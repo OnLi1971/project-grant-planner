@@ -119,12 +119,33 @@ const months = [
   { name: 'December', weeks: ['CW49', 'CW50', 'CW51', 'CW52'] }
 ];
 
-const getProjectBadgeVariant = (projekt: string) => {
-  if (projekt === 'FREE') return 'secondary';
-  if (projekt === 'DOVOLENÁ') return 'destructive';
-  if (projekt.startsWith('ST_')) return 'default';
-  if (projekt.startsWith('SAF_')) return 'outline';
-  return 'default';
+const getProjectBadgeStyle = (projekt: string) => {
+  // Free and vacation
+  if (projekt === 'FREE') return 'bg-muted text-muted-foreground border-muted';
+  if (projekt === 'DOVOLENÁ') return 'bg-destructive text-destructive-foreground border-destructive';
+  
+  // ST projects - different shades of blue/primary
+  if (projekt === 'ST_EMU_INT') return 'bg-blue-500 text-white border-blue-600';
+  if (projekt === 'ST_TRAM_INT') return 'bg-blue-600 text-white border-blue-700';
+  if (projekt === 'ST_MAINZ') return 'bg-blue-400 text-white border-blue-500';
+  if (projekt === 'ST_KASSEL') return 'bg-blue-700 text-white border-blue-800';
+  if (projekt === 'ST_BLAVA') return 'bg-cyan-500 text-white border-cyan-600';
+  if (projekt === 'ST_FEM') return 'bg-blue-300 text-blue-900 border-blue-400';
+  if (projekt === 'ST_POZAR') return 'bg-indigo-500 text-white border-indigo-600';
+  if (projekt === 'ST_JIGS') return 'bg-sky-500 text-white border-sky-600';
+  if (projekt === 'ST_TRAM_HS') return 'bg-blue-800 text-white border-blue-900';
+  
+  // NUVIA - green family
+  if (projekt.startsWith('NU_')) return 'bg-green-600 text-white border-green-700';
+  
+  // WABTEC - orange family
+  if (projekt.startsWith('WA_')) return 'bg-orange-500 text-white border-orange-600';
+  
+  // SAFRAN - purple family
+  if (projekt.startsWith('SAF_')) return 'bg-purple-500 text-white border-purple-600';
+  
+  // Default
+  return 'bg-gray-500 text-white border-gray-600';
 };
 
 export const ProjectAssignmentMatrix = () => {
@@ -315,14 +336,13 @@ export const ProjectAssignmentMatrix = () => {
                             }`}
                           >
                             {project && (
-                              <Badge 
-                                variant={getProjectBadgeVariant(project)}
-                                className="text-xs px-2 py-1 w-full justify-center font-medium shadow-sm hover:shadow-md transition-all duration-200 border border-border/50"
+                              <div 
+                                className={`text-xs px-2 py-1 w-full justify-center font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-md inline-flex items-center ${getProjectBadgeStyle(project)}`}
                               >
                                 <span className="truncate max-w-[70px]" title={project}>
                                   {project}
                                 </span>
-                              </Badge>
+                              </div>
                             )}
                           </td>
                         );
