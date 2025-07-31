@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Edit, Save, X, Plus } from 'lucide-react';
+import { Calendar, Edit, Save, X, Plus, MousePointer, MousePointer2 } from 'lucide-react';
 import { usePlanning } from '@/contexts/PlanningContext';
 
 interface WeekPlan {
@@ -64,9 +64,41 @@ export const PlanningEditor: React.FC = () => {
   
   const [editingCell, setEditingCell] = useState<EditableCell | null>(null);
   const [selectedKonstrukter, setSelectedKonstrukter] = useState<string>(konstrukteri[0] || '');
+  const [isMultiSelectMode, setIsMultiSelectMode] = useState<boolean>(false);
+  const [selectedWeeks, setSelectedWeeks] = useState<Set<string>>(new Set());
 
   const updateCell = (konstrukter: string, cw: string, field: 'projekt' | 'mhTyden', value: string | number) => {
     updatePlanningEntry(konstrukter, cw, field, value);
+  };
+
+  const toggleWeekSelection = (cw: string) => {
+    if (!isMultiSelectMode) return;
+    
+    const newSelectedWeeks = new Set(selectedWeeks);
+    if (newSelectedWeeks.has(cw)) {
+      newSelectedWeeks.delete(cw);
+    } else {
+      newSelectedWeeks.add(cw);
+    }
+    setSelectedWeeks(newSelectedWeeks);
+  };
+
+  const clearSelection = () => {
+    setSelectedWeeks(new Set());
+  };
+
+  const bulkUpdateProject = (projekt: string) => {
+    selectedWeeks.forEach(cw => {
+      updateCell(selectedKonstrukter, cw, 'projekt', projekt);
+    });
+    clearSelection();
+  };
+
+  const bulkUpdateHours = (hours: number) => {
+    selectedWeeks.forEach(cw => {
+      updateCell(selectedKonstrukter, cw, 'mhTyden', hours);
+    });
+    clearSelection();
   };
 
   const getProjectBadge = (projekt: string) => {
@@ -102,6 +134,17 @@ export const PlanningEditor: React.FC = () => {
             </div>
           </div>
           <div className="flex gap-2">
+            <Button 
+              variant={isMultiSelectMode ? "default" : "secondary"} 
+              onClick={() => {
+                setIsMultiSelectMode(!isMultiSelectMode);
+                if (isMultiSelectMode) clearSelection();
+              }}
+              className="bg-white/10 hover:bg-white/20"
+            >
+              <MousePointer2 className="h-4 w-4 mr-2" />
+              {isMultiSelectMode ? 'Ukončit výběr' : 'Vybrat více týdnů'}
+            </Button>
             <Button variant="secondary" onClick={addNewEngineer} className="bg-white/10 hover:bg-white/20">
               <Plus className="h-4 w-4 mr-2" />
               Přidat konstruktéra
@@ -148,11 +191,56 @@ export const PlanningEditor: React.FC = () => {
         </Card>
       </div>
 
+      {/* Bulk Edit Panel */}
+      {isMultiSelectMode && selectedWeeks.size > 0 && (
+        <Card className="p-4 shadow-card-custom border-primary">
+          <div className="flex items-center gap-4">
+            <div className="text-sm font-medium">
+              Vybráno {selectedWeeks.size} týdnů pro {selectedKonstrukter}
+            </div>
+            <div className="flex gap-2">
+              <Select onValueChange={bulkUpdateProject}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Nastavit projekt pro všechny" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableProjects.map(projekt => (
+                    <SelectItem key={projekt} value={projekt}>{projekt}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                type="number"
+                placeholder="Hodiny"
+                className="w-24"
+                onChange={(e) => e.target.value && bulkUpdateHours(parseInt(e.target.value) || 0)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    const target = e.target as HTMLInputElement;
+                    if (target.value) {
+                      bulkUpdateHours(parseInt(target.value) || 0);
+                      target.value = '';
+                    }
+                  }
+                }}
+              />
+              <Button variant="outline" onClick={clearSelection}>
+                <X className="h-4 w-4 mr-2" />
+                Zrušit výběr
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* Selector konstruktéra */}
       <Card className="p-4 shadow-card-custom">
         <div className="flex items-center gap-4">
           <label className="text-sm font-medium">Konstruktér:</label>
-          <Select value={selectedKonstrukter} onValueChange={setSelectedKonstrukter}>
+          <Select value={selectedKonstrukter} onValueChange={(value) => {
+            setSelectedKonstrukter(value);
+            clearSelection(); // Clear selection when changing engineer
+          }}>
             <SelectTrigger className="w-64">
               <SelectValue />
             </SelectTrigger>
@@ -165,6 +253,11 @@ export const PlanningEditor: React.FC = () => {
           <div className="text-sm text-muted-foreground">
             {konstrukteri.length} konstruktérů k dispozici
           </div>
+          {isMultiSelectMode && (
+            <Badge variant="outline" className="border-primary text-primary">
+              Režim výběru více týdnů
+            </Badge>
+          )}
         </div>
       </Card>
 
@@ -182,22 +275,42 @@ export const PlanningEditor: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {currentPlan.map((week, index) => (
+              {currentPlan.map((week, index) => {
+                const isSelected = selectedWeeks.has(week.cw);
+                return (
                 <tr 
                   key={week.cw}
                   className={`
-                    border-b transition-colors hover:bg-planning-cell-hover
-                    ${index % 2 === 0 ? 'bg-planning-cell' : 'bg-planning-stripe'}
+                    border-b transition-colors cursor-pointer
+                    ${isSelected ? 'bg-primary/10 border-primary' : 
+                      index % 2 === 0 ? 'bg-planning-cell hover:bg-planning-cell-hover' : 
+                      'bg-planning-stripe hover:bg-planning-cell-hover'}
+                    ${isMultiSelectMode ? 'hover:bg-primary/5' : ''}
                   `}
+                  onClick={() => isMultiSelectMode && toggleWeekSelection(week.cw)}
                 >
-                  <td className="p-3 font-mono font-medium">{week.cw}</td>
-                  <td className="p-3 text-muted-foreground">{week.mesic}</td>
+                  <td className="p-3 font-mono font-medium relative">
+                    {isSelected && (
+                      <div className="absolute inset-0 bg-primary/20 rounded" />
+                    )}
+                    <span className="relative z-10">{week.cw}</span>
+                  </td>
+                  <td className="p-3 text-muted-foreground relative">
+                    {isSelected && (
+                      <div className="absolute inset-0 bg-primary/20 rounded" />
+                    )}
+                    <span className="relative z-10">{week.mesic}</span>
+                  </td>
                   
                   {/* Editovatelné MH/týden */}
-                  <td className="p-3">
+                  <td className="p-3 relative">
+                    {isSelected && (
+                      <div className="absolute inset-0 bg-primary/20 rounded" />
+                    )}
+                    <div className="relative z-10">
                     {editingCell?.konstrukter === selectedKonstrukter && 
                      editingCell?.cw === week.cw && 
-                     editingCell?.field === 'mhTyden' ? (
+                     editingCell?.field === 'mhTyden' && !isMultiSelectMode ? (
                       <Input
                         type="number"
                         value={week.mhTyden}
@@ -207,28 +320,40 @@ export const PlanningEditor: React.FC = () => {
                         className="w-20 h-8"
                         autoFocus
                       />
-                    ) : (
-                      <div 
-                        className="cursor-pointer hover:bg-muted p-1 rounded flex items-center gap-2"
-                        onClick={() => setEditingCell({ konstrukter: selectedKonstrukter, cw: week.cw, field: 'mhTyden' })}
-                      >
-                        <span className={`font-medium ${
-                          week.mhTyden >= 40 ? 'text-success' :
-                          week.mhTyden >= 20 ? 'text-warning' :
-                          week.mhTyden > 0 ? 'text-foreground' : 'text-muted-foreground'
-                        }`}>
-                          {week.mhTyden}h
-                        </span>
-                        <Edit className="h-3 w-3 opacity-50" />
-                      </div>
-                    )}
+                      ) : (
+                        <div 
+                          className={`cursor-pointer hover:bg-muted p-1 rounded flex items-center gap-2 ${
+                            isMultiSelectMode ? 'pointer-events-none' : ''
+                          }`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (!isMultiSelectMode) {
+                              setEditingCell({ konstrukter: selectedKonstrukter, cw: week.cw, field: 'mhTyden' });
+                            }
+                          }}
+                        >
+                          <span className={`font-medium ${
+                            week.mhTyden >= 40 ? 'text-success' :
+                            week.mhTyden >= 20 ? 'text-warning' :
+                            week.mhTyden > 0 ? 'text-foreground' : 'text-muted-foreground'
+                          }`}>
+                            {week.mhTyden}h
+                          </span>
+                          {!isMultiSelectMode && <Edit className="h-3 w-3 opacity-50" />}
+                        </div>
+                      )}
+                    </div>
                   </td>
                   
                   {/* Editovatelný projekt */}
-                  <td className="p-3">
+                  <td className="p-3 relative">
+                    {isSelected && (
+                      <div className="absolute inset-0 bg-primary/20 rounded" />
+                    )}
+                    <div className="relative z-10">
                     {editingCell?.konstrukter === selectedKonstrukter && 
                      editingCell?.cw === week.cw && 
-                     editingCell?.field === 'projekt' ? (
+                     editingCell?.field === 'projekt' && !isMultiSelectMode ? (
                       <Select
                         value={week.projekt || 'FREE'}
                         onValueChange={(value) => {
@@ -245,23 +370,37 @@ export const PlanningEditor: React.FC = () => {
                           ))}
                         </SelectContent>
                       </Select>
-                    ) : (
-                      <div 
-                        className="cursor-pointer hover:bg-muted p-1 rounded flex items-center gap-2"
-                        onClick={() => setEditingCell({ konstrukter: selectedKonstrukter, cw: week.cw, field: 'projekt' })}
-                      >
-                        <span className="font-medium">{week.projekt || 'FREE'}</span>
-                        <Edit className="h-3 w-3 opacity-50" />
-                      </div>
-                    )}
+                      ) : (
+                        <div 
+                          className={`cursor-pointer hover:bg-muted p-1 rounded flex items-center gap-2 ${
+                            isMultiSelectMode ? 'pointer-events-none' : ''
+                          }`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (!isMultiSelectMode) {
+                              setEditingCell({ konstrukter: selectedKonstrukter, cw: week.cw, field: 'projekt' });
+                            }
+                          }}
+                        >
+                          <span className="font-medium">{week.projekt || 'FREE'}</span>
+                          {!isMultiSelectMode && <Edit className="h-3 w-3 opacity-50" />}
+                        </div>
+                      )}
+                    </div>
                   </td>
                   
                   {/* Status badge */}
-                  <td className="p-3">
-                    {getProjectBadge(week.projekt)}
+                  <td className="p-3 relative">
+                    {isSelected && (
+                      <div className="absolute inset-0 bg-primary/20 rounded" />
+                    )}
+                    <div className="relative z-10">
+                      {getProjectBadge(week.projekt)}
+                    </div>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
