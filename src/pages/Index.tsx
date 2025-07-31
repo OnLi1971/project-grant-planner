@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { PlanningTable } from '@/components/PlanningTable';
 import { PlanningEditor } from '@/components/PlanningEditor';
+import { FreeCapacityOverview } from '@/components/FreeCapacityOverview';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Calendar, Edit } from 'lucide-react';
+import { Calendar, Edit, Users } from 'lucide-react';
 
 const Index = () => {
-  const [activeView, setActiveView] = useState<'overview' | 'editor'>('editor');
+  const [activeView, setActiveView] = useState<'overview' | 'editor' | 'free-capacity'>('editor');
 
   return (
     <div className="min-h-screen bg-background">
@@ -29,11 +30,25 @@ const Index = () => {
             <Edit className="h-4 w-4" />
             Editor plánování
           </Button>
+          <Button
+            variant={activeView === 'free-capacity' ? 'default' : 'outline'}
+            onClick={() => setActiveView('free-capacity')}
+            className="flex items-center gap-2"
+          >
+            <Users className="h-4 w-4" />
+            Volné kapacity
+          </Button>
         </div>
       </Card>
 
       {/* Content */}
-      {activeView === 'overview' ? <PlanningTable /> : <PlanningEditor />}
+      {activeView === 'overview' ? (
+        <PlanningTable />
+      ) : activeView === 'editor' ? (
+        <PlanningEditor />
+      ) : (
+        <FreeCapacityOverview />
+      )}
     </div>
   );
 };
