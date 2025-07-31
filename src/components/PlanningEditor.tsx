@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Edit, Save, X, Plus } from 'lucide-react';
-import { planningData } from '@/data/planningData';
+import { usePlanning } from '@/contexts/PlanningContext';
 
 interface WeekPlan {
   cw: string;
@@ -26,12 +26,12 @@ const availableProjects = [
   'NU_CRAIN', 'WA_HVAC', 'ST_JIGS', 'ST_TRAM_HS', 'SAF_FEM', 'FREE', 'DOVOLENÁ'
 ];
 
-// Transformace importovaných dat do formátu editoru
-const generatePlanningDataForEditor = (): { [key: string]: WeekPlan[] } => {
+// Transformace dat z contextu do formátu editoru
+const generatePlanningDataForEditor = (data: any[]): { [key: string]: WeekPlan[] } => {
   const result: { [key: string]: WeekPlan[] } = {};
   
   // Skupina konstruktérů podle jmen
-  planningData.forEach(entry => {
+  data.forEach(entry => {
     if (!result[entry.konstrukter]) {
       result[entry.konstrukter] = [];
     }
@@ -57,22 +57,16 @@ const generatePlanningDataForEditor = (): { [key: string]: WeekPlan[] } => {
 };
 
 export const PlanningEditor: React.FC = () => {
-  const realPlanningData = useMemo(() => generatePlanningDataForEditor(), []);
-  const konstrukteri = useMemo(() => Object.keys(realPlanningData).sort(), [realPlanningData]);
+  const { planningData, updatePlanningEntry, addEngineer, savePlan } = usePlanning();
   
-  const [planData, setPlanData] = useState<{ [key: string]: WeekPlan[] }>(realPlanningData);
+  const planData = useMemo(() => generatePlanningDataForEditor(planningData), [planningData]);
+  const konstrukteri = useMemo(() => Object.keys(planData).sort(), [planData]);
+  
   const [editingCell, setEditingCell] = useState<EditableCell | null>(null);
   const [selectedKonstrukter, setSelectedKonstrukter] = useState<string>(konstrukteri[0] || '');
 
   const updateCell = (konstrukter: string, cw: string, field: 'projekt' | 'mhTyden', value: string | number) => {
-    setPlanData(prev => ({
-      ...prev,
-      [konstrukter]: prev[konstrukter].map(week => 
-        week.cw === cw 
-          ? { ...week, [field]: value }
-          : week
-      )
-    }));
+    updatePlanningEntry(konstrukter, cw, field, value);
   };
 
   const getProjectBadge = (projekt: string) => {
@@ -90,21 +84,7 @@ export const PlanningEditor: React.FC = () => {
   const addNewEngineer = () => {
     const newName = prompt('Zadejte jméno nového konstruktéra:');
     if (newName && !konstrukteri.includes(newName)) {
-      const weeks = ['CW32', 'CW33', 'CW34', 'CW35', 'CW36', 'CW37', 'CW38', 'CW39', 'CW40', 'CW41', 'CW42', 'CW43', 'CW44', 'CW45', 'CW46', 'CW47', 'CW48', 'CW49', 'CW50', 'CW51', 'CW52'];
-      const months = ['August', 'August', 'August', 'August', 'September', 'September', 'September', 'September', 'October', 'October', 'October', 'October', 'October', 'November', 'November', 'November', 'November', 'December', 'December', 'December', 'December'];
-      
-      const newPlan = weeks.map((week, index) => ({
-        cw: week,
-        mesic: months[index],
-        mhTyden: 0,
-        projekt: 'FREE'
-      }));
-      
-      setPlanData(prev => ({
-        ...prev,
-        [newName]: newPlan
-      }));
-      
+      addEngineer(newName);
       setSelectedKonstrukter(newName);
     }
   };
@@ -126,7 +106,7 @@ export const PlanningEditor: React.FC = () => {
               <Plus className="h-4 w-4 mr-2" />
               Přidat konstruktéra
             </Button>
-            <Button variant="secondary" className="bg-white/10 hover:bg-white/20">
+            <Button variant="secondary" onClick={savePlan} className="bg-white/10 hover:bg-white/20">
               <Save className="h-4 w-4 mr-2" />
               Uložit plán
             </Button>

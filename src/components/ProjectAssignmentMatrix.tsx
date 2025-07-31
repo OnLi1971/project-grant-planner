@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { planningData, type PlanningEntry } from '@/data/planningData';
+import { usePlanning } from '@/contexts/PlanningContext';
 
 // Organizational structure and project mappings
 const organizacniVedouci = [
@@ -128,6 +128,7 @@ const getProjectBadgeVariant = (projekt: string) => {
 };
 
 export const ProjectAssignmentMatrix = () => {
+  const { planningData } = usePlanning();
   const [filterOrgVedouci, setFilterOrgVedouci] = useState('Všichni');
   const [filterPM, setFilterPM] = useState('Všichni');
   const [filterZakaznik, setFilterZakaznik] = useState('Všichni');
@@ -147,7 +148,7 @@ export const ProjectAssignmentMatrix = () => {
     });
     
     return matrix;
-  }, []);
+  }, [planningData]);
 
   // Filter engineers based on selected filters
   const filteredEngineers = useMemo(() => {
