@@ -1,349 +1,91 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Users, Calendar } from 'lucide-react';
+import { usePlanning } from '@/contexts/PlanningContext';
 
-// Reálná data z PlanningEditor (zkrácená verze pro FREE kapacity)
-const realPlanningData: { [key: string]: { cw: string; projekt: string }[] } = {
-  'Hlavan Martin': [
-    { cw: 'CW32', projekt: 'ST_BLAVA' }, { cw: 'CW33', projekt: 'ST_BLAVA' }, { cw: 'CW34', projekt: 'ST_BLAVA' }, { cw: 'CW35', projekt: 'ST_BLAVA' },
-    { cw: 'CW36', projekt: 'ST_BLAVA' }, { cw: 'CW37', projekt: 'ST_BLAVA' }, { cw: 'CW38', projekt: 'ST_BLAVA' }, { cw: 'CW39', projekt: 'ST_BLAVA' },
-    { cw: 'CW40', projekt: 'ST_BLAVA' }, { cw: 'CW41', projekt: 'ST_BLAVA' }, { cw: 'CW42', projekt: 'ST_BLAVA' }, { cw: 'CW43', projekt: 'ST_BLAVA' },
-    { cw: 'CW44', projekt: 'ST_BLAVA' }, { cw: 'CW45', projekt: 'ST_MAINZ' }, { cw: 'CW46', projekt: 'ST_MAINZ' }, { cw: 'CW47', projekt: 'ST_MAINZ' },
-    { cw: 'CW48', projekt: 'ST_MAINZ' }, { cw: 'CW49', projekt: 'ST_MAINZ' }, { cw: 'CW50', projekt: 'ST_MAINZ' }, { cw: 'CW51', projekt: 'ST_MAINZ' }, { cw: 'CW52', projekt: 'ST_MAINZ' }
-  ],
-  'Fica Ladislav': [
-    { cw: 'CW32', projekt: 'FREE' }, { cw: 'CW33', projekt: 'FREE' }, { cw: 'CW34', projekt: 'ST_MAINZ' }, { cw: 'CW35', projekt: 'ST_MAINZ' },
-    { cw: 'CW36', projekt: 'ST_MAINZ' }, { cw: 'CW37', projekt: 'ST_MAINZ' }, { cw: 'CW38', projekt: 'ST_MAINZ' }, { cw: 'CW39', projekt: 'ST_MAINZ' },
-    { cw: 'CW40', projekt: 'ST_MAINZ' }, { cw: 'CW41', projekt: 'ST_MAINZ' }, { cw: 'CW42', projekt: 'ST_MAINZ' }, { cw: 'CW43', projekt: 'ST_MAINZ' },
-    { cw: 'CW44', projekt: 'ST_MAINZ' }, { cw: 'CW45', projekt: 'ST_MAINZ' }, { cw: 'CW46', projekt: 'ST_MAINZ' }, { cw: 'CW47', projekt: 'ST_MAINZ' },
-    { cw: 'CW48', projekt: 'ST_MAINZ' }, { cw: 'CW49', projekt: 'ST_MAINZ' }, { cw: 'CW50', projekt: 'ST_MAINZ' }, { cw: 'CW51', projekt: 'ST_MAINZ' }, { cw: 'CW52', projekt: 'ST_MAINZ' }
-  ],
-  'Ambrož David': [
-    { cw: 'CW32', projekt: 'DOVOLENÁ' }, { cw: 'CW33', projekt: 'ST_BLAVA' }, { cw: 'CW34', projekt: 'DOVOLENÁ' }, { cw: 'CW35', projekt: 'DOVOLENÁ' },
-    { cw: 'CW36', projekt: 'ST_MAINZ' }, { cw: 'CW37', projekt: 'ST_MAINZ' }, { cw: 'CW38', projekt: 'ST_MAINZ' }, { cw: 'CW39', projekt: 'ST_MAINZ' },
-    { cw: 'CW40', projekt: 'ST_MAINZ' }, { cw: 'CW41', projekt: 'ST_MAINZ' }, { cw: 'CW42', projekt: 'ST_MAINZ' }, { cw: 'CW43', projekt: 'ST_MAINZ' },
-    { cw: 'CW44', projekt: 'ST_MAINZ' }, { cw: 'CW45', projekt: 'ST_MAINZ' }, { cw: 'CW46', projekt: 'ST_MAINZ' }, { cw: 'CW47', projekt: 'ST_MAINZ' },
-    { cw: 'CW48', projekt: 'ST_MAINZ' }, { cw: 'CW49', projekt: 'ST_MAINZ' }, { cw: 'CW50', projekt: 'ST_MAINZ' }, { cw: 'CW51', projekt: 'ST_MAINZ' }, { cw: 'CW52', projekt: 'ST_MAINZ' }
-  ],
-  'Slavík Ondřej': [
-    { cw: 'CW32', projekt: 'ST_EMU_INT' }, { cw: 'CW33', projekt: 'ST_EMU_INT' }, { cw: 'CW34', projekt: 'ST_EMU_INT' }, { cw: 'CW35', projekt: 'ST_EMU_INT' },
-    { cw: 'CW36', projekt: 'ST_EMU_INT' }, { cw: 'CW37', projekt: 'ST_EMU_INT' }, { cw: 'CW38', projekt: 'ST_EMU_INT' }, { cw: 'CW39', projekt: 'ST_EMU_INT' },
-    { cw: 'CW40', projekt: 'ST_EMU_INT' }, { cw: 'CW41', projekt: 'ST_EMU_INT' }, { cw: 'CW42', projekt: 'ST_EMU_INT' }, { cw: 'CW43', projekt: 'ST_EMU_INT' },
-    { cw: 'CW44', projekt: 'ST_EMU_INT' }, { cw: 'CW45', projekt: 'ST_EMU_INT' }, { cw: 'CW46', projekt: 'ST_EMU_INT' }, { cw: 'CW47', projekt: 'ST_EMU_INT' },
-    { cw: 'CW48', projekt: 'ST_EMU_INT' }, { cw: 'CW49', projekt: 'ST_EMU_INT' }, { cw: 'CW50', projekt: 'ST_EMU_INT' }, { cw: 'CW51', projekt: 'ST_EMU_INT' }, { cw: 'CW52', projekt: 'FREE' }
-  ],
-  'Chrenko Peter': [
-    { cw: 'CW32', projekt: 'ST_EMU_INT' }, { cw: 'CW33', projekt: 'ST_EMU_INT' }, { cw: 'CW34', projekt: 'ST_EMU_INT' }, { cw: 'CW35', projekt: 'ST_EMU_INT' },
-    { cw: 'CW36', projekt: 'ST_EMU_INT' }, { cw: 'CW37', projekt: 'ST_EMU_INT' }, { cw: 'CW38', projekt: 'ST_EMU_INT' }, { cw: 'CW39', projekt: 'ST_EMU_INT' },
-    { cw: 'CW40', projekt: 'ST_EMU_INT' }, { cw: 'CW41', projekt: 'ST_EMU_INT' }, { cw: 'CW42', projekt: 'ST_EMU_INT' }, { cw: 'CW43', projekt: 'ST_EMU_INT' },
-    { cw: 'CW44', projekt: 'ST_EMU_INT' }, { cw: 'CW45', projekt: 'ST_EMU_INT' }, { cw: 'CW46', projekt: 'ST_EMU_INT' }, { cw: 'CW47', projekt: 'ST_EMU_INT' },
-    { cw: 'CW48', projekt: 'ST_EMU_INT' }, { cw: 'CW49', projekt: 'ST_EMU_INT' }, { cw: 'CW50', projekt: 'ST_EMU_INT' }, { cw: 'CW51', projekt: 'ST_EMU_INT' }, { cw: 'CW52', projekt: 'ST_EMU_INT' }
-  ],
-  'Jurčišin Peter': [
-    { cw: 'CW32', projekt: 'ST_EMU_INT' }, { cw: 'CW33', projekt: 'ST_EMU_INT' }, { cw: 'CW34', projekt: 'ST_EMU_INT' }, { cw: 'CW35', projekt: 'ST_EMU_INT' },
-    { cw: 'CW36', projekt: 'ST_EMU_INT' }, { cw: 'CW37', projekt: 'ST_EMU_INT' }, { cw: 'CW38', projekt: 'ST_EMU_INT' }, { cw: 'CW39', projekt: 'ST_EMU_INT' },
-    { cw: 'CW40', projekt: 'ST_EMU_INT' }, { cw: 'CW41', projekt: 'ST_EMU_INT' }, { cw: 'CW42', projekt: 'ST_EMU_INT' }, { cw: 'CW43', projekt: 'ST_EMU_INT' },
-    { cw: 'CW44', projekt: 'ST_EMU_INT' }, { cw: 'CW45', projekt: 'ST_EMU_INT' }, { cw: 'CW46', projekt: 'ST_EMU_INT' }, { cw: 'CW47', projekt: 'ST_EMU_INT' },
-    { cw: 'CW48', projekt: 'ST_EMU_INT' }, { cw: 'CW49', projekt: 'ST_EMU_INT' }, { cw: 'CW50', projekt: 'ST_EMU_INT' }, { cw: 'CW51', projekt: 'ST_EMU_INT' }, { cw: 'CW52', projekt: 'ST_EMU_INT' }
-  ],
-  'Púpava Marián': [
-    { cw: 'CW32', projekt: 'ST_EMU_INT' }, { cw: 'CW33', projekt: 'ST_EMU_INT' }, { cw: 'CW34', projekt: 'ST_EMU_INT' }, { cw: 'CW35', projekt: 'ST_EMU_INT' },
-    { cw: 'CW36', projekt: 'ST_EMU_INT' }, { cw: 'CW37', projekt: 'ST_EMU_INT' }, { cw: 'CW38', projekt: 'ST_EMU_INT' }, { cw: 'CW39', projekt: 'ST_EMU_INT' },
-    { cw: 'CW40', projekt: 'ST_EMU_INT' }, { cw: 'CW41', projekt: 'ST_EMU_INT' }, { cw: 'CW42', projekt: 'ST_EMU_INT' }, { cw: 'CW43', projekt: 'ST_EMU_INT' },
-    { cw: 'CW44', projekt: 'ST_EMU_INT' }, { cw: 'CW45', projekt: 'ST_EMU_INT' }, { cw: 'CW46', projekt: 'ST_EMU_INT' }, { cw: 'CW47', projekt: 'ST_EMU_INT' },
-    { cw: 'CW48', projekt: 'ST_EMU_INT' }, { cw: 'CW49', projekt: 'ST_EMU_INT' }, { cw: 'CW50', projekt: 'ST_EMU_INT' }, { cw: 'CW51', projekt: 'ST_EMU_INT' }, { cw: 'CW52', projekt: 'ST_EMU_INT' }
-  ],
-  'Bohušík Martin': [
-    { cw: 'CW32', projekt: 'ST_EMU_INT' }, { cw: 'CW33', projekt: 'ST_EMU_INT' }, { cw: 'CW34', projekt: 'ST_EMU_INT' }, { cw: 'CW35', projekt: 'ST_EMU_INT' },
-    { cw: 'CW36', projekt: 'ST_EMU_INT' }, { cw: 'CW37', projekt: 'ST_EMU_INT' }, { cw: 'CW38', projekt: 'ST_EMU_INT' }, { cw: 'CW39', projekt: 'ST_EMU_INT' },
-    { cw: 'CW40', projekt: 'ST_EMU_INT' }, { cw: 'CW41', projekt: 'ST_EMU_INT' }, { cw: 'CW42', projekt: 'ST_EMU_INT' }, { cw: 'CW43', projekt: 'ST_EMU_INT' },
-    { cw: 'CW44', projekt: 'ST_EMU_INT' }, { cw: 'CW45', projekt: 'ST_EMU_INT' }, { cw: 'CW46', projekt: 'ST_EMU_INT' }, { cw: 'CW47', projekt: 'ST_EMU_INT' },
-    { cw: 'CW48', projekt: 'ST_EMU_INT' }, { cw: 'CW49', projekt: 'ST_EMU_INT' }, { cw: 'CW50', projekt: 'ST_EMU_INT' }, { cw: 'CW51', projekt: 'ST_EMU_INT' }, { cw: 'CW52', projekt: 'ST_EMU_INT' }
-  ],
-  'Uher Tomáš': [
-    { cw: 'CW32', projekt: 'ST_EMU_INT' }, { cw: 'CW33', projekt: 'ST_EMU_INT' }, { cw: 'CW34', projekt: 'ST_EMU_INT' }, { cw: 'CW35', projekt: 'ST_EMU_INT' },
-    { cw: 'CW36', projekt: 'ST_EMU_INT' }, { cw: 'CW37', projekt: 'ST_EMU_INT' }, { cw: 'CW38', projekt: 'ST_EMU_INT' }, { cw: 'CW39', projekt: 'ST_EMU_INT' },
-    { cw: 'CW40', projekt: 'ST_EMU_INT' }, { cw: 'CW41', projekt: 'ST_EMU_INT' }, { cw: 'CW42', projekt: 'ST_EMU_INT' }, { cw: 'CW43', projekt: 'ST_EMU_INT' },
-    { cw: 'CW44', projekt: 'ST_EMU_INT' }, { cw: 'CW45', projekt: 'ST_EMU_INT' }, { cw: 'CW46', projekt: 'ST_EMU_INT' }, { cw: 'CW47', projekt: 'ST_EMU_INT' },
-    { cw: 'CW48', projekt: 'ST_EMU_INT' }, { cw: 'CW49', projekt: 'ST_EMU_INT' }, { cw: 'CW50', projekt: 'ST_EMU_INT' }, { cw: 'CW51', projekt: 'ST_EMU_INT' }, { cw: 'CW52', projekt: 'ST_EMU_INT' }
-  ],
-  'Weiss Ondřej': [
-    { cw: 'CW32', projekt: 'FREE' }, { cw: 'CW33', projekt: 'FREE' }, { cw: 'CW34', projekt: 'FREE' }, { cw: 'CW35', projekt: 'FREE' },
-    { cw: 'CW36', projekt: 'FREE' }, { cw: 'CW37', projekt: 'FREE' }, { cw: 'CW38', projekt: 'FREE' }, { cw: 'CW39', projekt: 'FREE' },
-    { cw: 'CW40', projekt: 'FREE' }, { cw: 'CW41', projekt: 'FREE' }, { cw: 'CW42', projekt: 'FREE' }, { cw: 'CW43', projekt: 'FREE' },
-    { cw: 'CW44', projekt: 'FREE' }, { cw: 'CW45', projekt: 'FREE' }, { cw: 'CW46', projekt: 'FREE' }, { cw: 'CW47', projekt: 'FREE' },
-    { cw: 'CW48', projekt: 'FREE' }, { cw: 'CW49', projekt: 'FREE' }, { cw: 'CW50', projekt: 'FREE' }, { cw: 'CW51', projekt: 'FREE' }, { cw: 'CW52', projekt: 'FREE' }
-  ],
-  'Borský Jan': [
-    { cw: 'CW32', projekt: 'FREE' }, { cw: 'CW33', projekt: 'FREE' }, { cw: 'CW34', projekt: 'FREE' }, { cw: 'CW35', projekt: 'FREE' },
-    { cw: 'CW36', projekt: 'FREE' }, { cw: 'CW37', projekt: 'FREE' }, { cw: 'CW38', projekt: 'FREE' }, { cw: 'CW39', projekt: 'FREE' },
-    { cw: 'CW40', projekt: 'FREE' }, { cw: 'CW41', projekt: 'FREE' }, { cw: 'CW42', projekt: 'FREE' }, { cw: 'CW43', projekt: 'FREE' },
-    { cw: 'CW44', projekt: 'FREE' }, { cw: 'CW45', projekt: 'FREE' }, { cw: 'CW46', projekt: 'FREE' }, { cw: 'CW47', projekt: 'FREE' },
-    { cw: 'CW48', projekt: 'FREE' }, { cw: 'CW49', projekt: 'FREE' }, { cw: 'CW50', projekt: 'FREE' }, { cw: 'CW51', projekt: 'FREE' }, { cw: 'CW52', projekt: 'FREE' }
-  ],
-  'Pytela Martin': [
-    { cw: 'CW32', projekt: 'FREE' }, { cw: 'CW33', projekt: 'FREE' }, { cw: 'CW34', projekt: 'FREE' }, { cw: 'CW35', projekt: 'FREE' },
-    { cw: 'CW36', projekt: 'FREE' }, { cw: 'CW37', projekt: 'FREE' }, { cw: 'CW38', projekt: 'FREE' }, { cw: 'CW39', projekt: 'FREE' },
-    { cw: 'CW40', projekt: 'FREE' }, { cw: 'CW41', projekt: 'FREE' }, { cw: 'CW42', projekt: 'FREE' }, { cw: 'CW43', projekt: 'FREE' },
-    { cw: 'CW44', projekt: 'FREE' }, { cw: 'CW45', projekt: 'FREE' }, { cw: 'CW46', projekt: 'FREE' }, { cw: 'CW47', projekt: 'FREE' },
-    { cw: 'CW48', projekt: 'FREE' }, { cw: 'CW49', projekt: 'FREE' }, { cw: 'CW50', projekt: 'FREE' }, { cw: 'CW51', projekt: 'FREE' }, { cw: 'CW52', projekt: 'FREE' }
-  ],
-  'Litvinov Evgenii': [
-    { cw: 'CW32', projekt: 'FREE' }, { cw: 'CW33', projekt: 'FREE' }, { cw: 'CW34', projekt: 'FREE' }, { cw: 'CW35', projekt: 'FREE' },
-    { cw: 'CW36', projekt: 'FREE' }, { cw: 'CW37', projekt: 'FREE' }, { cw: 'CW38', projekt: 'FREE' }, { cw: 'CW39', projekt: 'FREE' },
-    { cw: 'CW40', projekt: 'FREE' }, { cw: 'CW41', projekt: 'FREE' }, { cw: 'CW42', projekt: 'FREE' }, { cw: 'CW43', projekt: 'FREE' },
-    { cw: 'CW44', projekt: 'FREE' }, { cw: 'CW45', projekt: 'FREE' }, { cw: 'CW46', projekt: 'FREE' }, { cw: 'CW47', projekt: 'FREE' },
-    { cw: 'CW48', projekt: 'FREE' }, { cw: 'CW49', projekt: 'FREE' }, { cw: 'CW50', projekt: 'FREE' }, { cw: 'CW51', projekt: 'FREE' }, { cw: 'CW52', projekt: 'FREE' }
-  ],
-  'Jandečka Karel': [
-    { cw: 'CW32', projekt: 'FREE' }, { cw: 'CW33', projekt: 'FREE' }, { cw: 'CW34', projekt: 'FREE' }, { cw: 'CW35', projekt: 'FREE' },
-    { cw: 'CW36', projekt: 'FREE' }, { cw: 'CW37', projekt: 'FREE' }, { cw: 'CW38', projekt: 'FREE' }, { cw: 'CW39', projekt: 'FREE' },
-    { cw: 'CW40', projekt: 'FREE' }, { cw: 'CW41', projekt: 'FREE' }, { cw: 'CW42', projekt: 'FREE' }, { cw: 'CW43', projekt: 'FREE' },
-    { cw: 'CW44', projekt: 'FREE' }, { cw: 'CW45', projekt: 'FREE' }, { cw: 'CW46', projekt: 'FREE' }, { cw: 'CW47', projekt: 'FREE' },
-    { cw: 'CW48', projekt: 'FREE' }, { cw: 'CW49', projekt: 'FREE' }, { cw: 'CW50', projekt: 'FREE' }, { cw: 'CW51', projekt: 'FREE' }, { cw: 'CW52', projekt: 'FREE' }
-  ],
-  'Heřman Daniel': [
-    { cw: 'CW32', projekt: 'ST_EMU_INT' }, { cw: 'CW33', projekt: 'ST_EMU_INT' }, { cw: 'CW34', projekt: 'ST_EMU_INT' }, { cw: 'CW35', projekt: 'ST_EMU_INT' },
-    { cw: 'CW36', projekt: 'ST_EMU_INT' }, { cw: 'CW37', projekt: 'ST_EMU_INT' }, { cw: 'CW38', projekt: 'ST_EMU_INT' }, { cw: 'CW39', projekt: 'ST_EMU_INT' },
-    { cw: 'CW40', projekt: 'ST_EMU_INT' }, { cw: 'CW41', projekt: 'ST_EMU_INT' }, { cw: 'CW42', projekt: 'ST_EMU_INT' }, { cw: 'CW43', projekt: 'ST_EMU_INT' },
-    { cw: 'CW44', projekt: 'ST_EMU_INT' }, { cw: 'CW45', projekt: 'ST_EMU_INT' }, { cw: 'CW46', projekt: 'ST_EMU_INT' }, { cw: 'CW47', projekt: 'ST_EMU_INT' },
-    { cw: 'CW48', projekt: 'ST_EMU_INT' }, { cw: 'CW49', projekt: 'ST_EMU_INT' }, { cw: 'CW50', projekt: 'ST_EMU_INT' }, { cw: 'CW51', projekt: 'ST_EMU_INT' }, { cw: 'CW52', projekt: 'ST_EMU_INT' }
-  ],
-  'Karlesz Michal': [
-    { cw: 'CW32', projekt: 'FREE' }, { cw: 'CW33', projekt: 'FREE' }, { cw: 'CW34', projekt: 'ST_MAINZ' }, { cw: 'CW35', projekt: 'ST_MAINZ' },
-    { cw: 'CW36', projekt: 'ST_MAINZ' }, { cw: 'CW37', projekt: 'ST_MAINZ' }, { cw: 'CW38', projekt: 'ST_MAINZ' }, { cw: 'CW39', projekt: 'ST_MAINZ' },
-    { cw: 'CW40', projekt: 'ST_MAINZ' }, { cw: 'CW41', projekt: 'ST_MAINZ' }, { cw: 'CW42', projekt: 'ST_MAINZ' }, { cw: 'CW43', projekt: 'ST_MAINZ' },
-    { cw: 'CW44', projekt: 'ST_MAINZ' }, { cw: 'CW45', projekt: 'ST_MAINZ' }, { cw: 'CW46', projekt: 'ST_MAINZ' }, { cw: 'CW47', projekt: 'ST_MAINZ' },
-    { cw: 'CW48', projekt: 'ST_MAINZ' }, { cw: 'CW49', projekt: 'ST_MAINZ' }, { cw: 'CW50', projekt: 'ST_MAINZ' }, { cw: 'CW51', projekt: 'ST_MAINZ' }, { cw: 'CW52', projekt: 'ST_MAINZ' }
-  ],
-  'Matta Jozef': [
-    { cw: 'CW32', projekt: 'ST_BLAVA' }, { cw: 'CW33', projekt: 'ST_BLAVA' }, { cw: 'CW34', projekt: 'DOVOLENÁ' }, { cw: 'CW35', projekt: 'ST_MAINZ' },
-    { cw: 'CW36', projekt: 'ST_MAINZ' }, { cw: 'CW37', projekt: 'ST_MAINZ' }, { cw: 'CW38', projekt: 'ST_MAINZ' }, { cw: 'CW39', projekt: 'ST_MAINZ' },
-    { cw: 'CW40', projekt: 'ST_MAINZ' }, { cw: 'CW41', projekt: 'ST_MAINZ' }, { cw: 'CW42', projekt: 'ST_MAINZ' }, { cw: 'CW43', projekt: 'ST_MAINZ' },
-    { cw: 'CW44', projekt: 'ST_MAINZ' }, { cw: 'CW45', projekt: 'ST_MAINZ' }, { cw: 'CW46', projekt: 'ST_MAINZ' }, { cw: 'CW47', projekt: 'ST_MAINZ' },
-    { cw: 'CW48', projekt: 'ST_MAINZ' }, { cw: 'CW49', projekt: 'ST_MAINZ' }, { cw: 'CW50', projekt: 'ST_MAINZ' }, { cw: 'CW51', projekt: 'ST_MAINZ' }, { cw: 'CW52', projekt: 'ST_MAINZ' }
-  ],
-  'Pecinovský Pavel': [
-    { cw: 'CW32', projekt: 'ST_EMU_INT' }, { cw: 'CW33', projekt: 'ST_EMU_INT' }, { cw: 'CW34', projekt: 'ST_EMU_INT' }, { cw: 'CW35', projekt: 'ST_EMU_INT' },
-    { cw: 'CW36', projekt: 'ST_EMU_INT' }, { cw: 'CW37', projekt: 'ST_EMU_INT' }, { cw: 'CW38', projekt: 'ST_EMU_INT' }, { cw: 'CW39', projekt: 'ST_EMU_INT' },
-    { cw: 'CW40', projekt: 'ST_EMU_INT' }, { cw: 'CW41', projekt: 'ST_EMU_INT' }, { cw: 'CW42', projekt: 'ST_EMU_INT' }, { cw: 'CW43', projekt: 'ST_EMU_INT' },
-    { cw: 'CW44', projekt: 'ST_EMU_INT' }, { cw: 'CW45', projekt: 'ST_EMU_INT' }, { cw: 'CW46', projekt: 'ST_EMU_INT' }, { cw: 'CW47', projekt: 'ST_EMU_INT' },
-    { cw: 'CW48', projekt: 'ST_EMU_INT' }, { cw: 'CW49', projekt: 'ST_EMU_INT' }, { cw: 'CW50', projekt: 'ST_EMU_INT' }, { cw: 'CW51', projekt: 'ST_EMU_INT' }, { cw: 'CW52', projekt: 'ST_EMU_INT' }
-  ],
-  'Anovčín Branislav': [
-    { cw: 'CW32', projekt: 'ST_BLAVA' }, { cw: 'CW33', projekt: 'ST_BLAVA' }, { cw: 'CW34', projekt: 'ST_BLAVA' }, { cw: 'CW35', projekt: 'ST_BLAVA' },
-    { cw: 'CW36', projekt: 'ST_MAINZ' }, { cw: 'CW37', projekt: 'ST_MAINZ' }, { cw: 'CW38', projekt: 'ST_MAINZ' }, { cw: 'CW39', projekt: 'ST_MAINZ' },
-    { cw: 'CW40', projekt: 'ST_MAINZ' }, { cw: 'CW41', projekt: 'ST_MAINZ' }, { cw: 'CW42', projekt: 'ST_MAINZ' }, { cw: 'CW43', projekt: 'ST_MAINZ' },
-    { cw: 'CW44', projekt: 'ST_MAINZ' }, { cw: 'CW45', projekt: 'ST_MAINZ' }, { cw: 'CW46', projekt: 'ST_MAINZ' }, { cw: 'CW47', projekt: 'ST_MAINZ' },
-    { cw: 'CW48', projekt: 'ST_MAINZ' }, { cw: 'CW49', projekt: 'ST_MAINZ' }, { cw: 'CW50', projekt: 'ST_MAINZ' }, { cw: 'CW51', projekt: 'ST_MAINZ' }, { cw: 'CW52', projekt: 'ST_MAINZ' }
-  ],
-  'Bartovič Anton': [
-    { cw: 'CW32', projekt: 'FREE' }, { cw: 'CW33', projekt: 'FREE' }, { cw: 'CW34', projekt: 'FREE' }, { cw: 'CW35', projekt: 'FREE' },
-    { cw: 'CW36', projekt: 'FREE' }, { cw: 'CW37', projekt: 'FREE' }, { cw: 'CW38', projekt: 'FREE' }, { cw: 'CW39', projekt: 'FREE' },
-    { cw: 'CW40', projekt: 'FREE' }, { cw: 'CW41', projekt: 'FREE' }, { cw: 'CW42', projekt: 'FREE' }, { cw: 'CW43', projekt: 'FREE' },
-    { cw: 'CW44', projekt: 'FREE' }, { cw: 'CW45', projekt: 'FREE' }, { cw: 'CW46', projekt: 'FREE' }, { cw: 'CW47', projekt: 'FREE' },
-    { cw: 'CW48', projekt: 'FREE' }, { cw: 'CW49', projekt: 'FREE' }, { cw: 'CW50', projekt: 'FREE' }, { cw: 'CW51', projekt: 'FREE' }, { cw: 'CW52', projekt: 'FREE' }
-  ],
-  'Břicháček Miloš': [
-    { cw: 'CW32', projekt: 'ST_BLAVA' }, { cw: 'CW33', projekt: 'ST_BLAVA' }, { cw: 'CW34', projekt: 'ST_BLAVA' }, { cw: 'CW35', projekt: 'ST_BLAVA' },
-    { cw: 'CW36', projekt: 'ST_MAINZ' }, { cw: 'CW37', projekt: 'ST_MAINZ' }, { cw: 'CW38', projekt: 'ST_MAINZ' }, { cw: 'CW39', projekt: 'ST_MAINZ' },
-    { cw: 'CW40', projekt: 'ST_MAINZ' }, { cw: 'CW41', projekt: 'ST_MAINZ' }, { cw: 'CW42', projekt: 'ST_MAINZ' }, { cw: 'CW43', projekt: 'ST_MAINZ' },
-    { cw: 'CW44', projekt: 'ST_MAINZ' }, { cw: 'CW45', projekt: 'ST_MAINZ' }, { cw: 'CW46', projekt: 'ST_MAINZ' }, { cw: 'CW47', projekt: 'ST_MAINZ' },
-    { cw: 'CW48', projekt: 'ST_MAINZ' }, { cw: 'CW49', projekt: 'ST_MAINZ' }, { cw: 'CW50', projekt: 'ST_MAINZ' }, { cw: 'CW51', projekt: 'ST_MAINZ' }, { cw: 'CW52', projekt: 'ST_MAINZ' }
-  ],
-  'Fenyk Pavel': [
-    { cw: 'CW32', projekt: 'FREE' }, { cw: 'CW33', projekt: 'FREE' }, { cw: 'CW34', projekt: 'FREE' }, { cw: 'CW35', projekt: 'FREE' },
-    { cw: 'CW36', projekt: 'FREE' }, { cw: 'CW37', projekt: 'FREE' }, { cw: 'CW38', projekt: 'FREE' }, { cw: 'CW39', projekt: 'FREE' },
-    { cw: 'CW40', projekt: 'FREE' }, { cw: 'CW41', projekt: 'FREE' }, { cw: 'CW42', projekt: 'FREE' }, { cw: 'CW43', projekt: 'FREE' },
-    { cw: 'CW44', projekt: 'FREE' }, { cw: 'CW45', projekt: 'ST_MAINZ' }, { cw: 'CW46', projekt: 'ST_MAINZ' }, { cw: 'CW47', projekt: 'ST_MAINZ' },
-    { cw: 'CW48', projekt: 'ST_MAINZ' }, { cw: 'CW49', projekt: 'ST_MAINZ' }, { cw: 'CW50', projekt: 'ST_MAINZ' }, { cw: 'CW51', projekt: 'ST_MAINZ' }, { cw: 'CW52', projekt: 'ST_MAINZ' }
-  ],
-  'Kalafa Ján': [
-    { cw: 'CW32', projekt: 'FREE' }, { cw: 'CW33', projekt: 'FREE' }, { cw: 'CW34', projekt: 'ST_MAINZ' }, { cw: 'CW35', projekt: 'ST_MAINZ' },
-    { cw: 'CW36', projekt: 'ST_MAINZ' }, { cw: 'CW37', projekt: 'ST_MAINZ' }, { cw: 'CW38', projekt: 'ST_MAINZ' }, { cw: 'CW39', projekt: 'ST_MAINZ' },
-    { cw: 'CW40', projekt: 'ST_MAINZ' }, { cw: 'CW41', projekt: 'ST_MAINZ' }, { cw: 'CW42', projekt: 'ST_MAINZ' }, { cw: 'CW43', projekt: 'ST_MAINZ' },
-    { cw: 'CW44', projekt: 'ST_MAINZ' }, { cw: 'CW45', projekt: 'ST_MAINZ' }, { cw: 'CW46', projekt: 'ST_MAINZ' }, { cw: 'CW47', projekt: 'ST_MAINZ' },
-    { cw: 'CW48', projekt: 'ST_MAINZ' }, { cw: 'CW49', projekt: 'ST_MAINZ' }, { cw: 'CW50', projekt: 'ST_MAINZ' }, { cw: 'CW51', projekt: 'ST_MAINZ' }, { cw: 'CW52', projekt: 'ST_MAINZ' }
-  ],
-  'Lengyel Martin': [
-    { cw: 'CW32', projekt: 'FREE' }, { cw: 'CW33', projekt: 'FREE' }, { cw: 'CW34', projekt: 'ST_MAINZ' }, { cw: 'CW35', projekt: 'ST_MAINZ' },
-    { cw: 'CW36', projekt: 'ST_MAINZ' }, { cw: 'CW37', projekt: 'ST_MAINZ' }, { cw: 'CW38', projekt: 'ST_MAINZ' }, { cw: 'CW39', projekt: 'ST_MAINZ' },
-    { cw: 'CW40', projekt: 'ST_MAINZ' }, { cw: 'CW41', projekt: 'ST_MAINZ' }, { cw: 'CW42', projekt: 'ST_MAINZ' }, { cw: 'CW43', projekt: 'ST_MAINZ' },
-    { cw: 'CW44', projekt: 'ST_MAINZ' }, { cw: 'CW45', projekt: 'ST_MAINZ' }, { cw: 'CW46', projekt: 'ST_MAINZ' }, { cw: 'CW47', projekt: 'ST_MAINZ' },
-    { cw: 'CW48', projekt: 'ST_MAINZ' }, { cw: 'CW49', projekt: 'ST_MAINZ' }, { cw: 'CW50', projekt: 'ST_MAINZ' }, { cw: 'CW51', projekt: 'ST_MAINZ' }, { cw: 'CW52', projekt: 'ST_MAINZ' }
-  ],
-  'Šoupa Karel': [
-    { cw: 'CW32', projekt: 'DOVOLENÁ' }, { cw: 'CW33', projekt: 'FREE' }, { cw: 'CW34', projekt: 'FREE' }, { cw: 'CW35', projekt: 'FREE' },
-    { cw: 'CW36', projekt: 'FREE' }, { cw: 'CW37', projekt: 'FREE' }, { cw: 'CW38', projekt: 'FREE' }, { cw: 'CW39', projekt: 'FREE' },
-    { cw: 'CW40', projekt: 'FREE' }, { cw: 'CW41', projekt: 'FREE' }, { cw: 'CW42', projekt: 'FREE' }, { cw: 'CW43', projekt: 'FREE' },
-    { cw: 'CW44', projekt: 'FREE' }, { cw: 'CW45', projekt: 'FREE' }, { cw: 'CW46', projekt: 'FREE' }, { cw: 'CW47', projekt: 'FREE' },
-    { cw: 'CW48', projekt: 'FREE' }, { cw: 'CW49', projekt: 'FREE' }, { cw: 'CW50', projekt: 'FREE' }, { cw: 'CW51', projekt: 'FREE' }, { cw: 'CW52', projekt: 'FREE' }
-  ],
-  'Večeř Jiří': [
-    { cw: 'CW32', projekt: 'ST_EMU_INT' }, { cw: 'CW33', projekt: 'ST_EMU_INT' }, { cw: 'CW34', projekt: 'ST_EMU_INT' }, { cw: 'CW35', projekt: 'ST_EMU_INT' },
-    { cw: 'CW36', projekt: 'ST_EMU_INT' }, { cw: 'CW37', projekt: 'ST_EMU_INT' }, { cw: 'CW38', projekt: 'ST_EMU_INT' }, { cw: 'CW39', projekt: 'ST_EMU_INT' },
-    { cw: 'CW40', projekt: 'ST_EMU_INT' }, { cw: 'CW41', projekt: 'ST_EMU_INT' }, { cw: 'CW42', projekt: 'ST_EMU_INT' }, { cw: 'CW43', projekt: 'ST_EMU_INT' },
-    { cw: 'CW44', projekt: 'ST_EMU_INT' }, { cw: 'CW45', projekt: 'ST_EMU_INT' }, { cw: 'CW46', projekt: 'ST_EMU_INT' }, { cw: 'CW47', projekt: 'ST_EMU_INT' },
-    { cw: 'CW48', projekt: 'ST_EMU_INT' }, { cw: 'CW49', projekt: 'ST_EMU_INT' }, { cw: 'CW50', projekt: 'ST_EMU_INT' }, { cw: 'CW51', projekt: 'ST_EMU_INT' }, { cw: 'CW52', projekt: 'ST_EMU_INT' }
-  ],
-  'Bartovičová Agáta': [
-    { cw: 'CW32', projekt: 'FREE' }, { cw: 'CW33', projekt: 'FREE' }, { cw: 'CW34', projekt: 'FREE' }, { cw: 'CW35', projekt: 'FREE' },
-    { cw: 'CW36', projekt: 'FREE' }, { cw: 'CW37', projekt: 'FREE' }, { cw: 'CW38', projekt: 'FREE' }, { cw: 'CW39', projekt: 'FREE' },
-    { cw: 'CW40', projekt: 'FREE' }, { cw: 'CW41', projekt: 'FREE' }, { cw: 'CW42', projekt: 'FREE' }, { cw: 'CW43', projekt: 'FREE' },
-    { cw: 'CW44', projekt: 'FREE' }, { cw: 'CW45', projekt: 'FREE' }, { cw: 'CW46', projekt: 'FREE' }, { cw: 'CW47', projekt: 'FREE' },
-    { cw: 'CW48', projekt: 'FREE' }, { cw: 'CW49', projekt: 'FREE' }, { cw: 'CW50', projekt: 'FREE' }, { cw: 'CW51', projekt: 'FREE' }, { cw: 'CW52', projekt: 'FREE' }
-  ],
-  'Hrachová Ivana': [
-    { cw: 'CW32', projekt: 'FREE' }, { cw: 'CW33', projekt: 'FREE' }, { cw: 'CW34', projekt: 'FREE' }, { cw: 'CW35', projekt: 'FREE' },
-    { cw: 'CW36', projekt: 'FREE' }, { cw: 'CW37', projekt: 'FREE' }, { cw: 'CW38', projekt: 'FREE' }, { cw: 'CW39', projekt: 'FREE' },
-    { cw: 'CW40', projekt: 'FREE' }, { cw: 'CW41', projekt: 'FREE' }, { cw: 'CW42', projekt: 'FREE' }, { cw: 'CW43', projekt: 'FREE' },
-    { cw: 'CW44', projekt: 'FREE' }, { cw: 'CW45', projekt: 'FREE' }, { cw: 'CW46', projekt: 'FREE' }, { cw: 'CW47', projekt: 'FREE' },
-    { cw: 'CW48', projekt: 'FREE' }, { cw: 'CW49', projekt: 'FREE' }, { cw: 'CW50', projekt: 'FREE' }, { cw: 'CW51', projekt: 'FREE' }, { cw: 'CW52', projekt: 'FREE' }
-  ],
-  'Karlík Štěpán': [
-    { cw: 'CW32', projekt: 'FREE' }, { cw: 'CW33', projekt: 'FREE' }, { cw: 'CW34', projekt: 'ST_MAINZ' }, { cw: 'CW35', projekt: 'ST_MAINZ' },
-    { cw: 'CW36', projekt: 'ST_MAINZ' }, { cw: 'CW37', projekt: 'ST_MAINZ' }, { cw: 'CW38', projekt: 'ST_MAINZ' }, { cw: 'CW39', projekt: 'ST_MAINZ' },
-    { cw: 'CW40', projekt: 'ST_MAINZ' }, { cw: 'CW41', projekt: 'ST_MAINZ' }, { cw: 'CW42', projekt: 'ST_MAINZ' }, { cw: 'CW43', projekt: 'ST_MAINZ' },
-    { cw: 'CW44', projekt: 'ST_MAINZ' }, { cw: 'CW45', projekt: 'ST_MAINZ' }, { cw: 'CW46', projekt: 'ST_MAINZ' }, { cw: 'CW47', projekt: 'ST_MAINZ' },
-    { cw: 'CW48', projekt: 'ST_MAINZ' }, { cw: 'CW49', projekt: 'ST_MAINZ' }, { cw: 'CW50', projekt: 'ST_MAINZ' }, { cw: 'CW51', projekt: 'ST_MAINZ' }, { cw: 'CW52', projekt: 'ST_MAINZ' }
-  ],
-  'Friedlová Jiřina': [
-    { cw: 'CW32', projekt: 'ST_BLAVA' }, { cw: 'CW33', projekt: 'ST_POZAR' }, { cw: 'CW34', projekt: 'ST_EMU_INT' }, { cw: 'CW35', projekt: 'ST_TRAM_INT' },
-    { cw: 'CW36', projekt: 'DOVOLENÁ' }, { cw: 'CW37', projekt: 'ST_TRAM_HS' }, { cw: 'CW38', projekt: 'ST_EMU_INT' }, { cw: 'CW39', projekt: 'FREE' },
-    { cw: 'CW40', projekt: 'ST_POZAR' }, { cw: 'CW41', projekt: 'ST_TRAM_HS' }, { cw: 'CW42', projekt: 'ST_TRAM_INT' }, { cw: 'CW43', projekt: 'ST_POZAR' },
-    { cw: 'CW44', projekt: 'ST_EMU_INT' }, { cw: 'CW45', projekt: 'ST_BLAVA' }, { cw: 'CW46', projekt: 'ST_POZAR' }, { cw: 'CW47', projekt: 'ST_EMU_INT' },
-    { cw: 'CW48', projekt: 'ST_TRAM_INT' }, { cw: 'CW49', projekt: 'ST_POZAR' }, { cw: 'CW50', projekt: 'ST_TRAM_HS' }, { cw: 'CW51', projekt: 'ST_EMU_INT' }, { cw: 'CW52', projekt: 'FREE' }
-  ],
-  'Fuchs Pavel': [
-    { cw: 'CW32', projekt: 'FREE' }, { cw: 'CW33', projekt: 'FREE' }, { cw: 'CW34', projekt: 'FREE' }, { cw: 'CW35', projekt: 'FREE' },
-    { cw: 'CW36', projekt: 'FREE' }, { cw: 'CW37', projekt: 'FREE' }, { cw: 'CW38', projekt: 'FREE' }, { cw: 'CW39', projekt: 'FREE' },
-    { cw: 'CW40', projekt: 'FREE' }, { cw: 'CW41', projekt: 'FREE' }, { cw: 'CW42', projekt: 'FREE' }, { cw: 'CW43', projekt: 'FREE' },
-    { cw: 'CW44', projekt: 'FREE' }, { cw: 'CW45', projekt: 'FREE' }, { cw: 'CW46', projekt: 'FREE' }, { cw: 'CW47', projekt: 'FREE' },
-    { cw: 'CW48', projekt: 'FREE' }, { cw: 'CW49', projekt: 'FREE' }, { cw: 'CW50', projekt: 'FREE' }, { cw: 'CW51', projekt: 'FREE' }, { cw: 'CW52', projekt: 'FREE' }
-  ],
-  'Mohelník Martin': [
-    { cw: 'CW32', projekt: 'ST_EMU_INT' }, { cw: 'CW33', projekt: 'ST_EMU_INT' }, { cw: 'CW34', projekt: 'ST_EMU_INT' }, { cw: 'CW35', projekt: 'ST_EMU_INT' },
-    { cw: 'CW36', projekt: 'ST_EMU_INT' }, { cw: 'CW37', projekt: 'ST_EMU_INT' }, { cw: 'CW38', projekt: 'ST_EMU_INT' }, { cw: 'CW39', projekt: 'ST_EMU_INT' },
-    { cw: 'CW40', projekt: 'ST_EMU_INT' }, { cw: 'CW41', projekt: 'ST_EMU_INT' }, { cw: 'CW42', projekt: 'ST_EMU_INT' }, { cw: 'CW43', projekt: 'ST_EMU_INT' },
-    { cw: 'CW44', projekt: 'ST_EMU_INT' }, { cw: 'CW45', projekt: 'ST_EMU_INT' }, { cw: 'CW46', projekt: 'ST_EMU_INT' }, { cw: 'CW47', projekt: 'ST_EMU_INT' },
-    { cw: 'CW48', projekt: 'ST_EMU_INT' }, { cw: 'CW49', projekt: 'ST_EMU_INT' }, { cw: 'CW50', projekt: 'ST_EMU_INT' }, { cw: 'CW51', projekt: 'ST_EMU_INT' }, { cw: 'CW52', projekt: 'ST_EMU_INT' }
-  ],
-  'Nedavaška Petr': [
-    { cw: 'CW32', projekt: 'ST_BLAVA' }, { cw: 'CW33', projekt: 'ST_BLAVA' }, { cw: 'CW34', projekt: 'ST_BLAVA' }, { cw: 'CW35', projekt: 'ST_BLAVA' },
-    { cw: 'CW36', projekt: 'SAF_FEM' }, { cw: 'CW37', projekt: 'SAF_FEM' }, { cw: 'CW38', projekt: 'SAF_FEM' }, { cw: 'CW39', projekt: 'SAF_FEM' },
-    { cw: 'CW40', projekt: 'FREE' }, { cw: 'CW41', projekt: 'FREE' }, { cw: 'CW42', projekt: 'FREE' }, { cw: 'CW43', projekt: 'FREE' },
-    { cw: 'CW44', projekt: 'FREE' }, { cw: 'CW45', projekt: 'FREE' }, { cw: 'CW46', projekt: 'FREE' }, { cw: 'CW47', projekt: 'FREE' },
-    { cw: 'CW48', projekt: 'FREE' }, { cw: 'CW49', projekt: 'FREE' }, { cw: 'CW50', projekt: 'FREE' }, { cw: 'CW51', projekt: 'FREE' }, { cw: 'CW52', projekt: 'FREE' }
-  ],
-  'Šedovičová Darina': [
-    { cw: 'CW32', projekt: 'ST_BLAVA' }, { cw: 'CW33', projekt: 'ST_BLAVA' }, { cw: 'CW34', projekt: 'ST_BLAVA' }, { cw: 'CW35', projekt: 'ST_BLAVA' },
-    { cw: 'CW36', projekt: 'FREE' }, { cw: 'CW37', projekt: 'FREE' }, { cw: 'CW38', projekt: 'FREE' }, { cw: 'CW39', projekt: 'FREE' },
-    { cw: 'CW40', projekt: 'FREE' }, { cw: 'CW41', projekt: 'FREE' }, { cw: 'CW42', projekt: 'FREE' }, { cw: 'CW43', projekt: 'FREE' },
-    { cw: 'CW44', projekt: 'FREE' }, { cw: 'CW45', projekt: 'FREE' }, { cw: 'CW46', projekt: 'FREE' }, { cw: 'CW47', projekt: 'FREE' },
-    { cw: 'CW48', projekt: 'FREE' }, { cw: 'CW49', projekt: 'FREE' }, { cw: 'CW50', projekt: 'FREE' }, { cw: 'CW51', projekt: 'FREE' }, { cw: 'CW52', projekt: 'FREE' }
-  ],
-  'Ješš Jozef': [
-    { cw: 'CW32', projekt: 'ST_BLAVA' }, { cw: 'CW33', projekt: 'ST_BLAVA' }, { cw: 'CW34', projekt: 'ST_BLAVA' }, { cw: 'CW35', projekt: 'ST_BLAVA' },
-    { cw: 'CW36', projekt: 'SAF_FEM' }, { cw: 'CW37', projekt: 'SAF_FEM' }, { cw: 'CW38', projekt: 'SAF_FEM' }, { cw: 'CW39', projekt: 'SAF_FEM' },
-    { cw: 'CW40', projekt: 'FREE' }, { cw: 'CW41', projekt: 'FREE' }, { cw: 'CW42', projekt: 'FREE' }, { cw: 'CW43', projekt: 'FREE' },
-    { cw: 'CW44', projekt: 'FREE' }, { cw: 'CW45', projekt: 'FREE' }, { cw: 'CW46', projekt: 'FREE' }, { cw: 'CW47', projekt: 'FREE' },
-    { cw: 'CW48', projekt: 'FREE' }, { cw: 'CW49', projekt: 'FREE' }, { cw: 'CW50', projekt: 'FREE' }, { cw: 'CW51', projekt: 'FREE' }, { cw: 'CW52', projekt: 'FREE' }
-  ],
-  'Melichar Ondřej': [
-    { cw: 'CW32', projekt: 'ST_BLAVA' }, { cw: 'CW33', projekt: 'ST_BLAVA' }, { cw: 'CW34', projekt: 'ST_BLAVA' }, { cw: 'CW35', projekt: 'ST_BLAVA' },
-    { cw: 'CW36', projekt: 'SAF_FEM' }, { cw: 'CW37', projekt: 'SAF_FEM' }, { cw: 'CW38', projekt: 'SAF_FEM' }, { cw: 'CW39', projekt: 'SAF_FEM' },
-    { cw: 'CW40', projekt: 'FREE' }, { cw: 'CW41', projekt: 'FREE' }, { cw: 'CW42', projekt: 'FREE' }, { cw: 'CW43', projekt: 'FREE' },
-    { cw: 'CW44', projekt: 'FREE' }, { cw: 'CW45', projekt: 'FREE' }, { cw: 'CW46', projekt: 'FREE' }, { cw: 'CW47', projekt: 'FREE' },
-    { cw: 'CW48', projekt: 'FREE' }, { cw: 'CW49', projekt: 'FREE' }, { cw: 'CW50', projekt: 'FREE' }, { cw: 'CW51', projekt: 'FREE' }, { cw: 'CW52', projekt: 'FREE' }
-  ],
-  'Klíma Milan': [
-    { cw: 'CW32', projekt: 'ST_BLAVA' }, { cw: 'CW33', projekt: 'ST_BLAVA' }, { cw: 'CW34', projekt: 'ST_BLAVA' }, { cw: 'CW35', projekt: 'ST_BLAVA' },
-    { cw: 'CW36', projekt: 'ST_MAINZ' }, { cw: 'CW37', projekt: 'ST_MAINZ' }, { cw: 'CW38', projekt: 'ST_MAINZ' }, { cw: 'CW39', projekt: 'ST_MAINZ' },
-    { cw: 'CW40', projekt: 'ST_MAINZ' }, { cw: 'CW41', projekt: 'ST_MAINZ' }, { cw: 'CW42', projekt: 'ST_MAINZ' }, { cw: 'CW43', projekt: 'ST_MAINZ' },
-    { cw: 'CW44', projekt: 'ST_MAINZ' }, { cw: 'CW45', projekt: 'ST_MAINZ' }, { cw: 'CW46', projekt: 'ST_MAINZ' }, { cw: 'CW47', projekt: 'ST_MAINZ' },
-    { cw: 'CW48', projekt: 'ST_MAINZ' }, { cw: 'CW49', projekt: 'ST_MAINZ' }, { cw: 'CW50', projekt: 'ST_MAINZ' }, { cw: 'CW51', projekt: 'ST_MAINZ' }, { cw: 'CW52', projekt: 'ST_MAINZ' }
-  ],
-  'Hibler František': [
-    { cw: 'CW32', projekt: 'FREE' }, { cw: 'CW33', projekt: 'FREE' }, { cw: 'CW34', projekt: 'FREE' }, { cw: 'CW35', projekt: 'FREE' },
-    { cw: 'CW36', projekt: 'FREE' }, { cw: 'CW37', projekt: 'FREE' }, { cw: 'CW38', projekt: 'FREE' }, { cw: 'CW39', projekt: 'FREE' },
-    { cw: 'CW40', projekt: 'FREE' }, { cw: 'CW41', projekt: 'FREE' }, { cw: 'CW42', projekt: 'FREE' }, { cw: 'CW43', projekt: 'FREE' },
-    { cw: 'CW44', projekt: 'FREE' }, { cw: 'CW45', projekt: 'FREE' }, { cw: 'CW46', projekt: 'FREE' }, { cw: 'CW47', projekt: 'FREE' },
-    { cw: 'CW48', projekt: 'FREE' }, { cw: 'CW49', projekt: 'FREE' }, { cw: 'CW50', projekt: 'FREE' }, { cw: 'CW51', projekt: 'FREE' }, { cw: 'CW52', projekt: 'FREE' }
-  ],
-  'Brojír Jaroslav': [
-    { cw: 'CW32', projekt: 'FREE' }, { cw: 'CW33', projekt: 'FREE' }, { cw: 'CW34', projekt: 'FREE' }, { cw: 'CW35', projekt: 'FREE' },
-    { cw: 'CW36', projekt: 'FREE' }, { cw: 'CW37', projekt: 'FREE' }, { cw: 'CW38', projekt: 'FREE' }, { cw: 'CW39', projekt: 'FREE' },
-    { cw: 'CW40', projekt: 'FREE' }, { cw: 'CW41', projekt: 'FREE' }, { cw: 'CW42', projekt: 'FREE' }, { cw: 'CW43', projekt: 'ST_MAINZ' },
-    { cw: 'CW44', projekt: 'ST_MAINZ' }, { cw: 'CW45', projekt: 'ST_MAINZ' }, { cw: 'CW46', projekt: 'ST_MAINZ' }, { cw: 'CW47', projekt: 'ST_MAINZ' },
-    { cw: 'CW48', projekt: 'ST_MAINZ' }, { cw: 'CW49', projekt: 'ST_MAINZ' }, { cw: 'CW50', projekt: 'ST_MAINZ' }, { cw: 'CW51', projekt: 'ST_MAINZ' }, { cw: 'CW52', projekt: 'ST_MAINZ' }
-  ],
-  'Madanský Peter': [
-    { cw: 'CW32', projekt: 'NU_CRAIN' }, { cw: 'CW33', projekt: 'NU_CRAIN' }, { cw: 'CW34', projekt: 'NU_CRAIN' }, { cw: 'CW35', projekt: 'NU_CRAIN' },
-    { cw: 'CW36', projekt: 'FREE' }, { cw: 'CW37', projekt: 'FREE' }, { cw: 'CW38', projekt: 'FREE' }, { cw: 'CW39', projekt: 'FREE' },
-    { cw: 'CW40', projekt: 'FREE' }, { cw: 'CW41', projekt: 'FREE' }, { cw: 'CW42', projekt: 'FREE' }, { cw: 'CW43', projekt: 'FREE' },
-    { cw: 'CW44', projekt: 'FREE' }, { cw: 'CW45', projekt: 'FREE' }, { cw: 'CW46', projekt: 'FREE' }, { cw: 'CW47', projekt: 'FREE' },
-    { cw: 'CW48', projekt: 'FREE' }, { cw: 'CW49', projekt: 'FREE' }, { cw: 'CW50', projekt: 'FREE' }, { cw: 'CW51', projekt: 'FREE' }, { cw: 'CW52', projekt: 'FREE' }
-  ],
-  'Samko Mikuláš': [
-    { cw: 'CW32', projekt: 'FREE' }, { cw: 'CW33', projekt: 'FREE' }, { cw: 'CW34', projekt: 'FREE' }, { cw: 'CW35', projekt: 'FREE' },
-    { cw: 'CW36', projekt: 'FREE' }, { cw: 'CW37', projekt: 'FREE' }, { cw: 'CW38', projekt: 'FREE' }, { cw: 'CW39', projekt: 'FREE' },
-    { cw: 'CW40', projekt: 'FREE' }, { cw: 'CW41', projekt: 'FREE' }, { cw: 'CW42', projekt: 'FREE' }, { cw: 'CW43', projekt: 'FREE' },
-    { cw: 'CW44', projekt: 'FREE' }, { cw: 'CW45', projekt: 'FREE' }, { cw: 'CW46', projekt: 'FREE' }, { cw: 'CW47', projekt: 'FREE' },
-    { cw: 'CW48', projekt: 'FREE' }, { cw: 'CW49', projekt: 'FREE' }, { cw: 'CW50', projekt: 'FREE' }, { cw: 'CW51', projekt: 'FREE' }, { cw: 'CW52', projekt: 'FREE' }
-  ],
-  'Chrenko Daniel': [
-    { cw: 'CW32', projekt: 'FREE' }, { cw: 'CW33', projekt: 'FREE' }, { cw: 'CW34', projekt: 'FREE' }, { cw: 'CW35', projekt: 'FREE' },
-    { cw: 'CW36', projekt: 'FREE' }, { cw: 'CW37', projekt: 'FREE' }, { cw: 'CW38', projekt: 'FREE' }, { cw: 'CW39', projekt: 'FREE' },
-    { cw: 'CW40', projekt: 'FREE' }, { cw: 'CW41', projekt: 'FREE' }, { cw: 'CW42', projekt: 'FREE' }, { cw: 'CW43', projekt: 'FREE' },
-    { cw: 'CW44', projekt: 'FREE' }, { cw: 'CW45', projekt: 'FREE' }, { cw: 'CW46', projekt: 'FREE' }, { cw: 'CW47', projekt: 'FREE' },
-    { cw: 'CW48', projekt: 'FREE' }, { cw: 'CW49', projekt: 'FREE' }, { cw: 'CW50', projekt: 'FREE' }, { cw: 'CW51', projekt: 'FREE' }, { cw: 'CW52', projekt: 'FREE' }
-  ]
+const weeks = ['CW32', 'CW33', 'CW34', 'CW35', 'CW36', 'CW37', 'CW38', 'CW39', 'CW40', 'CW41', 'CW42', 'CW43', 'CW44', 'CW45', 'CW46', 'CW47', 'CW48', 'CW49', 'CW50', 'CW51', 'CW52'];
+
+const months = [
+  { name: 'August', weeks: ['CW32', 'CW33', 'CW34', 'CW35'] },
+  { name: 'September', weeks: ['CW36', 'CW37', 'CW38', 'CW39'] },
+  { name: 'October', weeks: ['CW40', 'CW41', 'CW42', 'CW43', 'CW44'] },
+  { name: 'November', weeks: ['CW45', 'CW46', 'CW47', 'CW48'] },
+  { name: 'December', weeks: ['CW49', 'CW50', 'CW51', 'CW52'] }
+];
+
+const getProjectBadge = (projekt: string) => {
+  if (!projekt || projekt === 'FREE') return <Badge variant="secondary">Volný</Badge>;
+  if (projekt === 'DOVOLENÁ') return <Badge variant="outline" className="border-accent">Dovolená</Badge>;
+  if (projekt.startsWith('ST_')) return <Badge className="bg-primary">ST Projekt</Badge>;
+  if (projekt.startsWith('NU_')) return <Badge className="bg-warning text-warning-foreground">NUVIA</Badge>;
+  if (projekt.startsWith('WA_')) return <Badge className="bg-success">WABTEC</Badge>;
+  if (projekt.startsWith('SAF_')) return <Badge style={{backgroundColor: 'hsl(280 100% 70%)', color: 'white'}}>SAFRAN</Badge>;
+  return <Badge variant="outline">{projekt}</Badge>;
 };
 
-// Kalendářní týdny
-const calendarWeeks = ['CW32', 'CW33', 'CW34', 'CW35', 'CW36', 'CW37', 'CW38', 'CW39', 'CW40', 'CW41', 'CW42', 'CW43', 'CW44', 'CW45', 'CW46', 'CW47', 'CW48', 'CW49', 'CW50', 'CW51', 'CW52'];
+export const FreeCapacityOverview = () => {
+  const { planningData } = usePlanning();
 
-export const FreeCapacityOverview: React.FC = () => {
-  // Vytvoř matici volných kapacit
-  const freeCapacityMatrix = () => {
-    const matrix: { [week: string]: string[] } = {};
-    const totals: { [week: string]: number } = {};
-    const engineerTotals: { [engineer: string]: number } = {};
-
-    // Inicializuj matici
-    calendarWeeks.forEach(week => {
-      matrix[week] = [];
-      totals[week] = 0;
-    });
-
-    // Projdi všechny konstruktéry
-    Object.entries(realPlanningData).forEach(([engineer, weeks]) => {
-      let engineerFreeWeeks = 0;
-      
-      weeks.forEach(week => {
-        if (week.projekt === 'FREE') {
-          matrix[week.cw].push(engineer);
-          totals[week.cw]++;
-          engineerFreeWeeks++;
-        }
+  // Transformace dat z centrálního contextu
+  const processedData = useMemo(() => {
+    const engineersMap: { [key: string]: { cw: string; projekt: string }[] } = {};
+    
+    // Skupinování dat podle konstruktéra
+    planningData.forEach(entry => {
+      if (!engineersMap[entry.konstrukter]) {
+        engineersMap[entry.konstrukter] = [];
+      }
+      engineersMap[entry.konstrukter].push({
+        cw: entry.cw,
+        projekt: entry.projekt
       });
-      
-      engineerTotals[engineer] = engineerFreeWeeks;
     });
 
-    return { matrix, totals, engineerTotals };
-  };
+    // Seřazení týdnů
+    Object.keys(engineersMap).forEach(engineer => {
+      engineersMap[engineer].sort((a, b) => {
+        const aNum = parseInt(a.cw.replace('CW', ''));
+        const bNum = parseInt(b.cw.replace('CW', ''));
+        return aNum - bNum;
+      });
+    });
 
-  const { matrix, totals, engineerTotals } = freeCapacityMatrix();
+    return engineersMap;
+  }, [planningData]);
 
-  // Seřaď konstruktéry podle počtu volných týdnů (sestupně)
-  const sortedEngineers = Object.entries(engineerTotals)
-    .filter(([_, totalFree]) => totalFree > 0)
-    .sort(([, a], [, b]) => b - a);
+  // Filtrování inženýrů s volnými kapacitami
+  const engineersWithFreeCapacity = useMemo(() => {
+    return Object.keys(processedData)
+      .filter(engineer => {
+        const engineerData = processedData[engineer];
+        return engineerData.some(week => week.projekt === 'FREE');
+      })
+      .map(engineer => {
+        const engineerData = processedData[engineer];
+        const freeWeeks = engineerData.filter(week => week.projekt === 'FREE');
+        const totalWeeks = engineerData.length;
+        const busyWeeks = totalWeeks - freeWeeks.length;
+        
+        return {
+          name: engineer,
+          freeWeeks: freeWeeks.length,
+          busyWeeks,
+          totalWeeks,
+          freePercentage: Math.round((freeWeeks.length / totalWeeks) * 100),
+          weeks: engineerData
+        };
+      })
+      .sort((a, b) => b.freeWeeks - a.freeWeeks);
+  }, [processedData]);
 
-  // Celkový počet volných týdnů
-  const totalFreeWeeks = Object.values(totals).reduce((sum, count) => sum + count, 0);
+  // Celkové statistiky
+  const totalEngineers = Object.keys(processedData).length;
+  const engineersWithFree = engineersWithFreeCapacity.length;
+  const totalFreeWeeks = engineersWithFreeCapacity.reduce((sum, eng) => sum + eng.freeWeeks, 0);
+  const avgFreePercentage = engineersWithFree > 0 
+    ? Math.round(engineersWithFreeCapacity.reduce((sum, eng) => sum + eng.freePercentage, 0) / engineersWithFree)
+    : 0;
 
   return (
     <div className="space-y-6 p-6 bg-background min-h-screen">
@@ -353,103 +95,120 @@ export const FreeCapacityOverview: React.FC = () => {
           <Users className="h-8 w-8" />
           <div>
             <h1 className="text-2xl font-bold">Přehled volných kapacit</h1>
-            <p className="text-primary-foreground/80">Analýza dostupných konstruktérů po týdnech</p>
+            <p className="text-primary-foreground/80">Konstruktéři s dostupnými hodinami pro nové projekty</p>
           </div>
         </div>
       </div>
 
-      {/* Summary Statistics */}
-      <Card className="p-6 shadow-card-custom">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="p-4 shadow-card-custom">
           <div className="text-center">
-            <div className="text-3xl font-bold text-primary">{sortedEngineers.length}</div>
-            <div className="text-sm text-muted-foreground">Konstruktérů s volnými kapacitami</div>
+            <div className="text-2xl font-bold text-primary">{totalEngineers}</div>
+            <div className="text-sm text-muted-foreground">Celkem konstruktérů</div>
           </div>
+        </Card>
+        <Card className="p-4 shadow-card-custom">
           <div className="text-center">
-            <div className="text-3xl font-bold text-primary">{totalFreeWeeks}</div>
+            <div className="text-2xl font-bold text-success">{engineersWithFree}</div>
+            <div className="text-sm text-muted-foreground">S volnými kapacitami</div>
+          </div>
+        </Card>
+        <Card className="p-4 shadow-card-custom">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-warning">{totalFreeWeeks}</div>
             <div className="text-sm text-muted-foreground">Celkem volných týdnů</div>
           </div>
+        </Card>
+        <Card className="p-4 shadow-card-custom">
           <div className="text-center">
-            <div className="text-3xl font-bold text-primary">
-              {Math.max(...Object.values(totals))}
-            </div>
-            <div className="text-sm text-muted-foreground">Max. volných lidí v týdnu</div>
+            <div className="text-2xl font-bold text-accent">{avgFreePercentage}%</div>
+            <div className="text-sm text-muted-foreground">Průměrná volná kapacita</div>
           </div>
-        </div>
-      </Card>
+        </Card>
+      </div>
 
-      {/* Free Capacity Table */}
-      <Card className="shadow-planning overflow-hidden">
+      {/* Engineers with Free Capacity */}
+      <Card className="shadow-planning">
+        <div className="p-6 border-b">
+          <h2 className="text-xl font-semibold">Konstruktéři s volnými kapacitami</h2>
+          <p className="text-muted-foreground">Seřazeno podle počtu volných týdnů</p>
+        </div>
+        
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full">
             <thead className="bg-planning-header text-white">
               <tr>
-                <th className="p-3 text-left font-medium min-w-[150px] sticky left-0 bg-planning-header z-10">
-                  Konstruktér
-                </th>
-                {calendarWeeks.map(week => (
-                  <th key={week} className="p-2 text-center font-medium min-w-[60px]">
+                <th className="p-3 text-left font-medium sticky left-0 z-10 bg-planning-header min-w-[200px]">Konstruktér</th>
+                <th className="p-3 text-center font-medium min-w-[100px]">Volné týdny</th>
+                <th className="p-3 text-center font-medium min-w-[100px]">Vytížené týdny</th>
+                <th className="p-3 text-center font-medium min-w-[120px]">Volná kapacita %</th>
+                {months.map(month => (
+                  <th key={month.name} className="p-2 text-center font-medium border-l" colSpan={month.weeks.length}>
+                    {month.name}
+                  </th>
+                ))}
+              </tr>
+              <tr className="bg-planning-header/80">
+                <th className="p-2 sticky left-0 z-10 bg-planning-header/80"></th>
+                <th className="p-2"></th>
+                <th className="p-2"></th>
+                <th className="p-2"></th>
+                {weeks.map(week => (
+                  <th key={week} className="p-1 text-xs border-l min-w-[60px]">
                     {week}
                   </th>
                 ))}
-                <th className="p-3 text-center font-medium min-w-[80px]">
-                  Celkem
-                </th>
               </tr>
             </thead>
             <tbody>
-              {/* Řádek s celkovými počty */}
-              <tr className="bg-accent/5 border-b-2 border-accent font-bold">
-                <td className="p-3 sticky left-0 bg-accent/5 z-10">
-                  <Badge className="bg-accent text-accent-foreground">
-                    FREE CELKEM
-                  </Badge>
-                </td>
-                {calendarWeeks.map(week => (
-                  <td key={week} className="p-2 text-center">
-                    <span className={`font-bold ${
-                      totals[week] >= 10 ? 'text-success' : 
-                      totals[week] >= 5 ? 'text-warning' : 
-                      totals[week] > 0 ? 'text-primary' : 'text-muted-foreground'
-                    }`}>
-                      {totals[week]}
-                    </span>
-                  </td>
-                ))}
-                <td className="p-3 text-center">
-                  <Badge className="bg-primary text-primary-foreground">
-                    {totalFreeWeeks}
-                  </Badge>
-                </td>
-              </tr>
-
-              {/* Řádky pro jednotlivé konstruktéry */}
-              {sortedEngineers.map(([engineer, totalFree], index) => (
+              {engineersWithFreeCapacity.map((engineer, index) => (
                 <tr 
-                  key={engineer}
+                  key={engineer.name}
                   className={`
                     border-b transition-colors hover:bg-planning-cell-hover
                     ${index % 2 === 0 ? 'bg-planning-cell' : 'bg-planning-stripe'}
                   `}
                 >
-                  <td className="p-3 sticky left-0 z-10 font-medium bg-inherit">
-                    {engineer}
+                  <td className="p-3 font-medium sticky left-0 z-10 bg-inherit border-r">
+                    {engineer.name}
                   </td>
-                  {calendarWeeks.map(week => (
-                    <td key={week} className="p-2 text-center">
-                      {matrix[week].includes(engineer) ? (
-                        <div className="w-5 h-5 bg-success rounded-full mx-auto" 
-                             title={`${engineer} - ${week} FREE`} />
-                      ) : (
-                        <div className="w-5 h-5 bg-muted rounded-full mx-auto opacity-30" />
-                      )}
-                    </td>
-                  ))}
                   <td className="p-3 text-center">
-                    <Badge variant="secondary">
-                      {totalFree}
+                    <Badge variant="secondary" className="bg-success/20 text-success">
+                      {engineer.freeWeeks}
                     </Badge>
                   </td>
+                  <td className="p-3 text-center">
+                    <Badge variant="outline">
+                      {engineer.busyWeeks}
+                    </Badge>
+                  </td>
+                  <td className="p-3 text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-success rounded-full transition-all"
+                          style={{ width: `${engineer.freePercentage}%` }}
+                        />
+                      </div>
+                      <span className="text-sm font-medium">{engineer.freePercentage}%</span>
+                    </div>
+                  </td>
+                  {weeks.map(week => {
+                    const weekData = engineer.weeks.find(w => w.cw === week);
+                    const isFree = weekData?.projekt === 'FREE';
+                    return (
+                      <td key={week} className="p-1 text-center border-l">
+                        {weekData && (
+                          <div className={`text-xs p-1 rounded ${
+                            isFree ? 'bg-success/20 text-success font-medium' : ''
+                          }`}>
+                            {isFree ? 'FREE' : getProjectBadge(weekData.projekt)}
+                          </div>
+                        )}
+                      </td>
+                    );
+                  })}
                 </tr>
               ))}
             </tbody>
@@ -457,17 +216,38 @@ export const FreeCapacityOverview: React.FC = () => {
         </div>
       </Card>
 
-      {/* Legend */}
-      <Card className="p-4 shadow-card-custom">
-        <h3 className="font-medium mb-3">Legenda</h3>
-        <div className="flex flex-wrap gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-success rounded-full" />
-            <span className="text-sm">Volný v daném týdnu</span>
+      {/* No Free Capacity Message */}
+      {engineersWithFreeCapacity.length === 0 && (
+        <Card className="p-8 text-center shadow-card-custom">
+          <div className="text-muted-foreground">
+            <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p className="text-lg font-medium">Žádné volné kapacity</p>
+            <p className="text-sm">Všichni konstruktéři jsou momentálně plně vytíženi</p>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-muted rounded-full opacity-30" />
-            <span className="text-sm">Obsazený v daném týdnu</span>
+        </Card>
+      )}
+
+      {/* Additional Info */}
+      <Card className="p-4 shadow-card-custom">
+        <div className="text-sm text-muted-foreground">
+          <h3 className="font-medium text-foreground mb-2">Legenda:</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="bg-success/20 text-success">FREE</Badge>
+              <span>Volný týden</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="border-accent">DOVOLENÁ</Badge>
+              <span>Dovolená</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge className="bg-primary">ST_XXX</Badge>
+              <span>ST Projekt</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge className="bg-warning text-warning-foreground">NU_XXX</Badge>
+              <span>NUVIA projekt</span>
+            </div>
           </div>
         </div>
       </Card>
