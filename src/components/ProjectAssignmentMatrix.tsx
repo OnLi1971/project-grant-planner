@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { usePlanning } from '@/contexts/PlanningContext';
 
 // Organizational structure and project mappings
@@ -150,10 +151,10 @@ const getProjectBadgeStyle = (projekt: string) => {
 
 export const ProjectAssignmentMatrix = () => {
   const { planningData } = usePlanning();
-  const [filterOrgVedouci, setFilterOrgVedouci] = useState('Všichni');
-  const [filterPM, setFilterPM] = useState('Všichni');
-  const [filterZakaznik, setFilterZakaznik] = useState('Všichni');
-  const [filterProgram, setFilterProgram] = useState('Všichni');
+  const [filterOrgVedouci, setFilterOrgVedouci] = useState<string[]>(['Všichni']);
+  const [filterPM, setFilterPM] = useState<string[]>(['Všichni']);
+  const [filterZakaznik, setFilterZakaznik] = useState<string[]>(['Všichni']);
+  const [filterProgram, setFilterProgram] = useState<string[]>(['Všichni']);
 
   // Create matrix data structure
   const matrixData = useMemo(() => {
@@ -171,43 +172,62 @@ export const ProjectAssignmentMatrix = () => {
     return matrix;
   }, [planningData]);
 
+  // Helper functions for multi-select
+  const toggleFilterValue = (currentFilter: string[], value: string, setter: (value: string[]) => void) => {
+    if (value === 'Všichni') {
+      setter(['Všichni']);
+    } else {
+      const filteredArray = currentFilter.filter(item => item !== 'Všichni');
+      if (filteredArray.includes(value)) {
+        const newArray = filteredArray.filter(item => item !== value);
+        setter(newArray.length === 0 ? ['Všichni'] : newArray);
+      } else {
+        setter([...filteredArray, value]);
+      }
+    }
+  };
+
+  const isFilterActive = (filter: string[], value: string) => {
+    return filter.includes(value) || (filter.includes('Všichni') && value === 'Všichni');
+  };
+
   // Filter engineers based on selected filters
   const filteredEngineers = useMemo(() => {
     let engineers = Object.keys(matrixData);
     
     // Filter by organizational leader
-    if (filterOrgVedouci !== 'Všichni') {
+    if (!filterOrgVedouci.includes('Všichni')) {
       engineers = engineers.filter(engineer => 
-        konstrukterVedouci[engineer] === filterOrgVedouci
+        filterOrgVedouci.includes(konstrukterVedouci[engineer])
       );
     }
     
     // Filter by PM
-    if (filterPM !== 'Všichni') {
+    if (!filterPM.includes('Všichni')) {
       engineers = engineers.filter(engineer => {
         return weeks.some(week => {
           const project = matrixData[engineer][week];
-          return projektInfo[project]?.pm === filterPM;
+          return projektInfo[project]?.pm && filterPM.includes(projektInfo[project].pm);
         });
       });
     }
     
     // Filter by customer
-    if (filterZakaznik !== 'Všichni') {
+    if (!filterZakaznik.includes('Všichni')) {
       engineers = engineers.filter(engineer => {
         return weeks.some(week => {
           const project = matrixData[engineer][week];
-          return projektInfo[project]?.zakaznik === filterZakaznik;
+          return projektInfo[project]?.zakaznik && filterZakaznik.includes(projektInfo[project].zakaznik);
         });
       });
     }
     
     // Filter by program
-    if (filterProgram !== 'Všichni') {
+    if (!filterProgram.includes('Všichni')) {
       engineers = engineers.filter(engineer => {
         return weeks.some(week => {
           const project = matrixData[engineer][week];
-          return projektInfo[project]?.program === filterProgram;
+          return projektInfo[project]?.program && filterProgram.includes(projektInfo[project].program);
         });
       });
     }
@@ -226,58 +246,110 @@ export const ProjectAssignmentMatrix = () => {
           <div className="grid grid-cols-4 gap-4 mb-6">
             <div>
               <label className="text-sm font-medium mb-2 block">Organizační vedoucí</label>
-              <Select value={filterOrgVedouci} onValueChange={setFilterOrgVedouci}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {organizacniVedouci.map(vedouci => (
-                    <SelectItem key={vedouci} value={vedouci}>{vedouci}</SelectItem>
+              <div className="border border-border rounded-md p-2 max-h-32 overflow-y-auto bg-background">
+                {organizacniVedouci.map(vedouci => (
+                  <div key={vedouci} className="flex items-center space-x-2 py-1">
+                    <Checkbox
+                      id={`org-${vedouci}`}
+                      checked={isFilterActive(filterOrgVedouci, vedouci)}
+                      onCheckedChange={() => toggleFilterValue(filterOrgVedouci, vedouci, setFilterOrgVedouci)}
+                    />
+                    <label htmlFor={`org-${vedouci}`} className="text-sm cursor-pointer">
+                      {vedouci}
+                    </label>
+                  </div>
+                ))}
+              </div>
+              {!filterOrgVedouci.includes('Všichni') && (
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {filterOrgVedouci.map(item => (
+                    <Badge key={item} variant="secondary" className="text-xs">
+                      {item}
+                    </Badge>
                   ))}
-                </SelectContent>
-              </Select>
+                </div>
+              )}
             </div>
             
             <div>
               <label className="text-sm font-medium mb-2 block">Project Manager</label>
-              <Select value={filterPM} onValueChange={setFilterPM}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {projektManagers.map(pm => (
-                    <SelectItem key={pm} value={pm}>{pm}</SelectItem>
+              <div className="border border-border rounded-md p-2 max-h-32 overflow-y-auto bg-background">
+                {projektManagers.map(pm => (
+                  <div key={pm} className="flex items-center space-x-2 py-1">
+                    <Checkbox
+                      id={`pm-${pm}`}
+                      checked={isFilterActive(filterPM, pm)}
+                      onCheckedChange={() => toggleFilterValue(filterPM, pm, setFilterPM)}
+                    />
+                    <label htmlFor={`pm-${pm}`} className="text-sm cursor-pointer">
+                      {pm}
+                    </label>
+                  </div>
+                ))}
+              </div>
+              {!filterPM.includes('Všichni') && (
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {filterPM.map(item => (
+                    <Badge key={item} variant="secondary" className="text-xs">
+                      {item}
+                    </Badge>
                   ))}
-                </SelectContent>
-              </Select>
+                </div>
+              )}
             </div>
             
             <div>
               <label className="text-sm font-medium mb-2 block">Zákazník</label>
-              <Select value={filterZakaznik} onValueChange={setFilterZakaznik}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {zakaznici.map(zakaznik => (
-                    <SelectItem key={zakaznik} value={zakaznik}>{zakaznik}</SelectItem>
+              <div className="border border-border rounded-md p-2 max-h-32 overflow-y-auto bg-background">
+                {zakaznici.map(zakaznik => (
+                  <div key={zakaznik} className="flex items-center space-x-2 py-1">
+                    <Checkbox
+                      id={`customer-${zakaznik}`}
+                      checked={isFilterActive(filterZakaznik, zakaznik)}
+                      onCheckedChange={() => toggleFilterValue(filterZakaznik, zakaznik, setFilterZakaznik)}
+                    />
+                    <label htmlFor={`customer-${zakaznik}`} className="text-sm cursor-pointer">
+                      {zakaznik}
+                    </label>
+                  </div>
+                ))}
+              </div>
+              {!filterZakaznik.includes('Všichni') && (
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {filterZakaznik.map(item => (
+                    <Badge key={item} variant="secondary" className="text-xs">
+                      {item}
+                    </Badge>
                   ))}
-                </SelectContent>
-              </Select>
+                </div>
+              )}
             </div>
             
             <div>
               <label className="text-sm font-medium mb-2 block">Program</label>
-              <Select value={filterProgram} onValueChange={setFilterProgram}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {programy.map(program => (
-                    <SelectItem key={program} value={program}>{program}</SelectItem>
+              <div className="border border-border rounded-md p-2 max-h-32 overflow-y-auto bg-background">
+                {programy.map(program => (
+                  <div key={program} className="flex items-center space-x-2 py-1">
+                    <Checkbox
+                      id={`program-${program}`}
+                      checked={isFilterActive(filterProgram, program)}
+                      onCheckedChange={() => toggleFilterValue(filterProgram, program, setFilterProgram)}
+                    />
+                    <label htmlFor={`program-${program}`} className="text-sm cursor-pointer">
+                      {program}
+                    </label>
+                  </div>
+                ))}
+              </div>
+              {!filterProgram.includes('Všichni') && (
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {filterProgram.map(item => (
+                    <Badge key={item} variant="secondary" className="text-xs">
+                      {item}
+                    </Badge>
                   ))}
-                </SelectContent>
-              </Select>
+                </div>
+              )}
             </div>
           </div>
 
