@@ -1,11 +1,13 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { planningData as initialPlanningData, type PlanningEntry } from '@/data/planningData';
+import { useToast } from '@/hooks/use-toast';
 
 interface PlanningContextType {
   planningData: PlanningEntry[];
   updatePlanningEntry: (konstrukter: string, cw: string, field: 'projekt' | 'mhTyden', value: string | number) => void;
   addEngineer: (name: string) => void;
   savePlan: () => void;
+  resetToOriginal: () => void;
 }
 
 const PlanningContext = createContext<PlanningContextType | undefined>(undefined);
@@ -18,8 +20,20 @@ export const usePlanning = () => {
   return context;
 };
 
+const STORAGE_KEY = 'planning-data';
+
 export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [planningData, setPlanningData] = useState<PlanningEntry[]>(initialPlanningData);
+  const { toast } = useToast();
+  
+  // Load data from localStorage or use initial data
+  const [planningData, setPlanningData] = useState<PlanningEntry[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved) : initialPlanningData;
+    } catch {
+      return initialPlanningData;
+    }
+  });
 
   const updatePlanningEntry = useCallback((konstrukter: string, cw: string, field: 'projekt' | 'mhTyden', value: string | number) => {
     setPlanningData(prev => 
@@ -47,17 +61,37 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, []);
 
   const savePlan = useCallback(() => {
-    // Here you could implement saving to localStorage, API, etc.
-    console.log('Plan saved:', planningData);
-    // For now, just log the data
-  }, [planningData]);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(planningData));
+      toast({
+        title: "Plán uložen",
+        description: "Vaše změny byly úspěšně uloženy.",
+      });
+    } catch (error) {
+      toast({
+        title: "Chyba při ukládání",
+        description: "Nepodařilo se uložit změny.",
+        variant: "destructive",
+      });
+    }
+  }, [planningData, toast]);
+
+  const resetToOriginal = useCallback(() => {
+    setPlanningData(initialPlanningData);
+    localStorage.removeItem(STORAGE_KEY);
+    toast({
+      title: "Plán obnoven",
+      description: "Data byla obnovena na původní stav.",
+    });
+  }, [toast]);
 
   return (
     <PlanningContext.Provider value={{
       planningData,
       updatePlanningEntry,
       addEngineer,
-      savePlan
+      savePlan,
+      resetToOriginal
     }}>
       {children}
     </PlanningContext.Provider>

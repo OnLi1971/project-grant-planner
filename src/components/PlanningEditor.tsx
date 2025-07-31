@@ -57,7 +57,7 @@ const generatePlanningDataForEditor = (data: any[]): { [key: string]: WeekPlan[]
 };
 
 export const PlanningEditor: React.FC = () => {
-  const { planningData, updatePlanningEntry, addEngineer, savePlan } = usePlanning();
+  const { planningData, updatePlanningEntry, addEngineer, savePlan, resetToOriginal } = usePlanning();
   
   const planData = useMemo(() => generatePlanningDataForEditor(planningData), [planningData]);
   const konstrukteri = useMemo(() => Object.keys(planData).sort(), [planData]);
@@ -152,6 +152,10 @@ export const PlanningEditor: React.FC = () => {
             <Button variant="secondary" onClick={savePlan} className="bg-white/10 hover:bg-white/20">
               <Save className="h-4 w-4 mr-2" />
               Uložit plán
+            </Button>
+            <Button variant="outline" onClick={resetToOriginal} className="bg-white/10 hover:bg-white/20">
+              <X className="h-4 w-4 mr-2" />
+              Obnovit původní
             </Button>
           </div>
         </div>
