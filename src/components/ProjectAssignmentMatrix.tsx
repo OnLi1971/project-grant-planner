@@ -262,48 +262,72 @@ export const ProjectAssignmentMatrix = () => {
 
           {/* Matrix Table */}
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse border border-border">
+            <table className="w-full border-collapse">
               <thead>
                 <tr>
-                  <th className="border border-border p-2 bg-muted text-left sticky left-0 z-10 min-w-[200px]">
+                  <th className="border-2 border-border p-3 bg-gradient-to-r from-primary/10 to-primary/5 text-left sticky left-0 z-10 min-w-[200px] font-semibold">
                     Konstruktér
                   </th>
-                  {months.map(month => (
-                    <th key={month.name} className="border border-border p-2 bg-muted text-center" colSpan={month.weeks.length}>
-                      {month.name}
+                  {months.map((month, monthIndex) => (
+                    <th 
+                      key={month.name} 
+                      className={`border-2 border-border p-3 bg-gradient-to-r from-secondary/20 to-secondary/10 text-center font-bold text-lg ${
+                        monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
+                      }`} 
+                      colSpan={month.weeks.length}
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        <span className="text-primary">{month.name}</span>
+                      </div>
                     </th>
                   ))}
                 </tr>
                 <tr>
-                  <th className="border border-border p-2 bg-muted/50 sticky left-0 z-10"></th>
-                  {weeks.map(week => (
-                    <th key={week} className="border border-border p-1 bg-muted/50 text-xs min-w-[80px]">
-                      {week}
-                    </th>
-                  ))}
+                  <th className="border border-border p-2 bg-muted/30 sticky left-0 z-10 font-medium"></th>
+                  {months.map((month, monthIndex) => 
+                    month.weeks.map((week, weekIndex) => (
+                      <th 
+                        key={week} 
+                        className={`border border-border p-2 bg-muted/30 text-xs min-w-[90px] font-medium ${
+                          monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
+                        }`}
+                      >
+                        <span className="text-muted-foreground">{week}</span>
+                      </th>
+                    ))
+                  )}
                 </tr>
               </thead>
               <tbody>
                 {filteredEngineers.map(engineer => (
-                  <tr key={engineer} className="hover:bg-muted/20">
-                    <td className="border border-border p-2 font-medium sticky left-0 bg-background z-10">
+                  <tr key={engineer} className="hover:bg-muted/10 transition-colors">
+                    <td className="border border-border p-3 font-semibold sticky left-0 bg-background z-10 text-foreground">
                       {engineer}
                     </td>
-                    {weeks.map(week => {
-                      const project = matrixData[engineer][week];
-                      return (
-                        <td key={week} className="border border-border p-1 text-center">
-                          {project && (
-                            <Badge 
-                              variant={getProjectBadgeVariant(project)}
-                              className="text-xs px-1 py-0.5 w-full justify-center"
-                            >
-                              {project}
-                            </Badge>
-                          )}
-                        </td>
-                      );
-                    })}
+                    {months.map((month, monthIndex) => 
+                      month.weeks.map((week, weekIndex) => {
+                        const project = matrixData[engineer][week];
+                        return (
+                          <td 
+                            key={week} 
+                            className={`border border-border p-1.5 text-center ${
+                              monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
+                            }`}
+                          >
+                            {project && (
+                              <Badge 
+                                variant={getProjectBadgeVariant(project)}
+                                className="text-xs px-2 py-1 w-full justify-center font-medium shadow-sm hover:shadow-md transition-all duration-200 border border-border/50"
+                              >
+                                <span className="truncate max-w-[70px]" title={project}>
+                                  {project}
+                                </span>
+                              </Badge>
+                            )}
+                          </td>
+                        );
+                      })
+                    )}
                   </tr>
                 ))}
               </tbody>
