@@ -148,32 +148,47 @@ const konstrukterVedouci: { [key: string]: string } = {
   'Trač Vasyl': 'PeMa'
 };
 
+// Project mappings
+const projektInfo: { [key: string]: { zakaznik: string, pm: string, program: string } } = {
+  'ST_EMU_INT': { zakaznik: 'ST', pm: 'KaSo', program: 'RAIL' },
+  'ST_TRAM_INT': { zakaznik: 'ST', pm: 'JoMa', program: 'RAIL' },
+  'ST_MAINZ': { zakaznik: 'ST', pm: 'JoMa', program: 'RAIL' },
+  'ST_KASSEL': { zakaznik: 'ST', pm: 'JoMa', program: 'RAIL' },
+  'ST_BLAVA': { zakaznik: 'ST', pm: 'JoMa', program: 'RAIL' },
+  'ST_FEM': { zakaznik: 'ST', pm: 'PeNe', program: 'RAIL' },
+  'ST_POZAR': { zakaznik: 'ST', pm: 'OnLi', program: 'RAIL' },
+  'NU_CRAIN': { zakaznik: 'NUVIA', pm: 'PeMa', program: 'MACH' },
+  'WA_HVAC': { zakaznik: 'WABTEC', pm: 'DaAm', program: 'RAIL' },
+  'ST_JIGS': { zakaznik: 'ST', pm: 'KaSo', program: 'RAIL' },
+  'ST_TRAM_HS': { zakaznik: 'ST', pm: 'KaSo', program: 'RAIL' },
+  'SAF_FEM': { zakaznik: 'SAFRAN DE', pm: 'PeNe', program: 'AERO' },
+  'FREE': { zakaznik: 'N/A', pm: 'N/A', program: 'N/A' },
+  'DOVOLENÁ': { zakaznik: 'N/A', pm: 'N/A', program: 'N/A' }
+};
+
 const projektManagers = [
   'Všichni',
-  'Johnson Sarah',
-  'Williams Michael',
-  'Brown Jessica',
-  'Davis Robert'
+  'KaSo',
+  'JoMa',
+  'PeNe',
+  'OnLi',
+  'PeMa',
+  'DaAm'
 ];
 
 const zakaznici = [
   'Všichni',
-  'Siemens Transportation',
-  'Škoda Transportation',
-  'Alstom Transport',
-  'Stadler Rail'
+  'ST',
+  'NUVIA',
+  'WABTEC',
+  'SAFRAN DE'
 ];
 
 const programy = [
   'Všichni',
-  'ST_BLAVA',
-  'ST_MAINZ', 
-  'ST_EMU_INT',
-  'ST_POZAR',
-  'ST_TRAM_INT',
-  'ST_TRAM_HS',
-  'SAF_FEM',
-  'NU_CRAIN'
+  'RAIL',
+  'MACH',
+  'AERO'
 ];
 
 const weeks = ['CW32', 'CW33', 'CW34', 'CW35', 'CW36', 'CW37', 'CW38', 'CW39', 'CW40', 'CW41', 'CW42', 'CW43', 'CW44', 'CW45', 'CW46', 'CW47', 'CW48', 'CW49', 'CW50', 'CW51', 'CW52'];
@@ -227,10 +242,33 @@ export const ProjectAssignmentMatrix = () => {
       );
     }
     
+    // Filter by PM
+    if (filterPM !== 'Všichni') {
+      engineers = engineers.filter(engineer => {
+        return weeks.some(week => {
+          const project = matrixData[engineer][week];
+          return projektInfo[project]?.pm === filterPM;
+        });
+      });
+    }
+    
+    // Filter by customer
+    if (filterZakaznik !== 'Všichni') {
+      engineers = engineers.filter(engineer => {
+        return weeks.some(week => {
+          const project = matrixData[engineer][week];
+          return projektInfo[project]?.zakaznik === filterZakaznik;
+        });
+      });
+    }
+    
     // Filter by program
     if (filterProgram !== 'Všichni') {
       engineers = engineers.filter(engineer => {
-        return weeks.some(week => matrixData[engineer][week] === filterProgram);
+        return weeks.some(week => {
+          const project = matrixData[engineer][week];
+          return projektInfo[project]?.program === filterProgram;
+        });
       });
     }
     
