@@ -21,53 +21,81 @@ interface PlanningEntry {
   obrat: number;
 }
 
-// Reální seznam konstruktérů a jejich organizačních vedoucích
+// Organizační struktura
+const organizacniStruktura = {
+  "RAIL": {
+    vedouci: { nick: "OnLi", jmeno: "Ondřej Lišťanský" },
+    oddeleni: {
+      "Rail Interiéry": { vedouci: { nick: "JoMa", jmeno: "Jozef Matta" } },
+      "Rail Hrubá stavba": { vedouci: { nick: "KaSo", jmeno: "Karel Šoupa" } },
+      "Výpočty": { vedouci: { nick: "PeNe", jmeno: "Petr Nedavaška" } },
+      "Rail Elektro": { vedouci: { nick: "PaHo", jmeno: "Pavel Hormandl" } }
+    }
+  },
+  "Machinery": {
+    vedouci: { nick: "OnLi", jmeno: "Ondřej Lišťanský" },
+    oddeleni: {
+      "General machinery": { vedouci: { nick: "PeMa", jmeno: "Peter Madanský" } },
+      "Turbines": { vedouci: { nick: "DaAm", jmeno: "David Ambrož" } }
+    }
+  }
+};
+
+// Rozšířený seznam konstruktérů s oddělením
 const konstrukteri = [
-  { jmeno: "Hlavan Martin", orgVedouci: "JoMa" },
-  { jmeno: "Fica Ladislav", orgVedouci: "JoMa" },
-  { jmeno: "Ambrož David", orgVedouci: "OnLi" },
-  { jmeno: "Slavík Ondřej", orgVedouci: "KaSo" },
-  { jmeno: "Chrenko Peter", orgVedouci: "Subdodavka" },
-  { jmeno: "Jurčišin Peter", orgVedouci: "Subdodavka" },
-  { jmeno: "Púpava Marián", orgVedouci: "Subdodavka" },
-  { jmeno: "Bohušík Martin", orgVedouci: "Subdodavka" },
-  { jmeno: "Uher Tomáš", orgVedouci: "KaSo" },
-  { jmeno: "Weiss Ondřej", orgVedouci: "PaHo" },
-  { jmeno: "Borský Jan", orgVedouci: "PaHo" },
-  { jmeno: "Pytela Martin", orgVedouci: "PaHo" },
-  { jmeno: "Litvinov Evgenii", orgVedouci: "PaHo" },
-  { jmeno: "Jandečka Karel", orgVedouci: "KaSo" },
-  { jmeno: "Heřman Daniel", orgVedouci: "JoMa" },
-  { jmeno: "Karlesz Michal", orgVedouci: "PeMa" },
-  { jmeno: "Matta Jozef", orgVedouci: "OnLi" },
-  { jmeno: "Pecinovský Pavel", orgVedouci: "JoMa" },
-  { jmeno: "Anovčín Branislav", orgVedouci: "DaAm" },
-  { jmeno: "Bartovič Anton", orgVedouci: "DaAm" },
-  { jmeno: "Břicháček Miloš", orgVedouci: "JoMa" },
-  { jmeno: "Fenyk Pavel", orgVedouci: "PeMa" },
-  { jmeno: "Kalafa Ján", orgVedouci: "JoMa" },
-  { jmeno: "Lengyel Martin", orgVedouci: "JoMa" },
-  { jmeno: "Šoupa Karel", orgVedouci: "OnLi" },
-  { jmeno: "Večeř Jiří", orgVedouci: "JoMa" },
-  { jmeno: "Bartovičová Agáta", orgVedouci: "KaSo" },
-  { jmeno: "Hrachová Ivana", orgVedouci: "KaSo" },
-  { jmeno: "Karlík Štěpán", orgVedouci: "JoMa" },
-  { jmeno: "Friedlová Jiřina", orgVedouci: "OnLi" },
-  { jmeno: "Fuchs Pavel", orgVedouci: "DaAm" },
-  { jmeno: "Mohelník Martin", orgVedouci: "JoMa" },
-  { jmeno: "Nedavaška Petr", orgVedouci: "OnLi" },
-  { jmeno: "Šedovičová Darina", orgVedouci: "PeNe" },
-  { jmeno: "Ješš Jozef", orgVedouci: "PeNe" },
-  { jmeno: "Melichar Ondřej", orgVedouci: "PeNe" },
-  { jmeno: "Klíma Milan", orgVedouci: "KaSo" },
-  { jmeno: "Hibler František", orgVedouci: "KaSo" },
-  { jmeno: "Brojír Jaroslav", orgVedouci: "JoMa" },
-  { jmeno: "Madanský Peter", orgVedouci: "OnLi" },
-  { jmeno: "Samko Mikuláš", orgVedouci: "JoMa" },
-  { jmeno: "Chrenko Daniel", orgVedouci: "Subdodavka" },
-  { jmeno: "Jiřička Aleš", orgVedouci: "JoMa" },
-  { jmeno: "Stránský Martin", orgVedouci: "PeMa" },
-  { jmeno: "Trač Vasyl", orgVedouci: "PeMa" }
+  { jmeno: "Hlavan Martin", orgVedouci: "JoMa", oddeleni: "Rail Interiéry", oblast: "RAIL" },
+  { jmeno: "Fica Ladislav", orgVedouci: "JoMa", oddeleni: "Rail Interiéry", oblast: "RAIL" },
+  { jmeno: "Heřman Daniel", orgVedouci: "JoMa", oddeleni: "Rail Interiéry", oblast: "RAIL" },
+  { jmeno: "Pecinovský Pavel", orgVedouci: "JoMa", oddeleni: "Rail Interiéry", oblast: "RAIL" },
+  { jmeno: "Břicháček Miloš", orgVedouci: "JoMa", oddeleni: "Rail Interiéry", oblast: "RAIL" },
+  { jmeno: "Kalafa Ján", orgVedouci: "JoMa", oddeleni: "Rail Interiéry", oblast: "RAIL" },
+  { jmeno: "Lengyel Martin", orgVedouci: "JoMa", oddeleni: "Rail Interiéry", oblast: "RAIL" },
+  { jmeno: "Večeř Jiří", orgVedouci: "JoMa", oddeleni: "Rail Interiéry", oblast: "RAIL" },
+  { jmeno: "Karlík Štěpán", orgVedouci: "JoMa", oddeleni: "Rail Interiéry", oblast: "RAIL" },
+  { jmeno: "Mohelník Martin", orgVedouci: "JoMa", oddeleni: "Rail Interiéry", oblast: "RAIL" },
+  { jmeno: "Brojír Jaroslav", orgVedouci: "JoMa", oddeleni: "Rail Interiéry", oblast: "RAIL" },
+  { jmeno: "Samko Mikuláš", orgVedouci: "JoMa", oddeleni: "Rail Interiéry", oblast: "RAIL" },
+  { jmeno: "Jiřička Aleš", orgVedouci: "JoMa", oddeleni: "Rail Interiéry", oblast: "RAIL" },
+  
+  { jmeno: "Slavík Ondřej", orgVedouci: "KaSo", oddeleni: "Rail Hrubá stavba", oblast: "RAIL" },
+  { jmeno: "Uher Tomáš", orgVedouci: "KaSo", oddeleni: "Rail Hrubá stavba", oblast: "RAIL" },
+  { jmeno: "Jandečka Karel", orgVedouci: "KaSo", oddeleni: "Rail Hrubá stavba", oblast: "RAIL" },
+  { jmeno: "Bartovičová Agáta", orgVedouci: "KaSo", oddeleni: "Rail Hrubá stavba", oblast: "RAIL" },
+  { jmeno: "Hrachová Ivana", orgVedouci: "KaSo", oddeleni: "Rail Hrubá stavba", oblast: "RAIL" },
+  { jmeno: "Klíma Milan", orgVedouci: "KaSo", oddeleni: "Rail Hrubá stavba", oblast: "RAIL" },
+  { jmeno: "Hibler František", orgVedouci: "KaSo", oddeleni: "Rail Hrubá stavba", oblast: "RAIL" },
+  
+  { jmeno: "Weiss Ondřej", orgVedouci: "PaHo", oddeleni: "Rail Elektro", oblast: "RAIL" },
+  { jmeno: "Borský Jan", orgVedouci: "PaHo", oddeleni: "Rail Elektro", oblast: "RAIL" },
+  { jmeno: "Pytela Martin", orgVedouci: "PaHo", oddeleni: "Rail Elektro", oblast: "RAIL" },
+  { jmeno: "Litvinov Evgenii", orgVedouci: "PaHo", oddeleni: "Rail Elektro", oblast: "RAIL" },
+  
+  { jmeno: "Šedovičová Darina", orgVedouci: "PeNe", oddeleni: "Výpočty", oblast: "RAIL" },
+  { jmeno: "Ješš Jozef", orgVedouci: "PeNe", oddeleni: "Výpočty", oblast: "RAIL" },
+  { jmeno: "Melichar Ondřej", orgVedouci: "PeNe", oddeleni: "Výpočty", oblast: "RAIL" },
+  
+  { jmeno: "Karlesz Michal", orgVedouci: "PeMa", oddeleni: "General machinery", oblast: "Machinery" },
+  { jmeno: "Fenyk Pavel", orgVedouci: "PeMa", oddeleni: "General machinery", oblast: "Machinery" },
+  { jmeno: "Stránský Martin", orgVedouci: "PeMa", oddeleni: "General machinery", oblast: "Machinery" },
+  { jmeno: "Trač Vasyl", orgVedouci: "PeMa", oddeleni: "General machinery", oblast: "Machinery" },
+  
+  { jmeno: "Anovčín Branislav", orgVedouci: "DaAm", oddeleni: "Turbines", oblast: "Machinery" },
+  { jmeno: "Bartovič Anton", orgVedouci: "DaAm", oddeleni: "Turbines", oblast: "Machinery" },
+  { jmeno: "Fuchs Pavel", orgVedouci: "DaAm", oddeleni: "Turbines", oblast: "Machinery" },
+  
+  { jmeno: "Ambrož David", orgVedouci: "OnLi", oddeleni: "OnLi tým", oblast: "RAIL" },
+  { jmeno: "Matta Jozef", orgVedouci: "OnLi", oddeleni: "OnLi tým", oblast: "RAIL" },
+  { jmeno: "Šoupa Karel", orgVedouci: "OnLi", oddeleni: "OnLi tým", oblast: "RAIL" },
+  { jmeno: "Friedlová Jiřina", orgVedouci: "OnLi", oddeleni: "OnLi tým", oblast: "RAIL" },
+  { jmeno: "Nedavaška Petr", orgVedouci: "OnLi", oddeleni: "OnLi tým", oblast: "RAIL" },
+  { jmeno: "Madanský Peter", orgVedouci: "OnLi", oddeleni: "OnLi tým", oblast: "RAIL" },
+  
+  // Subdodavatelé
+  { jmeno: "Chrenko Peter", orgVedouci: "Subdodavka", oddeleni: "Externí", oblast: "Externí" },
+  { jmeno: "Jurčišin Peter", orgVedouci: "Subdodavka", oddeleni: "Externí", oblast: "Externí" },
+  { jmeno: "Púpava Marián", orgVedouci: "Subdodavka", oddeleni: "Externí", oblast: "Externí" },
+  { jmeno: "Bohušík Martin", orgVedouci: "Subdodavka", oddeleni: "Externí", oblast: "Externí" },
+  { jmeno: "Chrenko Daniel", orgVedouci: "Subdodavka", oddeleni: "Externí", oblast: "Externí" }
 ];
 
 // Reálné projekty s jejich parametry
@@ -186,11 +214,13 @@ export const PlanningTable: React.FC = () => {
   const [filterZakaznik, setFilterZakaznik] = useState<string>('all');
   const [filterProgram, setFilterProgram] = useState<string>('all');
   const [filterOrgVedouci, setFilterOrgVedouci] = useState<string>('all');
+  const [filterOddeleni, setFilterOddeleni] = useState<string>('all');
   const [searchKonstrukter, setSearchKonstrukter] = useState<string>('');
 
   const uniqueZakaznici = Array.from(new Set(data.map(item => item.zakaznik).filter(z => z !== 'N/A')));
   const uniquePrograms = Array.from(new Set(data.map(item => item.program).filter(p => p !== 'N/A')));
   const uniqueOrgVedouci = Array.from(new Set(konstrukteri.map(k => k.orgVedouci)));
+  const uniqueOddeleni = Array.from(new Set(konstrukteri.map(k => k.oddeleni)));
 
   React.useEffect(() => {
     let filtered = data;
@@ -210,6 +240,13 @@ export const PlanningTable: React.FC = () => {
       });
     }
     
+    if (filterOddeleni !== 'all') {
+      filtered = filtered.filter(item => {
+        const konstrukter = konstrukteri.find(k => k.jmeno === item.konstrukter);
+        return konstrukter?.oddeleni === filterOddeleni;
+      });
+    }
+    
     if (searchKonstrukter) {
       filtered = filtered.filter(item => 
         item.konstrukter.toLowerCase().includes(searchKonstrukter.toLowerCase())
@@ -217,7 +254,7 @@ export const PlanningTable: React.FC = () => {
     }
     
     setFilteredData(filtered);
-  }, [data, filterZakaznik, filterProgram, filterOrgVedouci, searchKonstrukter]);
+  }, [data, filterZakaznik, filterProgram, filterOrgVedouci, filterOddeleni, searchKonstrukter]);
 
   const totalObrat = filteredData.reduce((sum, item) => sum + item.obrat, 0);
   const totalHours = filteredData.reduce((sum, item) => sum + item.mhTyden, 0);
@@ -315,6 +352,18 @@ export const PlanningTable: React.FC = () => {
               ))}
             </SelectContent>
           </Select>
+          
+          <Select value={filterOddeleni} onValueChange={setFilterOddeleni}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Všechna oddělení" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Všechna oddělení</SelectItem>
+              {uniqueOddeleni.map(oddeleni => (
+                <SelectItem key={oddeleni} value={oddeleni}>{oddeleni}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </Card>
 
@@ -325,6 +374,7 @@ export const PlanningTable: React.FC = () => {
             <thead className="bg-planning-header text-white">
               <tr>
                 <th className="p-3 text-left font-medium">Konstruktér</th>
+                <th className="p-3 text-left font-medium">Oddělení</th>
                 <th className="p-3 text-left font-medium">CW</th>
                 <th className="p-3 text-left font-medium">Měsíc</th>
                 <th className="p-3 text-left font-medium">MH/týden</th>
@@ -339,7 +389,9 @@ export const PlanningTable: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredData.map((entry, index) => (
+              {filteredData.map((entry, index) => {
+                const konstrukterData = konstrukteri.find(k => k.jmeno === entry.konstrukter);
+                return (
                 <tr 
                   key={`${entry.konstrukter}-${entry.cw}`}
                   className={`
@@ -348,6 +400,9 @@ export const PlanningTable: React.FC = () => {
                   `}
                 >
                   <td className="p-3 font-medium text-foreground">{entry.konstrukter}</td>
+                  <td className="p-3 text-muted-foreground text-sm">
+                    {konstrukterData?.oddeleni || '-'}
+                  </td>
                   <td className="p-3 text-muted-foreground font-mono">{entry.cw}</td>
                   <td className="p-3 text-muted-foreground">{entry.mesic}</td>
                   <td className="p-3">
@@ -374,7 +429,8 @@ export const PlanningTable: React.FC = () => {
                     {getStatusBadge(entry.projekt, entry.mhTyden)}
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
