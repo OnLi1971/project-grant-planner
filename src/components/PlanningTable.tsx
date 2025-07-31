@@ -21,195 +21,100 @@ interface PlanningEntry {
   obrat: number;
 }
 
+// Reální seznam konstruktérů a jejich organizačních vedoucích
+const konstrukteri = [
+  { jmeno: "Hlavan Martin", orgVedouci: "JoMa" },
+  { jmeno: "Fica Ladislav", orgVedouci: "JoMa" },
+  { jmeno: "Ambrož David", orgVedouci: "OnLi" },
+  { jmeno: "Slavík Ondřej", orgVedouci: "KaSo" },
+  { jmeno: "Chrenko Peter", orgVedouci: "Subdodavka" },
+  { jmeno: "Jurčišin Peter", orgVedouci: "Subdodavka" },
+  { jmeno: "Púpava Marián", orgVedouci: "Subdodavka" },
+  { jmeno: "Bohušík Martin", orgVedouci: "Subdodavka" },
+  { jmeno: "Uher Tomáš", orgVedouci: "KaSo" },
+  { jmeno: "Weiss Ondřej", orgVedouci: "PaHo" },
+  { jmeno: "Borský Jan", orgVedouci: "PaHo" },
+  { jmeno: "Pytela Martin", orgVedouci: "PaHo" },
+  { jmeno: "Litvinov Evgenii", orgVedouci: "PaHo" },
+  { jmeno: "Jandečka Karel", orgVedouci: "KaSo" },
+  { jmeno: "Heřman Daniel", orgVedouci: "JoMa" },
+  { jmeno: "Karlesz Michal", orgVedouci: "PeMa" },
+  { jmeno: "Matta Jozef", orgVedouci: "OnLi" },
+  { jmeno: "Pecinovský Pavel", orgVedouci: "JoMa" },
+  { jmeno: "Anovčín Branislav", orgVedouci: "DaAm" },
+  { jmeno: "Bartovič Anton", orgVedouci: "DaAm" },
+  { jmeno: "Břicháček Miloš", orgVedouci: "JoMa" },
+  { jmeno: "Fenyk Pavel", orgVedouci: "PeMa" },
+  { jmeno: "Kalafa Ján", orgVedouci: "JoMa" },
+  { jmeno: "Lengyel Martin", orgVedouci: "JoMa" },
+  { jmeno: "Šoupa Karel", orgVedouci: "OnLi" },
+  { jmeno: "Večeř Jiří", orgVedouci: "JoMa" },
+  { jmeno: "Bartovičová Agáta", orgVedouci: "KaSo" },
+  { jmeno: "Hrachová Ivana", orgVedouci: "KaSo" },
+  { jmeno: "Karlík Štěpán", orgVedouci: "JoMa" },
+  { jmeno: "Friedlová Jiřina", orgVedouci: "OnLi" },
+  { jmeno: "Fuchs Pavel", orgVedouci: "DaAm" },
+  { jmeno: "Mohelník Martin", orgVedouci: "JoMa" },
+  { jmeno: "Nedavaška Petr", orgVedouci: "OnLi" },
+  { jmeno: "Šedovičová Darina", orgVedouci: "PeNe" },
+  { jmeno: "Ješš Jozef", orgVedouci: "PeNe" },
+  { jmeno: "Melichar Ondřej", orgVedouci: "PeNe" },
+  { jmeno: "Klíma Milan", orgVedouci: "KaSo" },
+  { jmeno: "Hibler František", orgVedouci: "KaSo" },
+  { jmeno: "Brojír Jaroslav", orgVedouci: "JoMa" },
+  { jmeno: "Madanský Peter", orgVedouci: "OnLi" },
+  { jmeno: "Samko Mikuláš", orgVedouci: "JoMa" },
+  { jmeno: "Chrenko Daniel", orgVedouci: "Subdodavka" },
+  { jmeno: "Jiřička Aleš", orgVedouci: "JoMa" },
+  { jmeno: "Stránský Martin", orgVedouci: "PeMa" },
+  { jmeno: "Trač Vasyl", orgVedouci: "PeMa" }
+];
+
+// Reálné projekty s jejich parametry
+const projekty = [
+  { kod: "ST_EMU_INT", zakaznik: "ST", pm: "KaSo", smt: "1", program: "RAIL", sazba: 1100 },
+  { kod: "ST_TRAM_INT", zakaznik: "ST", pm: "JoMa", smt: "1", program: "RAIL", sazba: 1100 },
+  { kod: "ST_MAINZ", zakaznik: "ST", pm: "JoMa", smt: "1", program: "RAIL", sazba: 1100 },
+  { kod: "ST_KASSEL", zakaznik: "ST", pm: "JoMa", smt: "1", program: "RAIL", sazba: 1100 },
+  { kod: "ST_BLAVA", zakaznik: "ST", pm: "JoMa", smt: "1", program: "RAIL", sazba: 1150 },
+  { kod: "ST_FEM", zakaznik: "ST", pm: "PeNe", smt: "0", program: "RAIL", sazba: 1250 },
+  { kod: "ST_POZAR", zakaznik: "ST", pm: "OnLi", smt: "0.5", program: "RAIL", sazba: 1250 },
+  { kod: "NU_CRAIN", zakaznik: "NUVIA", pm: "PeMa", smt: "0", program: "MACH", sazba: 1580 },
+  { kod: "WA_HVAC", zakaznik: "WABTEC", pm: "DaAm", smt: "0", program: "RAIL", sazba: 1220 },
+  { kod: "ST_JIGS", zakaznik: "ST", pm: "KaSo", smt: "1", program: "RAIL", sazba: 1150 },
+  { kod: "ST_TRAM_HS", zakaznik: "ST", pm: "KaSo", smt: "1", program: "RAIL", sazba: 1085 },
+  { kod: "SAF_FEM", zakaznik: "SAFRAN DE", pm: "PeNe", smt: "0", program: "AERO", sazba: 1300 },
+  { kod: "FREE", zakaznik: "N/A", pm: "N/A", smt: "N/A", program: "N/A", sazba: 0 },
+  { kod: "DOVOLENÁ", zakaznik: "N/A", pm: "N/A", smt: "N/A", program: "N/A", sazba: 0 }
+];
+
+// Funkce pro náhodné přiřazení projektů konstruktérům
+const generateRandomAssignment = (konstrukter: any, week: string, month: string) => {
+  const randomProject = projekty[Math.floor(Math.random() * (projekty.length - 2))]; // Vynechá FREE a DOVOLENÁ
+  const randomHours = Math.floor(Math.random() * 4) * 10 + 20; // 20, 30, 40, 50 hodin
+  
+  return {
+    konstrukter: konstrukter.jmeno,
+    cw: week,
+    mesic: month,
+    mhTyden: randomHours,
+    projekt: randomProject.kod,
+    lokalita: randomProject.zakaznik === "ST" ? "ST" : randomProject.zakaznik,
+    zakaznik: randomProject.zakaznik,
+    pm: randomProject.pm,
+    smt: randomProject.smt,
+    program: randomProject.program,
+    hodinovaSazba: randomProject.sazba,
+    obrat: randomHours * randomProject.sazba
+  };
+};
+
+// Generování ukázkových dat pro první konstruktéry
 const mockData: PlanningEntry[] = [
-  // ST Projekty - RAIL
-  {
-    konstrukter: "Hlavan Martin",
-    cw: "CW32",
-    mesic: "August",
-    mhTyden: 36,
-    projekt: "ST_BLAVA",
-    lokalita: "ST",
-    zakaznik: "ST",
-    pm: "JoMa",
-    smt: "1",
-    program: "RAIL",
-    hodinovaSazba: 1150,
-    obrat: 41400
-  },
-  {
-    konstrukter: "Hlavan Martin",
-    cw: "CW33",
-    mesic: "August", 
-    mhTyden: 36,
-    projekt: "ST_BLAVA",
-    lokalita: "ST",
-    zakaznik: "ST",
-    pm: "JoMa",
-    smt: "1",
-    program: "RAIL",
-    hodinovaSazba: 1150,
-    obrat: 41400
-  },
-  {
-    konstrukter: "Novák Jan",
-    cw: "CW32",
-    mesic: "August",
-    mhTyden: 40,
-    projekt: "ST_MAINZ",
-    lokalita: "ST",
-    zakaznik: "ST",
-    pm: "JoMa",
-    smt: "1",
-    program: "RAIL",
-    hodinovaSazba: 1100,
-    obrat: 44000
-  },
-  {
-    konstrukter: "Svoboda Petr",
-    cw: "CW32",
-    mesic: "August",
-    mhTyden: 35,
-    projekt: "ST_KASSEL",
-    lokalita: "ST",
-    zakaznik: "ST",
-    pm: "JoMa",
-    smt: "1",
-    program: "RAIL",
-    hodinovaSazba: 1100,
-    obrat: 38500
-  },
-  {
-    konstrukter: "Dvořák Tomáš",
-    cw: "CW32",
-    mesic: "August",
-    mhTyden: 38,
-    projekt: "ST_EMU_INT",
-    lokalita: "ST",
-    zakaznik: "ST",
-    pm: "KaSo",
-    smt: "1",
-    program: "RAIL",
-    hodinovaSazba: 1100,
-    obrat: 41800
-  },
-  {
-    konstrukter: "Procházka Pavel",
-    cw: "CW32",
-    mesic: "August",
-    mhTyden: 32,
-    projekt: "ST_TRAM_INT",
-    lokalita: "ST",
-    zakaznik: "ST",
-    pm: "JoMa",
-    smt: "1",
-    program: "RAIL",
-    hodinovaSazba: 1100,
-    obrat: 35200
-  },
-  // NUVIA Projekt - MACH
-  {
-    konstrukter: "Krejčí Milan",
-    cw: "CW32",
-    mesic: "August",
-    mhTyden: 40,
-    projekt: "NU_CRAIN",
-    lokalita: "NUVIA",
-    zakaznik: "NUVIA",
-    pm: "PeMa",
-    smt: "0",
-    program: "MACH",
-    hodinovaSazba: 1580,
-    obrat: 63200
-  },
-  // WABTEC Projekt - RAIL
-  {
-    konstrukter: "Veselý David",
-    cw: "CW32",
-    mesic: "August",
-    mhTyden: 36,
-    projekt: "WA_HVAC",
-    lokalita: "WABTEC",
-    zakaznik: "WABTEC",
-    pm: "DaAm",
-    smt: "0",
-    program: "RAIL",
-    hodinovaSazba: 1220,
-    obrat: 43920
-  },
-  // SAFRAN Projekt - AERO
-  {
-    konstrukter: "Černý Robert",
-    cw: "CW32",
-    mesic: "August",
-    mhTyden: 35,
-    projekt: "SAF_FEM",
-    lokalita: "SAFRAN DE",
-    zakaznik: "SAFRAN DE",
-    pm: "PeNe",
-    smt: "0",
-    program: "AERO",
-    hodinovaSazba: 1300,
-    obrat: 45500
-  },
-  // ST Speciální projekty
-  {
-    konstrukter: "Kratochvíl Jan",
-    cw: "CW32",
-    mesic: "August",
-    mhTyden: 30,
-    projekt: "ST_FEM",
-    lokalita: "ST",
-    zakaznik: "ST",
-    pm: "PeNe",
-    smt: "0",
-    program: "RAIL",
-    hodinovaSazba: 1250,
-    obrat: 37500
-  },
-  {
-    konstrukter: "Horáček Michal",
-    cw: "CW32",
-    mesic: "August",
-    mhTyden: 20,
-    projekt: "ST_POZAR",
-    lokalita: "ST",
-    zakaznik: "ST",
-    pm: "OnLi",
-    smt: "0.5",
-    program: "RAIL",
-    hodinovaSazba: 1250,
-    obrat: 25000
-  },
-  {
-    konstrukter: "Bureš Lukáš",
-    cw: "CW32",
-    mesic: "August",
-    mhTyden: 38,
-    projekt: "ST_JIGS",
-    lokalita: "ST",
-    zakaznik: "ST",
-    pm: "KaSo",
-    smt: "1",
-    program: "RAIL",
-    hodinovaSazba: 1150,
-    obrat: 43700
-  },
-  {
-    konstrukter: "Moravec Ondřej",
-    cw: "CW32",
-    mesic: "August",
-    mhTyden: 36,
-    projekt: "ST_TRAM_HS",
-    lokalita: "ST",
-    zakaznik: "ST",
-    pm: "KaSo",
-    smt: "1",
-    program: "RAIL",
-    hodinovaSazba: 1085,
-    obrat: 39060
-  },
-  // Volní konstruktéři
+  // Hlavan Martin - kompletní plánování
+  generateRandomAssignment(konstrukteri[0], "CW32", "August"),
+  generateRandomAssignment(konstrukteri[0], "CW33", "August"), 
+  generateRandomAssignment(konstrukteri[0], "CW34", "August"),
   {
     konstrukter: "Hlavan Martin",
     cw: "CW42",
@@ -224,10 +129,33 @@ const mockData: PlanningEntry[] = [
     hodinovaSazba: 0,
     obrat: 0
   },
+  
+  // Fica Ladislav
+  generateRandomAssignment(konstrukteri[1], "CW32", "August"),
+  generateRandomAssignment(konstrukteri[1], "CW33", "August"),
+  
+  // Ambrož David
+  generateRandomAssignment(konstrukteri[2], "CW32", "August"),
+  generateRandomAssignment(konstrukteri[2], "CW33", "August"),
+  
+  // Slavík Ondřej  
+  generateRandomAssignment(konstrukteri[3], "CW32", "August"),
+  generateRandomAssignment(konstrukteri[3], "CW33", "August"),
+  
+  // Uher Tomáš
+  generateRandomAssignment(konstrukteri[8], "CW32", "August"),
+  generateRandomAssignment(konstrukteri[8], "CW33", "August"),
+  
+  // Weiss Ondřej
+  generateRandomAssignment(konstrukteri[9], "CW32", "August"),
+  generateRandomAssignment(konstrukteri[9], "CW33", "August"),
+  
+  // Borský Jan
+  generateRandomAssignment(konstrukteri[10], "CW32", "August"),
   {
-    konstrukter: "Svoboda Petr",
-    cw: "CW44",
-    mesic: "October",
+    konstrukter: "Borský Jan",
+    cw: "CW33",
+    mesic: "August",
     mhTyden: 0,
     projekt: "DOVOLENÁ",
     lokalita: "",
@@ -237,7 +165,19 @@ const mockData: PlanningEntry[] = [
     program: "N/A",
     hodinovaSazba: 0,
     obrat: 0
-  }
+  },
+  
+  // Pytela Martin
+  generateRandomAssignment(konstrukteri[11], "CW32", "August"),
+  generateRandomAssignment(konstrukteri[11], "CW33", "August"),
+  
+  // Jandečka Karel
+  generateRandomAssignment(konstrukteri[13], "CW32", "August"),
+  generateRandomAssignment(konstrukteri[13], "CW33", "August"),
+  
+  // Heřman Daniel
+  generateRandomAssignment(konstrukteri[14], "CW32", "August"),
+  generateRandomAssignment(konstrukteri[14], "CW33", "August"),
 ];
 
 export const PlanningTable: React.FC = () => {
@@ -245,10 +185,12 @@ export const PlanningTable: React.FC = () => {
   const [filteredData, setFilteredData] = useState<PlanningEntry[]>(mockData);
   const [filterZakaznik, setFilterZakaznik] = useState<string>('all');
   const [filterProgram, setFilterProgram] = useState<string>('all');
+  const [filterOrgVedouci, setFilterOrgVedouci] = useState<string>('all');
   const [searchKonstrukter, setSearchKonstrukter] = useState<string>('');
 
   const uniqueZakaznici = Array.from(new Set(data.map(item => item.zakaznik).filter(z => z !== 'N/A')));
   const uniquePrograms = Array.from(new Set(data.map(item => item.program).filter(p => p !== 'N/A')));
+  const uniqueOrgVedouci = Array.from(new Set(konstrukteri.map(k => k.orgVedouci)));
 
   React.useEffect(() => {
     let filtered = data;
@@ -261,6 +203,13 @@ export const PlanningTable: React.FC = () => {
       filtered = filtered.filter(item => item.program === filterProgram);
     }
     
+    if (filterOrgVedouci !== 'all') {
+      filtered = filtered.filter(item => {
+        const konstrukter = konstrukteri.find(k => k.jmeno === item.konstrukter);
+        return konstrukter?.orgVedouci === filterOrgVedouci;
+      });
+    }
+    
     if (searchKonstrukter) {
       filtered = filtered.filter(item => 
         item.konstrukter.toLowerCase().includes(searchKonstrukter.toLowerCase())
@@ -268,7 +217,7 @@ export const PlanningTable: React.FC = () => {
     }
     
     setFilteredData(filtered);
-  }, [data, filterZakaznik, filterProgram, searchKonstrukter]);
+  }, [data, filterZakaznik, filterProgram, filterOrgVedouci, searchKonstrukter]);
 
   const totalObrat = filteredData.reduce((sum, item) => sum + item.obrat, 0);
   const totalHours = filteredData.reduce((sum, item) => sum + item.mhTyden, 0);
@@ -351,6 +300,18 @@ export const PlanningTable: React.FC = () => {
               <SelectItem value="all">Všechny programy</SelectItem>
               {uniquePrograms.map(program => (
                 <SelectItem key={program} value={program}>{program}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <Select value={filterOrgVedouci} onValueChange={setFilterOrgVedouci}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Všichni vedoucí" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Všichni vedoucí</SelectItem>
+              {uniqueOrgVedouci.map(vedouci => (
+                <SelectItem key={vedouci} value={vedouci}>{vedouci}</SelectItem>
               ))}
             </SelectContent>
           </Select>
