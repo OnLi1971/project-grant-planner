@@ -22,6 +22,7 @@ interface PlanningEntry {
 }
 
 const mockData: PlanningEntry[] = [
+  // ST Projekty - RAIL
   {
     konstrukter: "Hlavan Martin",
     cw: "CW32",
@@ -29,9 +30,9 @@ const mockData: PlanningEntry[] = [
     mhTyden: 36,
     projekt: "ST_BLAVA",
     lokalita: "ST",
-    zakaznik: "JoMa",
-    pm: "1",
-    smt: "RAIL",
+    zakaznik: "ST",
+    pm: "JoMa",
+    smt: "1",
     program: "RAIL",
     hodinovaSazba: 1150,
     obrat: 41400
@@ -43,13 +44,172 @@ const mockData: PlanningEntry[] = [
     mhTyden: 36,
     projekt: "ST_BLAVA",
     lokalita: "ST",
-    zakaznik: "JoMa",
-    pm: "1",
-    smt: "RAIL",
+    zakaznik: "ST",
+    pm: "JoMa",
+    smt: "1",
     program: "RAIL",
     hodinovaSazba: 1150,
     obrat: 41400
   },
+  {
+    konstrukter: "Novák Jan",
+    cw: "CW32",
+    mesic: "August",
+    mhTyden: 40,
+    projekt: "ST_MAINZ",
+    lokalita: "ST",
+    zakaznik: "ST",
+    pm: "JoMa",
+    smt: "1",
+    program: "RAIL",
+    hodinovaSazba: 1100,
+    obrat: 44000
+  },
+  {
+    konstrukter: "Svoboda Petr",
+    cw: "CW32",
+    mesic: "August",
+    mhTyden: 35,
+    projekt: "ST_KASSEL",
+    lokalita: "ST",
+    zakaznik: "ST",
+    pm: "JoMa",
+    smt: "1",
+    program: "RAIL",
+    hodinovaSazba: 1100,
+    obrat: 38500
+  },
+  {
+    konstrukter: "Dvořák Tomáš",
+    cw: "CW32",
+    mesic: "August",
+    mhTyden: 38,
+    projekt: "ST_EMU_INT",
+    lokalita: "ST",
+    zakaznik: "ST",
+    pm: "KaSo",
+    smt: "1",
+    program: "RAIL",
+    hodinovaSazba: 1100,
+    obrat: 41800
+  },
+  {
+    konstrukter: "Procházka Pavel",
+    cw: "CW32",
+    mesic: "August",
+    mhTyden: 32,
+    projekt: "ST_TRAM_INT",
+    lokalita: "ST",
+    zakaznik: "ST",
+    pm: "JoMa",
+    smt: "1",
+    program: "RAIL",
+    hodinovaSazba: 1100,
+    obrat: 35200
+  },
+  // NUVIA Projekt - MACH
+  {
+    konstrukter: "Krejčí Milan",
+    cw: "CW32",
+    mesic: "August",
+    mhTyden: 40,
+    projekt: "NU_CRAIN",
+    lokalita: "NUVIA",
+    zakaznik: "NUVIA",
+    pm: "PeMa",
+    smt: "0",
+    program: "MACH",
+    hodinovaSazba: 1580,
+    obrat: 63200
+  },
+  // WABTEC Projekt - RAIL
+  {
+    konstrukter: "Veselý David",
+    cw: "CW32",
+    mesic: "August",
+    mhTyden: 36,
+    projekt: "WA_HVAC",
+    lokalita: "WABTEC",
+    zakaznik: "WABTEC",
+    pm: "DaAm",
+    smt: "0",
+    program: "RAIL",
+    hodinovaSazba: 1220,
+    obrat: 43920
+  },
+  // SAFRAN Projekt - AERO
+  {
+    konstrukter: "Černý Robert",
+    cw: "CW32",
+    mesic: "August",
+    mhTyden: 35,
+    projekt: "SAF_FEM",
+    lokalita: "SAFRAN DE",
+    zakaznik: "SAFRAN DE",
+    pm: "PeNe",
+    smt: "0",
+    program: "AERO",
+    hodinovaSazba: 1300,
+    obrat: 45500
+  },
+  // ST Speciální projekty
+  {
+    konstrukter: "Kratochvíl Jan",
+    cw: "CW32",
+    mesic: "August",
+    mhTyden: 30,
+    projekt: "ST_FEM",
+    lokalita: "ST",
+    zakaznik: "ST",
+    pm: "PeNe",
+    smt: "0",
+    program: "RAIL",
+    hodinovaSazba: 1250,
+    obrat: 37500
+  },
+  {
+    konstrukter: "Horáček Michal",
+    cw: "CW32",
+    mesic: "August",
+    mhTyden: 20,
+    projekt: "ST_POZAR",
+    lokalita: "ST",
+    zakaznik: "ST",
+    pm: "OnLi",
+    smt: "0.5",
+    program: "RAIL",
+    hodinovaSazba: 1250,
+    obrat: 25000
+  },
+  {
+    konstrukter: "Bureš Lukáš",
+    cw: "CW32",
+    mesic: "August",
+    mhTyden: 38,
+    projekt: "ST_JIGS",
+    lokalita: "ST",
+    zakaznik: "ST",
+    pm: "KaSo",
+    smt: "1",
+    program: "RAIL",
+    hodinovaSazba: 1150,
+    obrat: 43700
+  },
+  {
+    konstrukter: "Moravec Ondřej",
+    cw: "CW32",
+    mesic: "August",
+    mhTyden: 36,
+    projekt: "ST_TRAM_HS",
+    lokalita: "ST",
+    zakaznik: "ST",
+    pm: "KaSo",
+    smt: "1",
+    program: "RAIL",
+    hodinovaSazba: 1085,
+    obrat: 39060
+  },
+  // Volní konstruktéři
   {
     konstrukter: "Hlavan Martin",
     cw: "CW42",
@@ -65,32 +225,18 @@ const mockData: PlanningEntry[] = [
     obrat: 0
   },
   {
-    konstrukter: "Novák Jan",
-    cw: "CW32",
-    mesic: "August",
-    mhTyden: 40,
-    projekt: "PR_BERLIN",
-    lokalita: "BE",
-    zakaznik: "Siemens",
-    pm: "2",
-    smt: "AUTO",
-    program: "AUTO",
-    hodinovaSazba: 1200,
-    obrat: 48000
-  },
-  {
     konstrukter: "Svoboda Petr",
-    cw: "CW32",
-    mesic: "August",
-    mhTyden: 35,
-    projekt: "ST_PRAHA",
-    lokalita: "PR",
-    zakaznik: "ČD",
-    pm: "3",
-    smt: "RAIL",
-    program: "RAIL",
-    hodinovaSazba: 1100,
-    obrat: 38500
+    cw: "CW44",
+    mesic: "October",
+    mhTyden: 0,
+    projekt: "DOVOLENÁ",
+    lokalita: "",
+    zakaznik: "N/A",
+    pm: "N/A",
+    smt: "N/A",
+    program: "N/A",
+    hodinovaSazba: 0,
+    obrat: 0
   }
 ];
 
