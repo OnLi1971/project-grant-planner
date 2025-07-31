@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Edit, Save, X, Plus } from 'lucide-react';
+import { planningData } from '@/data/planningData';
 
 interface WeekPlan {
   cw: string;
@@ -25,178 +26,43 @@ const availableProjects = [
   'NU_CRAIN', 'WA_HVAC', 'ST_JIGS', 'ST_TRAM_HS', 'SAF_FEM', 'FREE', 'DOVOLENÁ'
 ];
 
-// Reálná data z vašeho plánu
-const realPlanningData: { [key: string]: WeekPlan[] } = {
-  'Hlavan Martin': [
-    { cw: 'CW32', mesic: 'August', mhTyden: 36, projekt: 'ST_BLAVA' },
-    { cw: 'CW33', mesic: 'August', mhTyden: 36, projekt: 'ST_BLAVA' },
-    { cw: 'CW34', mesic: 'August', mhTyden: 36, projekt: 'ST_BLAVA' },
-    { cw: 'CW35', mesic: 'August', mhTyden: 36, projekt: 'ST_BLAVA' },
-    { cw: 'CW36', mesic: 'September', mhTyden: 36, projekt: 'ST_BLAVA' },
-    { cw: 'CW37', mesic: 'September', mhTyden: 36, projekt: 'ST_BLAVA' },
-    { cw: 'CW38', mesic: 'September', mhTyden: 36, projekt: 'ST_BLAVA' },
-    { cw: 'CW39', mesic: 'September', mhTyden: 36, projekt: 'ST_BLAVA' },
-    { cw: 'CW40', mesic: 'October', mhTyden: 36, projekt: 'ST_BLAVA' },
-    { cw: 'CW41', mesic: 'October', mhTyden: 36, projekt: 'ST_BLAVA' },
-    { cw: 'CW42', mesic: 'October', mhTyden: 36, projekt: 'ST_BLAVA' },
-    { cw: 'CW43', mesic: 'October', mhTyden: 36, projekt: 'ST_BLAVA' },
-    { cw: 'CW44', mesic: 'October', mhTyden: 36, projekt: 'ST_BLAVA' },
-    { cw: 'CW45', mesic: 'November', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW46', mesic: 'November', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW47', mesic: 'November', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW48', mesic: 'November', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW49', mesic: 'December', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW50', mesic: 'December', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW51', mesic: 'December', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW52', mesic: 'December', mhTyden: 36, projekt: 'ST_MAINZ' }
-  ],
-  'Fica Ladislav': [
-    { cw: 'CW32', mesic: 'August', mhTyden: 0, projekt: 'FREE' },
-    { cw: 'CW33', mesic: 'August', mhTyden: 0, projekt: 'FREE' },
-    { cw: 'CW34', mesic: 'August', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW35', mesic: 'August', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW36', mesic: 'September', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW37', mesic: 'September', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW38', mesic: 'September', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW39', mesic: 'September', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW40', mesic: 'October', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW41', mesic: 'October', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW42', mesic: 'October', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW43', mesic: 'October', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW44', mesic: 'October', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW45', mesic: 'November', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW46', mesic: 'November', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW47', mesic: 'November', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW48', mesic: 'November', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW49', mesic: 'December', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW50', mesic: 'December', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW51', mesic: 'December', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW52', mesic: 'December', mhTyden: 36, projekt: 'ST_MAINZ' }
-  ],
-  'Ambrož David': [
-    { cw: 'CW32', mesic: 'August', mhTyden: 36, projekt: 'DOVOLENÁ' },
-    { cw: 'CW33', mesic: 'August', mhTyden: 36, projekt: 'ST_BLAVA' },
-    { cw: 'CW34', mesic: 'August', mhTyden: 36, projekt: 'DOVOLENÁ' },
-    { cw: 'CW35', mesic: 'August', mhTyden: 36, projekt: 'DOVOLENÁ' },
-    { cw: 'CW36', mesic: 'September', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW37', mesic: 'September', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW38', mesic: 'September', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW39', mesic: 'September', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW40', mesic: 'October', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW41', mesic: 'October', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW42', mesic: 'October', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW43', mesic: 'October', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW44', mesic: 'October', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW45', mesic: 'November', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW46', mesic: 'November', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW47', mesic: 'November', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW48', mesic: 'November', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW49', mesic: 'December', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW50', mesic: 'December', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW51', mesic: 'December', mhTyden: 36, projekt: 'ST_MAINZ' },
-    { cw: 'CW52', mesic: 'December', mhTyden: 36, projekt: 'ST_MAINZ' }
-  ],
-  'Slavík Ondřej': [
-    { cw: 'CW32', mesic: 'August', mhTyden: 36, projekt: 'ST_EMU_INT' },
-    { cw: 'CW33', mesic: 'August', mhTyden: 36, projekt: 'ST_EMU_INT' },
-    { cw: 'CW34', mesic: 'August', mhTyden: 36, projekt: 'ST_EMU_INT' },
-    { cw: 'CW35', mesic: 'August', mhTyden: 36, projekt: 'ST_EMU_INT' },
-    { cw: 'CW36', mesic: 'September', mhTyden: 36, projekt: 'ST_EMU_INT' },
-    { cw: 'CW37', mesic: 'September', mhTyden: 36, projekt: 'ST_EMU_INT' },
-    { cw: 'CW38', mesic: 'September', mhTyden: 36, projekt: 'ST_EMU_INT' },
-    { cw: 'CW39', mesic: 'September', mhTyden: 36, projekt: 'ST_EMU_INT' },
-    { cw: 'CW40', mesic: 'October', mhTyden: 36, projekt: 'ST_EMU_INT' },
-    { cw: 'CW41', mesic: 'October', mhTyden: 36, projekt: 'ST_EMU_INT' },
-    { cw: 'CW42', mesic: 'October', mhTyden: 36, projekt: 'ST_EMU_INT' },
-    { cw: 'CW43', mesic: 'October', mhTyden: 36, projekt: 'ST_EMU_INT' },
-    { cw: 'CW44', mesic: 'October', mhTyden: 36, projekt: 'ST_EMU_INT' },
-    { cw: 'CW45', mesic: 'November', mhTyden: 36, projekt: 'ST_EMU_INT' },
-    { cw: 'CW46', mesic: 'November', mhTyden: 36, projekt: 'ST_EMU_INT' },
-    { cw: 'CW47', mesic: 'November', mhTyden: 36, projekt: 'ST_EMU_INT' },
-    { cw: 'CW48', mesic: 'November', mhTyden: 36, projekt: 'ST_EMU_INT' },
-    { cw: 'CW49', mesic: 'December', mhTyden: 36, projekt: 'ST_EMU_INT' },
-    { cw: 'CW50', mesic: 'December', mhTyden: 36, projekt: 'ST_EMU_INT' },
-    { cw: 'CW51', mesic: 'December', mhTyden: 36, projekt: 'ST_EMU_INT' },
-    { cw: 'CW52', mesic: 'December', mhTyden: 0, projekt: 'FREE' }
-  ],
-  'Friedlová Jiřina': [
-    { cw: 'CW32', mesic: 'August', mhTyden: 36, projekt: 'ST_BLAVA' },
-    { cw: 'CW33', mesic: 'August', mhTyden: 36, projekt: 'ST_POZAR' },
-    { cw: 'CW34', mesic: 'August', mhTyden: 36, projekt: 'ST_EMU_INT' },
-    { cw: 'CW35', mesic: 'August', mhTyden: 36, projekt: 'ST_TRAM_INT' },
-    { cw: 'CW36', mesic: 'September', mhTyden: 36, projekt: 'DOVOLENÁ' },
-    { cw: 'CW37', mesic: 'September', mhTyden: 36, projekt: 'ST_TRAM_HS' },
-    { cw: 'CW38', mesic: 'September', mhTyden: 36, projekt: 'ST_EMU_INT' },
-    { cw: 'CW39', mesic: 'September', mhTyden: 0, projekt: 'FREE' },
-    { cw: 'CW40', mesic: 'October', mhTyden: 36, projekt: 'ST_POZAR' },
-    { cw: 'CW41', mesic: 'October', mhTyden: 36, projekt: 'ST_TRAM_HS' },
-    { cw: 'CW42', mesic: 'October', mhTyden: 36, projekt: 'ST_TRAM_INT' },
-    { cw: 'CW43', mesic: 'October', mhTyden: 36, projekt: 'ST_POZAR' },
-    { cw: 'CW44', mesic: 'October', mhTyden: 36, projekt: 'ST_EMU_INT' },
-    { cw: 'CW45', mesic: 'November', mhTyden: 36, projekt: 'ST_BLAVA' },
-    { cw: 'CW46', mesic: 'November', mhTyden: 36, projekt: 'ST_POZAR' },
-    { cw: 'CW47', mesic: 'November', mhTyden: 36, projekt: 'ST_EMU_INT' },
-    { cw: 'CW48', mesic: 'November', mhTyden: 36, projekt: 'ST_TRAM_INT' },
-    { cw: 'CW49', mesic: 'December', mhTyden: 36, projekt: 'ST_POZAR' },
-    { cw: 'CW50', mesic: 'December', mhTyden: 36, projekt: 'ST_TRAM_HS' },
-    { cw: 'CW51', mesic: 'December', mhTyden: 36, projekt: 'ST_EMU_INT' },
-    { cw: 'CW52', mesic: 'December', mhTyden: 0, projekt: 'FREE' }
-  ],
-  'Madanský Peter': [
-    { cw: 'CW32', mesic: 'August', mhTyden: 36, projekt: 'NU_CRAIN' },
-    { cw: 'CW33', mesic: 'August', mhTyden: 36, projekt: 'NU_CRAIN' },
-    { cw: 'CW34', mesic: 'August', mhTyden: 36, projekt: 'NU_CRAIN' },
-    { cw: 'CW35', mesic: 'August', mhTyden: 36, projekt: 'NU_CRAIN' },
-    { cw: 'CW36', mesic: 'September', mhTyden: 0, projekt: 'FREE' },
-    { cw: 'CW37', mesic: 'September', mhTyden: 0, projekt: 'FREE' },
-    { cw: 'CW38', mesic: 'September', mhTyden: 0, projekt: 'FREE' },
-    { cw: 'CW39', mesic: 'September', mhTyden: 0, projekt: 'FREE' },
-    { cw: 'CW40', mesic: 'October', mhTyden: 0, projekt: 'FREE' },
-    { cw: 'CW41', mesic: 'October', mhTyden: 0, projekt: 'FREE' },
-    { cw: 'CW42', mesic: 'October', mhTyden: 0, projekt: 'FREE' },
-    { cw: 'CW43', mesic: 'October', mhTyden: 0, projekt: 'FREE' },
-    { cw: 'CW44', mesic: 'October', mhTyden: 0, projekt: 'FREE' },
-    { cw: 'CW45', mesic: 'November', mhTyden: 0, projekt: 'FREE' },
-    { cw: 'CW46', mesic: 'November', mhTyden: 0, projekt: 'FREE' },
-    { cw: 'CW47', mesic: 'November', mhTyden: 0, projekt: 'FREE' },
-    { cw: 'CW48', mesic: 'November', mhTyden: 0, projekt: 'FREE' },
-    { cw: 'CW49', mesic: 'December', mhTyden: 0, projekt: 'FREE' },
-    { cw: 'CW50', mesic: 'December', mhTyden: 0, projekt: 'FREE' },
-    { cw: 'CW51', mesic: 'December', mhTyden: 0, projekt: 'FREE' },
-    { cw: 'CW52', mesic: 'December', mhTyden: 0, projekt: 'FREE' }
-  ],
-  'Nedavaška Petr': [
-    { cw: 'CW32', mesic: 'August', mhTyden: 36, projekt: 'ST_BLAVA' },
-    { cw: 'CW33', mesic: 'August', mhTyden: 36, projekt: 'ST_BLAVA' },
-    { cw: 'CW34', mesic: 'August', mhTyden: 36, projekt: 'ST_BLAVA' },
-    { cw: 'CW35', mesic: 'August', mhTyden: 36, projekt: 'ST_BLAVA' },
-    { cw: 'CW36', mesic: 'September', mhTyden: 36, projekt: 'SAF_FEM' },
-    { cw: 'CW37', mesic: 'September', mhTyden: 36, projekt: 'SAF_FEM' },
-    { cw: 'CW38', mesic: 'September', mhTyden: 36, projekt: 'SAF_FEM' },
-    { cw: 'CW39', mesic: 'September', mhTyden: 36, projekt: 'SAF_FEM' },
-    { cw: 'CW40', mesic: 'October', mhTyden: 0, projekt: 'FREE' },
-    { cw: 'CW41', mesic: 'October', mhTyden: 0, projekt: 'FREE' },
-    { cw: 'CW42', mesic: 'October', mhTyden: 0, projekt: 'FREE' },
-    { cw: 'CW43', mesic: 'October', mhTyden: 0, projekt: 'FREE' },
-    { cw: 'CW44', mesic: 'October', mhTyden: 0, projekt: 'FREE' },
-    { cw: 'CW45', mesic: 'November', mhTyden: 0, projekt: 'FREE' },
-    { cw: 'CW46', mesic: 'November', mhTyden: 0, projekt: 'FREE' },
-    { cw: 'CW47', mesic: 'November', mhTyden: 0, projekt: 'FREE' },
-    { cw: 'CW48', mesic: 'November', mhTyden: 0, projekt: 'FREE' },
-    { cw: 'CW49', mesic: 'December', mhTyden: 0, projekt: 'FREE' },
-    { cw: 'CW50', mesic: 'December', mhTyden: 0, projekt: 'FREE' },
-    { cw: 'CW51', mesic: 'December', mhTyden: 0, projekt: 'FREE' },
-    { cw: 'CW52', mesic: 'December', mhTyden: 0, projekt: 'FREE' }
-  ]
+// Transformace importovaných dat do formátu editoru
+const generatePlanningDataForEditor = (): { [key: string]: WeekPlan[] } => {
+  const result: { [key: string]: WeekPlan[] } = {};
+  
+  // Skupina konstruktérů podle jmen
+  planningData.forEach(entry => {
+    if (!result[entry.konstrukter]) {
+      result[entry.konstrukter] = [];
+    }
+    
+    result[entry.konstrukter].push({
+      cw: entry.cw,
+      mesic: entry.mesic,
+      mhTyden: entry.mhTyden,
+      projekt: entry.projekt
+    });
+  });
+  
+  // Seřadí týdny podle CW
+  Object.keys(result).forEach(konstrukter => {
+    result[konstrukter].sort((a, b) => {
+      const aNum = parseInt(a.cw.replace('CW', ''));
+      const bNum = parseInt(b.cw.replace('CW', ''));
+      return aNum - bNum;
+    });
+  });
+  
+  return result;
 };
 
-// Seznam konstruktérů podle reálných dat
-const konstrukteri = Object.keys(realPlanningData);
-
 export const PlanningEditor: React.FC = () => {
+  const realPlanningData = useMemo(() => generatePlanningDataForEditor(), []);
+  const konstrukteri = useMemo(() => Object.keys(realPlanningData).sort(), [realPlanningData]);
+  
   const [planData, setPlanData] = useState<{ [key: string]: WeekPlan[] }>(realPlanningData);
   const [editingCell, setEditingCell] = useState<EditableCell | null>(null);
-  const [selectedKonstrukter, setSelectedKonstrukter] = useState<string>(konstrukteri[0]);
+  const [selectedKonstrukter, setSelectedKonstrukter] = useState<string>(konstrukteri[0] || '');
 
   const updateCell = (konstrukter: string, cw: string, field: 'projekt' | 'mhTyden', value: string | number) => {
     setPlanData(prev => ({
@@ -210,7 +76,7 @@ export const PlanningEditor: React.FC = () => {
   };
 
   const getProjectBadge = (projekt: string) => {
-    if (projekt === 'FREE') return <Badge variant="secondary">Volný</Badge>;
+    if (!projekt || projekt === 'FREE') return <Badge variant="secondary">Volný</Badge>;
     if (projekt === 'DOVOLENÁ') return <Badge variant="outline" className="border-accent">Dovolená</Badge>;
     if (projekt.startsWith('ST_')) return <Badge className="bg-primary">ST Projekt</Badge>;
     if (projekt.startsWith('NU_')) return <Badge className="bg-warning text-warning-foreground">NUVIA</Badge>;
@@ -220,6 +86,28 @@ export const PlanningEditor: React.FC = () => {
   };
 
   const currentPlan = planData[selectedKonstrukter] || [];
+
+  const addNewEngineer = () => {
+    const newName = prompt('Zadejte jméno nového konstruktéra:');
+    if (newName && !konstrukteri.includes(newName)) {
+      const weeks = ['CW32', 'CW33', 'CW34', 'CW35', 'CW36', 'CW37', 'CW38', 'CW39', 'CW40', 'CW41', 'CW42', 'CW43', 'CW44', 'CW45', 'CW46', 'CW47', 'CW48', 'CW49', 'CW50', 'CW51', 'CW52'];
+      const months = ['August', 'August', 'August', 'August', 'September', 'September', 'September', 'September', 'October', 'October', 'October', 'October', 'October', 'November', 'November', 'November', 'November', 'December', 'December', 'December', 'December'];
+      
+      const newPlan = weeks.map((week, index) => ({
+        cw: week,
+        mesic: months[index],
+        mhTyden: 0,
+        projekt: 'FREE'
+      }));
+      
+      setPlanData(prev => ({
+        ...prev,
+        [newName]: newPlan
+      }));
+      
+      setSelectedKonstrukter(newName);
+    }
+  };
 
   return (
     <div className="space-y-6 p-6 bg-background min-h-screen">
@@ -234,12 +122,50 @@ export const PlanningEditor: React.FC = () => {
             </div>
           </div>
           <div className="flex gap-2">
+            <Button variant="secondary" onClick={addNewEngineer} className="bg-white/10 hover:bg-white/20">
+              <Plus className="h-4 w-4 mr-2" />
+              Přidat konstruktéra
+            </Button>
             <Button variant="secondary" className="bg-white/10 hover:bg-white/20">
               <Save className="h-4 w-4 mr-2" />
               Uložit plán
             </Button>
           </div>
         </div>
+      </div>
+
+      {/* Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="p-4 shadow-card-custom">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-primary">{konstrukteri.length}</div>
+            <div className="text-sm text-muted-foreground">Celkem konstruktérů</div>
+          </div>
+        </Card>
+        <Card className="p-4 shadow-card-custom">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-success">
+              {currentPlan.filter(w => w.projekt && w.projekt !== 'FREE' && w.projekt !== 'DOVOLENÁ').length}
+            </div>
+            <div className="text-sm text-muted-foreground">Aktivní týdny</div>
+          </div>
+        </Card>
+        <Card className="p-4 shadow-card-custom">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-warning">
+              {currentPlan.filter(w => w.projekt === 'FREE').length}
+            </div>
+            <div className="text-sm text-muted-foreground">Volné týdny</div>
+          </div>
+        </Card>
+        <Card className="p-4 shadow-card-custom">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-accent">
+              {currentPlan.reduce((sum, w) => sum + w.mhTyden, 0)}h
+            </div>
+            <div className="text-sm text-muted-foreground">Celkem hodin</div>
+          </div>
+        </Card>
       </div>
 
       {/* Selector konstruktéra */}
@@ -256,6 +182,9 @@ export const PlanningEditor: React.FC = () => {
               ))}
             </SelectContent>
           </Select>
+          <div className="text-sm text-muted-foreground">
+            {konstrukteri.length} konstruktérů k dispozici
+          </div>
         </div>
       </Card>
 
@@ -347,8 +276,9 @@ export const PlanningEditor: React.FC = () => {
                     )}
                   </td>
                   
+                  {/* Status badge */}
                   <td className="p-3">
-                    {getProjectBadge(week.projekt || 'FREE')}
+                    {getProjectBadge(week.projekt)}
                   </td>
                 </tr>
               ))}
@@ -357,35 +287,15 @@ export const PlanningEditor: React.FC = () => {
         </div>
       </Card>
 
-      {/* Sumarizace */}
-      <Card className="p-4 shadow-card-custom">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-primary">
-              {currentPlan.reduce((sum, week) => sum + week.mhTyden, 0)}h
-            </div>
-            <div className="text-sm text-muted-foreground">Celkem hodin</div>
+      {currentPlan.length === 0 && (
+        <Card className="p-8 text-center shadow-card-custom">
+          <div className="text-muted-foreground">
+            <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>Žádná data pro vybraného konstruktéra</p>
+            <p className="text-sm">Vyberte jiného konstruktéra nebo přidejte nového</p>
           </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-success">
-              {currentPlan.filter(week => week.mhTyden >= 36).length}
-            </div>
-            <div className="text-sm text-muted-foreground">Plně vytížené týdny</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-warning">
-              {currentPlan.filter(week => (week.projekt || 'FREE') === 'FREE').length}
-            </div>
-            <div className="text-sm text-muted-foreground">Volné týdny</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-accent">
-              {currentPlan.filter(week => week.projekt === 'DOVOLENÁ').length}
-            </div>
-            <div className="text-sm text-muted-foreground">Týdny dovolené</div>
-          </div>
-        </div>
-      </Card>
+        </Card>
+      )}
     </div>
   );
 };
