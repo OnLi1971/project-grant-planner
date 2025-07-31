@@ -3,6 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { ChevronDown } from 'lucide-react';
 import { usePlanning } from '@/contexts/PlanningContext';
 
 // Organizational structure and project mappings
@@ -191,6 +194,16 @@ export const ProjectAssignmentMatrix = () => {
     return filter.includes(value) || (filter.includes('Všichni') && value === 'Všichni');
   };
 
+  const getFilterDisplayText = (filter: string[]) => {
+    if (filter.includes('Všichni') || filter.length === 0) {
+      return 'Všichni';
+    }
+    if (filter.length === 1) {
+      return filter[0];
+    }
+    return `${filter.length} vybraných`;
+  };
+
   // Filter engineers based on selected filters
   const filteredEngineers = useMemo(() => {
     let engineers = Object.keys(matrixData);
@@ -246,110 +259,114 @@ export const ProjectAssignmentMatrix = () => {
           <div className="grid grid-cols-4 gap-4 mb-6">
             <div>
               <label className="text-sm font-medium mb-2 block">Organizační vedoucí</label>
-              <div className="border border-border rounded-md p-2 max-h-32 overflow-y-auto bg-background">
-                {organizacniVedouci.map(vedouci => (
-                  <div key={vedouci} className="flex items-center space-x-2 py-1">
-                    <Checkbox
-                      id={`org-${vedouci}`}
-                      checked={isFilterActive(filterOrgVedouci, vedouci)}
-                      onCheckedChange={() => toggleFilterValue(filterOrgVedouci, vedouci, setFilterOrgVedouci)}
-                    />
-                    <label htmlFor={`org-${vedouci}`} className="text-sm cursor-pointer">
-                      {vedouci}
-                    </label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-between">
+                    {getFilterDisplayText(filterOrgVedouci)}
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-60 p-0" align="start">
+                  <div className="p-2 max-h-64 overflow-y-auto">
+                    {organizacniVedouci.map(vedouci => (
+                      <div key={vedouci} className="flex items-center space-x-2 py-2 px-2 rounded hover:bg-muted/50">
+                        <Checkbox
+                          id={`org-${vedouci}`}
+                          checked={isFilterActive(filterOrgVedouci, vedouci)}
+                          onCheckedChange={() => toggleFilterValue(filterOrgVedouci, vedouci, setFilterOrgVedouci)}
+                        />
+                        <label htmlFor={`org-${vedouci}`} className="text-sm cursor-pointer flex-1">
+                          {vedouci}
+                        </label>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-              {!filterOrgVedouci.includes('Všichni') && (
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {filterOrgVedouci.map(item => (
-                    <Badge key={item} variant="secondary" className="text-xs">
-                      {item}
-                    </Badge>
-                  ))}
-                </div>
-              )}
+                </PopoverContent>
+              </Popover>
             </div>
             
             <div>
               <label className="text-sm font-medium mb-2 block">Project Manager</label>
-              <div className="border border-border rounded-md p-2 max-h-32 overflow-y-auto bg-background">
-                {projektManagers.map(pm => (
-                  <div key={pm} className="flex items-center space-x-2 py-1">
-                    <Checkbox
-                      id={`pm-${pm}`}
-                      checked={isFilterActive(filterPM, pm)}
-                      onCheckedChange={() => toggleFilterValue(filterPM, pm, setFilterPM)}
-                    />
-                    <label htmlFor={`pm-${pm}`} className="text-sm cursor-pointer">
-                      {pm}
-                    </label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-between">
+                    {getFilterDisplayText(filterPM)}
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-60 p-0" align="start">
+                  <div className="p-2 max-h-64 overflow-y-auto">
+                    {projektManagers.map(pm => (
+                      <div key={pm} className="flex items-center space-x-2 py-2 px-2 rounded hover:bg-muted/50">
+                        <Checkbox
+                          id={`pm-${pm}`}
+                          checked={isFilterActive(filterPM, pm)}
+                          onCheckedChange={() => toggleFilterValue(filterPM, pm, setFilterPM)}
+                        />
+                        <label htmlFor={`pm-${pm}`} className="text-sm cursor-pointer flex-1">
+                          {pm}
+                        </label>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-              {!filterPM.includes('Všichni') && (
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {filterPM.map(item => (
-                    <Badge key={item} variant="secondary" className="text-xs">
-                      {item}
-                    </Badge>
-                  ))}
-                </div>
-              )}
+                </PopoverContent>
+              </Popover>
             </div>
             
             <div>
               <label className="text-sm font-medium mb-2 block">Zákazník</label>
-              <div className="border border-border rounded-md p-2 max-h-32 overflow-y-auto bg-background">
-                {zakaznici.map(zakaznik => (
-                  <div key={zakaznik} className="flex items-center space-x-2 py-1">
-                    <Checkbox
-                      id={`customer-${zakaznik}`}
-                      checked={isFilterActive(filterZakaznik, zakaznik)}
-                      onCheckedChange={() => toggleFilterValue(filterZakaznik, zakaznik, setFilterZakaznik)}
-                    />
-                    <label htmlFor={`customer-${zakaznik}`} className="text-sm cursor-pointer">
-                      {zakaznik}
-                    </label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-between">
+                    {getFilterDisplayText(filterZakaznik)}
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-60 p-0" align="start">
+                  <div className="p-2 max-h-64 overflow-y-auto">
+                    {zakaznici.map(zakaznik => (
+                      <div key={zakaznik} className="flex items-center space-x-2 py-2 px-2 rounded hover:bg-muted/50">
+                        <Checkbox
+                          id={`customer-${zakaznik}`}
+                          checked={isFilterActive(filterZakaznik, zakaznik)}
+                          onCheckedChange={() => toggleFilterValue(filterZakaznik, zakaznik, setFilterZakaznik)}
+                        />
+                        <label htmlFor={`customer-${zakaznik}`} className="text-sm cursor-pointer flex-1">
+                          {zakaznik}
+                        </label>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-              {!filterZakaznik.includes('Všichni') && (
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {filterZakaznik.map(item => (
-                    <Badge key={item} variant="secondary" className="text-xs">
-                      {item}
-                    </Badge>
-                  ))}
-                </div>
-              )}
+                </PopoverContent>
+              </Popover>
             </div>
             
             <div>
               <label className="text-sm font-medium mb-2 block">Program</label>
-              <div className="border border-border rounded-md p-2 max-h-32 overflow-y-auto bg-background">
-                {programy.map(program => (
-                  <div key={program} className="flex items-center space-x-2 py-1">
-                    <Checkbox
-                      id={`program-${program}`}
-                      checked={isFilterActive(filterProgram, program)}
-                      onCheckedChange={() => toggleFilterValue(filterProgram, program, setFilterProgram)}
-                    />
-                    <label htmlFor={`program-${program}`} className="text-sm cursor-pointer">
-                      {program}
-                    </label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-between">
+                    {getFilterDisplayText(filterProgram)}
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-60 p-0" align="start">
+                  <div className="p-2 max-h-64 overflow-y-auto">
+                    {programy.map(program => (
+                      <div key={program} className="flex items-center space-x-2 py-2 px-2 rounded hover:bg-muted/50">
+                        <Checkbox
+                          id={`program-${program}`}
+                          checked={isFilterActive(filterProgram, program)}
+                          onCheckedChange={() => toggleFilterValue(filterProgram, program, setFilterProgram)}
+                        />
+                        <label htmlFor={`program-${program}`} className="text-sm cursor-pointer flex-1">
+                          {program}
+                        </label>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-              {!filterProgram.includes('Všichni') && (
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {filterProgram.map(item => (
-                    <Badge key={item} variant="secondary" className="text-xs">
-                      {item}
-                    </Badge>
-                  ))}
-                </div>
-              )}
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 
