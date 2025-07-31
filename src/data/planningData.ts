@@ -1,4 +1,6 @@
 // Complete planning data for all engineers from August to December (CW32-CW52)
+import { additionalEngineersData } from './additionalEngineers';
+import { finalEngineersData } from './finalEngineers';
 export interface PlanningEntry {
   konstrukter: string;
   cw: string;
@@ -480,6 +482,79 @@ export const planningData: PlanningEntry[] = [
   { konstrukter: 'Večeř Jiří', cw: 'CW51', mesic: 'December', mhTyden: 36, projekt: 'ST_TRAM_INT' },
   { konstrukter: 'Večeř Jiří', cw: 'CW52', mesic: 'December', mhTyden: 0, projekt: '' },
 
-  // Zbývající konstruktéři mají podobná data - pro účely testování je k dispozici základní sada
-  // Ostatní konstruktéři z seznamu lze doplnit stejným způsobem
+  // Merge with additional engineers data
+  ...additionalEngineersData,
+
+  // Add remaining engineers from the complete list
+  // Bartovičová Agáta
+  { konstrukter: 'Bartovičová Agáta', cw: 'CW32', mesic: 'August', mhTyden: 36, projekt: 'ST_JIGS' },
+  { konstrukter: 'Bartovičová Agáta', cw: 'CW33', mesic: 'August', mhTyden: 36, projekt: 'ST_JIGS' },
+  { konstrukter: 'Bartovičová Agáta', cw: 'CW34', mesic: 'August', mhTyden: 36, projekt: 'ST_JIGS' },
+  { konstrukter: 'Bartovičová Agáta', cw: 'CW35', mesic: 'August', mhTyden: 36, projekt: 'ST_JIGS' },
+  { konstrukter: 'Bartovičová Agáta', cw: 'CW36', mesic: 'September', mhTyden: 36, projekt: 'ST_JIGS' },
+  { konstrukter: 'Bartovičová Agáta', cw: 'CW37', mesic: 'September', mhTyden: 36, projekt: 'ST_JIGS' },
+  { konstrukter: 'Bartovičová Agáta', cw: 'CW38', mesic: 'September', mhTyden: 36, projekt: 'ST_JIGS' },
+  { konstrukter: 'Bartovičová Agáta', cw: 'CW39', mesic: 'September', mhTyden: 36, projekt: 'ST_JIGS' },
+  { konstrukter: 'Bartovičová Agáta', cw: 'CW40', mesic: 'October', mhTyden: 36, projekt: 'ST_JIGS' },
+  { konstrukter: 'Bartovičová Agáta', cw: 'CW41', mesic: 'October', mhTyden: 36, projekt: 'ST_JIGS' },
+  { konstrukter: 'Bartovičová Agáta', cw: 'CW42', mesic: 'October', mhTyden: 36, projekt: 'ST_JIGS' },
+  { konstrukter: 'Bartovičová Agáta', cw: 'CW43', mesic: 'October', mhTyden: 36, projekt: 'ST_JIGS' },
+  { konstrukter: 'Bartovičová Agáta', cw: 'CW44', mesic: 'October', mhTyden: 36, projekt: 'ST_JIGS' },
+  { konstrukter: 'Bartovičová Agáta', cw: 'CW45', mesic: 'November', mhTyden: 36, projekt: 'ST_JIGS' },
+  { konstrukter: 'Bartovičová Agáta', cw: 'CW46', mesic: 'November', mhTyden: 36, projekt: 'ST_JIGS' },
+  { konstrukter: 'Bartovičová Agáta', cw: 'CW47', mesic: 'November', mhTyden: 36, projekt: 'ST_JIGS' },
+  { konstrukter: 'Bartovičová Agáta', cw: 'CW48', mesic: 'November', mhTyden: 36, projekt: 'ST_JIGS' },
+  { konstrukter: 'Bartovičová Agáta', cw: 'CW49', mesic: 'December', mhTyden: 36, projekt: 'ST_JIGS' },
+  { konstrukter: 'Bartovičová Agáta', cw: 'CW50', mesic: 'December', mhTyden: 36, projekt: 'ST_JIGS' },
+  { konstrukter: 'Bartovičová Agáta', cw: 'CW51', mesic: 'December', mhTyden: 36, projekt: 'ST_JIGS' },
+  { konstrukter: 'Bartovičová Agáta', cw: 'CW52', mesic: 'December', mhTyden: 0, projekt: '' },
+
+  // Hrachová Ivana
+  { konstrukter: 'Hrachová Ivana', cw: 'CW32', mesic: 'August', mhTyden: 36, projekt: 'ST_TRAM_HS' },
+  { konstrukter: 'Hrachová Ivana', cw: 'CW33', mesic: 'August', mhTyden: 36, projekt: 'ST_TRAM_HS' },
+  { konstrukter: 'Hrachová Ivana', cw: 'CW34', mesic: 'August', mhTyden: 36, projekt: 'ST_TRAM_HS' },
+  { konstrukter: 'Hrachová Ivana', cw: 'CW35', mesic: 'August', mhTyden: 36, projekt: 'ST_TRAM_HS' },
+  { konstrukter: 'Hrachová Ivana', cw: 'CW36', mesic: 'September', mhTyden: 36, projekt: 'ST_TRAM_HS' },
+  { konstrukter: 'Hrachová Ivana', cw: 'CW37', mesic: 'September', mhTyden: 36, projekt: 'ST_TRAM_HS' },
+  { konstrukter: 'Hrachová Ivana', cw: 'CW38', mesic: 'September', mhTyden: 36, projekt: 'ST_TRAM_HS' },
+  { konstrukter: 'Hrachová Ivana', cw: 'CW39', mesic: 'September', mhTyden: 36, projekt: 'ST_TRAM_HS' },
+  { konstrukter: 'Hrachová Ivana', cw: 'CW40', mesic: 'October', mhTyden: 36, projekt: 'ST_TRAM_HS' },
+  { konstrukter: 'Hrachová Ivana', cw: 'CW41', mesic: 'October', mhTyden: 36, projekt: 'ST_TRAM_HS' },
+  { konstrukter: 'Hrachová Ivana', cw: 'CW42', mesic: 'October', mhTyden: 36, projekt: 'ST_TRAM_HS' },
+  { konstrukter: 'Hrachová Ivana', cw: 'CW43', mesic: 'October', mhTyden: 36, projekt: 'ST_TRAM_HS' },
+  { konstrukter: 'Hrachová Ivana', cw: 'CW44', mesic: 'October', mhTyden: 36, projekt: 'ST_TRAM_HS' },
+  { konstrukter: 'Hrachová Ivana', cw: 'CW45', mesic: 'November', mhTyden: 36, projekt: 'ST_TRAM_HS' },
+  { konstrukter: 'Hrachová Ivana', cw: 'CW46', mesic: 'November', mhTyden: 36, projekt: 'ST_TRAM_HS' },
+  { konstrukter: 'Hrachová Ivana', cw: 'CW47', mesic: 'November', mhTyden: 36, projekt: 'ST_TRAM_HS' },
+  { konstrukter: 'Hrachová Ivana', cw: 'CW48', mesic: 'November', mhTyden: 36, projekt: 'ST_TRAM_HS' },
+  { konstrukter: 'Hrachová Ivana', cw: 'CW49', mesic: 'December', mhTyden: 36, projekt: 'ST_TRAM_HS' },
+  { konstrukter: 'Hrachová Ivana', cw: 'CW50', mesic: 'December', mhTyden: 36, projekt: 'ST_TRAM_HS' },
+  { konstrukter: 'Hrachová Ivana', cw: 'CW51', mesic: 'December', mhTyden: 36, projekt: 'ST_TRAM_HS' },
+  { konstrukter: 'Hrachová Ivana', cw: 'CW52', mesic: 'December', mhTyden: 0, projekt: '' },
+
+  // Karlík Štěpán
+  { konstrukter: 'Karlík Štěpán', cw: 'CW32', mesic: 'August', mhTyden: 36, projekt: 'ST_KASSEL' },
+  { konstrukter: 'Karlík Štěpán', cw: 'CW33', mesic: 'August', mhTyden: 36, projekt: 'ST_KASSEL' },
+  { konstrukter: 'Karlík Štěpán', cw: 'CW34', mesic: 'August', mhTyden: 36, projekt: 'ST_KASSEL' },
+  { konstrukter: 'Karlík Štěpán', cw: 'CW35', mesic: 'August', mhTyden: 36, projekt: 'ST_KASSEL' },
+  { konstrukter: 'Karlík Štěpán', cw: 'CW36', mesic: 'September', mhTyden: 36, projekt: 'ST_KASSEL' },
+  { konstrukter: 'Karlík Štěpán', cw: 'CW37', mesic: 'September', mhTyden: 36, projekt: 'ST_KASSEL' },
+  { konstrukter: 'Karlík Štěpán', cw: 'CW38', mesic: 'September', mhTyden: 36, projekt: 'ST_KASSEL' },
+  { konstrukter: 'Karlík Štěpán', cw: 'CW39', mesic: 'September', mhTyden: 36, projekt: 'ST_KASSEL' },
+  { konstrukter: 'Karlík Štěpán', cw: 'CW40', mesic: 'October', mhTyden: 36, projekt: 'ST_KASSEL' },
+  { konstrukter: 'Karlík Štěpán', cw: 'CW41', mesic: 'October', mhTyden: 36, projekt: 'ST_KASSEL' },
+  { konstrukter: 'Karlík Štěpán', cw: 'CW42', mesic: 'October', mhTyden: 36, projekt: 'ST_KASSEL' },
+  { konstrukter: 'Karlík Štěpán', cw: 'CW43', mesic: 'October', mhTyden: 36, projekt: 'ST_KASSEL' },
+  { konstrukter: 'Karlík Štěpán', cw: 'CW44', mesic: 'October', mhTyden: 36, projekt: 'ST_KASSEL' },
+  { konstrukter: 'Karlík Štěpán', cw: 'CW45', mesic: 'November', mhTyden: 36, projekt: 'ST_KASSEL' },
+  { konstrukter: 'Karlík Štěpán', cw: 'CW46', mesic: 'November', mhTyden: 36, projekt: 'ST_KASSEL' },
+  { konstrukter: 'Karlík Štěpán', cw: 'CW47', mesic: 'November', mhTyden: 36, projekt: 'ST_KASSEL' },
+  { konstrukter: 'Karlík Štěpán', cw: 'CW48', mesic: 'November', mhTyden: 36, projekt: 'ST_KASSEL' },
+  { konstrukter: 'Karlík Štěpán', cw: 'CW49', mesic: 'December', mhTyden: 36, projekt: 'ST_KASSEL' },
+  { konstrukter: 'Karlík Štěpán', cw: 'CW50', mesic: 'December', mhTyden: 36, projekt: 'ST_KASSEL' },
+  { konstrukter: 'Karlík Štěpán', cw: 'CW51', mesic: 'December', mhTyden: 36, projekt: 'ST_KASSEL' },
+  { konstrukter: 'Karlík Štěpán', cw: 'CW52', mesic: 'December', mhTyden: 0, projekt: '' },
+
+  // Přidání zbývajících konstruktérů
+  ...finalEngineersData,
 ];
