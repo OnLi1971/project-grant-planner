@@ -89,11 +89,64 @@ const planningData: PlanningEntry[] = [
 // Organizational structure and project mappings
 const organizacniVedouci = [
   'Všichni',
-  'Hruška Tomáš',
-  'Pavelka Pavel', 
-  'Svoboda Jan',
-  'Novák Jan'
+  'JoMa',
+  'OnLi', 
+  'KaSo',
+  'PaHo',
+  'PeMa',
+  'DaAm',
+  'PeNe',
+  'Subdodavka'
 ];
+
+// Mapping of engineers to organizational leaders
+const konstrukterVedouci: { [key: string]: string } = {
+  'Hlavan Martin': 'JoMa',
+  'Fica Ladislav': 'JoMa',
+  'Ambrož David': 'OnLi',
+  'Slavík Ondřej': 'KaSo',
+  'Chrenko Peter': 'Subdodavka',
+  'Jurčišin Peter': 'Subdodavka',
+  'Púpava Marián': 'Subdodavka',
+  'Bohušík Martin': 'Subdodavka',
+  'Uher Tomáš': 'KaSo',
+  'Weiss Ondřej': 'PaHo',
+  'Borský Jan': 'PaHo',
+  'Pytela Martin': 'PaHo',
+  'Litvinov Evgenii': 'PaHo',
+  'Jandečka Karel': 'KaSo',
+  'Heřman Daniel': 'JoMa',
+  'Karlesz Michal': 'PeMa',
+  'Matta Jozef': 'OnLi',
+  'Pecinovský Pavel': 'JoMa',
+  'Anovčín Branislav': 'DaAm',
+  'Bartovič Anton': 'DaAm',
+  'Břicháček Miloš': 'JoMa',
+  'Fenyk Pavel': 'PeMa',
+  'Kalafa Ján': 'JoMa',
+  'Lengyel Martin': 'JoMa',
+  'Šoupa Karel': 'OnLi',
+  'Večeř Jiří': 'JoMa',
+  'Bartovičová Agáta': 'KaSo',
+  'Hrachová Ivana': 'KaSo',
+  'Karlík Štěpán': 'JoMa',
+  'Friedlová Jiřina': 'OnLi',
+  'Fuchs Pavel': 'DaAm',
+  'Mohelník Martin': 'JoMa',
+  'Nedavaška Petr': 'OnLi',
+  'Šedovičová Darina': 'PeNe',
+  'Ješš Jozef': 'PeNe',
+  'Melichar Ondřej': 'PeNe',
+  'Klíma Milan': 'KaSo',
+  'Hibler František': 'KaSo',
+  'Brojír Jaroslav': 'JoMa',
+  'Madanský Peter': 'OnLi',
+  'Samko Mikuláš': 'JoMa',
+  'Chrenko Daniel': 'Subdodavka',
+  'Jiřička Aleš': 'JoMa',
+  'Stránský Martin': 'PeMa',
+  'Trač Vasyl': 'PeMa'
+};
 
 const projektManagers = [
   'Všichni',
@@ -167,7 +220,14 @@ export const ProjectAssignmentMatrix = () => {
   const filteredEngineers = useMemo(() => {
     let engineers = Object.keys(matrixData);
     
-    // Apply filters here (simplified - would need proper mapping to org structure)
+    // Filter by organizational leader
+    if (filterOrgVedouci !== 'Všichni') {
+      engineers = engineers.filter(engineer => 
+        konstrukterVedouci[engineer] === filterOrgVedouci
+      );
+    }
+    
+    // Filter by program
     if (filterProgram !== 'Všichni') {
       engineers = engineers.filter(engineer => {
         return weeks.some(week => matrixData[engineer][week] === filterProgram);
