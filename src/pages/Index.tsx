@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { PlanningTable } from '@/components/PlanningTable';
 import { PlanningEditor } from '@/components/PlanningEditor';
 import { FreeCapacityOverview } from '@/components/FreeCapacityOverview';
+import { ProjectAssignmentMatrix } from '@/components/ProjectAssignmentMatrix';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Calendar, Edit, Users } from 'lucide-react';
+import { Calendar, Edit, Users, Grid3x3 } from 'lucide-react';
 
 const Index = () => {
-  const [activeView, setActiveView] = useState<'overview' | 'editor' | 'free-capacity'>('editor');
+  const [activeView, setActiveView] = useState<'overview' | 'editor' | 'free-capacity' | 'matrix'>('editor');
 
   return (
     <div className="min-h-screen bg-background">
@@ -38,6 +39,14 @@ const Index = () => {
             <Users className="h-4 w-4" />
             Volné kapacity
           </Button>
+          <Button
+            variant={activeView === 'matrix' ? 'default' : 'outline'}
+            onClick={() => setActiveView('matrix')}
+            className="flex items-center gap-2"
+          >
+            <Grid3x3 className="h-4 w-4" />
+            Matice projektů
+          </Button>
         </div>
       </Card>
 
@@ -46,8 +55,10 @@ const Index = () => {
         <PlanningTable />
       ) : activeView === 'editor' ? (
         <PlanningEditor />
-      ) : (
+      ) : activeView === 'free-capacity' ? (
         <FreeCapacityOverview />
+      ) : (
+        <ProjectAssignmentMatrix />
       )}
     </div>
   );
