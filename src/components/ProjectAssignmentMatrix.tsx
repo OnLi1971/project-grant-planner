@@ -122,6 +122,7 @@ const getProjectBadgeStyle = (projekt: string) => {
 
 export const ProjectAssignmentMatrix = () => {
   const { planningData } = usePlanning();
+  const [viewMode, setViewMode] = useState<'weeks' | 'months'>('weeks');
   const [filterOrgVedouci, setFilterOrgVedouci] = useState<string[]>(['Všichni']);
   const [filterPM, setFilterPM] = useState<string[]>(['Všichni']);
   const [filterZakaznik, setFilterZakaznik] = useState<string[]>(['Všichni']);
@@ -178,6 +179,45 @@ export const ProjectAssignmentMatrix = () => {
     return matrix;
   }, [planningData]);
 
+  // Create monthly aggregated data
+  const monthlyData = useMemo(() => {
+    const engineers = [...new Set(planningData.map(entry => entry.konstrukter))];
+    const monthlyMatrix: { [engineer: string]: { [month: string]: { projects: string[], totalHours: number, dominantProject: string } } } = {};
+    
+    engineers.forEach(engineer => {
+      monthlyMatrix[engineer] = {};
+      months.forEach(month => {
+        const monthProjects: { [project: string]: number } = {};
+        let totalHours = 0;
+        
+        month.weeks.forEach(week => {
+          const entry = planningData.find(e => e.konstrukter === engineer && e.cw === week);
+          if (entry && entry.projekt) {
+            const hours = typeof entry.mhTyden === 'number' ? entry.mhTyden : 0;
+            monthProjects[entry.projekt] = (monthProjects[entry.projekt] || 0) + hours;
+            totalHours += hours;
+          }
+        });
+        
+        const projects = Object.keys(monthProjects);
+        const dominantProject = projects.reduce((a, b) => 
+          monthProjects[a] > monthProjects[b] ? a : b, projects[0] || ''
+        );
+        
+        monthlyMatrix[engineer][month.name] = {
+          projects,
+          totalHours,
+          dominantProject
+        };
+      });
+    });
+    
+    return monthlyMatrix;
+  }, [planningData]);
+
+  // Get display data based on view mode
+  const displayData = viewMode === 'weeks' ? matrixData : monthlyData;
+
   // Helper functions for multi-select
   const toggleFilterValue = (currentFilter: string[], value: string, setter: (value: string[]) => void) => {
     if (value === 'Všichni') {
@@ -209,7 +249,7 @@ export const ProjectAssignmentMatrix = () => {
 
   // Filter engineers based on selected filters
   const filteredEngineers = useMemo(() => {
-    let engineers = Object.keys(matrixData);
+    let engineers = Object.keys(displayData);
     
     // Filter by organizational leader
     if (!filterOrgVedouci.includes('Všichni')) {
@@ -218,44 +258,92 @@ export const ProjectAssignmentMatrix = () => {
       );
     }
     
-    // Filter by PM
-    if (!filterPM.includes('Všichni')) {
-      engineers = engineers.filter(engineer => {
-        return weeks.some(week => {
-          const project = matrixData[engineer][week];
-          return projektInfo[project]?.pm && filterPM.includes(projektInfo[project].pm);
+    if (viewMode === 'weeks') {
+      // Filter by PM
+      if (!filterPM.includes('Všichni')) {
+        engineers = engineers.filter(engineer => {
+          return weeks.some(week => {
+            const project = matrixData[engineer][week];
+            return projektInfo[project]?.pm && filterPM.includes(projektInfo[project].pm);
+          });
         });
-      });
-    }
-    
-    // Filter by customer
-    if (!filterZakaznik.includes('Všichni')) {
-      engineers = engineers.filter(engineer => {
-        return weeks.some(week => {
-          const project = matrixData[engineer][week];
-          return projektInfo[project]?.zakaznik && filterZakaznik.includes(projektInfo[project].zakaznik);
+      }
+      
+      // Filter by customer
+      if (!filterZakaznik.includes('Všichni')) {
+        engineers = engineers.filter(engineer => {
+          return weeks.some(week => {
+            const project = matrixData[engineer][week];
+            return projektInfo[project]?.zakaznik && filterZakaznik.includes(projektInfo[project].zakaznik);
+          });
         });
-      });
-    }
-    
-    // Filter by program
-    if (!filterProgram.includes('Všichni')) {
-      engineers = engineers.filter(engineer => {
-        return weeks.some(week => {
-          const project = matrixData[engineer][week];
-          return projektInfo[project]?.program && filterProgram.includes(projektInfo[project].program);
+      }
+      
+      // Filter by program
+      if (!filterProgram.includes('Všichni')) {
+        engineers = engineers.filter(engineer => {
+          return weeks.some(week => {
+            const project = matrixData[engineer][week];
+            return projektInfo[project]?.program && filterProgram.includes(projektInfo[project].program);
+          });
         });
-      });
+      }
+    } else {
+      // Monthly view filters
+      if (!filterPM.includes('Všichni')) {
+        engineers = engineers.filter(engineer => {
+          return months.some(month => {
+            const monthData = monthlyData[engineer][month.name];
+            return monthData.projects.some(project => 
+              projektInfo[project]?.pm && filterPM.includes(projektInfo[project].pm)
+            );
+          });
+        });
+      }
+      
+      if (!filterZakaznik.includes('Všichni')) {
+        engineers = engineers.filter(engineer => {
+          return months.some(month => {
+            const monthData = monthlyData[engineer][month.name];
+            return monthData.projects.some(project => 
+              projektInfo[project]?.zakaznik && filterZakaznik.includes(projektInfo[project].zakaznik)
+            );
+          });
+        });
+      }
+      
+      if (!filterProgram.includes('Všichni')) {
+        engineers = engineers.filter(engineer => {
+          return months.some(month => {
+            const monthData = monthlyData[engineer][month.name];
+            return monthData.projects.some(project => 
+              projektInfo[project]?.program && filterProgram.includes(projektInfo[project].program)
+            );
+          });
+        });
+      }
     }
     
     return engineers.sort();
-  }, [matrixData, filterOrgVedouci, filterPM, filterZakaznik, filterProgram]);
+  }, [displayData, matrixData, monthlyData, viewMode, filterOrgVedouci, filterPM, filterZakaznik, filterProgram]);
 
   return (
     <div className="p-6 space-y-6">
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl font-bold">Matice plánování projektů</CardTitle>
+          <div className="flex items-center gap-4 mt-4">
+            <label className="text-sm font-medium">Zobrazení:</label>
+            <Select value={viewMode} onValueChange={(value: 'weeks' | 'months') => setViewMode(value)}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="weeks">Týdny</SelectItem>
+                <SelectItem value="months">Měsíce</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
         <CardContent>
           {/* Filters */}
@@ -377,39 +465,61 @@ export const ProjectAssignmentMatrix = () => {
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
-                <tr>
-                  <th className="border-2 border-border p-3 bg-gradient-to-r from-primary/10 to-primary/5 text-left sticky left-0 z-10 min-w-[200px] font-semibold">
-                    Konstruktér
-                  </th>
-                  {months.map((month, monthIndex) => (
-                    <th 
-                      key={month.name} 
-                      className={`border-2 border-border p-3 bg-gradient-to-r from-secondary/20 to-secondary/10 text-center font-bold text-lg ${
-                        monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
-                      }`} 
-                      colSpan={month.weeks.length}
-                    >
-                      <div className="flex items-center justify-center gap-2">
-                        <span className="text-primary">{month.name}</span>
-                      </div>
+                {viewMode === 'weeks' ? (
+                  <>
+                    <tr>
+                      <th className="border-2 border-border p-3 bg-gradient-to-r from-primary/10 to-primary/5 text-left sticky left-0 z-10 min-w-[200px] font-semibold">
+                        Konstruktér
+                      </th>
+                      {months.map((month, monthIndex) => (
+                        <th 
+                          key={month.name} 
+                          className={`border-2 border-border p-3 bg-gradient-to-r from-secondary/20 to-secondary/10 text-center font-bold text-lg ${
+                            monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
+                          }`} 
+                          colSpan={month.weeks.length}
+                        >
+                          <div className="flex items-center justify-center gap-2">
+                            <span className="text-primary">{month.name}</span>
+                          </div>
+                        </th>
+                      ))}
+                    </tr>
+                    <tr>
+                      <th className="border border-border p-2 bg-muted/30 sticky left-0 z-10 font-medium"></th>
+                      {months.map((month, monthIndex) => 
+                        month.weeks.map((week, weekIndex) => (
+                          <th 
+                            key={week} 
+                            className={`border border-border p-2 bg-muted/30 text-xs min-w-[90px] font-medium ${
+                              monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
+                            }`}
+                          >
+                            <span className="text-muted-foreground">{week}</span>
+                          </th>
+                        ))
+                      )}
+                    </tr>
+                  </>
+                ) : (
+                  <tr>
+                    <th className="border-2 border-border p-3 bg-gradient-to-r from-primary/10 to-primary/5 text-left sticky left-0 z-10 min-w-[200px] font-semibold">
+                      Konstruktér
                     </th>
-                  ))}
-                </tr>
-                <tr>
-                  <th className="border border-border p-2 bg-muted/30 sticky left-0 z-10 font-medium"></th>
-                  {months.map((month, monthIndex) => 
-                    month.weeks.map((week, weekIndex) => (
+                    {months.map((month, monthIndex) => (
                       <th 
-                        key={week} 
-                        className={`border border-border p-2 bg-muted/30 text-xs min-w-[90px] font-medium ${
-                          monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
+                        key={month.name} 
+                        className={`border-2 border-border p-3 bg-gradient-to-r from-secondary/20 to-secondary/10 text-center font-bold text-lg min-w-[150px] ${
+                          monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                         }`}
                       >
-                        <span className="text-muted-foreground">{week}</span>
+                        <div className="flex items-center justify-center gap-2">
+                          <span className="text-primary">{month.name}</span>
+                        </div>
                       </th>
-                    ))
-                  )}
-                </tr>
+                    ))}
+                  </tr>
+                )}
               </thead>
               <tbody>
                 {filteredEngineers.map(engineer => (
@@ -417,23 +527,70 @@ export const ProjectAssignmentMatrix = () => {
                     <td className="border border-border p-3 font-semibold sticky left-0 bg-background z-10 text-foreground">
                       {engineer}
                     </td>
-                    {months.map((month, monthIndex) => 
-                      month.weeks.map((week, weekIndex) => {
-                        const project = matrixData[engineer][week];
+                    {viewMode === 'weeks' ? (
+                      months.map((month, monthIndex) => 
+                        month.weeks.map((week, weekIndex) => {
+                          const project = matrixData[engineer][week];
+                          return (
+                            <td 
+                              key={week} 
+                              className={`border border-border p-1.5 text-center ${
+                                monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
+                              }`}
+                            >
+                              {project && (
+                                <div 
+                                  className={`text-xs px-2 py-1 w-full justify-center font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-md inline-flex items-center ${getProjectBadgeStyle(project)}`}
+                                >
+                                  <span className="truncate max-w-[70px]" title={project}>
+                                    {project}
+                                  </span>
+                                </div>
+                              )}
+                            </td>
+                          );
+                        })
+                      )
+                    ) : (
+                      months.map((month, monthIndex) => {
+                        const monthData = monthlyData[engineer][month.name];
+                        const hasProjects = monthData.projects.length > 0;
                         return (
                           <td 
-                            key={week} 
-                            className={`border border-border p-1.5 text-center ${
-                              monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
+                            key={month.name} 
+                            className={`border border-border p-2 text-center align-top ${
+                              monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                             }`}
                           >
-                            {project && (
-                              <div 
-                                className={`text-xs px-2 py-1 w-full justify-center font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-md inline-flex items-center ${getProjectBadgeStyle(project)}`}
-                              >
-                                <span className="truncate max-w-[70px]" title={project}>
-                                  {project}
-                                </span>
+                            {hasProjects && (
+                              <div className="flex flex-col gap-1">
+                                {monthData.projects.length === 1 ? (
+                                  <div 
+                                    className={`text-xs px-2 py-1 w-full justify-center font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-md inline-flex items-center ${getProjectBadgeStyle(monthData.dominantProject)}`}
+                                  >
+                                    <span className="truncate max-w-[100px]" title={monthData.dominantProject}>
+                                      {monthData.dominantProject}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <div 
+                                      className={`text-xs px-2 py-1 w-full justify-center font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-md inline-flex items-center ${getProjectBadgeStyle(monthData.dominantProject)}`}
+                                    >
+                                      <span className="truncate max-w-[100px]" title={monthData.dominantProject}>
+                                        {monthData.dominantProject}
+                                      </span>
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">
+                                      +{monthData.projects.length - 1} dalších
+                                    </div>
+                                  </>
+                                )}
+                                {monthData.totalHours > 0 && (
+                                  <div className="text-xs text-muted-foreground font-medium">
+                                    {monthData.totalHours}h
+                                  </div>
+                                )}
                               </div>
                             )}
                           </td>
