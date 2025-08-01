@@ -101,13 +101,23 @@ export const FreeCapacityOverview = () => {
         const engineerData = processedData[engineer];
         // Filter by selected weeks/months
         const relevantWeeks = engineerData.filter(week => filteredWeeks.includes(week.cw));
-        return relevantWeeks.some(week => week.projekt === 'FREE');
+        // Consider FREE, empty projekt, or weeks with 0 hours as free capacity
+        return relevantWeeks.some(week => 
+          week.projekt === 'FREE' || 
+          week.projekt === '' || 
+          !week.projekt
+        );
       })
       .map(engineer => {
         const engineerData = processedData[engineer];
         // Filter by selected weeks/months
         const relevantWeeks = engineerData.filter(week => filteredWeeks.includes(week.cw));
-        const freeWeeks = relevantWeeks.filter(week => week.projekt === 'FREE');
+        // Consider FREE, empty projekt, or weeks with 0 hours as free capacity
+        const freeWeeks = relevantWeeks.filter(week => 
+          week.projekt === 'FREE' || 
+          week.projekt === '' || 
+          !week.projekt
+        );
         const totalWeeks = relevantWeeks.length;
         const busyWeeks = totalWeeks - freeWeeks.length;
         
@@ -358,7 +368,7 @@ export const FreeCapacityOverview = () => {
                   </td>
                 {filteredWeeks.map(week => {
                     const weekData = engineer.weeks.find(w => w.cw === week);
-                    const isFree = weekData?.projekt === 'FREE';
+                    const isFree = weekData?.projekt === 'FREE' || weekData?.projekt === '' || !weekData?.projekt;
                     return (
                       <td key={week} className="p-1 text-center border-l">
                          {weekData && (
