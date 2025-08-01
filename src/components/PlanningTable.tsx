@@ -241,7 +241,7 @@ export const PlanningTable: React.FC = () => {
       <Card className="shadow-planning overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-planning-header text-white">
+            <thead className="bg-planning-header text-white sticky top-0 z-10">
               <tr>
                 <th className="p-3 text-left font-medium">Konstruktér</th>
                 <th className="p-3 text-left font-medium">Společnost</th>

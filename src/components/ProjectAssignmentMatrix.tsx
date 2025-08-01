@@ -464,7 +464,7 @@ export const ProjectAssignmentMatrix = () => {
           {/* Matrix Table */}
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
-              <thead>
+              <thead className="sticky top-0 z-20">
                 {viewMode === 'weeks' ? (
                   <>
                     <tr>
