@@ -1,17 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Filter, Users } from 'lucide-react';
+import { usePlanning } from '@/contexts/PlanningContext';
 
 interface EngineerOverview {
   konstrukter: string;
   spolecnost: string;
   orgVedouci: string;
-  planNa4Tydny: string[];
+  planNa4Tydny: Array<{ cw: string; projekt: string }>;
   status: 'VOLNY' | 'CASTECNE' | 'PLNE' | 'DOVOLENA';
 }
+
+// Funkce pro výpočet aktuálního kalendářního týdne
+const getCurrentWeek = (): number => {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 1);
+  const days = Math.floor((now.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
+  return Math.ceil((days + start.getDay() + 1) / 7);
+};
+
+// Funkce pro generování následujících 4 týdnů
+const getNext4Weeks = (): string[] => {
+  const currentWeek = getCurrentWeek();
+  return Array.from({ length: 4 }, (_, i) => `CW${currentWeek + i}`);
+};
 
 // Seznam konstruktérů s aktualizovanými daty podle požadavku
 const konstrukteri = [
@@ -62,47 +77,50 @@ const konstrukteri = [
   { jmeno: "Trač Vasyl", orgVedouci: "PeMa", spolecnost: "TM CZ a.s." }
 ];
 
-// Generování ukázkových projektů pro následující 4 týdny
-const generateMockPlan = (konstrukter: any): EngineerOverview => {
-  const projects = ['ST_MAINZ', 'ST_KASSEL', 'NU_CRAIN', 'WA_HVAC', 'FREE', 'DOVOLENÁ'];
-  const plan: string[] = [];
-  
-  for (let i = 0; i < 4; i++) {
-    const randomProject = projects[Math.floor(Math.random() * projects.length)];
-    plan.push(randomProject);
-  }
-  
-  // Určení statusu na základě plánu
-  const freeCount = plan.filter(p => p === 'FREE').length;
-  const vacationCount = plan.filter(p => p === 'DOVOLENÁ').length;
-  
-  let status: 'VOLNY' | 'CASTECNE' | 'PLNE' | 'DOVOLENA';
-  
-  if (vacationCount >= 2) {
-    status = 'DOVOLENA';
-  } else if (freeCount >= 3) {
-    status = 'VOLNY';
-  } else if (freeCount >= 1) {
-    status = 'CASTECNE';
-  } else {
-    status = 'PLNE';
-  }
-  
-  return {
-    konstrukter: konstrukter.jmeno,
-    spolecnost: konstrukter.spolecnost,
-    orgVedouci: konstrukter.orgVedouci,
-    planNa4Tydny: plan,
-    status
-  };
-};
-
-// Generování přehledových dat
-const mockOverviewData: EngineerOverview[] = konstrukteri.map(k => generateMockPlan(k));
-
 export const PlanningTable: React.FC = () => {
-  const [data] = useState<EngineerOverview[]>(mockOverviewData);
-  const [filteredData, setFilteredData] = useState<EngineerOverview[]>(mockOverviewData);
+  const { planningData } = usePlanning();
+  
+  const overviewData = useMemo(() => {
+    const next4Weeks = getNext4Weeks();
+    
+    return konstrukteri.map(konstrukter => {
+      const planNa4Tydny = next4Weeks.map(cw => {
+        const entry = planningData.find(p => 
+          p.konstrukter === konstrukter.jmeno && p.cw === cw
+        );
+        return {
+          cw,
+          projekt: entry?.projekt || 'FREE'
+        };
+      });
+      
+      // Určení statusu na základě plánu
+      const freeCount = planNa4Tydny.filter(p => p.projekt === 'FREE' || !p.projekt).length;
+      const vacationCount = planNa4Tydny.filter(p => p.projekt === 'DOVOLENÁ').length;
+      
+      let status: 'VOLNY' | 'CASTECNE' | 'PLNE' | 'DOVOLENA';
+      
+      if (vacationCount >= 2) {
+        status = 'DOVOLENA';
+      } else if (freeCount >= 3) {
+        status = 'VOLNY';
+      } else if (freeCount >= 1) {
+        status = 'CASTECNE';
+      } else {
+        status = 'PLNE';
+      }
+      
+      return {
+        konstrukter: konstrukter.jmeno,
+        spolecnost: konstrukter.spolecnost,
+        orgVedouci: konstrukter.orgVedouci,
+        planNa4Tydny,
+        status
+      };
+    });
+  }, [planningData]);
+  
+  const [filteredData, setFilteredData] = useState<EngineerOverview[]>(overviewData);
   const [filterOrgVedouci, setFilterOrgVedouci] = useState<string>('all');
   const [filterSpolecnost, setFilterSpolecnost] = useState<string>('all');
   const [searchKonstrukter, setSearchKonstrukter] = useState<string>('');
@@ -111,7 +129,7 @@ export const PlanningTable: React.FC = () => {
   const uniqueSpolecnosti = Array.from(new Set(konstrukteri.map(k => k.spolecnost)));
 
   React.useEffect(() => {
-    let filtered = data;
+    let filtered = overviewData;
     
     if (filterOrgVedouci !== 'all') {
       filtered = filtered.filter(item => item.orgVedouci === filterOrgVedouci);
@@ -128,7 +146,7 @@ export const PlanningTable: React.FC = () => {
     }
     
     setFilteredData(filtered);
-  }, [data, filterOrgVedouci, filterSpolecnost, searchKonstrukter]);
+  }, [overviewData, filterOrgVedouci, filterSpolecnost, searchKonstrukter]);
 
   const getStatusBadge = (status: EngineerOverview['status']) => {
     switch (status) {
@@ -245,11 +263,14 @@ export const PlanningTable: React.FC = () => {
                   <td className="p-3 text-muted-foreground">{engineer.spolecnost}</td>
                   <td className="p-3 text-muted-foreground font-medium">{engineer.orgVedouci}</td>
                   <td className="p-3">
-                    <div className="flex gap-1 flex-wrap">
-                      {engineer.planNa4Tydny.map((projekt, weekIndex) => (
-                        <span key={weekIndex} className="text-xs">
-                          {getProjectBadge(projekt)}
-                        </span>
+                    <div className="space-y-1">
+                      {engineer.planNa4Tydny.map((weekPlan, weekIndex) => (
+                        <div key={weekIndex} className="flex items-center gap-2 text-xs">
+                          <span className="font-mono text-muted-foreground min-w-[2.5rem]">
+                            {weekPlan.cw}:
+                          </span>
+                          {getProjectBadge(weekPlan.projekt)}
+                        </div>
                       ))}
                     </div>
                   </td>
