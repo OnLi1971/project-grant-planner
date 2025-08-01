@@ -7,6 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Button } from '@/components/ui/button';
 import { ChevronDown } from 'lucide-react';
 import { usePlanning } from '@/contexts/PlanningContext';
+import { customers, projectManagers, programs, projects } from '@/data/projectsData';
 
 // Organizational structure and project mappings
 const organizacniVedouci = [
@@ -70,48 +71,6 @@ const konstrukterVedouci: { [key: string]: string } = {
   'Trač Vasyl': 'PeMa'
 };
 
-// Project mappings
-const projektInfo: { [key: string]: { zakaznik: string, pm: string, program: string } } = {
-  'ST_EMU_INT': { zakaznik: 'ST', pm: 'KaSo', program: 'RAIL' },
-  'ST_TRAM_INT': { zakaznik: 'ST', pm: 'JoMa', program: 'RAIL' },
-  'ST_MAINZ': { zakaznik: 'ST', pm: 'JoMa', program: 'RAIL' },
-  'ST_KASSEL': { zakaznik: 'ST', pm: 'JoMa', program: 'RAIL' },
-  'ST_BLAVA': { zakaznik: 'ST', pm: 'JoMa', program: 'RAIL' },
-  'ST_FEM': { zakaznik: 'ST', pm: 'PeNe', program: 'RAIL' },
-  'ST_POZAR': { zakaznik: 'ST', pm: 'OnLi', program: 'RAIL' },
-  'NU_CRAIN': { zakaznik: 'NUVIA', pm: 'PeMa', program: 'MACH' },
-  'WA_HVAC': { zakaznik: 'WABTEC', pm: 'DaAm', program: 'RAIL' },
-  'ST_JIGS': { zakaznik: 'ST', pm: 'KaSo', program: 'RAIL' },
-  'ST_TRAM_HS': { zakaznik: 'ST', pm: 'KaSo', program: 'RAIL' },
-  'SAF_FEM': { zakaznik: 'SAFRAN DE', pm: 'PeNe', program: 'AERO' },
-  'FREE': { zakaznik: 'N/A', pm: 'N/A', program: 'N/A' },
-  'DOVOLENÁ': { zakaznik: 'N/A', pm: 'N/A', program: 'N/A' }
-};
-
-const projektManagers = [
-  'Všichni',
-  'KaSo',
-  'JoMa',
-  'PeNe',
-  'OnLi',
-  'PeMa',
-  'DaAm'
-];
-
-const zakaznici = [
-  'Všichni',
-  'ST',
-  'NUVIA',
-  'WABTEC',
-  'SAFRAN DE'
-];
-
-const programy = [
-  'Všichni',
-  'RAIL',
-  'MACH',
-  'AERO'
-];
 
 const weeks = ['CW32', 'CW33', 'CW34', 'CW35', 'CW36', 'CW37', 'CW38', 'CW39', 'CW40', 'CW41', 'CW42', 'CW43', 'CW44', 'CW45', 'CW46', 'CW47', 'CW48', 'CW49', 'CW50', 'CW51', 'CW52'];
 
@@ -148,6 +107,15 @@ const getProjectBadgeStyle = (projekt: string) => {
   // SAFRAN - purple family
   if (projekt.startsWith('SAF_')) return 'bg-purple-500 text-white border-purple-600';
   
+  // BUCHER - brown family
+  if (projekt.startsWith('BUCH_')) return 'bg-amber-700 text-white border-amber-800';
+  
+  // AIRBUS - teal family
+  if (projekt.startsWith('AIRB_')) return 'bg-teal-600 text-white border-teal-700';
+  
+  // OVER (overtime) - yellow family
+  if (projekt === 'OVER') return 'bg-yellow-500 text-yellow-900 border-yellow-600';
+  
   // Default
   return 'bg-gray-500 text-white border-gray-600';
 };
@@ -158,6 +126,41 @@ export const ProjectAssignmentMatrix = () => {
   const [filterPM, setFilterPM] = useState<string[]>(['Všichni']);
   const [filterZakaznik, setFilterZakaznik] = useState<string[]>(['Všichni']);
   const [filterProgram, setFilterProgram] = useState<string[]>(['Všichni']);
+
+  // Dynamic project mappings based on projectsData
+  const projektInfo = useMemo(() => {
+    const info: { [key: string]: { zakaznik: string, pm: string, program: string } } = {};
+    
+    projects.forEach(project => {
+      const customer = customers.find(c => c.id === project.customerId);
+      const pm = projectManagers.find(p => p.id === project.projectManagerId);
+      const program = programs.find(pr => pr.id === project.programId);
+      
+      info[project.code] = {
+        zakaznik: customer?.name || 'N/A',
+        pm: pm?.name || 'N/A',
+        program: program?.code || 'N/A'
+      };
+    });
+    
+    return info;
+  }, []);
+
+  // Dynamic filter arrays based on projectsData
+  const projektManagersList = useMemo(() => {
+    const pmNames = projectManagers.map(pm => pm.name);
+    return ['Všichni', ...pmNames];
+  }, []);
+
+  const zakazniciList = useMemo(() => {
+    const customerNames = customers.map(c => c.name);
+    return ['Všichni', ...customerNames];
+  }, []);
+
+  const programyList = useMemo(() => {
+    const programCodes = programs.map(p => p.code);
+    return ['Všichni', ...programCodes];
+  }, []);
 
   // Create matrix data structure
   const matrixData = useMemo(() => {
@@ -296,7 +299,7 @@ export const ProjectAssignmentMatrix = () => {
                 </PopoverTrigger>
                 <PopoverContent className="w-60 p-0" align="start">
                   <div className="p-2 max-h-64 overflow-y-auto">
-                    {projektManagers.map(pm => (
+                    {projektManagersList.map(pm => (
                       <div key={pm} className="flex items-center space-x-2 py-2 px-2 rounded hover:bg-muted/50">
                         <Checkbox
                           id={`pm-${pm}`}
@@ -324,7 +327,7 @@ export const ProjectAssignmentMatrix = () => {
                 </PopoverTrigger>
                 <PopoverContent className="w-60 p-0" align="start">
                   <div className="p-2 max-h-64 overflow-y-auto">
-                    {zakaznici.map(zakaznik => (
+                    {zakazniciList.map(zakaznik => (
                       <div key={zakaznik} className="flex items-center space-x-2 py-2 px-2 rounded hover:bg-muted/50">
                         <Checkbox
                           id={`customer-${zakaznik}`}
@@ -352,7 +355,7 @@ export const ProjectAssignmentMatrix = () => {
                 </PopoverTrigger>
                 <PopoverContent className="w-60 p-0" align="start">
                   <div className="p-2 max-h-64 overflow-y-auto">
-                    {programy.map(program => (
+                    {programyList.map(program => (
                       <div key={program} className="flex items-center space-x-2 py-2 px-2 rounded hover:bg-muted/50">
                         <Checkbox
                           id={`program-${program}`}
