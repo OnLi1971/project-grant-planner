@@ -153,7 +153,7 @@ export const PlanningTable: React.FC = () => {
       case 'VOLNY':
         return <Badge className="bg-success/20 text-success border-success/30">Volný</Badge>;
       case 'CASTECNE':
-        return <Badge className="bg-warning/20 text-warning-foreground border-warning/30">Částečně vytížen</Badge>;
+        return <Badge className="bg-orange-500/20 text-orange-600 dark:text-orange-400 border-orange-500/30">Částečně vytížen</Badge>;
       case 'PLNE':
         return <Badge className="bg-primary/20 text-primary border-primary/30">Plně vytížen</Badge>;
       case 'DOVOLENA':
@@ -263,10 +263,10 @@ export const PlanningTable: React.FC = () => {
                   <td className="p-3 text-muted-foreground">{engineer.spolecnost}</td>
                   <td className="p-3 text-muted-foreground font-medium">{engineer.orgVedouci}</td>
                   <td className="p-3">
-                    <div className="space-y-1">
+                    <div className="flex gap-2 flex-wrap">
                       {engineer.planNa4Tydny.map((weekPlan, weekIndex) => (
-                        <div key={weekIndex} className="flex items-center gap-2 text-xs">
-                          <span className="font-mono text-muted-foreground min-w-[2.5rem]">
+                        <div key={weekIndex} className="flex items-center gap-1 text-xs">
+                          <span className="font-mono text-muted-foreground text-xs">
                             {weekPlan.cw}:
                           </span>
                           {getProjectBadge(weekPlan.projekt)}
