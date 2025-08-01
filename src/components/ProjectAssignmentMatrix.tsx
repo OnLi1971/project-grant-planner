@@ -555,6 +555,20 @@ export const ProjectAssignmentMatrix = () => {
                       months.map((month, monthIndex) => {
                         const monthData = monthlyData[engineer][month.name];
                         const hasProjects = monthData.projects.length > 0;
+                        
+                        // Sort projects by hours descending
+                        const sortedProjects = monthData.projects.sort((a, b) => {
+                          const aHours = month.weeks.reduce((sum, week) => {
+                            const entry = planningData.find(e => e.konstrukter === engineer && e.cw === week && e.projekt === a);
+                            return sum + (typeof entry?.mhTyden === 'number' ? entry.mhTyden : 0);
+                          }, 0);
+                          const bHours = month.weeks.reduce((sum, week) => {
+                            const entry = planningData.find(e => e.konstrukter === engineer && e.cw === week && e.projekt === b);
+                            return sum + (typeof entry?.mhTyden === 'number' ? entry.mhTyden : 0);
+                          }, 0);
+                          return bHours - aHours;
+                        });
+                        
                         return (
                           <td 
                             key={month.name} 
@@ -564,33 +578,26 @@ export const ProjectAssignmentMatrix = () => {
                           >
                             {hasProjects && (
                               <div className="flex flex-col gap-1">
-                                {monthData.projects.length === 1 ? (
+                                {/* Main project */}
+                                <div 
+                                  className={`text-xs px-2 py-1 w-full justify-center font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-md inline-flex items-center ${getProjectBadgeStyle(sortedProjects[0])}`}
+                                >
+                                  <span className="truncate max-w-[100px]" title={sortedProjects[0]}>
+                                    {sortedProjects[0]}
+                                  </span>
+                                </div>
+                                
+                                {/* Additional projects */}
+                                {sortedProjects.slice(1).map((project, index) => (
                                   <div 
-                                    className={`text-xs px-2 py-1 w-full justify-center font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-md inline-flex items-center ${getProjectBadgeStyle(monthData.dominantProject)}`}
+                                    key={index}
+                                    className={`text-xs px-1.5 py-0.5 w-full justify-center font-normal opacity-75 rounded-sm inline-flex items-center ${getProjectBadgeStyle(project)}`}
                                   >
-                                    <span className="truncate max-w-[100px]" title={monthData.dominantProject}>
-                                      {monthData.dominantProject}
+                                    <span className="truncate max-w-[90px] text-xs" title={project}>
+                                      {project}
                                     </span>
                                   </div>
-                                ) : (
-                                  <>
-                                    <div 
-                                      className={`text-xs px-2 py-1 w-full justify-center font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-md inline-flex items-center ${getProjectBadgeStyle(monthData.dominantProject)}`}
-                                    >
-                                      <span className="truncate max-w-[100px]" title={monthData.dominantProject}>
-                                        {monthData.dominantProject}
-                                      </span>
-                                    </div>
-                                    <div className="text-xs text-muted-foreground">
-                                      +{monthData.projects.length - 1} dalších
-                                    </div>
-                                  </>
-                                )}
-                                {monthData.totalHours > 0 && (
-                                  <div className="text-xs text-muted-foreground font-medium">
-                                    {monthData.totalHours}h
-                                  </div>
-                                )}
+                                ))}
                               </div>
                             )}
                           </td>
