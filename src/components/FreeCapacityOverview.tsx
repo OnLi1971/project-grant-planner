@@ -14,21 +14,40 @@ const months = [
   { name: 'December', weeks: ['CW49', 'CW50', 'CW51', 'CW52'] }
 ];
 
+// Updated project badge styling function to match ProjectAssignmentMatrix
+const getProjectBadgeStyle = (projekt: string) => {
+  if (!projekt || projekt === 'FREE') return 'bg-green-100 text-green-800 border-green-300';
+  if (projekt === 'DOVOLENÁ') return 'bg-blue-100 text-blue-800 border-blue-300';
+  if (projekt.startsWith('ST_')) return 'bg-purple-100 text-purple-800 border-purple-300';
+  if (projekt.startsWith('NU_')) return 'bg-orange-100 text-orange-800 border-orange-300';
+  if (projekt.startsWith('WA_')) return 'bg-teal-100 text-teal-800 border-teal-300';
+  if (projekt.startsWith('SAF_')) return 'bg-pink-100 text-pink-800 border-pink-300';
+  if (projekt.startsWith('BUCH_')) return 'bg-cyan-100 text-cyan-800 border-cyan-300';
+  if (projekt.startsWith('AIRB_')) return 'bg-indigo-100 text-indigo-800 border-indigo-300';
+  if (projekt === 'OVER') return 'bg-red-100 text-red-800 border-red-300';
+  return 'bg-gray-100 text-gray-800 border-gray-300';
+};
+
 const getProjectBadge = (projekt: string) => {
-  if (!projekt || projekt === 'FREE') return <Badge variant="secondary">Volný</Badge>;
-  if (projekt === 'DOVOLENÁ') return <Badge variant="outline" className="border-accent">Dovolená</Badge>;
-  if (projekt.startsWith('ST_')) return <Badge className="bg-primary">ST Projekt</Badge>;
-  if (projekt.startsWith('NU_')) return <Badge className="bg-warning text-warning-foreground">NUVIA</Badge>;
-  if (projekt.startsWith('WA_')) return <Badge className="bg-success">WABTEC</Badge>;
-  if (projekt.startsWith('SAF_')) return <Badge style={{backgroundColor: 'hsl(280 100% 70%)', color: 'white'}}>SAFRAN</Badge>;
-  return <Badge variant="outline">{projekt}</Badge>;
+  if (!projekt || projekt === 'FREE') return <Badge variant="secondary" className="bg-green-100 text-green-800">Volný</Badge>;
+  if (projekt === 'DOVOLENÁ') return <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">Dovolená</Badge>;
+  
+  return (
+    <div className={`text-xs px-2 py-1 rounded-md border inline-flex items-center ${getProjectBadgeStyle(projekt)}`}>
+      {projekt}
+    </div>
+  );
 };
 
 export const FreeCapacityOverview = () => {
   const { planningData } = usePlanning();
+  
+  // Debug logging to check data reactivity
+  console.log('FreeCapacityOverview: planningData updated', planningData.length, 'entries');
 
-  // Transformace dat z centrálního contextu
+  // Enhanced data processing with better reactivity
   const processedData = useMemo(() => {
+    console.log('FreeCapacityOverview: Processing data with', planningData.length, 'entries');
     const engineersMap: { [key: string]: { cw: string; projekt: string }[] } = {};
     
     // Skupinování dat podle konstruktéra
@@ -42,7 +61,7 @@ export const FreeCapacityOverview = () => {
       });
     });
 
-    // Seřazení týdnů
+    // Seřazení týdnů chronologicky
     Object.keys(engineersMap).forEach(engineer => {
       engineersMap[engineer].sort((a, b) => {
         const aNum = parseInt(a.cw.replace('CW', ''));
@@ -51,6 +70,7 @@ export const FreeCapacityOverview = () => {
       });
     });
 
+    console.log('FreeCapacityOverview: Processed engineers:', Object.keys(engineersMap).length);
     return engineersMap;
   }, [planningData]);
 
@@ -199,13 +219,19 @@ export const FreeCapacityOverview = () => {
                     const isFree = weekData?.projekt === 'FREE';
                     return (
                       <td key={week} className="p-1 text-center border-l">
-                        {weekData && (
-                          <div className={`text-xs p-1 rounded ${
-                            isFree ? 'bg-success/20 text-success font-medium' : ''
-                          }`}>
-                            {isFree ? 'FREE' : getProjectBadge(weekData.projekt)}
-                          </div>
-                        )}
+                         {weekData && (
+                           <div className="text-xs p-1">
+                             {isFree ? (
+                               <div className="bg-green-100 text-green-800 border border-green-300 px-2 py-1 rounded-md font-medium">
+                                 FREE
+                               </div>
+                             ) : (
+                               <div className={`px-2 py-1 rounded-md border ${getProjectBadgeStyle(weekData.projekt)}`}>
+                                 {weekData.projekt}
+                               </div>
+                             )}
+                           </div>
+                         )}
                       </td>
                     );
                   })}
@@ -233,20 +259,28 @@ export const FreeCapacityOverview = () => {
           <h3 className="font-medium text-foreground mb-2">Legenda:</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="bg-success/20 text-success">FREE</Badge>
+              <div className="bg-green-100 text-green-800 border border-green-300 px-2 py-1 rounded-md text-xs">FREE</div>
               <span>Volný týden</span>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant="outline" className="border-accent">DOVOLENÁ</Badge>
+              <div className="bg-blue-100 text-blue-800 border border-blue-300 px-2 py-1 rounded-md text-xs">DOVOLENÁ</div>
               <span>Dovolená</span>
             </div>
             <div className="flex items-center gap-2">
-              <Badge className="bg-primary">ST_XXX</Badge>
+              <div className="bg-purple-100 text-purple-800 border border-purple-300 px-2 py-1 rounded-md text-xs">ST_XXX</div>
               <span>ST Projekt</span>
             </div>
             <div className="flex items-center gap-2">
-              <Badge className="bg-warning text-warning-foreground">NU_XXX</Badge>
+              <div className="bg-orange-100 text-orange-800 border border-orange-300 px-2 py-1 rounded-md text-xs">NU_XXX</div>
               <span>NUVIA projekt</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="bg-teal-100 text-teal-800 border border-teal-300 px-2 py-1 rounded-md text-xs">WA_XXX</div>
+              <span>WABTEC projekt</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="bg-pink-100 text-pink-800 border border-pink-300 px-2 py-1 rounded-md text-xs">SAF_XXX</div>
+              <span>SAFRAN projekt</span>
             </div>
           </div>
         </div>
