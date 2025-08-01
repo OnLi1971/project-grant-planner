@@ -1,7 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Users, Calendar } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Users, Calendar, Filter } from 'lucide-react';
 import { usePlanning } from '@/contexts/PlanningContext';
 
 const weeks = ['CW32', 'CW33', 'CW34', 'CW35', 'CW36', 'CW37', 'CW38', 'CW39', 'CW40', 'CW41', 'CW42', 'CW43', 'CW44', 'CW45', 'CW46', 'CW47', 'CW48', 'CW49', 'CW50', 'CW51', 'CW52'];
@@ -42,6 +45,10 @@ const getProjectBadge = (projekt: string) => {
 export const FreeCapacityOverview = () => {
   const { planningData } = usePlanning();
   
+  // Filter states
+  const [selectedWeeks, setSelectedWeeks] = useState<string[]>([]);
+  const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
+  
   // Debug logging to check data reactivity
   console.log('FreeCapacityOverview: planningData updated', planningData.length, 'entries');
 
@@ -74,17 +81,34 @@ export const FreeCapacityOverview = () => {
     return engineersMap;
   }, [planningData]);
 
+  // Get filtered weeks based on selections
+  const filteredWeeks = useMemo(() => {
+    if (selectedWeeks.length > 0) {
+      return selectedWeeks;
+    }
+    if (selectedMonths.length > 0) {
+      return months
+        .filter(month => selectedMonths.includes(month.name))
+        .flatMap(month => month.weeks);
+    }
+    return weeks; // Show all weeks if no filter
+  }, [selectedWeeks, selectedMonths]);
+
   // Filtrování inženýrů s volnými kapacitami
   const engineersWithFreeCapacity = useMemo(() => {
     return Object.keys(processedData)
       .filter(engineer => {
         const engineerData = processedData[engineer];
-        return engineerData.some(week => week.projekt === 'FREE');
+        // Filter by selected weeks/months
+        const relevantWeeks = engineerData.filter(week => filteredWeeks.includes(week.cw));
+        return relevantWeeks.some(week => week.projekt === 'FREE');
       })
       .map(engineer => {
         const engineerData = processedData[engineer];
-        const freeWeeks = engineerData.filter(week => week.projekt === 'FREE');
-        const totalWeeks = engineerData.length;
+        // Filter by selected weeks/months
+        const relevantWeeks = engineerData.filter(week => filteredWeeks.includes(week.cw));
+        const freeWeeks = relevantWeeks.filter(week => week.projekt === 'FREE');
+        const totalWeeks = relevantWeeks.length;
         const busyWeeks = totalWeeks - freeWeeks.length;
         
         return {
@@ -92,12 +116,13 @@ export const FreeCapacityOverview = () => {
           freeWeeks: freeWeeks.length,
           busyWeeks,
           totalWeeks,
-          freePercentage: Math.round((freeWeeks.length / totalWeeks) * 100),
+          freePercentage: totalWeeks > 0 ? Math.round((freeWeeks.length / totalWeeks) * 100) : 0,
           weeks: engineerData
         };
       })
+      .filter(engineer => engineer.totalWeeks > 0) // Only show engineers with data in selected period
       .sort((a, b) => b.freeWeeks - a.freeWeeks);
-  }, [processedData]);
+  }, [processedData, filteredWeeks]);
 
   // Celkové statistiky
   const totalEngineers = Object.keys(processedData).length;
@@ -148,11 +173,125 @@ export const FreeCapacityOverview = () => {
         </Card>
       </div>
 
+      {/* Filter Controls */}
+      <Card className="p-4 shadow-card-custom">
+        <div className="flex flex-wrap gap-4 items-center">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4" />
+            <span className="text-sm font-medium">Filtrovat podle:</span>
+          </div>
+          
+          {/* Week Filter */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Calendar className="h-4 w-4" />
+                Týdny {selectedWeeks.length > 0 && `(${selectedWeeks.length})`}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium">Vybrat týdny</h4>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => setSelectedWeeks([])}
+                  >
+                    Zrušit
+                  </Button>
+                </div>
+                <div className="grid grid-cols-3 gap-2 max-h-60 overflow-y-auto">
+                  {weeks.map(week => (
+                    <div key={week} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={week}
+                        checked={selectedWeeks.includes(week)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setSelectedWeeks([...selectedWeeks, week]);
+                            setSelectedMonths([]); // Clear month filter
+                          } else {
+                            setSelectedWeeks(selectedWeeks.filter(w => w !== week));
+                          }
+                        }}
+                      />
+                      <label htmlFor={week} className="text-sm">{week}</label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          {/* Month Filter */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Calendar className="h-4 w-4" />
+                Měsíce {selectedMonths.length > 0 && `(${selectedMonths.length})`}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-60">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium">Vybrat měsíce</h4>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => setSelectedMonths([])}
+                  >
+                    Zrušit
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  {months.map(month => (
+                    <div key={month.name} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={month.name}
+                        checked={selectedMonths.includes(month.name)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setSelectedMonths([...selectedMonths, month.name]);
+                            setSelectedWeeks([]); // Clear week filter
+                          } else {
+                            setSelectedMonths(selectedMonths.filter(m => m !== month.name));
+                          }
+                        }}
+                      />
+                      <label htmlFor={month.name} className="text-sm">{month.name}</label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          {/* Clear All Filters */}
+          {(selectedWeeks.length > 0 || selectedMonths.length > 0) && (
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => {
+                setSelectedWeeks([]);
+                setSelectedMonths([]);
+              }}
+            >
+              Zrušit všechny filtry
+            </Button>
+          )}
+        </div>
+      </Card>
+
       {/* Engineers with Free Capacity */}
       <Card className="shadow-planning">
         <div className="p-6 border-b">
           <h2 className="text-xl font-semibold">Konstruktéři s volnými kapacitami</h2>
-          <p className="text-muted-foreground">Seřazeno podle počtu volných týdnů</p>
+          <p className="text-muted-foreground">
+            Seřazeno podle počtu volných týdnů
+            {selectedWeeks.length > 0 && ` (filtr: ${selectedWeeks.join(', ')})`}
+            {selectedMonths.length > 0 && ` (filtr: ${selectedMonths.join(', ')})`}
+          </p>
         </div>
         
         <div className="overflow-x-auto">
@@ -174,7 +313,21 @@ export const FreeCapacityOverview = () => {
                 <th className="p-2"></th>
                 <th className="p-2"></th>
                 <th className="p-2"></th>
-                {weeks.map(week => (
+                {months.map(month => {
+                  const monthWeeks = month.weeks.filter(week => filteredWeeks.includes(week));
+                  return monthWeeks.length > 0 ? (
+                    <th key={month.name} className="p-2 text-center font-medium border-l" colSpan={monthWeeks.length}>
+                      {month.name}
+                    </th>
+                  ) : null;
+                })}
+              </tr>
+              <tr className="bg-planning-header/80">
+                <th className="p-2 sticky left-0 z-10 bg-planning-header/80"></th>
+                <th className="p-2"></th>
+                <th className="p-2"></th>
+                <th className="p-2"></th>
+                {filteredWeeks.map(week => (
                   <th key={week} className="p-1 text-xs border-l min-w-[60px]">
                     {week}
                   </th>
@@ -214,7 +367,7 @@ export const FreeCapacityOverview = () => {
                       <span className="text-sm font-medium">{engineer.freePercentage}%</span>
                     </div>
                   </td>
-                  {weeks.map(week => {
+                {filteredWeeks.map(week => {
                     const weekData = engineer.weeks.find(w => w.cw === week);
                     const isFree = weekData?.projekt === 'FREE';
                     return (
