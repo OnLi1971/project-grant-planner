@@ -302,17 +302,6 @@ export const FreeCapacityOverview = () => {
                 <th className="p-3 text-center font-medium min-w-[100px]">Volné týdny</th>
                 <th className="p-3 text-center font-medium min-w-[100px]">Vytížené týdny</th>
                 <th className="p-3 text-center font-medium min-w-[120px]">Volná kapacita %</th>
-                {months.map(month => (
-                  <th key={month.name} className="p-2 text-center font-medium border-l" colSpan={month.weeks.length}>
-                    {month.name}
-                  </th>
-                ))}
-              </tr>
-              <tr className="bg-planning-header/80">
-                <th className="p-2 sticky left-0 z-10 bg-planning-header/80"></th>
-                <th className="p-2"></th>
-                <th className="p-2"></th>
-                <th className="p-2"></th>
                 {months.map(month => {
                   const monthWeeks = month.weeks.filter(week => filteredWeeks.includes(week));
                   return monthWeeks.length > 0 ? (
