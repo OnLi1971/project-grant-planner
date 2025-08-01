@@ -4,8 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Edit, Save, X, Plus, MousePointer, MousePointer2 } from 'lucide-react';
+import { Calendar, Edit, Save, X, Plus, MousePointer, MousePointer2, FolderPlus } from 'lucide-react';
 import { usePlanning } from '@/contexts/PlanningContext';
+import { ProjectManagement } from '@/components/ProjectManagement';
+import { projects, customers, projectManagers, programs, type Project } from '@/data/projectsData';
 
 interface WeekPlan {
   cw: string;
@@ -66,6 +68,23 @@ export const PlanningEditor: React.FC = () => {
   const [selectedKonstrukter, setSelectedKonstrukter] = useState<string>(konstrukteri[0] || '');
   const [isMultiSelectMode, setIsMultiSelectMode] = useState<boolean>(false);
   const [selectedWeeks, setSelectedWeeks] = useState<Set<string>>(new Set());
+  const [availableProjectsLocal, setAvailableProjectsLocal] = useState<string[]>(availableProjects);
+
+  // Dynamicky aktualizujeme seznam projektů
+  const allProjectCodes = useMemo(() => {
+    const staticProjects = availableProjects;
+    const dynamicProjects = projects.map(p => p.code);
+    return Array.from(new Set([...staticProjects, ...dynamicProjects]));
+  }, []);
+
+  const handleProjectCreated = (newProject: Project) => {
+    setAvailableProjectsLocal(prev => {
+      if (!prev.includes(newProject.code)) {
+        return [...prev, newProject.code];
+      }
+      return prev;
+    });
+  };
 
   const updateCell = (konstrukter: string, cw: string, field: 'projekt' | 'mhTyden', value: string | number) => {
     updatePlanningEntry(konstrukter, cw, field, value);
@@ -208,7 +227,7 @@ export const PlanningEditor: React.FC = () => {
                   <SelectValue placeholder="Nastavit projekt pro všechny" />
                 </SelectTrigger>
                 <SelectContent>
-                  {availableProjects.map(projekt => (
+                  {allProjectCodes.map(projekt => (
                     <SelectItem key={projekt} value={projekt}>{projekt}</SelectItem>
                   ))}
                 </SelectContent>
@@ -236,6 +255,17 @@ export const PlanningEditor: React.FC = () => {
           </div>
         </Card>
       )}
+
+      {/* Project Management */}
+      <Card className="p-4 shadow-card-custom">
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <FolderPlus className="h-5 w-5 text-primary" />
+            <h3 className="text-lg font-semibold">Správa projektů</h3>
+          </div>
+          <ProjectManagement onProjectCreated={handleProjectCreated} />
+        </div>
+      </Card>
 
       {/* Selector konstruktéra */}
       <Card className="p-4 shadow-card-custom">
@@ -369,7 +399,7 @@ export const PlanningEditor: React.FC = () => {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {availableProjects.map(projekt => (
+                          {allProjectCodes.map(projekt => (
                             <SelectItem key={projekt} value={projekt}>{projekt}</SelectItem>
                           ))}
                         </SelectContent>
