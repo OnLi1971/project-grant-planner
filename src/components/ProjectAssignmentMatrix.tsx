@@ -522,9 +522,9 @@ export const ProjectAssignmentMatrix = () => {
                 )}
               </thead>
               <tbody>
-                {filteredEngineers.map(engineer => (
-                  <tr key={engineer} className="hover:bg-muted/10 transition-colors">
-                    <td className="border border-border p-3 font-semibold sticky left-0 bg-background z-10 text-foreground">
+                {filteredEngineers.map((engineer, index) => (
+                  <tr key={engineer} className={`transition-colors hover:bg-muted/20 ${index % 2 === 1 ? 'bg-muted/30' : 'bg-background'}`}>
+                    <td className="border border-border p-3 font-semibold sticky left-0 bg-inherit z-10 text-foreground">
                       {engineer}
                     </td>
                     {viewMode === 'weeks' ? (
