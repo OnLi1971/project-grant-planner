@@ -154,25 +154,25 @@ export const PlanningEditor: React.FC = () => {
           </div>
           <div className="flex gap-2">
             <Button 
-              variant={isMultiSelectMode ? "default" : "secondary"} 
+              variant={isMultiSelectMode ? "default" : "outline"} 
               onClick={() => {
                 setIsMultiSelectMode(!isMultiSelectMode);
                 if (isMultiSelectMode) clearSelection();
               }}
-              className="bg-white/10 hover:bg-white/20"
+              className="bg-white/10 hover:bg-white/20 text-white border-white/30 hover:border-white/50"
             >
               <MousePointer2 className="h-4 w-4 mr-2" />
               {isMultiSelectMode ? 'Ukončit výběr' : 'Vybrat více týdnů'}
             </Button>
-            <Button variant="secondary" onClick={addNewEngineer} className="bg-white/10 hover:bg-white/20">
+            <Button variant="outline" onClick={addNewEngineer} className="bg-white/10 hover:bg-white/20 text-white border-white/30 hover:border-white/50">
               <Plus className="h-4 w-4 mr-2" />
               Přidat konstruktéra
             </Button>
-            <Button variant="secondary" onClick={savePlan} className="bg-white/10 hover:bg-white/20">
+            <Button variant="outline" onClick={savePlan} className="bg-white/10 hover:bg-white/20 text-white border-white/30 hover:border-white/50">
               <Save className="h-4 w-4 mr-2" />
               Uložit plán
             </Button>
-            <Button variant="outline" onClick={resetToOriginal} className="bg-white/10 hover:bg-white/20">
+            <Button variant="outline" onClick={resetToOriginal} className="bg-white/10 hover:bg-white/20 text-white border-white/30 hover:border-white/50">
               <X className="h-4 w-4 mr-2" />
               Obnovit původní
             </Button>
