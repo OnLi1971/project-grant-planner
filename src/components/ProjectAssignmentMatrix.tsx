@@ -468,13 +468,13 @@ export const ProjectAssignmentMatrix = () => {
                 {viewMode === 'weeks' ? (
                   <>
                     <tr>
-                      <th className="border-2 border-border p-3 bg-gradient-to-r from-primary/10 to-primary/5 text-left sticky left-0 sticky top-0 z-30 min-w-[200px] font-semibold">
+                      <th className="border-2 border-border p-3 bg-background text-left sticky left-0 sticky top-0 z-30 min-w-[200px] font-semibold">
                         Konstruktér
                       </th>
                       {months.map((month, monthIndex) => (
                         <th 
                           key={month.name} 
-                          className={`border-2 border-border p-3 bg-gradient-to-r from-secondary/20 to-secondary/10 text-center font-bold text-lg sticky top-0 z-20 ${
+                          className={`border-2 border-border p-3 bg-background text-center font-bold text-lg sticky top-0 z-20 ${
                             monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                           }`} 
                           colSpan={month.weeks.length}
@@ -486,12 +486,12 @@ export const ProjectAssignmentMatrix = () => {
                       ))}
                     </tr>
                     <tr>
-                      <th className="border border-border p-2 bg-muted/30 sticky left-0 sticky top-[52px] z-30 font-medium"></th>
+                      <th className="border border-border p-2 bg-background sticky left-0 sticky top-[52px] z-30 font-medium"></th>
                       {months.map((month, monthIndex) => 
                         month.weeks.map((week, weekIndex) => (
                           <th 
                             key={week} 
-                            className={`border border-border p-2 bg-muted/30 text-xs min-w-[90px] font-medium sticky top-[52px] z-20 ${
+                            className={`border border-border p-2 bg-background text-xs min-w-[90px] font-medium sticky top-[52px] z-20 ${
                               monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
                             }`}
                           >
@@ -503,13 +503,13 @@ export const ProjectAssignmentMatrix = () => {
                   </>
                 ) : (
                   <tr>
-                    <th className="border-2 border-border p-3 bg-gradient-to-r from-primary/10 to-primary/5 text-left sticky left-0 sticky top-0 z-30 min-w-[200px] font-semibold">
+                    <th className="border-2 border-border p-3 bg-background text-left sticky left-0 sticky top-0 z-30 min-w-[200px] font-semibold">
                       Konstruktér
                     </th>
                     {months.map((month, monthIndex) => (
                       <th 
                         key={month.name} 
-                        className={`border-2 border-border p-3 bg-gradient-to-r from-secondary/20 to-secondary/10 text-center font-bold text-lg min-w-[150px] sticky top-0 z-20 ${
+                        className={`border-2 border-border p-3 bg-background text-center font-bold text-lg min-w-[150px] sticky top-0 z-20 ${
                           monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                         }`}
                       >
