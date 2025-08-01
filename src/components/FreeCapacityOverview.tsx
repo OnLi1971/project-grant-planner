@@ -304,30 +304,30 @@ export const FreeCapacityOverview = () => {
           </p>
         </div>
         
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto overflow-y-auto max-h-[70vh]">
           <table className="w-full">
             <thead className="bg-planning-header text-white sticky top-0 z-10">
               <tr>
-                <th className="p-3 text-left font-medium sticky left-0 z-10 bg-planning-header min-w-[200px]">Konstruktér</th>
-                <th className="p-3 text-center font-medium min-w-[100px]">Volné týdny</th>
-                <th className="p-3 text-center font-medium min-w-[100px]">Vytížené týdny</th>
-                <th className="p-3 text-center font-medium min-w-[120px]">Volná kapacita %</th>
+                <th className="p-3 text-left font-medium sticky left-0 sticky top-0 z-20 bg-planning-header min-w-[200px]">Konstruktér</th>
+                <th className="p-3 text-center font-medium min-w-[100px] sticky top-0 bg-planning-header">Volné týdny</th>
+                <th className="p-3 text-center font-medium min-w-[100px] sticky top-0 bg-planning-header">Vytížené týdny</th>
+                <th className="p-3 text-center font-medium min-w-[120px] sticky top-0 bg-planning-header">Volná kapacita %</th>
                 {months.map(month => {
                   const monthWeeks = month.weeks.filter(week => filteredWeeks.includes(week));
                   return monthWeeks.length > 0 ? (
-                    <th key={month.name} className="p-2 text-center font-medium border-l" colSpan={monthWeeks.length}>
+                    <th key={month.name} className="p-2 text-center font-medium border-l sticky top-0 bg-planning-header" colSpan={monthWeeks.length}>
                       {month.name}
                     </th>
                   ) : null;
                 })}
               </tr>
-              <tr className="bg-planning-header/80">
-                <th className="p-2 sticky left-0 z-10 bg-planning-header/80"></th>
-                <th className="p-2"></th>
-                <th className="p-2"></th>
-                <th className="p-2"></th>
+              <tr className="bg-planning-header/80 sticky top-[52px] z-10">
+                <th className="p-2 sticky left-0 z-20 bg-planning-header/80"></th>
+                <th className="p-2 sticky top-[52px] bg-planning-header/80"></th>
+                <th className="p-2 sticky top-[52px] bg-planning-header/80"></th>
+                <th className="p-2 sticky top-[52px] bg-planning-header/80"></th>
                 {filteredWeeks.map(week => (
-                  <th key={week} className="p-1 text-xs border-l min-w-[60px]">
+                  <th key={week} className="p-1 text-xs border-l min-w-[60px] sticky top-[52px] bg-planning-header/80">
                     {week}
                   </th>
                 ))}

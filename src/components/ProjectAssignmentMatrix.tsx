@@ -462,19 +462,19 @@ export const ProjectAssignmentMatrix = () => {
           </div>
 
           {/* Matrix Table */}
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto overflow-y-auto max-h-[70vh]">
             <table className="w-full border-collapse">
               <thead className="sticky top-0 z-20">
                 {viewMode === 'weeks' ? (
                   <>
                     <tr>
-                      <th className="border-2 border-border p-3 bg-gradient-to-r from-primary/10 to-primary/5 text-left sticky left-0 z-10 min-w-[200px] font-semibold">
+                      <th className="border-2 border-border p-3 bg-gradient-to-r from-primary/10 to-primary/5 text-left sticky left-0 sticky top-0 z-30 min-w-[200px] font-semibold">
                         Konstruktér
                       </th>
                       {months.map((month, monthIndex) => (
                         <th 
                           key={month.name} 
-                          className={`border-2 border-border p-3 bg-gradient-to-r from-secondary/20 to-secondary/10 text-center font-bold text-lg ${
+                          className={`border-2 border-border p-3 bg-gradient-to-r from-secondary/20 to-secondary/10 text-center font-bold text-lg sticky top-0 z-20 ${
                             monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                           }`} 
                           colSpan={month.weeks.length}
@@ -486,12 +486,12 @@ export const ProjectAssignmentMatrix = () => {
                       ))}
                     </tr>
                     <tr>
-                      <th className="border border-border p-2 bg-muted/30 sticky left-0 z-10 font-medium"></th>
+                      <th className="border border-border p-2 bg-muted/30 sticky left-0 sticky top-[52px] z-30 font-medium"></th>
                       {months.map((month, monthIndex) => 
                         month.weeks.map((week, weekIndex) => (
                           <th 
                             key={week} 
-                            className={`border border-border p-2 bg-muted/30 text-xs min-w-[90px] font-medium ${
+                            className={`border border-border p-2 bg-muted/30 text-xs min-w-[90px] font-medium sticky top-[52px] z-20 ${
                               monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
                             }`}
                           >

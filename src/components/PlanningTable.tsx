@@ -83,41 +83,43 @@ export const PlanningTable: React.FC = () => {
   const overviewData = useMemo(() => {
     const next4Weeks = getNext4Weeks();
     
-    return konstrukteri.map(konstrukter => {
-      const planNa4Tydny = next4Weeks.map(cw => {
-        const entry = planningData.find(p => 
-          p.konstrukter === konstrukter.jmeno && p.cw === cw
-        );
+    return konstrukteri
+      .sort((a, b) => a.jmeno.localeCompare(b.jmeno)) // Seřadit podle abecedy
+      .map(konstrukter => {
+        const planNa4Tydny = next4Weeks.map(cw => {
+          const entry = planningData.find(p => 
+            p.konstrukter === konstrukter.jmeno && p.cw === cw
+          );
+          return {
+            cw,
+            projekt: entry?.projekt || 'FREE'
+          };
+        });
+        
+        // Určení statusu na základě plánu
+        const freeCount = planNa4Tydny.filter(p => p.projekt === 'FREE' || !p.projekt).length;
+        const vacationCount = planNa4Tydny.filter(p => p.projekt === 'DOVOLENÁ').length;
+        
+        let status: 'VOLNY' | 'CASTECNE' | 'PLNE' | 'DOVOLENA';
+        
+        if (vacationCount >= 2) {
+          status = 'DOVOLENA';
+        } else if (freeCount >= 3) {
+          status = 'VOLNY';
+        } else if (freeCount >= 1) {
+          status = 'CASTECNE';
+        } else {
+          status = 'PLNE';
+        }
+        
         return {
-          cw,
-          projekt: entry?.projekt || 'FREE'
+          konstrukter: konstrukter.jmeno,
+          spolecnost: konstrukter.spolecnost,
+          orgVedouci: konstrukter.orgVedouci,
+          planNa4Tydny,
+          status
         };
       });
-      
-      // Určení statusu na základě plánu
-      const freeCount = planNa4Tydny.filter(p => p.projekt === 'FREE' || !p.projekt).length;
-      const vacationCount = planNa4Tydny.filter(p => p.projekt === 'DOVOLENÁ').length;
-      
-      let status: 'VOLNY' | 'CASTECNE' | 'PLNE' | 'DOVOLENA';
-      
-      if (vacationCount >= 2) {
-        status = 'DOVOLENA';
-      } else if (freeCount >= 3) {
-        status = 'VOLNY';
-      } else if (freeCount >= 1) {
-        status = 'CASTECNE';
-      } else {
-        status = 'PLNE';
-      }
-      
-      return {
-        konstrukter: konstrukter.jmeno,
-        spolecnost: konstrukter.spolecnost,
-        orgVedouci: konstrukter.orgVedouci,
-        planNa4Tydny,
-        status
-      };
-    });
   }, [planningData]);
   
   const [filteredData, setFilteredData] = useState<EngineerOverview[]>(overviewData);
@@ -239,17 +241,17 @@ export const PlanningTable: React.FC = () => {
 
       {/* Overview Table */}
       <Card className="shadow-planning overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto overflow-y-auto max-h-[70vh]">
           <table className="w-full">
             <thead className="bg-planning-header text-white sticky top-0 z-10">
               <tr>
-                <th className="p-3 text-left font-medium">Konstruktér</th>
-                <th className="p-3 text-left font-medium">Společnost</th>
-                <th className="p-3 text-left font-medium">Organizační vedoucí</th>
+                <th className="p-3 text-left font-medium sticky top-0 bg-planning-header">Konstruktér</th>
+                <th className="p-3 text-left font-medium sticky top-0 bg-planning-header">Společnost</th>
+                <th className="p-3 text-left font-medium sticky top-0 bg-planning-header">Organizační vedoucí</th>
                 {getNext4Weeks().map(cw => (
-                  <th key={cw} className="p-3 text-center font-medium min-w-[100px]">{cw}</th>
+                  <th key={cw} className="p-3 text-center font-medium min-w-[100px] sticky top-0 bg-planning-header">{cw}</th>
                 ))}
-                <th className="p-3 text-left font-medium">Status</th>
+                <th className="p-3 text-left font-medium sticky top-0 bg-planning-header">Status</th>
               </tr>
             </thead>
             <tbody>
