@@ -246,7 +246,9 @@ export const PlanningTable: React.FC = () => {
                 <th className="p-3 text-left font-medium">Konstruktér</th>
                 <th className="p-3 text-left font-medium">Společnost</th>
                 <th className="p-3 text-left font-medium">Organizační vedoucí</th>
-                <th className="p-3 text-left font-medium">Plán na 4 týdny dopředu</th>
+                {getNext4Weeks().map(cw => (
+                  <th key={cw} className="p-3 text-center font-medium min-w-[100px]">{cw}</th>
+                ))}
                 <th className="p-3 text-left font-medium">Status</th>
               </tr>
             </thead>
@@ -262,18 +264,11 @@ export const PlanningTable: React.FC = () => {
                   <td className="p-3 font-medium text-foreground">{engineer.konstrukter}</td>
                   <td className="p-3 text-muted-foreground">{engineer.spolecnost}</td>
                   <td className="p-3 text-muted-foreground font-medium">{engineer.orgVedouci}</td>
-                  <td className="p-3">
-                    <div className="flex gap-2 flex-wrap">
-                      {engineer.planNa4Tydny.map((weekPlan, weekIndex) => (
-                        <div key={weekIndex} className="flex items-center gap-1 text-xs">
-                          <span className="font-mono text-muted-foreground text-xs">
-                            {weekPlan.cw}:
-                          </span>
-                          {getProjectBadge(weekPlan.projekt)}
-                        </div>
-                      ))}
-                    </div>
-                  </td>
+                  {engineer.planNa4Tydny.map((weekPlan, weekIndex) => (
+                    <td key={weekIndex} className="p-3 text-center">
+                      {getProjectBadge(weekPlan.projekt)}
+                    </td>
+                  ))}
                   <td className="p-3">
                     {getStatusBadge(engineer.status)}
                   </td>
