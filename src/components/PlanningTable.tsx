@@ -1,250 +1,124 @@
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Filter, Users, TrendingUp } from 'lucide-react';
+import { Calendar, Filter, Users } from 'lucide-react';
 
-interface PlanningEntry {
+interface EngineerOverview {
   konstrukter: string;
-  cw: string;
-  mesic: string;
-  mhTyden: number;
-  projekt: string;
-  lokalita: string;
-  zakaznik: string;
-  pm: string;
-  smt: string;
-  program: string;
-  hodinovaSazba: number;
-  obrat: number;
+  spolecnost: string;
+  orgVedouci: string;
+  planNa4Tydny: string[];
+  status: 'VOLNY' | 'CASTECNE' | 'PLNE' | 'DOVOLENA';
 }
 
-// Organizační struktura
-const organizacniStruktura = {
-  "RAIL": {
-    vedouci: { nick: "OnLi", jmeno: "Ondřej Lišťanský" },
-    oddeleni: {
-      "Rail Interiéry": { vedouci: { nick: "JoMa", jmeno: "Jozef Matta" } },
-      "Rail Hrubá stavba": { vedouci: { nick: "KaSo", jmeno: "Karel Šoupa" } },
-      "Výpočty": { vedouci: { nick: "PeNe", jmeno: "Petr Nedavaška" } },
-      "Rail Elektro": { vedouci: { nick: "PaHo", jmeno: "Pavel Hormandl" } }
-    }
-  },
-  "Machinery": {
-    vedouci: { nick: "OnLi", jmeno: "Ondřej Lišťanský" },
-    oddeleni: {
-      "General machinery": { vedouci: { nick: "PeMa", jmeno: "Peter Madanský" } },
-      "Turbines": { vedouci: { nick: "DaAm", jmeno: "David Ambrož" } }
-    }
-  }
-};
-
-// Rozšířený seznam konstruktérů s oddělením
+// Seznam konstruktérů s aktualizovanými daty podle požadavku
 const konstrukteri = [
-  { jmeno: "Hlavan Martin", orgVedouci: "JoMa", oddeleni: "Rail Interiéry", oblast: "RAIL" },
-  { jmeno: "Fica Ladislav", orgVedouci: "JoMa", oddeleni: "Rail Interiéry", oblast: "RAIL" },
-  { jmeno: "Heřman Daniel", orgVedouci: "JoMa", oddeleni: "Rail Interiéry", oblast: "RAIL" },
-  { jmeno: "Pecinovský Pavel", orgVedouci: "JoMa", oddeleni: "Rail Interiéry", oblast: "RAIL" },
-  { jmeno: "Břicháček Miloš", orgVedouci: "JoMa", oddeleni: "Rail Interiéry", oblast: "RAIL" },
-  { jmeno: "Kalafa Ján", orgVedouci: "JoMa", oddeleni: "Rail Interiéry", oblast: "RAIL" },
-  { jmeno: "Lengyel Martin", orgVedouci: "JoMa", oddeleni: "Rail Interiéry", oblast: "RAIL" },
-  { jmeno: "Večeř Jiří", orgVedouci: "JoMa", oddeleni: "Rail Interiéry", oblast: "RAIL" },
-  { jmeno: "Karlík Štěpán", orgVedouci: "JoMa", oddeleni: "Rail Interiéry", oblast: "RAIL" },
-  { jmeno: "Mohelník Martin", orgVedouci: "JoMa", oddeleni: "Rail Interiéry", oblast: "RAIL" },
-  { jmeno: "Brojír Jaroslav", orgVedouci: "JoMa", oddeleni: "Rail Interiéry", oblast: "RAIL" },
-  { jmeno: "Samko Mikuláš", orgVedouci: "JoMa", oddeleni: "Rail Interiéry", oblast: "RAIL" },
-  { jmeno: "Jiřička Aleš", orgVedouci: "JoMa", oddeleni: "Rail Interiéry", oblast: "RAIL" },
-  
-  { jmeno: "Slavík Ondřej", orgVedouci: "KaSo", oddeleni: "Rail Hrubá stavba", oblast: "RAIL" },
-  { jmeno: "Uher Tomáš", orgVedouci: "KaSo", oddeleni: "Rail Hrubá stavba", oblast: "RAIL" },
-  { jmeno: "Jandečka Karel", orgVedouci: "KaSo", oddeleni: "Rail Hrubá stavba", oblast: "RAIL" },
-  { jmeno: "Bartovičová Agáta", orgVedouci: "KaSo", oddeleni: "Rail Hrubá stavba", oblast: "RAIL" },
-  { jmeno: "Hrachová Ivana", orgVedouci: "KaSo", oddeleni: "Rail Hrubá stavba", oblast: "RAIL" },
-  { jmeno: "Klíma Milan", orgVedouci: "KaSo", oddeleni: "Rail Hrubá stavba", oblast: "RAIL" },
-  { jmeno: "Hibler František", orgVedouci: "KaSo", oddeleni: "Rail Hrubá stavba", oblast: "RAIL" },
-  
-  { jmeno: "Weiss Ondřej", orgVedouci: "PaHo", oddeleni: "Rail Elektro", oblast: "RAIL" },
-  { jmeno: "Borský Jan", orgVedouci: "PaHo", oddeleni: "Rail Elektro", oblast: "RAIL" },
-  { jmeno: "Pytela Martin", orgVedouci: "PaHo", oddeleni: "Rail Elektro", oblast: "RAIL" },
-  { jmeno: "Litvinov Evgenii", orgVedouci: "PaHo", oddeleni: "Rail Elektro", oblast: "RAIL" },
-  
-  { jmeno: "Šedovičová Darina", orgVedouci: "PeNe", oddeleni: "Výpočty", oblast: "RAIL" },
-  { jmeno: "Ješš Jozef", orgVedouci: "PeNe", oddeleni: "Výpočty", oblast: "RAIL" },
-  { jmeno: "Melichar Ondřej", orgVedouci: "PeNe", oddeleni: "Výpočty", oblast: "RAIL" },
-  
-  { jmeno: "Karlesz Michal", orgVedouci: "PeMa", oddeleni: "General machinery", oblast: "Machinery" },
-  { jmeno: "Fenyk Pavel", orgVedouci: "PeMa", oddeleni: "General machinery", oblast: "Machinery" },
-  { jmeno: "Stránský Martin", orgVedouci: "PeMa", oddeleni: "General machinery", oblast: "Machinery" },
-  { jmeno: "Trač Vasyl", orgVedouci: "PeMa", oddeleni: "General machinery", oblast: "Machinery" },
-  
-  { jmeno: "Anovčín Branislav", orgVedouci: "DaAm", oddeleni: "Turbines", oblast: "Machinery" },
-  { jmeno: "Bartovič Anton", orgVedouci: "DaAm", oddeleni: "Turbines", oblast: "Machinery" },
-  { jmeno: "Fuchs Pavel", orgVedouci: "DaAm", oddeleni: "Turbines", oblast: "Machinery" },
-  
-  { jmeno: "Ambrož David", orgVedouci: "OnLi", oddeleni: "OnLi tým", oblast: "RAIL" },
-  { jmeno: "Matta Jozef", orgVedouci: "OnLi", oddeleni: "OnLi tým", oblast: "RAIL" },
-  { jmeno: "Šoupa Karel", orgVedouci: "OnLi", oddeleni: "OnLi tým", oblast: "RAIL" },
-  { jmeno: "Friedlová Jiřina", orgVedouci: "OnLi", oddeleni: "OnLi tým", oblast: "RAIL" },
-  { jmeno: "Nedavaška Petr", orgVedouci: "OnLi", oddeleni: "OnLi tým", oblast: "RAIL" },
-  { jmeno: "Madanský Peter", orgVedouci: "OnLi", oddeleni: "OnLi tým", oblast: "RAIL" },
-  
-  // Subdodavatelé
-  { jmeno: "Chrenko Peter", orgVedouci: "Subdodavka", oddeleni: "Externí", oblast: "Externí" },
-  { jmeno: "Jurčišin Peter", orgVedouci: "Subdodavka", oddeleni: "Externí", oblast: "Externí" },
-  { jmeno: "Púpava Marián", orgVedouci: "Subdodavka", oddeleni: "Externí", oblast: "Externí" },
-  { jmeno: "Bohušík Martin", orgVedouci: "Subdodavka", oddeleni: "Externí", oblast: "Externí" },
-  { jmeno: "Chrenko Daniel", orgVedouci: "Subdodavka", oddeleni: "Externí", oblast: "Externí" }
+  { jmeno: "Hlavan Martin", orgVedouci: "JoMa", spolecnost: "TM CZ a.s." },
+  { jmeno: "Fica Ladislav", orgVedouci: "JoMa", spolecnost: "TM CZ a.s." },
+  { jmeno: "Ambrož David", orgVedouci: "OnLi", spolecnost: "TM CZ a.s." },
+  { jmeno: "Slavík Ondřej", orgVedouci: "KaSo", spolecnost: "TM CZ a.s." },
+  { jmeno: "Chrenko Peter", orgVedouci: "Dodavatel", spolecnost: "MB idea SK, s.r.o." },
+  { jmeno: "Jurčišin Peter", orgVedouci: "Dodavatel", spolecnost: "MB idea SK, s.r.o." },
+  { jmeno: "Púpava Marián", orgVedouci: "Dodavatel", spolecnost: "MB idea SK, s.r.o." },
+  { jmeno: "Bohušík Martin", orgVedouci: "Dodavatel", spolecnost: "MB idea SK, s.r.o." },
+  { jmeno: "Uher Tomáš", orgVedouci: "KaSo", spolecnost: "TM CZ a.s." },
+  { jmeno: "Weiss Ondřej", orgVedouci: "PaHo", spolecnost: "TM CZ a.s." },
+  { jmeno: "Borský Jan", orgVedouci: "PaHo", spolecnost: "TM CZ a.s." },
+  { jmeno: "Pytela Martin", orgVedouci: "PaHo", spolecnost: "TM CZ a.s." },
+  { jmeno: "Litvinov Evgenii", orgVedouci: "PaHo", spolecnost: "TM CZ a.s." },
+  { jmeno: "Jandečka Karel", orgVedouci: "KaSo", spolecnost: "TM CZ a.s." },
+  { jmeno: "Heřman Daniel", orgVedouci: "JoMa", spolecnost: "TM CZ a.s." },
+  { jmeno: "Karlesz Michal", orgVedouci: "PeMa", spolecnost: "TM CZ a.s." },
+  { jmeno: "Matta Jozef", orgVedouci: "OnLi", spolecnost: "TM CZ a.s." },
+  { jmeno: "Pecinovský Pavel", orgVedouci: "JoMa", spolecnost: "TM CZ a.s." },
+  { jmeno: "Anovčín Branislav", orgVedouci: "DaAm", spolecnost: "TM CZ a.s." },
+  { jmeno: "Bartovič Anton", orgVedouci: "DaAm", spolecnost: "TM CZ a.s." },
+  { jmeno: "Břicháček Miloš", orgVedouci: "JoMa", spolecnost: "TM CZ a.s." },
+  { jmeno: "Fenyk Pavel", orgVedouci: "PeMa", spolecnost: "TM CZ a.s." },
+  { jmeno: "Kalafa Ján", orgVedouci: "JoMa", spolecnost: "TM CZ a.s." },
+  { jmeno: "Lengyel Martin", orgVedouci: "JoMa", spolecnost: "TM CZ a.s." },
+  { jmeno: "Šoupa Karel", orgVedouci: "OnLi", spolecnost: "TM CZ a.s." },
+  { jmeno: "Večeř Jiří", orgVedouci: "JoMa", spolecnost: "TM CZ a.s." },
+  { jmeno: "Bartovičová Agáta", orgVedouci: "KaSo", spolecnost: "TM CZ a.s." },
+  { jmeno: "Hrachová Ivana", orgVedouci: "KaSo", spolecnost: "TM CZ a.s." },
+  { jmeno: "Karlík Štěpán", orgVedouci: "JoMa", spolecnost: "TM CZ a.s." },
+  { jmeno: "Friedlová Jiřina", orgVedouci: "OnLi", spolecnost: "TM CZ a.s." },
+  { jmeno: "Fuchs Pavel", orgVedouci: "DaAm", spolecnost: "TM CZ a.s." },
+  { jmeno: "Mohelník Martin", orgVedouci: "JoMa", spolecnost: "TM CZ a.s." },
+  { jmeno: "Nedavaška Petr", orgVedouci: "OnLi", spolecnost: "TM CZ a.s." },
+  { jmeno: "Šedovičová Darina", orgVedouci: "PeNe", spolecnost: "TM CZ a.s." },
+  { jmeno: "Ješš Jozef", orgVedouci: "PeNe", spolecnost: "TM CZ a.s." },
+  { jmeno: "Melichar Ondřej", orgVedouci: "PeNe", spolecnost: "TM CZ a.s." },
+  { jmeno: "Klíma Milan", orgVedouci: "KaSo", spolecnost: "TM CZ a.s." },
+  { jmeno: "Hibler František", orgVedouci: "KaSo", spolecnost: "TM CZ a.s." },
+  { jmeno: "Brojír Jaroslav", orgVedouci: "JoMa", spolecnost: "TM CZ a.s." },
+  { jmeno: "Madanský Peter", orgVedouci: "OnLi", spolecnost: "TM CZ a.s." },
+  { jmeno: "Samko Mikuláš", orgVedouci: "JoMa", spolecnost: "TM CZ a.s." },
+  { jmeno: "Chrenko Daniel", orgVedouci: "Dodavatel", spolecnost: "MB idea SK, s.r.o." },
+  { jmeno: "Jiřička Aleš", orgVedouci: "JoMa", spolecnost: "TM CZ a.s." },
+  { jmeno: "Stránský Martin", orgVedouci: "PeMa", spolecnost: "TM CZ a.s." },
+  { jmeno: "Trač Vasyl", orgVedouci: "PeMa", spolecnost: "TM CZ a.s." }
 ];
 
-// Reálné projekty s jejich parametry
-const projekty = [
-  { kod: "ST_EMU_INT", zakaznik: "ST", pm: "KaSo", smt: "1", program: "RAIL", sazba: 1100 },
-  { kod: "ST_TRAM_INT", zakaznik: "ST", pm: "JoMa", smt: "1", program: "RAIL", sazba: 1100 },
-  { kod: "ST_MAINZ", zakaznik: "ST", pm: "JoMa", smt: "1", program: "RAIL", sazba: 1100 },
-  { kod: "ST_KASSEL", zakaznik: "ST", pm: "JoMa", smt: "1", program: "RAIL", sazba: 1100 },
-  { kod: "ST_BLAVA", zakaznik: "ST", pm: "JoMa", smt: "1", program: "RAIL", sazba: 1150 },
-  { kod: "ST_FEM", zakaznik: "ST", pm: "PeNe", smt: "0", program: "RAIL", sazba: 1250 },
-  { kod: "ST_POZAR", zakaznik: "ST", pm: "OnLi", smt: "0.5", program: "RAIL", sazba: 1250 },
-  { kod: "NU_CRAIN", zakaznik: "NUVIA", pm: "PeMa", smt: "0", program: "MACH", sazba: 1580 },
-  { kod: "WA_HVAC", zakaznik: "WABTEC", pm: "DaAm", smt: "0", program: "RAIL", sazba: 1220 },
-  { kod: "ST_JIGS", zakaznik: "ST", pm: "KaSo", smt: "1", program: "RAIL", sazba: 1150 },
-  { kod: "ST_TRAM_HS", zakaznik: "ST", pm: "KaSo", smt: "1", program: "RAIL", sazba: 1085 },
-  { kod: "SAF_FEM", zakaznik: "SAFRAN DE", pm: "PeNe", smt: "0", program: "AERO", sazba: 1300 },
-  { kod: "FREE", zakaznik: "N/A", pm: "N/A", smt: "N/A", program: "N/A", sazba: 0 },
-  { kod: "DOVOLENÁ", zakaznik: "N/A", pm: "N/A", smt: "N/A", program: "N/A", sazba: 0 }
-];
-
-// Funkce pro náhodné přiřazení projektů konstruktérům
-const generateRandomAssignment = (konstrukter: any, week: string, month: string) => {
-  const randomProject = projekty[Math.floor(Math.random() * (projekty.length - 2))]; // Vynechá FREE a DOVOLENÁ
-  const randomHours = Math.floor(Math.random() * 4) * 10 + 20; // 20, 30, 40, 50 hodin
+// Generování ukázkových projektů pro následující 4 týdny
+const generateMockPlan = (konstrukter: any): EngineerOverview => {
+  const projects = ['ST_MAINZ', 'ST_KASSEL', 'NU_CRAIN', 'WA_HVAC', 'FREE', 'DOVOLENÁ'];
+  const plan: string[] = [];
+  
+  for (let i = 0; i < 4; i++) {
+    const randomProject = projects[Math.floor(Math.random() * projects.length)];
+    plan.push(randomProject);
+  }
+  
+  // Určení statusu na základě plánu
+  const freeCount = plan.filter(p => p === 'FREE').length;
+  const vacationCount = plan.filter(p => p === 'DOVOLENÁ').length;
+  
+  let status: 'VOLNY' | 'CASTECNE' | 'PLNE' | 'DOVOLENA';
+  
+  if (vacationCount >= 2) {
+    status = 'DOVOLENA';
+  } else if (freeCount >= 3) {
+    status = 'VOLNY';
+  } else if (freeCount >= 1) {
+    status = 'CASTECNE';
+  } else {
+    status = 'PLNE';
+  }
   
   return {
     konstrukter: konstrukter.jmeno,
-    cw: week,
-    mesic: month,
-    mhTyden: randomHours,
-    projekt: randomProject.kod,
-    lokalita: randomProject.zakaznik === "ST" ? "ST" : randomProject.zakaznik,
-    zakaznik: randomProject.zakaznik,
-    pm: randomProject.pm,
-    smt: randomProject.smt,
-    program: randomProject.program,
-    hodinovaSazba: randomProject.sazba,
-    obrat: randomHours * randomProject.sazba
+    spolecnost: konstrukter.spolecnost,
+    orgVedouci: konstrukter.orgVedouci,
+    planNa4Tydny: plan,
+    status
   };
 };
 
-// Generování ukázkových dat pro první konstruktéry
-const mockData: PlanningEntry[] = [
-  // Hlavan Martin - kompletní plánování
-  generateRandomAssignment(konstrukteri[0], "CW32", "August"),
-  generateRandomAssignment(konstrukteri[0], "CW33", "August"), 
-  generateRandomAssignment(konstrukteri[0], "CW34", "August"),
-  {
-    konstrukter: "Hlavan Martin",
-    cw: "CW42",
-    mesic: "October",
-    mhTyden: 0,
-    projekt: "FREE",
-    lokalita: "",
-    zakaznik: "N/A",
-    pm: "N/A",
-    smt: "N/A",
-    program: "N/A",
-    hodinovaSazba: 0,
-    obrat: 0
-  },
-  
-  // Fica Ladislav
-  generateRandomAssignment(konstrukteri[1], "CW32", "August"),
-  generateRandomAssignment(konstrukteri[1], "CW33", "August"),
-  
-  // Ambrož David
-  generateRandomAssignment(konstrukteri[2], "CW32", "August"),
-  generateRandomAssignment(konstrukteri[2], "CW33", "August"),
-  
-  // Slavík Ondřej  
-  generateRandomAssignment(konstrukteri[3], "CW32", "August"),
-  generateRandomAssignment(konstrukteri[3], "CW33", "August"),
-  
-  // Uher Tomáš
-  generateRandomAssignment(konstrukteri[8], "CW32", "August"),
-  generateRandomAssignment(konstrukteri[8], "CW33", "August"),
-  
-  // Weiss Ondřej
-  generateRandomAssignment(konstrukteri[9], "CW32", "August"),
-  generateRandomAssignment(konstrukteri[9], "CW33", "August"),
-  
-  // Borský Jan
-  generateRandomAssignment(konstrukteri[10], "CW32", "August"),
-  {
-    konstrukter: "Borský Jan",
-    cw: "CW33",
-    mesic: "August",
-    mhTyden: 0,
-    projekt: "DOVOLENÁ",
-    lokalita: "",
-    zakaznik: "N/A",
-    pm: "N/A",
-    smt: "N/A",
-    program: "N/A",
-    hodinovaSazba: 0,
-    obrat: 0
-  },
-  
-  // Pytela Martin
-  generateRandomAssignment(konstrukteri[11], "CW32", "August"),
-  generateRandomAssignment(konstrukteri[11], "CW33", "August"),
-  
-  // Jandečka Karel
-  generateRandomAssignment(konstrukteri[13], "CW32", "August"),
-  generateRandomAssignment(konstrukteri[13], "CW33", "August"),
-  
-  // Heřman Daniel
-  generateRandomAssignment(konstrukteri[14], "CW32", "August"),
-  generateRandomAssignment(konstrukteri[14], "CW33", "August"),
-];
+// Generování přehledových dat
+const mockOverviewData: EngineerOverview[] = konstrukteri.map(k => generateMockPlan(k));
 
 export const PlanningTable: React.FC = () => {
-  const [data, setData] = useState<PlanningEntry[]>(mockData);
-  const [filteredData, setFilteredData] = useState<PlanningEntry[]>(mockData);
-  const [filterZakaznik, setFilterZakaznik] = useState<string>('all');
-  const [filterProgram, setFilterProgram] = useState<string>('all');
+  const [data] = useState<EngineerOverview[]>(mockOverviewData);
+  const [filteredData, setFilteredData] = useState<EngineerOverview[]>(mockOverviewData);
   const [filterOrgVedouci, setFilterOrgVedouci] = useState<string>('all');
-  const [filterOddeleni, setFilterOddeleni] = useState<string>('all');
+  const [filterSpolecnost, setFilterSpolecnost] = useState<string>('all');
   const [searchKonstrukter, setSearchKonstrukter] = useState<string>('');
 
-  const uniqueZakaznici = Array.from(new Set(data.map(item => item.zakaznik).filter(z => z !== 'N/A')));
-  const uniquePrograms = Array.from(new Set(data.map(item => item.program).filter(p => p !== 'N/A')));
   const uniqueOrgVedouci = Array.from(new Set(konstrukteri.map(k => k.orgVedouci)));
-  const uniqueOddeleni = Array.from(new Set(konstrukteri.map(k => k.oddeleni)));
+  const uniqueSpolecnosti = Array.from(new Set(konstrukteri.map(k => k.spolecnost)));
 
   React.useEffect(() => {
     let filtered = data;
     
-    if (filterZakaznik !== 'all') {
-      filtered = filtered.filter(item => item.zakaznik === filterZakaznik);
-    }
-    
-    if (filterProgram !== 'all') {
-      filtered = filtered.filter(item => item.program === filterProgram);
-    }
-    
     if (filterOrgVedouci !== 'all') {
-      filtered = filtered.filter(item => {
-        const konstrukter = konstrukteri.find(k => k.jmeno === item.konstrukter);
-        return konstrukter?.orgVedouci === filterOrgVedouci;
-      });
+      filtered = filtered.filter(item => item.orgVedouci === filterOrgVedouci);
     }
     
-    if (filterOddeleni !== 'all') {
-      filtered = filtered.filter(item => {
-        const konstrukter = konstrukteri.find(k => k.jmeno === item.konstrukter);
-        return konstrukter?.oddeleni === filterOddeleni;
-      });
+    if (filterSpolecnost !== 'all') {
+      filtered = filtered.filter(item => item.spolecnost === filterSpolecnost);
     }
     
     if (searchKonstrukter) {
@@ -254,25 +128,32 @@ export const PlanningTable: React.FC = () => {
     }
     
     setFilteredData(filtered);
-  }, [data, filterZakaznik, filterProgram, filterOrgVedouci, filterOddeleni, searchKonstrukter]);
+  }, [data, filterOrgVedouci, filterSpolecnost, searchKonstrukter]);
 
-  const totalObrat = filteredData.reduce((sum, item) => sum + item.obrat, 0);
-  const totalHours = filteredData.reduce((sum, item) => sum + item.mhTyden, 0);
+  const getStatusBadge = (status: EngineerOverview['status']) => {
+    switch (status) {
+      case 'VOLNY':
+        return <Badge className="bg-success/20 text-success border-success/30">Volný</Badge>;
+      case 'CASTECNE':
+        return <Badge className="bg-warning/20 text-warning-foreground border-warning/30">Částečně vytížen</Badge>;
+      case 'PLNE':
+        return <Badge className="bg-primary/20 text-primary border-primary/30">Plně vytížen</Badge>;
+      case 'DOVOLENA':
+        return <Badge variant="outline" className="bg-accent text-accent-foreground border-accent">Dovolená</Badge>;
+      default:
+        return <Badge variant="secondary">Neznámý</Badge>;
+    }
+  };
 
-  const getStatusBadge = (projekt: string, mhTyden: number) => {
-    if (projekt === 'FREE' || mhTyden === 0) {
-      return <Badge variant="secondary">Volný</Badge>;
-    }
-    if (projekt === 'DOVOLENÁ') {
-      return <Badge variant="outline" className="border-accent">Dovolená</Badge>;
-    }
-    if (mhTyden >= 40) {
-      return <Badge className="bg-success">Plně vytížen</Badge>;
-    }
-    if (mhTyden >= 20) {
-      return <Badge className="bg-warning text-warning-foreground">Částečně vytížen</Badge>;
-    }
-    return <Badge variant="secondary">Nízké vytížení</Badge>;
+  const getProjectBadge = (projekt: string) => {
+    if (projekt === 'FREE') return <Badge variant="secondary" className="bg-success/20 text-success">FREE</Badge>;
+    if (projekt === 'DOVOLENÁ') return <Badge variant="outline" className="bg-accent text-accent-foreground border-accent">Dovolená</Badge>;
+    
+    return (
+      <Badge variant="outline" className="bg-muted text-muted-foreground border-border">
+        {projekt}
+      </Badge>
+    );
   };
 
   return (
@@ -283,20 +164,15 @@ export const PlanningTable: React.FC = () => {
           <div className="flex items-center gap-3">
             <Calendar className="h-8 w-8" />
             <div>
-              <h1 className="text-2xl font-bold">Plánování konstruktérů</h1>
-              <p className="text-primary-foreground/80">Týdenní přehled projektů a vytížení</p>
+              <h1 className="text-2xl font-bold">Přehled plánování</h1>
+              <p className="text-primary-foreground/80">Celkový přehled konstruktérů a jejich vytížení</p>
             </div>
           </div>
           <div className="flex gap-4 text-center">
             <div className="bg-white/10 p-3 rounded-lg">
-              <TrendingUp className="h-5 w-5 mb-1 mx-auto" />
-              <div className="text-sm">Celkový obrat</div>
-              <div className="font-bold">{totalObrat.toLocaleString('cs-CZ')} Kč</div>
-            </div>
-            <div className="bg-white/10 p-3 rounded-lg">
               <Users className="h-5 w-5 mb-1 mx-auto" />
-              <div className="text-sm">Celkem hodin</div>
-              <div className="font-bold">{totalHours}h</div>
+              <div className="text-sm">Celkem konstruktérů</div>
+              <div className="font-bold">{filteredData.length}</div>
             </div>
           </div>
         </div>
@@ -317,30 +193,6 @@ export const PlanningTable: React.FC = () => {
             className="w-48"
           />
           
-          <Select value={filterZakaznik} onValueChange={setFilterZakaznik}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Všichni zákazníci" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Všichni zákazníci</SelectItem>
-              {uniqueZakaznici.map(zakaznik => (
-                <SelectItem key={zakaznik} value={zakaznik}>{zakaznik}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
-          <Select value={filterProgram} onValueChange={setFilterProgram}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Všechny programy" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Všechny programy</SelectItem>
-              {uniquePrograms.map(program => (
-                <SelectItem key={program} value={program}>{program}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
           <Select value={filterOrgVedouci} onValueChange={setFilterOrgVedouci}>
             <SelectTrigger className="w-48">
               <SelectValue placeholder="Všichni vedoucí" />
@@ -353,84 +205,59 @@ export const PlanningTable: React.FC = () => {
             </SelectContent>
           </Select>
           
-          <Select value={filterOddeleni} onValueChange={setFilterOddeleni}>
+          <Select value={filterSpolecnost} onValueChange={setFilterSpolecnost}>
             <SelectTrigger className="w-48">
-              <SelectValue placeholder="Všechna oddělení" />
+              <SelectValue placeholder="Všechny společnosti" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Všechna oddělení</SelectItem>
-              {uniqueOddeleni.map(oddeleni => (
-                <SelectItem key={oddeleni} value={oddeleni}>{oddeleni}</SelectItem>
+              <SelectItem value="all">Všechny společnosti</SelectItem>
+              {uniqueSpolecnosti.map(spolecnost => (
+                <SelectItem key={spolecnost} value={spolecnost}>{spolecnost}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
       </Card>
 
-      {/* Planning Table */}
+      {/* Overview Table */}
       <Card className="shadow-planning overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-planning-header text-white">
               <tr>
                 <th className="p-3 text-left font-medium">Konstruktér</th>
-                <th className="p-3 text-left font-medium">Oddělení</th>
-                <th className="p-3 text-left font-medium">CW</th>
-                <th className="p-3 text-left font-medium">Měsíc</th>
-                <th className="p-3 text-left font-medium">MH/týden</th>
-                <th className="p-3 text-left font-medium">Projekt</th>
-                <th className="p-3 text-left font-medium">Lokalita</th>
-                <th className="p-3 text-left font-medium">Zákazník</th>
-                <th className="p-3 text-left font-medium">PM</th>
-                <th className="p-3 text-left font-medium">Program</th>
-                <th className="p-3 text-left font-medium">Hodinová sazba</th>
-                <th className="p-3 text-left font-medium">Obrat</th>
+                <th className="p-3 text-left font-medium">Společnost</th>
+                <th className="p-3 text-left font-medium">Organizační vedoucí</th>
+                <th className="p-3 text-left font-medium">Plán na 4 týdny dopředu</th>
                 <th className="p-3 text-left font-medium">Status</th>
               </tr>
             </thead>
             <tbody>
-              {filteredData.map((entry, index) => {
-                const konstrukterData = konstrukteri.find(k => k.jmeno === entry.konstrukter);
-                return (
+              {filteredData.map((engineer, index) => (
                 <tr 
-                  key={`${entry.konstrukter}-${entry.cw}`}
+                  key={engineer.konstrukter}
                   className={`
                     border-b transition-colors hover:bg-planning-cell-hover
                     ${index % 2 === 0 ? 'bg-planning-cell' : 'bg-planning-stripe'}
                   `}
                 >
-                  <td className="p-3 font-medium text-foreground">{entry.konstrukter}</td>
-                  <td className="p-3 text-muted-foreground text-sm">
-                    {konstrukterData?.oddeleni || '-'}
-                  </td>
-                  <td className="p-3 text-muted-foreground font-mono">{entry.cw}</td>
-                  <td className="p-3 text-muted-foreground">{entry.mesic}</td>
+                  <td className="p-3 font-medium text-foreground">{engineer.konstrukter}</td>
+                  <td className="p-3 text-muted-foreground">{engineer.spolecnost}</td>
+                  <td className="p-3 text-muted-foreground font-medium">{engineer.orgVedouci}</td>
                   <td className="p-3">
-                    <span className={`font-medium ${
-                      entry.mhTyden >= 40 ? 'text-success' :
-                      entry.mhTyden >= 20 ? 'text-warning' :
-                      entry.mhTyden > 0 ? 'text-foreground' : 'text-muted-foreground'
-                    }`}>
-                      {entry.mhTyden}h
-                    </span>
-                  </td>
-                  <td className="p-3 font-medium">{entry.projekt}</td>
-                  <td className="p-3 text-muted-foreground">{entry.lokalita}</td>
-                  <td className="p-3 font-medium">{entry.zakaznik}</td>
-                  <td className="p-3 text-muted-foreground">{entry.pm}</td>
-                  <td className="p-3">{entry.program}</td>
-                  <td className="p-3 font-mono">
-                    {entry.hodinovaSazba > 0 ? `${entry.hodinovaSazba.toLocaleString('cs-CZ')} Kč` : '-'}
-                  </td>
-                  <td className="p-3 font-medium">
-                    {entry.obrat > 0 ? `${entry.obrat.toLocaleString('cs-CZ')} Kč` : '-'}
+                    <div className="flex gap-1 flex-wrap">
+                      {engineer.planNa4Tydny.map((projekt, weekIndex) => (
+                        <span key={weekIndex} className="text-xs">
+                          {getProjectBadge(projekt)}
+                        </span>
+                      ))}
+                    </div>
                   </td>
                   <td className="p-3">
-                    {getStatusBadge(entry.projekt, entry.mhTyden)}
+                    {getStatusBadge(engineer.status)}
                   </td>
                 </tr>
-                );
-              })}
+              ))}
             </tbody>
           </table>
         </div>
