@@ -20,13 +20,24 @@ export const ProjectManagement: React.FC<ProjectManagementProps> = ({ onProjectC
   const [isProgramDialogOpen, setIsProgramDialogOpen] = useState(false);
 
   // Stavy pro nový projekt
-  const [newProject, setNewProject] = useState({
+  const [newProject, setNewProject] = useState<{
+    name: string;
+    code: string;
+    customerId: string;
+    projectManagerId: string;
+    programId: string;
+    status: 'active';
+    hourlyRate: number;
+    projectType: 'WP' | 'Hodinovka';
+  }>({
     name: '',
     code: '',
     customerId: '',
     projectManagerId: '',
     programId: '',
-    status: 'active' as const
+    status: 'active',
+    hourlyRate: 0,
+    projectType: 'WP'
   });
 
   // Stavy pro nové entity
@@ -63,7 +74,7 @@ export const ProjectManagement: React.FC<ProjectManagementProps> = ({ onProjectC
       description: `Projekt ${project.name} byl úspěšně vytvořen`
     });
 
-    setNewProject({ name: '', code: '', customerId: '', projectManagerId: '', programId: '', status: 'active' });
+    setNewProject({ name: '', code: '', customerId: '', projectManagerId: '', programId: '', status: 'active', hourlyRate: 0, projectType: 'WP' });
     setIsProjectDialogOpen(false);
   };
 
@@ -333,6 +344,31 @@ export const ProjectManagement: React.FC<ProjectManagementProps> = ({ onProjectC
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="project-type">Typ projektu</Label>
+                <Select value={newProject.projectType} onValueChange={(value: 'WP' | 'Hodinovka') => setNewProject(prev => ({ ...prev, projectType: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Vyberte typ" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="WP">WP (Work Package)</SelectItem>
+                    <SelectItem value="Hodinovka">Hodinovka</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="hourly-rate">Hodinová sazba (Kč)</Label>
+                <Input
+                  id="hourly-rate"
+                  type="number"
+                  value={newProject.hourlyRate}
+                  onChange={(e) => setNewProject(prev => ({ ...prev, hourlyRate: Number(e.target.value) }))}
+                  placeholder="Zadejte hodinovou sazbu"
+                />
+              </div>
             </div>
 
             <Button onClick={handleCreateProject} className="mt-4">
