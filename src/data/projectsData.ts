@@ -28,6 +28,8 @@ export interface Project {
   status: 'active' | 'inactive' | 'completed';
   hourlyRate?: number;
   projectType: 'WP' | 'Hodinovka';
+  budget?: number;
+  assignedLicenses?: string[];
 }
 
 // Výchozí zákazníci

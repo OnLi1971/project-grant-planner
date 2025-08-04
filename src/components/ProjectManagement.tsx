@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Building2, User, Briefcase, Eye, Calendar } from 'lucide-react';
+import { Plus, Building2, User, Briefcase, Eye, Calendar, Edit, Save, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { usePlanning } from '@/contexts/PlanningContext';
 import { customers, projectManagers, programs, projects, type Customer, type ProjectManager, type Program, type Project } from '@/data/projectsData';
@@ -23,6 +23,7 @@ export const ProjectManagement: React.FC<ProjectManagementProps> = ({ onProjectC
   const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
   const [isPMDialogOpen, setIsPMDialogOpen] = useState(false);
   const [isProgramDialogOpen, setIsProgramDialogOpen] = useState(false);
+  const [editingProject, setEditingProject] = useState<string | null>(null);
 
   // Stavy pro nový projekt
   const [newProject, setNewProject] = useState<{
@@ -34,6 +35,8 @@ export const ProjectManagement: React.FC<ProjectManagementProps> = ({ onProjectC
     status: 'active';
     hourlyRate: number;
     projectType: 'WP' | 'Hodinovka';
+    budget: number;
+    assignedLicenses: string[];
   }>({
     name: '',
     code: '',
@@ -42,7 +45,9 @@ export const ProjectManagement: React.FC<ProjectManagementProps> = ({ onProjectC
     programId: '',
     status: 'active',
     hourlyRate: 0,
-    projectType: 'WP'
+    projectType: 'WP',
+    budget: 0,
+    assignedLicenses: []
   });
 
   // Stavy pro nové entity
@@ -79,7 +84,7 @@ export const ProjectManagement: React.FC<ProjectManagementProps> = ({ onProjectC
       description: `Projekt ${project.name} byl úspěšně vytvořen`
     });
 
-    setNewProject({ name: '', code: '', customerId: '', projectManagerId: '', programId: '', status: 'active', hourlyRate: 0, projectType: 'WP' });
+    setNewProject({ name: '', code: '', customerId: '', projectManagerId: '', programId: '', status: 'active', hourlyRate: 0, projectType: 'WP', budget: 0, assignedLicenses: [] });
     setIsProjectDialogOpen(false);
   };
 
@@ -210,7 +215,10 @@ export const ProjectManagement: React.FC<ProjectManagementProps> = ({ onProjectC
                 <TableHead>PM</TableHead>
                 <TableHead>Program</TableHead>
                 <TableHead>Typ</TableHead>
+                <TableHead>Budget</TableHead>
+                <TableHead>Licence</TableHead>
                 <TableHead>Použití</TableHead>
+                <TableHead>Akce</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -234,15 +242,97 @@ export const ProjectManagement: React.FC<ProjectManagementProps> = ({ onProjectC
                     )}
                   </TableCell>
                   <TableCell>
+                    {editingProject === item.code ? (
+                      <Input
+                        type="number"
+                        value={item.project?.budget || 0}
+                        onChange={(e) => {
+                          const updatedProjects = localProjects.map(p => 
+                            p.code === item.code ? { ...p, budget: Number(e.target.value) } : p
+                          );
+                          setLocalProjects(updatedProjects);
+                        }}
+                        className="w-24"
+                      />
+                    ) : (
+                      <span>{item.project?.budget ? `${item.project.budget.toLocaleString()} Kč` : 'N/A'}</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {editingProject === item.code ? (
+                      <Select
+                        value={item.project?.assignedLicenses?.join(',') || ''}
+                        onValueChange={(value) => {
+                          const licenses = value ? value.split(',') : [];
+                          const updatedProjects = localProjects.map(p => 
+                            p.code === item.code ? { ...p, assignedLicenses: licenses } : p
+                          );
+                          setLocalProjects(updatedProjects);
+                        }}
+                      >
+                        <SelectTrigger className="w-32">
+                          <SelectValue placeholder="Vyberte licence" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="AutoCAD,Inventor">AutoCAD + Inventor</SelectItem>
+                          <SelectItem value="SolidWorks">SolidWorks</SelectItem>
+                          <SelectItem value="CATIA">CATIA</SelectItem>
+                          <SelectItem value="Ansys">Ansys</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <div className="flex gap-1 flex-wrap">
+                        {item.project?.assignedLicenses?.map(license => (
+                          <Badge key={license} variant="outline" className="text-xs">
+                            {license}
+                          </Badge>
+                        )) || <span className="text-muted-foreground">N/A</span>}
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell>
                     <Badge variant="outline" className="font-mono">
                       {item.usage}x
                     </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {editingProject === item.code ? (
+                      <div className="flex gap-1">
+                        <Button 
+                          size="sm" 
+                          onClick={() => {
+                            setEditingProject(null);
+                            toast({
+                              title: "Projekt uložen",
+                              description: `Změny projektu ${item.code} byly uloženy`
+                            });
+                          }}
+                        >
+                          <Save className="h-3 w-3" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => setEditingProject(null)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => setEditingProject(item.code)}
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                    )}
                   </TableCell>
                 </tr>
               ))}
               {usedProjects.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
                     Zatím nejsou používány žádné projekty
                   </TableCell>
                 </TableRow>
@@ -443,7 +533,7 @@ export const ProjectManagement: React.FC<ProjectManagementProps> = ({ onProjectC
               </Select>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="project-type">Typ projektu</Label>
                 <Select value={newProject.projectType} onValueChange={(value: 'WP' | 'Hodinovka') => setNewProject(prev => ({ ...prev, projectType: value }))}>
@@ -466,6 +556,47 @@ export const ProjectManagement: React.FC<ProjectManagementProps> = ({ onProjectC
                   placeholder="Zadejte hodinovou sazbu"
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="budget">Budget (Kč)</Label>
+                <Input
+                  id="budget"
+                  type="number"
+                  value={newProject.budget}
+                  onChange={(e) => setNewProject(prev => ({ ...prev, budget: Number(e.target.value) }))}
+                  placeholder="Zadejte budget"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Přiřazené licence</Label>
+              <Select
+                value={newProject.assignedLicenses.join(',')}
+                onValueChange={(value) => {
+                  const licenses = value ? value.split(',') : [];
+                  setNewProject(prev => ({ ...prev, assignedLicenses: licenses }));
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Vyberte licence" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="AutoCAD,Inventor">AutoCAD + Inventor</SelectItem>
+                  <SelectItem value="SolidWorks">SolidWorks</SelectItem>
+                  <SelectItem value="CATIA">CATIA</SelectItem>
+                  <SelectItem value="Ansys">Ansys</SelectItem>
+                  <SelectItem value="">Žádné</SelectItem>
+                </SelectContent>
+              </Select>
+              {newProject.assignedLicenses.length > 0 && (
+                <div className="flex gap-1 flex-wrap mt-2">
+                  {newProject.assignedLicenses.map(license => (
+                    <Badge key={license} variant="outline" className="text-xs">
+                      {license}
+                    </Badge>
+                  ))}
+                </div>
+              )}
             </div>
 
             <Button onClick={handleCreateProject} className="mt-4">
