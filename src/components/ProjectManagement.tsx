@@ -1,11 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Building2, User, Briefcase } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Plus, Building2, User, Briefcase, Eye, Calendar } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { usePlanning } from '@/contexts/PlanningContext';
 import { customers, projectManagers, programs, projects, type Customer, type ProjectManager, type Program, type Project } from '@/data/projectsData';
 
 interface ProjectManagementProps {
@@ -14,6 +18,7 @@ interface ProjectManagementProps {
 
 export const ProjectManagement: React.FC<ProjectManagementProps> = ({ onProjectCreated }) => {
   const { toast } = useToast();
+  const { planningData } = usePlanning();
   const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
   const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
   const [isPMDialogOpen, setIsPMDialogOpen] = useState(false);
@@ -153,8 +158,100 @@ export const ProjectManagement: React.FC<ProjectManagementProps> = ({ onProjectC
     });
   };
 
+  // Získej všechny používané projekty z plánovacích dat
+  const usedProjects = useMemo(() => {
+    const projectCodes = Array.from(new Set(planningData.map(entry => entry.projekt).filter(Boolean)));
+    return projectCodes.map(code => {
+      const projectData = localProjects.find(p => p.code === code);
+      const customer = localCustomers.find(c => c.id === projectData?.customerId);
+      const pm = localPMs.find(p => p.id === projectData?.projectManagerId);
+      const program = localPrograms.find(p => p.id === projectData?.programId);
+      
+      return {
+        code,
+        project: projectData,
+        customer,
+        pm,
+        program,
+        usage: planningData.filter(entry => entry.projekt === code).length
+      };
+    }).sort((a, b) => b.usage - a.usage);
+  }, [planningData, localProjects, localCustomers, localPMs, localPrograms]);
+
+  const getProjectBadge = (code: string) => {
+    if (!code || code === 'FREE') return <Badge variant="secondary">Volný</Badge>;
+    if (code === 'DOVOLENÁ') return <Badge variant="outline" className="border-accent">Dovolená</Badge>;
+    if (code.startsWith('ST_')) return <Badge className="bg-primary">ST Projekt</Badge>;
+    if (code.startsWith('NU_')) return <Badge className="bg-warning text-warning-foreground">NUVIA</Badge>;
+    if (code.startsWith('WA_')) return <Badge className="bg-success">WABTEC</Badge>;
+    if (code.startsWith('SAF_')) return <Badge style={{backgroundColor: 'hsl(280 100% 70%)', color: 'white'}}>SAFRAN</Badge>;
+    if (code.startsWith('BUCH_')) return <Badge className="bg-info">BUCHER</Badge>;
+    if (code.startsWith('AIRB_')) return <Badge className="bg-accent">AIRBUS</Badge>;
+    return <Badge variant="outline">{code}</Badge>;
+  };
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {/* Přehled používaných projektů */}
+      <Card className="p-4 shadow-card-custom">
+        <div className="flex items-center gap-2 mb-4">
+          <Eye className="h-5 w-5 text-primary" />
+          <h3 className="text-lg font-semibold">Používané projekty</h3>
+          <Badge variant="outline">{usedProjects.length} projektů</Badge>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Kód projektu</TableHead>
+                <TableHead>Název</TableHead>
+                <TableHead>Zákazník</TableHead>
+                <TableHead>PM</TableHead>
+                <TableHead>Program</TableHead>
+                <TableHead>Typ</TableHead>
+                <TableHead>Použití</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {usedProjects.map((item, index) => (
+                <tr 
+                  key={item.code}
+                  className={index % 2 === 0 ? 'bg-muted/50' : 'bg-background'}
+                >
+                  <TableCell className="font-mono font-medium">
+                    {getProjectBadge(item.code)}
+                  </TableCell>
+                  <TableCell>{item.project?.name || item.code}</TableCell>
+                  <TableCell>{item.customer?.name || 'N/A'}</TableCell>
+                  <TableCell>{item.pm?.name || 'N/A'}</TableCell>
+                  <TableCell>{item.program?.name || 'N/A'}</TableCell>
+                  <TableCell>
+                    {item.project?.projectType && (
+                      <Badge variant={item.project.projectType === 'WP' ? 'default' : 'secondary'}>
+                        {item.project.projectType}
+                      </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="font-mono">
+                      {item.usage}x
+                    </Badge>
+                  </TableCell>
+                </tr>
+              ))}
+              {usedProjects.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                    Zatím nejsou používány žádné projekty
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </Card>
+
       {/* Hlavní tlačítko pro vytvoření projektu */}
       <Dialog open={isProjectDialogOpen} onOpenChange={setIsProjectDialogOpen}>
         <DialogTrigger asChild>
