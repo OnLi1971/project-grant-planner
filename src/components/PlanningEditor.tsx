@@ -164,10 +164,6 @@ export const PlanningEditor: React.FC = () => {
               <MousePointer2 className="h-4 w-4 mr-2" />
               {isMultiSelectMode ? 'Ukončit výběr' : 'Vybrat více týdnů'}
             </Button>
-            <Button variant="outline" onClick={addNewEngineer} className="bg-white/10 hover:bg-white/20 text-white border-white/30 hover:border-white/50">
-              <Plus className="h-4 w-4 mr-2" />
-              Přidat konstruktéra
-            </Button>
             <Button variant="outline" onClick={savePlan} className="bg-white/10 hover:bg-white/20 text-white border-white/30 hover:border-white/50">
               <Save className="h-4 w-4 mr-2" />
               Uložit plán
@@ -256,16 +252,6 @@ export const PlanningEditor: React.FC = () => {
         </Card>
       )}
 
-      {/* Project Management */}
-      <Card className="p-4 shadow-card-custom">
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <FolderPlus className="h-5 w-5 text-primary" />
-            <h3 className="text-lg font-semibold">Správa projektů</h3>
-          </div>
-          <ProjectManagement onProjectCreated={handleProjectCreated} />
-        </div>
-      </Card>
 
       {/* Selector konstruktéra */}
       <Card className="p-4 shadow-card-custom">
