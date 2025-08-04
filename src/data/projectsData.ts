@@ -16,6 +16,11 @@ export interface Program {
   code: string;
 }
 
+export interface ProjectLicense {
+  licenseId: string;
+  percentage: number;
+}
+
 export interface Project {
   id: string;
   name: string;
@@ -29,7 +34,7 @@ export interface Project {
   hourlyRate?: number;
   projectType: 'WP' | 'Hodinovka';
   budget?: number;
-  assignedLicenses?: string[];
+  assignedLicenses?: ProjectLicense[];
 }
 
 // Výchozí zákazníci

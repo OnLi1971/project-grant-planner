@@ -1,176 +1,195 @@
-import React, { useState, useMemo } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Building2, User, Briefcase, Eye, Calendar, Edit, Save, X } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { Plus, Edit, Briefcase, Building, Trash2, X, Eye, Save } from 'lucide-react';
 import { usePlanning } from '@/contexts/PlanningContext';
-import { customers, projectManagers, programs, projects, type Customer, type ProjectManager, type Program, type Project } from '@/data/projectsData';
+import { 
+  Project, ProjectLicense, Customer, ProjectManager, Program, 
+  projects as initialProjects, 
+  customers, 
+  projectManagers, 
+  programs 
+} from '@/data/projectsData';
 
-interface ProjectManagementProps {
-  onProjectCreated?: (project: Project) => void;
+interface License {
+  id: string;
+  name: string;
+  type: 'software' | 'certification' | 'training';
+  provider: string;
+  totalSeats: number;
+  usedSeats: number;
+  expirationDate: string;
+  cost: number;
+  status: 'active' | 'expired' | 'expiring-soon';
 }
 
-export const ProjectManagement: React.FC<ProjectManagementProps> = ({ onProjectCreated }) => {
-  const { toast } = useToast();
-  const { planningData } = usePlanning();
-  const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
-  const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
-  const [isPMDialogOpen, setIsPMDialogOpen] = useState(false);
-  const [isProgramDialogOpen, setIsProgramDialogOpen] = useState(false);
-  const [editingProject, setEditingProject] = useState<string | null>(null);
-
-  // Stavy pro nový projekt
-  const [newProject, setNewProject] = useState<{
-    name: string;
-    code: string;
-    customerId: string;
-    projectManagerId: string;
-    programId: string;
-    status: 'active';
-    hourlyRate: number;
-    projectType: 'WP' | 'Hodinovka';
-    budget: number;
-    assignedLicenses: string[];
-  }>({
+export const ProjectManagement = () => {
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [licenses, setLicenses] = useState<License[]>([]);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [formData, setFormData] = useState({
     name: '',
     code: '',
     customerId: '',
     projectManagerId: '',
     programId: '',
-    status: 'active',
-    hourlyRate: 0,
-    projectType: 'WP',
+    projectType: 'WP' as 'WP' | 'Hodinovka',
     budget: 0,
-    assignedLicenses: []
+    assignedLicenses: [] as ProjectLicense[]
   });
+  const { toast } = useToast();
+  const { planningData } = usePlanning();
 
-  // Stavy pro nové entity
-  const [newCustomer, setNewCustomer] = useState({ name: '', code: '' });
-  const [newPM, setNewPM] = useState({ name: '', email: '' });
-  const [newProgram, setNewProgram] = useState({ name: '', code: '' });
+  // Load projects and licenses from localStorage
+  useEffect(() => {
+    const savedProjects = localStorage.getItem('projects-data');
+    if (savedProjects) {
+      setProjects(JSON.parse(savedProjects));
+    } else {
+      setProjects(initialProjects);
+      localStorage.setItem('projects-data', JSON.stringify(initialProjects));
+    }
 
-  // Lokální seznamy (v reálné aplikaci by byly v kontextu nebo databázi)
-  const [localCustomers, setLocalCustomers] = useState<Customer[]>(customers);
-  const [localPMs, setLocalPMs] = useState<ProjectManager[]>(projectManagers);
-  const [localPrograms, setLocalPrograms] = useState<Program[]>(programs);
-  const [localProjects, setLocalProjects] = useState<Project[]>(projects);
+    const savedLicenses = localStorage.getItem('licenses-data');
+    if (savedLicenses) {
+      setLicenses(JSON.parse(savedLicenses));
+    } else {
+      // Default licenses if none exist
+      const defaultLicenses: License[] = [
+        {
+          id: '1',
+          name: 'AutoCAD Professional',
+          type: 'software',
+          provider: 'Autodesk',
+          totalSeats: 10,
+          usedSeats: 8,
+          expirationDate: '2024-12-31',
+          cost: 150000,
+          status: 'active'
+        },
+        {
+          id: '2',
+          name: 'SolidWorks Premium',
+          type: 'software',
+          provider: 'Dassault Systèmes',
+          totalSeats: 5,
+          usedSeats: 5,
+          expirationDate: '2024-06-15',
+          cost: 200000,
+          status: 'expiring-soon'
+        }
+      ];
+      setLicenses(defaultLicenses);
+    }
+  }, []);
 
-  const handleCreateProject = () => {
-    if (!newProject.name || !newProject.code || !newProject.customerId || !newProject.projectManagerId || !newProject.programId) {
+  const handleSubmit = () => {
+    if (!formData.name || !formData.code || !formData.customerId || !formData.projectManagerId || !formData.programId) {
       toast({
         title: "Chyba",
-        description: "Všechna pole jsou povinná",
-        variant: "destructive"
+        description: "Všechna povinná pole musí být vyplněna.",
+        variant: "destructive",
       });
       return;
     }
 
-    const project: Project = {
-      id: Date.now().toString(),
-      ...newProject
-    };
+    if (editingProject) {
+      const updatedProjects = projects.map(project => 
+        project.id === editingProject.id 
+          ? { ...project, ...formData }
+          : project
+      );
+      setProjects(updatedProjects);
+      localStorage.setItem('projects-data', JSON.stringify(updatedProjects));
+      toast({
+        title: "Projekt upraven",
+        description: "Údaje projektu byly úspěšně aktualizovány.",
+      });
+    } else {
+      const newProject: Project = {
+        id: Date.now().toString(),
+        ...formData,
+        status: 'active'
+      };
+      const updatedProjects = [...projects, newProject];
+      setProjects(updatedProjects);
+      localStorage.setItem('projects-data', JSON.stringify(updatedProjects));
+      toast({
+        title: "Projekt přidán",
+        description: "Nový projekt byl úspěšně přidán.",
+      });
+    }
 
-    setLocalProjects(prev => [...prev, project]);
-    onProjectCreated?.(project);
-    
-    toast({
-      title: "Projekt vytvořen",
-      description: `Projekt ${project.name} byl úspěšně vytvořen`
-    });
-
-    setNewProject({ name: '', code: '', customerId: '', projectManagerId: '', programId: '', status: 'active', hourlyRate: 0, projectType: 'WP', budget: 0, assignedLicenses: [] });
-    setIsProjectDialogOpen(false);
+    resetForm();
   };
 
-  const handleCreateCustomer = () => {
-    if (!newCustomer.name || !newCustomer.code) {
-      toast({
-        title: "Chyba",
-        description: "Název a kód zákazníka jsou povinné",
-        variant: "destructive"
-      });
-      return;
-    }
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      code: '',
+      customerId: '',
+      projectManagerId: '',
+      programId: '',
+      projectType: 'WP',
+      budget: 0,
+      assignedLicenses: []
+    });
+    setIsAddDialogOpen(false);
+    setEditingProject(null);
+  };
 
-    const customer: Customer = {
-      id: Date.now().toString(),
-      ...newCustomer
-    };
-
-    setLocalCustomers(prev => [...prev, customer]);
-    setNewCustomer({ name: '', code: '' });
-    setIsCustomerDialogOpen(false);
-    
-    toast({
-      title: "Zákazník vytvořen",
-      description: `Zákazník ${customer.name} byl úspěšně vytvořen`
+  const addLicenseToProject = () => {
+    setFormData({
+      ...formData,
+      assignedLicenses: [...formData.assignedLicenses, { licenseId: '', percentage: 0 }]
     });
   };
 
-  const handleCreatePM = () => {
-    if (!newPM.name || !newPM.email) {
-      toast({
-        title: "Chyba",
-        description: "Jméno a email PM jsou povinné",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const pm: ProjectManager = {
-      id: Date.now().toString(),
-      ...newPM
-    };
-
-    setLocalPMs(prev => [...prev, pm]);
-    setNewPM({ name: '', email: '' });
-    setIsPMDialogOpen(false);
-    
-    toast({
-      title: "PM vytvořen",
-      description: `PM ${pm.name} byl úspěšně vytvořen`
+  const removeLicenseFromProject = (index: number) => {
+    setFormData({
+      ...formData,
+      assignedLicenses: formData.assignedLicenses.filter((_, i) => i !== index)
     });
   };
 
-  const handleCreateProgram = () => {
-    if (!newProgram.name || !newProgram.code) {
-      toast({
-        title: "Chyba",
-        description: "Název a kód programu jsou povinné",
-        variant: "destructive"
-      });
-      return;
-    }
+  const updateProjectLicense = (index: number, field: 'licenseId' | 'percentage', value: string | number) => {
+    const updated = formData.assignedLicenses.map((license, i) => 
+      i === index ? { ...license, [field]: value } : license
+    );
+    setFormData({ ...formData, assignedLicenses: updated });
+  };
 
-    const program: Program = {
-      id: Date.now().toString(),
-      ...newProgram
-    };
-
-    setLocalPrograms(prev => [...prev, program]);
-    setNewProgram({ name: '', code: '' });
-    setIsProgramDialogOpen(false);
-    
-    toast({
-      title: "Program vytvořen",
-      description: `Program ${program.name} byl úspěšně vytvořen`
+  const handleEdit = (project: Project) => {
+    setEditingProject(project);
+    setFormData({
+      name: project.name,
+      code: project.code,
+      customerId: project.customerId,
+      projectManagerId: project.projectManagerId,
+      programId: project.programId,
+      projectType: project.projectType,
+      budget: project.budget || 0,
+      assignedLicenses: project.assignedLicenses || []
     });
+    setIsAddDialogOpen(true);
   };
 
   // Získej všechny používané projekty z plánovacích dat
   const usedProjects = useMemo(() => {
     const projectCodes = Array.from(new Set(planningData.map(entry => entry.projekt).filter(Boolean)));
     return projectCodes.map(code => {
-      const projectData = localProjects.find(p => p.code === code);
-      const customer = localCustomers.find(c => c.id === projectData?.customerId);
-      const pm = localPMs.find(p => p.id === projectData?.projectManagerId);
-      const program = localPrograms.find(p => p.id === projectData?.programId);
+      const projectData = projects.find(p => p.code === code);
+      const customer = customers.find(c => c.id === projectData?.customerId);
+      const pm = projectManagers.find(p => p.id === projectData?.projectManagerId);
+      const program = programs.find(p => p.id === projectData?.programId);
       
       return {
         code,
@@ -181,7 +200,7 @@ export const ProjectManagement: React.FC<ProjectManagementProps> = ({ onProjectC
         usage: planningData.filter(entry => entry.projekt === code).length
       };
     }).sort((a, b) => b.usage - a.usage);
-  }, [planningData, localProjects, localCustomers, localPMs, localPrograms]);
+  }, [planningData, projects]);
 
   const getProjectBadge = (code: string) => {
     if (!code || code === 'FREE') return <Badge variant="secondary">Volný</Badge>;
@@ -198,413 +217,258 @@ export const ProjectManagement: React.FC<ProjectManagementProps> = ({ onProjectC
   return (
     <div className="space-y-6">
       {/* Přehled používaných projektů */}
-      <Card className="p-4 shadow-card-custom">
-        <div className="flex items-center gap-2 mb-4">
-          <Eye className="h-5 w-5 text-primary" />
-          <h3 className="text-lg font-semibold">Používané projekty</h3>
-          <Badge variant="outline">{usedProjects.length} projektů</Badge>
-        </div>
-        
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Kód projektu</TableHead>
-                <TableHead>Název</TableHead>
-                <TableHead>Zákazník</TableHead>
-                <TableHead>PM</TableHead>
-                <TableHead>Program</TableHead>
-                <TableHead>Typ</TableHead>
-                <TableHead>Budget</TableHead>
-                <TableHead>Licence</TableHead>
-                <TableHead>Použití</TableHead>
-                <TableHead>Akce</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {usedProjects.map((item, index) => (
-                <tr 
-                  key={item.code}
-                  className={index % 2 === 0 ? 'bg-muted/50' : 'bg-background'}
-                >
-                  <TableCell className="font-mono font-medium">
-                    {getProjectBadge(item.code)}
-                  </TableCell>
-                  <TableCell>{item.project?.name || item.code}</TableCell>
-                  <TableCell>{item.customer?.name || 'N/A'}</TableCell>
-                  <TableCell>{item.pm?.name || 'N/A'}</TableCell>
-                  <TableCell>{item.program?.name || 'N/A'}</TableCell>
-                  <TableCell>
-                    {item.project?.projectType && (
-                      <Badge variant={item.project.projectType === 'WP' ? 'default' : 'secondary'}>
-                        {item.project.projectType}
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {editingProject === item.code ? (
-                      <Input
-                        type="number"
-                        value={item.project?.budget || 0}
-                        onChange={(e) => {
-                          const updatedProjects = localProjects.map(p => 
-                            p.code === item.code ? { ...p, budget: Number(e.target.value) } : p
-                          );
-                          setLocalProjects(updatedProjects);
-                        }}
-                        className="w-24"
-                      />
-                    ) : (
-                      <span>{item.project?.budget ? `${item.project.budget.toLocaleString()} Kč` : 'N/A'}</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {editingProject === item.code ? (
-                      <Select
-                        value={item.project?.assignedLicenses?.join(',') || ''}
-                        onValueChange={(value) => {
-                          const licenses = value ? value.split(',') : [];
-                          const updatedProjects = localProjects.map(p => 
-                            p.code === item.code ? { ...p, assignedLicenses: licenses } : p
-                          );
-                          setLocalProjects(updatedProjects);
-                        }}
-                      >
-                        <SelectTrigger className="w-32">
-                          <SelectValue placeholder="Vyberte licence" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="AutoCAD,Inventor">AutoCAD + Inventor</SelectItem>
-                          <SelectItem value="SolidWorks">SolidWorks</SelectItem>
-                          <SelectItem value="CATIA">CATIA</SelectItem>
-                          <SelectItem value="Ansys">Ansys</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <div className="flex gap-1 flex-wrap">
-                        {item.project?.assignedLicenses?.map(license => (
-                          <Badge key={license} variant="outline" className="text-xs">
-                            {license}
-                          </Badge>
-                        )) || <span className="text-muted-foreground">N/A</span>}
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="font-mono">
-                      {item.usage}x
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {editingProject === item.code ? (
-                      <div className="flex gap-1">
+      <Card className="p-6 shadow-card-custom">
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center gap-2">
+            <Briefcase className="h-5 w-5" />
+            <h2 className="text-xl font-semibold">Používané projekty</h2>
+            <Badge variant="outline">{usedProjects.length} projektů</Badge>
+          </div>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Přidat projekt
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingProject ? 'Upravit projekt' : 'Přidat projekt'}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="name">Název *</Label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      placeholder="ST EMU INT"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="code">Kód *</Label>
+                    <Input
+                      id="code"
+                      value={formData.code}
+                      onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                      placeholder="ST_EMU_INT"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="customer">Zákazník *</Label>
+                    <Select value={formData.customerId} onValueChange={(value) => setFormData({ ...formData, customerId: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Vyberte zákazníka" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {customers.map((customer) => (
+                          <SelectItem key={customer.id} value={customer.id}>
+                            {customer.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="pm">Project Manager *</Label>
+                    <Select value={formData.projectManagerId} onValueChange={(value) => setFormData({ ...formData, projectManagerId: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Vyberte PM" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {projectManagers.map((pm) => (
+                          <SelectItem key={pm.id} value={pm.id}>
+                            {pm.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="program">Program *</Label>
+                    <Select value={formData.programId} onValueChange={(value) => setFormData({ ...formData, programId: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Vyberte program" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {programs.map((program) => (
+                          <SelectItem key={program.id} value={program.id}>
+                            {program.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="projectType">Typ projektu *</Label>
+                    <Select value={formData.projectType} onValueChange={(value: 'WP' | 'Hodinovka') => setFormData({ ...formData, projectType: value })}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="WP">WP (Work Package)</SelectItem>
+                        <SelectItem value="Hodinovka">Hodinovka</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="budget">Budget (Kč)</Label>
+                    <Input
+                      id="budget"
+                      type="number"
+                      value={formData.budget || ''}
+                      onChange={(e) => setFormData({ ...formData, budget: parseInt(e.target.value) || 0 })}
+                      placeholder="1000000"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <Label>Přiřazené licence</Label>
+                    <Button type="button" variant="outline" size="sm" onClick={addLicenseToProject}>
+                      <Plus className="h-3 w-3 mr-1" />
+                      Přidat licenci
+                    </Button>
+                  </div>
+                  <div className="space-y-2 max-h-32 overflow-y-auto">
+                    {formData.assignedLicenses.map((projectLicense, index) => (
+                      <div key={index} className="flex items-center gap-2 p-2 border rounded">
+                        <div className="flex-1">
+                          <Select 
+                            value={projectLicense.licenseId} 
+                            onValueChange={(value) => updateProjectLicense(index, 'licenseId', value)}
+                          >
+                            <SelectTrigger className="h-8">
+                              <SelectValue placeholder="Vyberte licenci" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {licenses.map((license) => (
+                                <SelectItem key={license.id} value={license.id}>
+                                  {license.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="w-20">
+                          <Input
+                            type="number"
+                            min="0"
+                            max="100"
+                            placeholder="%"
+                            value={projectLicense.percentage || ''}
+                            onChange={(e) => updateProjectLicense(index, 'percentage', parseInt(e.target.value) || 0)}
+                            className="h-8 text-center"
+                          />
+                        </div>
                         <Button 
+                          type="button" 
+                          variant="ghost" 
                           size="sm" 
-                          onClick={() => {
-                            setEditingProject(null);
-                            toast({
-                              title: "Projekt uložen",
-                              description: `Změny projektu ${item.code} byly uloženy`
-                            });
-                          }}
-                        >
-                          <Save className="h-3 w-3" />
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => setEditingProject(null)}
+                          onClick={() => removeLicenseFromProject(index)}
+                          className="h-8 w-8 p-0"
                         >
                           <X className="h-3 w-3" />
                         </Button>
                       </div>
-                    ) : (
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => setEditingProject(item.code)}
-                      >
-                        <Edit className="h-3 w-3" />
-                      </Button>
-                    )}
-                  </TableCell>
-                </tr>
-              ))}
-              {usedProjects.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
-                    Zatím nejsou používány žádné projekty
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </Card>
-
-      {/* Hlavní tlačítko pro vytvoření projektu */}
-      <Dialog open={isProjectDialogOpen} onOpenChange={setIsProjectDialogOpen}>
-        <DialogTrigger asChild>
-          <Button className="w-full">
-            <Plus className="mr-2 h-4 w-4" />
-            Založit nový projekt
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Založit nový projekt</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="project-name">Název projektu</Label>
-                <Input
-                  id="project-name"
-                  value={newProject.name}
-                  onChange={(e) => setNewProject(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="Zadejte název projektu"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="project-code">Kód projektu</Label>
-                <Input
-                  id="project-code"
-                  value={newProject.code}
-                  onChange={(e) => setNewProject(prev => ({ ...prev, code: e.target.value }))}
-                  placeholder="Zadejte kód projektu"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Zákazník</Label>
-                <Dialog open={isCustomerDialogOpen} onOpenChange={setIsCustomerDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <Building2 className="mr-2 h-4 w-4" />
-                      Nový zákazník
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Založit nového zákazníka</DialogTitle>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="customer-name">Název zákazníka</Label>
-                        <Input
-                          id="customer-name"
-                          value={newCustomer.name}
-                          onChange={(e) => setNewCustomer(prev => ({ ...prev, name: e.target.value }))}
-                          placeholder="Zadejte název zákazníka"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="customer-code">Kód zákazníka</Label>
-                        <Input
-                          id="customer-code"
-                          value={newCustomer.code}
-                          onChange={(e) => setNewCustomer(prev => ({ ...prev, code: e.target.value }))}
-                          placeholder="Zadejte kód zákazníka"
-                        />
-                      </div>
-                      <Button onClick={handleCreateCustomer}>Vytvořit zákazníka</Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
-              <Select value={newProject.customerId} onValueChange={(value) => setNewProject(prev => ({ ...prev, customerId: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Vyberte zákazníka" />
-                </SelectTrigger>
-                <SelectContent>
-                  {localCustomers.map(customer => (
-                    <SelectItem key={customer.id} value={customer.id}>
-                      {customer.name} ({customer.code})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Project Manager</Label>
-                <Dialog open={isPMDialogOpen} onOpenChange={setIsPMDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <User className="mr-2 h-4 w-4" />
-                      Nový PM
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Založit nového PM</DialogTitle>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="pm-name">Jméno PM</Label>
-                        <Input
-                          id="pm-name"
-                          value={newPM.name}
-                          onChange={(e) => setNewPM(prev => ({ ...prev, name: e.target.value }))}
-                          placeholder="Zadejte jméno PM"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="pm-email">Email PM</Label>
-                        <Input
-                          id="pm-email"
-                          type="email"
-                          value={newPM.email}
-                          onChange={(e) => setNewPM(prev => ({ ...prev, email: e.target.value }))}
-                          placeholder="Zadejte email PM"
-                        />
-                      </div>
-                      <Button onClick={handleCreatePM}>Vytvořit PM</Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
-              <Select value={newProject.projectManagerId} onValueChange={(value) => setNewProject(prev => ({ ...prev, projectManagerId: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Vyberte PM" />
-                </SelectTrigger>
-                <SelectContent>
-                  {localPMs.map(pm => (
-                    <SelectItem key={pm.id} value={pm.id}>
-                      {pm.name} ({pm.email})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Program</Label>
-                <Dialog open={isProgramDialogOpen} onOpenChange={setIsProgramDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <Briefcase className="mr-2 h-4 w-4" />
-                      Nový program
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Založit nový program</DialogTitle>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="program-name">Název programu</Label>
-                        <Input
-                          id="program-name"
-                          value={newProgram.name}
-                          onChange={(e) => setNewProgram(prev => ({ ...prev, name: e.target.value }))}
-                          placeholder="Zadejte název programu"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="program-code">Kód programu</Label>
-                        <Input
-                          id="program-code"
-                          value={newProgram.code}
-                          onChange={(e) => setNewProgram(prev => ({ ...prev, code: e.target.value }))}
-                          placeholder="Zadejte kód programu"
-                        />
-                      </div>
-                      <Button onClick={handleCreateProgram}>Vytvořit program</Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
-              <Select value={newProject.programId} onValueChange={(value) => setNewProject(prev => ({ ...prev, programId: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Vyberte program" />
-                </SelectTrigger>
-                <SelectContent>
-                  {localPrograms.map(program => (
-                    <SelectItem key={program.id} value={program.id}>
-                      {program.name} ({program.code})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="project-type">Typ projektu</Label>
-                <Select value={newProject.projectType} onValueChange={(value: 'WP' | 'Hodinovka') => setNewProject(prev => ({ ...prev, projectType: value }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Vyberte typ" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="WP">WP (Work Package)</SelectItem>
-                    <SelectItem value="Hodinovka">Hodinovka</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="hourly-rate">Hodinová sazba (Kč)</Label>
-                <Input
-                  id="hourly-rate"
-                  type="number"
-                  value={newProject.hourlyRate}
-                  onChange={(e) => setNewProject(prev => ({ ...prev, hourlyRate: Number(e.target.value) }))}
-                  placeholder="Zadejte hodinovou sazbu"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="budget">Budget (Kč)</Label>
-                <Input
-                  id="budget"
-                  type="number"
-                  value={newProject.budget}
-                  onChange={(e) => setNewProject(prev => ({ ...prev, budget: Number(e.target.value) }))}
-                  placeholder="Zadejte budget"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Přiřazené licence</Label>
-              <Select
-                value={newProject.assignedLicenses.join(',')}
-                onValueChange={(value) => {
-                  const licenses = value ? value.split(',') : [];
-                  setNewProject(prev => ({ ...prev, assignedLicenses: licenses }));
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Vyberte licence" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="AutoCAD,Inventor">AutoCAD + Inventor</SelectItem>
-                  <SelectItem value="SolidWorks">SolidWorks</SelectItem>
-                  <SelectItem value="CATIA">CATIA</SelectItem>
-                  <SelectItem value="Ansys">Ansys</SelectItem>
-                  <SelectItem value="">Žádné</SelectItem>
-                </SelectContent>
-              </Select>
-              {newProject.assignedLicenses.length > 0 && (
-                <div className="flex gap-1 flex-wrap mt-2">
-                  {newProject.assignedLicenses.map(license => (
-                    <Badge key={license} variant="outline" className="text-xs">
-                      {license}
-                    </Badge>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              )}
-            </div>
+                <div className="flex gap-2">
+                  <Button onClick={handleSubmit} className="flex-1">
+                    {editingProject ? 'Upravit' : 'Přidat'}
+                  </Button>
+                  <Button variant="outline" onClick={resetForm} className="flex-1">
+                    Zrušit
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
 
-            <Button onClick={handleCreateProject} className="mt-4">
-              Vytvořit projekt
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Název</TableHead>
+              <TableHead>Zákazník</TableHead>
+              <TableHead>PM</TableHead>
+              <TableHead>Program</TableHead>
+              <TableHead>Typ</TableHead>
+              <TableHead>Budget</TableHead>
+              <TableHead>Licence</TableHead>
+              <TableHead>Použití</TableHead>
+              <TableHead>Akce</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {usedProjects.map((item, index) => (
+              <TableRow key={item.code} className={index % 2 === 1 ? 'bg-muted/30' : 'bg-background'}>
+                <TableCell className="font-medium">
+                  <div className="flex flex-col gap-1">
+                    <span>{item.project?.name || item.code}</span>
+                    {getProjectBadge(item.code)}
+                  </div>
+                </TableCell>
+                <TableCell>{item.customer?.name || 'N/A'}</TableCell>
+                <TableCell>{item.pm?.name || 'N/A'}</TableCell>
+                <TableCell>{item.program?.name || 'N/A'}</TableCell>
+                <TableCell>
+                  {item.project?.projectType && (
+                    <Badge variant={item.project.projectType === 'WP' ? 'default' : 'secondary'}>
+                      {item.project.projectType}
+                    </Badge>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {item.project?.budget ? `${item.project.budget.toLocaleString('cs-CZ')} Kč` : 'N/A'}
+                </TableCell>
+                <TableCell>
+                  <div className="flex flex-wrap gap-1">
+                    {item.project?.assignedLicenses?.map((projectLicense, index) => {
+                      const license = licenses.find(l => l.id === projectLicense.licenseId);
+                      return (
+                        <Badge key={index} variant="outline" className="text-xs">
+                          {license?.name || 'Neznámá licence'} ({projectLicense.percentage}%)
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Badge variant="outline" className="font-mono">
+                    {item.usage}x
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => item.project && handleEdit(item.project)}
+                    disabled={!item.project}
+                  >
+                    <Edit className="h-3 w-3" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+            {usedProjects.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                  Zatím nejsou používány žádné projekty
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </Card>
     </div>
   );
 };
