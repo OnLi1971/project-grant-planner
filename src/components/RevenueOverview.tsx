@@ -66,15 +66,15 @@ export const RevenueOverview = () => {
     });
   }, [planningData, filterType, filterValue]);
 
-  // Výpočet revenue po měsících s filtrováním
-  const calculateMonthlyRevenue = (data = filteredData) => {
-    const monthlyRevenue: { [month: string]: number } = {};
+  // Výpočet revenue po měsících s rozložením podle projektů
+  const calculateMonthlyRevenueByProject = (data = filteredData) => {
+    const monthlyData: { [month: string]: { [projectCode: string]: number } } = {};
 
-    // Spočítáme revenue pro každý měsíc
+    // Inicializace struktur
     Object.keys(weekToMonthMapping).forEach(week => {
       const month = weekToMonthMapping[week];
-      if (!monthlyRevenue[month]) {
-        monthlyRevenue[month] = 0;
+      if (!monthlyData[month]) {
+        monthlyData[month] = {};
       }
     });
 
@@ -96,23 +96,71 @@ export const RevenueOverview = () => {
         hourlyRate = project.budget;
       }
 
-      // Přičteme týdenní revenue k měsíčnímu součtu
-      monthlyRevenue[month] += entry.mhTyden * hourlyRate;
+      // Pokud nemáme sazbu, přeskočíme
+      if (hourlyRate === 0) return;
+
+      // Inicializace projektu v měsíci
+      if (!monthlyData[month][entry.projekt]) {
+        monthlyData[month][entry.projekt] = 0;
+      }
+
+      // Přičteme týdenní revenue k měsíčnímu součtu pro projekt
+      monthlyData[month][entry.projekt] += entry.mhTyden * hourlyRate;
     });
 
-    return monthlyRevenue;
+    return monthlyData;
   };
 
-  const monthlyRevenue = calculateMonthlyRevenue();
-  const months = ['August', 'September', 'October', 'November', 'December'];
-  const totalRevenue = Object.values(monthlyRevenue).reduce((sum, revenue) => sum + revenue, 0);
+  // Barvy pro jednotlivé projekty/programy
+  const getProjectColor = (projectCode: string, index: number) => {
+    const colors = [
+      'hsl(213 88% 45%)',    // primary
+      'hsl(35 80% 55%)',     // orange
+      'hsl(262 83% 58%)',    // purple
+      'hsl(142 80% 35%)',    // green
+      'hsl(0 84% 60%)',      // red
+      'hsl(48 96% 53%)',     // yellow
+      'hsl(200 85% 50%)',    // cyan
+      'hsl(280 75% 55%)',    // violet
+      'hsl(15 85% 55%)',     // orange-red
+      'hsl(120 70% 45%)',    // lime
+      'hsl(300 70% 50%)',    // magenta
+      'hsl(190 80% 45%)',    // teal
+    ];
+    
+    return colors[index % colors.length];
+  };
 
-  // Data pro graf
-  const chartData = months.map(month => ({
-    month: month.slice(0, 3), // Zkrácené názvy měsíců
-    revenue: monthlyRevenue[month] || 0,
-    revenueFormatted: (monthlyRevenue[month] || 0).toLocaleString('cs-CZ')
-  }));
+  const monthlyRevenueByProject = calculateMonthlyRevenueByProject();
+  const months = ['August', 'September', 'October', 'November', 'December'];
+  
+  // Získání všech unikátních projektů s revenue
+  const allProjects = new Set<string>();
+  Object.values(monthlyRevenueByProject).forEach(monthData => {
+    Object.keys(monthData).forEach(projectCode => allProjects.add(projectCode));
+  });
+  const projectList = Array.from(allProjects);
+
+  // Výpočet celkového revenue
+  const totalRevenue = Object.values(monthlyRevenueByProject).reduce((sum, monthData) => {
+    return sum + Object.values(monthData).reduce((monthSum, projectRevenue) => monthSum + projectRevenue, 0);
+  }, 0);
+
+  // Data pro stackovaný graf
+  const chartData = months.map(month => {
+    const monthData = monthlyRevenueByProject[month] || {};
+    const data: any = {
+      month: month.slice(0, 3),
+      total: Object.values(monthData).reduce((sum: number, value: number) => sum + value, 0)
+    };
+    
+    // Přidáme data pro každý projekt
+    projectList.forEach(projectCode => {
+      data[projectCode] = monthData[projectCode] || 0;
+    });
+    
+    return data;
+  });
 
   // Možnosti pro filtrování
   const getFilterOptions = () => {
@@ -202,27 +250,63 @@ export const RevenueOverview = () => {
           </div>
 
           {/* Graf */}
-          <div className="h-80 mb-6">
+          <div className="h-96 mb-6">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+              <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
+                <XAxis 
+                  dataKey="month" 
+                  tick={{ fontSize: 12 }}
+                />
                 <YAxis 
                   tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
+                  tick={{ fontSize: 12 }}
                 />
                 <Tooltip 
-                  formatter={(value: number) => [`${value.toLocaleString('cs-CZ')} Kč`, 'Revenue']}
+                  formatter={(value: number, name: string) => [
+                    `${value.toLocaleString('cs-CZ')} Kč`, 
+                    name === 'total' ? 'Celkem' : name
+                  ]}
                   labelFormatter={(label) => `Měsíc: ${label}`}
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '6px'
+                  }}
                 />
-                <Legend />
-                <Bar 
-                  dataKey="revenue" 
-                  fill="hsl(var(--primary))" 
-                  name="Revenue (Kč)"
-                  radius={[4, 4, 0, 0]}
+                <Legend 
+                  wrapperStyle={{ paddingTop: '20px' }}
+                  iconType="rect"
                 />
+                {projectList.map((projectCode, index) => (
+                  <Bar 
+                    key={projectCode}
+                    dataKey={projectCode} 
+                    stackId="revenue"
+                    fill={getProjectColor(projectCode, index)}
+                    name={projectCode}
+                  />
+                ))}
               </BarChart>
             </ResponsiveContainer>
+          </div>
+          
+          {/* Celkové hodnoty pod grafem */}
+          <div className="grid grid-cols-3 md:grid-cols-5 gap-4 mb-6">
+            {months.map((month) => {
+              const monthData = monthlyRevenueByProject[month] || {};
+              const monthTotal = Object.values(monthData).reduce((sum: number, value: number) => sum + value, 0);
+              return (
+                <div key={month} className="text-center p-3 bg-muted/50 rounded-lg">
+                  <div className="text-sm font-medium text-muted-foreground">
+                    {month.slice(0, 3)}
+                  </div>
+                  <div className="text-lg font-bold">
+                    {monthTotal.toLocaleString('cs-CZ', { maximumFractionDigits: 0 })} Kč
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </CardContent>
       </Card>
@@ -245,7 +329,8 @@ export const RevenueOverview = () => {
             </TableHeader>
             <TableBody>
               {months.map((month) => {
-                const revenue = monthlyRevenue[month] || 0;
+                const monthData = monthlyRevenueByProject[month] || {};
+                const revenue = Object.values(monthData).reduce((sum: number, value: number) => sum + value, 0);
                 const percentage = totalRevenue > 0 ? (revenue / totalRevenue) * 100 : 0;
                 const workingDays = getWorkingDaysInMonth(month);
                 const totalDays = getDaysInMonth(month);
