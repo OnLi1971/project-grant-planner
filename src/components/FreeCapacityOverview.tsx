@@ -144,44 +144,6 @@ export const FreeCapacityOverview = () => {
 
   return (
     <div className="space-y-6 p-6 bg-background min-h-screen">
-      {/* Header */}
-      <div className="bg-gradient-header text-white p-6 rounded-lg shadow-planning">
-        <div className="flex items-center gap-3">
-          <Users className="h-8 w-8" />
-          <div>
-            <h1 className="text-2xl font-bold">Přehled volných kapacit</h1>
-            <p className="text-primary-foreground/80">Konstruktéři s dostupnými hodinami pro nové projekty</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="p-4 shadow-card-custom">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-primary">{totalEngineers}</div>
-            <div className="text-sm text-muted-foreground">Celkem konstruktérů</div>
-          </div>
-        </Card>
-        <Card className="p-4 shadow-card-custom">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-success">{engineersWithFree}</div>
-            <div className="text-sm text-muted-foreground">S volnými kapacitami</div>
-          </div>
-        </Card>
-        <Card className="p-4 shadow-card-custom">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-warning">{totalFreeWeeks}</div>
-            <div className="text-sm text-muted-foreground">Celkem volných týdnů</div>
-          </div>
-        </Card>
-        <Card className="p-4 shadow-card-custom">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-accent">{avgFreePercentage}%</div>
-            <div className="text-sm text-muted-foreground">Průměrná volná kapacita</div>
-          </div>
-        </Card>
-      </div>
 
       {/* Filter Controls */}
       <Card className="p-4 shadow-card-custom">
