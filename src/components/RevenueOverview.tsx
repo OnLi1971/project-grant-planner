@@ -40,53 +40,35 @@ export const RevenueOverview = () => {
   // Výpočet revenue po měsících
   const calculateMonthlyRevenue = () => {
     const monthlyRevenue: { [month: string]: number } = {};
-    const monthlyHours: { [month: string]: number } = {};
 
-    // Nejdřív sečteme hodiny po měsících
-    planningData.forEach(entry => {
-      const month = weekToMonthMapping[entry.cw];
-      if (!month) return;
-
-      if (!monthlyHours[month]) {
-        monthlyHours[month] = 0;
+    // Spočítáme revenue pro každý měsíc
+    Object.keys(weekToMonthMapping).forEach(week => {
+      const month = weekToMonthMapping[week];
+      if (!monthlyRevenue[month]) {
+        monthlyRevenue[month] = 0;
       }
-      
-      monthlyHours[month] += entry.mhTyden;
     });
 
-    // Pak spočítáme revenue pro každý měsíc
-    Object.keys(monthlyHours).forEach(month => {
-      const totalHours = monthlyHours[month];
-      const workingDays = getWorkingDaysInMonth(month);
-      
-      // Rozložíme týdenní hodiny na měsíční podle pracovních dnů
-      const monthlyHoursAdjusted = (totalHours / 5) * workingDays; // 5 dní v týdnu
+    // Projdeme všechny záznamy v plánovacích datech
+    planningData.forEach(entry => {
+      const month = weekToMonthMapping[entry.cw];
+      if (!month || entry.mhTyden === 0) return;
 
-      // Spočítáme revenue podle projektů
-      let monthRevenue = 0;
-      
-      planningData
-        .filter(entry => weekToMonthMapping[entry.cw] === month)
-        .forEach(entry => {
-          const project = projects.find(p => p.code === entry.projekt);
-          if (project) {
-            let hourlyRate = 0;
-            
-            if (project.projectType === 'WP' && project.averageHourlyRate) {
-              hourlyRate = project.averageHourlyRate;
-            } else if (project.projectType === 'Hodinovka' && project.budget) {
-              hourlyRate = project.budget;
-            }
-            
-            // Přepočítáme hodiny pro tento projekt na měsíc
-            const projectWeeklyHours = entry.mhTyden;
-            const projectMonthlyHours = (projectWeeklyHours / 5) * workingDays;
-            
-            monthRevenue += projectMonthlyHours * hourlyRate;
-          }
-        });
+      // Najdeme projekt podle kódu
+      const project = projects.find(p => p.code === entry.projekt);
+      if (!project) return;
 
-      monthlyRevenue[month] = monthRevenue;
+      let hourlyRate = 0;
+      
+      // Určíme hodinovou sazbu podle typu projektu
+      if (project.projectType === 'WP' && project.averageHourlyRate) {
+        hourlyRate = project.averageHourlyRate;
+      } else if (project.projectType === 'Hodinovka' && project.budget) {
+        hourlyRate = project.budget;
+      }
+
+      // Přičteme týdenní revenue k měsíčnímu součtu
+      monthlyRevenue[month] += entry.mhTyden * hourlyRate;
     });
 
     return monthlyRevenue;
@@ -132,17 +114,17 @@ export const RevenueOverview = () => {
               const totalDays = getDaysInMonth(month);
 
               return (
-                <TableRow key={month}>
-                  <TableCell className="font-medium">{month}</TableCell>
-                  <TableCell>{workingDays}</TableCell>
-                  <TableCell>{totalDays}</TableCell>
-                  <TableCell className="text-right font-mono">
-                    {revenue.toLocaleString('cs-CZ')} Kč
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {percentage.toFixed(1)}%
-                  </TableCell>
-                </TableRow>
+            <TableRow key={month}>
+              <TableCell className="font-medium">{month}</TableCell>
+              <TableCell>{workingDays}</TableCell>
+              <TableCell>{totalDays}</TableCell>
+              <TableCell className="text-right font-mono">
+                {revenue.toLocaleString('cs-CZ')} Kč
+              </TableCell>
+              <TableCell className="text-right">
+                {percentage.toFixed(1)}%
+              </TableCell>
+            </TableRow>
               );
             })}
           </TableBody>
@@ -151,10 +133,10 @@ export const RevenueOverview = () => {
         <div className="mt-6 p-4 bg-muted rounded-lg">
           <h4 className="font-medium mb-2">Metodika výpočtu:</h4>
           <ul className="text-sm text-muted-foreground space-y-1">
-            <li>• Týdenní hodiny se přepočítávají na měsíční podle poměru pracovních dnů</li>
-            <li>• Pracovní dny = 5/7 z kalendářních dnů měsíce</li>
-            <li>• WP projekty používají průměrnou hodinovou cenu</li>
+            <li>• Týdenní hodiny se násobí hodinovou sazbou projektu</li>
+            <li>• WP projekty používají průměrnou hodinovou cenu (pokud je zadána)</li>
             <li>• Hodinovky používají zadanou hodinovou cenu</li>
+            <li>• Projekty bez sazby (FREE, DOVOLENÁ) se nezapočítávají do revenue</li>
           </ul>
         </div>
       </CardContent>
