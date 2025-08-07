@@ -234,7 +234,7 @@ export const RevenueOverview = () => {
           <div className="h-96 mb-6">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
-                <CartesianGrid strokeDasharray="3 3" />
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis 
                   dataKey="month" 
                   tick={{ fontSize: 12 }}
@@ -244,14 +244,15 @@ export const RevenueOverview = () => {
                   tick={{ fontSize: 12 }}
                 />
                 <Tooltip 
+                  cursor={false}
                   formatter={(value: number, name: string) => [
                     `${value.toLocaleString('cs-CZ')} Kč`, 
                     name === 'total' ? 'Celkem' : name
                   ]}
                   labelFormatter={(label) => `Měsíc: ${label}`}
                   contentStyle={{
-                    backgroundColor: 'transparent',
-                    border: 'none',
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
                     borderRadius: '6px'
                   }}
                 />
