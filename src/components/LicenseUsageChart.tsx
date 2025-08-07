@@ -114,6 +114,8 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
     const selectedLicenseData = licenses.find(l => l.name === selectedLicense);
     if (!selectedLicenseData) return [];
     
+    console.log('Selected license data:', selectedLicenseData);
+    
     return chartData.map(weekData => ({
       week: weekData.week,
       usage: weekData[selectedLicense] || 0,
@@ -242,7 +244,7 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
                   return (
                     <Cell 
                       key={`cell-${index}`} 
-                      fill={isOverLimit ? 'hsl(var(--destructive))' : 'hsl(var(--primary))'} 
+                      fill={isOverLimit ? 'hsl(var(--destructive))' : 'hsl(120, 60%, 70%)'} 
                     />
                   );
                 })}
