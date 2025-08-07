@@ -250,8 +250,8 @@ export const RevenueOverview = () => {
                   ]}
                   labelFormatter={(label) => `Měsíc: ${label}`}
                   contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
+                    backgroundColor: 'transparent',
+                    border: 'none',
                     borderRadius: '6px'
                   }}
                 />
