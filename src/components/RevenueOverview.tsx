@@ -311,10 +311,94 @@ export const RevenueOverview = () => {
         </CardContent>
       </Card>
 
-      {/* Detailní tabulka */}
+      {/* Detailní tabulka projektů */}
       <Card className="shadow-card-custom">
         <CardHeader>
-          <CardTitle>Detailní rozpis</CardTitle>
+          <CardTitle>Detailní rozpis podle projektů</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="font-bold">Projekt</TableHead>
+                  {months.map(month => (
+                    <TableHead key={month} className="text-right font-bold min-w-[120px]">
+                      {month}
+                    </TableHead>
+                  ))}
+                  <TableHead className="text-right font-bold">Celkem</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {projectList
+                  .sort((a, b) => {
+                    // Seřadíme podle celkové revenue (sestupně)
+                    const totalA = Object.values(monthlyRevenueByProject).reduce((sum, monthData) => 
+                      sum + (monthData[a] || 0), 0);
+                    const totalB = Object.values(monthlyRevenueByProject).reduce((sum, monthData) => 
+                      sum + (monthData[b] || 0), 0);
+                    return totalB - totalA;
+                  })
+                  .map((projectCode, index) => {
+                    const projectTotal = Object.values(monthlyRevenueByProject).reduce((sum, monthData) => 
+                      sum + (monthData[projectCode] || 0), 0);
+                    
+                    if (projectTotal === 0) return null;
+
+                    return (
+                      <TableRow key={projectCode}>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-3 h-3 rounded" 
+                              style={{ backgroundColor: getProjectColor(projectCode, index) }}
+                            />
+                            {projectCode}
+                          </div>
+                        </TableCell>
+                        {months.map(month => {
+                          const revenue = monthlyRevenueByProject[month]?.[projectCode] || 0;
+                          return (
+                            <TableCell key={month} className="text-right font-mono">
+                              {revenue > 0 ? `${revenue.toLocaleString('cs-CZ')} Kč` : '-'}
+                            </TableCell>
+                          );
+                        })}
+                        <TableCell className="text-right font-mono font-bold">
+                          {projectTotal.toLocaleString('cs-CZ')} Kč
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                  .filter(Boolean)}
+                
+                {/* Celkový řádek */}
+                <TableRow className="font-bold border-t-2">
+                  <TableCell className="font-bold">CELKEM</TableCell>
+                  {months.map(month => {
+                    const monthData = monthlyRevenueByProject[month] || {};
+                    const monthTotal = Object.values(monthData).reduce((sum: number, value: number) => sum + value, 0);
+                    return (
+                      <TableCell key={month} className="text-right font-mono font-bold">
+                        {monthTotal.toLocaleString('cs-CZ')} Kč
+                      </TableCell>
+                    );
+                  })}
+                  <TableCell className="text-right font-mono font-bold text-primary">
+                    {totalRevenue.toLocaleString('cs-CZ')} Kč
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Sumární tabulka */}
+      <Card className="shadow-card-custom">
+        <CardHeader>
+          <CardTitle>Měsíční souhrn</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
