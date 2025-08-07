@@ -188,39 +188,6 @@ export const PlanningEditor: React.FC = () => {
         </div>
       </div>
 
-      {/* Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="p-4 shadow-card-custom">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-primary">{konstrukteri.length}</div>
-            <div className="text-sm text-muted-foreground">Celkem konstruktérů</div>
-          </div>
-        </Card>
-        <Card className="p-4 shadow-card-custom">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-success">
-              {currentPlan.filter(w => w.projekt && w.projekt !== 'FREE' && w.projekt !== 'DOVOLENÁ').length}
-            </div>
-            <div className="text-sm text-muted-foreground">Aktivní týdny</div>
-          </div>
-        </Card>
-        <Card className="p-4 shadow-card-custom">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-warning">
-              {currentPlan.filter(w => w.projekt === 'FREE').length}
-            </div>
-            <div className="text-sm text-muted-foreground">Volné týdny</div>
-          </div>
-        </Card>
-        <Card className="p-4 shadow-card-custom">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-accent">
-              {currentPlan.reduce((sum, w) => sum + w.mhTyden, 0)}h
-            </div>
-            <div className="text-sm text-muted-foreground">Celkem hodin</div>
-          </div>
-        </Card>
-      </div>
 
       {/* Bulk Edit Panel */}
       {isMultiSelectMode && selectedWeeks.size > 0 && (
