@@ -178,25 +178,6 @@ export const PlanningTable: React.FC = () => {
 
   return (
     <div className="space-y-6 p-6 bg-background min-h-screen">
-      {/* Header */}
-      <div className="bg-gradient-header text-white p-6 rounded-lg shadow-planning">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Calendar className="h-8 w-8" />
-            <div>
-              <h1 className="text-2xl font-bold">Přehled plánování</h1>
-              <p className="text-primary-foreground/80">Celkový přehled konstruktérů a jejich vytížení</p>
-            </div>
-          </div>
-          <div className="flex gap-4 text-center">
-            <div className="bg-white/10 p-3 rounded-lg">
-              <Users className="h-5 w-5 mb-1 mx-auto" />
-              <div className="text-sm">Celkem konstruktérů</div>
-              <div className="font-bold">{filteredData.length}</div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Filters */}
       <Card className="p-4 shadow-card-custom">
