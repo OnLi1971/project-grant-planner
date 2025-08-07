@@ -373,59 +373,6 @@ export const RevenueOverview = () => {
         </CardContent>
       </Card>
 
-      {/* Sumární tabulka */}
-      <Card className="shadow-card-custom">
-        <CardHeader>
-          <CardTitle>Měsíční souhrn</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Měsíc</TableHead>
-                <TableHead>Pracovní dny</TableHead>
-                <TableHead>Kalendářní dny</TableHead>
-                <TableHead className="text-right">Obrat (Kč)</TableHead>
-                <TableHead className="text-right">% z celku</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {months.map((month) => {
-                const monthData = monthlyRevenueByProject[month] || {};
-                const revenue = Object.values(monthData).reduce((sum: number, value: number) => sum + value, 0);
-                const percentage = totalRevenue > 0 ? (revenue / totalRevenue) * 100 : 0;
-                const workingDays = getWorkingDaysInMonth(month);
-                const totalDays = getDaysInMonth(month);
-
-                return (
-                  <TableRow key={month}>
-                    <TableCell className="font-medium">{month}</TableCell>
-                    <TableCell>{workingDays}</TableCell>
-                    <TableCell>{totalDays}</TableCell>
-                    <TableCell className="text-right font-mono">
-                      {revenue.toLocaleString('cs-CZ')} Kč
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {percentage.toFixed(1)}%
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-
-          <div className="mt-6 p-4 bg-muted rounded-lg">
-            <h4 className="font-medium mb-2">Metodika výpočtu:</h4>
-            <ul className="text-sm text-muted-foreground space-y-1">
-              <li>• Týdenní hodiny se násobí hodinovou sazbou projektu</li>
-              <li>• WP projekty používají průměrnou hodinovou cenu (pokud je zadána)</li>
-              <li>• Hodinovky používají zadanou hodinovou cenu</li>
-              <li>• Projekty bez sazby (FREE, DOVOLENÁ) se nezapočítávají do revenue</li>
-              <li>• Filtrování umožňuje zobrazit revenue pouze pro vybrané zákazníky, programy nebo projekty</li>
-            </ul>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };
