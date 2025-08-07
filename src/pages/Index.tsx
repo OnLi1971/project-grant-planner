@@ -3,6 +3,7 @@ import { PlanningTable } from '@/components/PlanningTable';
 import { PlanningEditor } from '@/components/PlanningEditor';
 import { FreeCapacityOverview } from '@/components/FreeCapacityOverview';
 import { ProjectAssignmentMatrix } from '@/components/ProjectAssignmentMatrix';
+import { RevenueOverview } from '@/components/RevenueOverview';
 import { ResourceManagement } from '@/components/ResourceManagement';
 import { LicenseManagement } from '@/components/LicenseManagement';
 import { ProjectManagement } from '@/components/ProjectManagement';
@@ -11,10 +12,10 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Edit, Users, Grid3x3, Database, TrendingUp, Settings, Shield, UserPlus } from 'lucide-react';
+import { Calendar, Edit, Users, Grid3x3, Database, TrendingUp, Settings, Shield, UserPlus, DollarSign } from 'lucide-react';
 
 const Index = () => {
-  const [outputView, setOutputView] = useState<'overview' | 'free-capacity' | 'matrix'>('overview');
+  const [outputView, setOutputView] = useState<'overview' | 'free-capacity' | 'matrix' | 'revenue'>('overview');
   const [managementView, setManagementView] = useState<'projects' | 'resources' | 'licenses'>('projects');
 
   return (
@@ -75,6 +76,14 @@ const Index = () => {
                     <Grid3x3 className="h-4 w-4" />
                     Matice projektů
                   </Button>
+                  <Button
+                    variant={outputView === 'revenue' ? 'default' : 'outline'}
+                    onClick={() => setOutputView('revenue')}
+                    className="flex items-center gap-2"
+                  >
+                    <DollarSign className="h-4 w-4" />
+                    Revenue
+                  </Button>
                 </div>
               </Card>
               
@@ -82,8 +91,10 @@ const Index = () => {
                 <PlanningTable />
               ) : outputView === 'free-capacity' ? (
                 <FreeCapacityOverview />
-              ) : (
+              ) : outputView === 'matrix' ? (
                 <ProjectAssignmentMatrix />
+              ) : (
+                <RevenueOverview />
               )}
             </TabsContent>
 
