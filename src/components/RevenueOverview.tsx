@@ -15,7 +15,7 @@ export const RevenueOverview = () => {
   const [filterValue, setFilterValue] = useState<string>('all');
 
   // Funkce pro výpočet počtu dnů v měsíci
-  const getDaysInMonth = (month: string, year: number = 2024): number => {
+  const getDaysInMonth = (month: string, year: number = 2025): number => {
     const monthMapping: { [key: string]: number } = {
       'August': 8,
       'September': 9,
@@ -28,36 +28,42 @@ export const RevenueOverview = () => {
     return new Date(year, monthNum, 0).getDate();
   };
 
-  // Funkce pro výpočet pracovních dnů v měsíci (5 dnů v týdnu)
+  // Funkce pro výpočet pracovních dnů v měsíci (5 dnů v týdnu) pro rok 2025
   const getWorkingDaysInMonth = (month: string): number => {
-    const totalDays = getDaysInMonth(month);
-    // Přibližný výpočet: 5/7 ze všech dnů (pondělí-pátek)
-    return Math.round((totalDays * 5) / 7);
+    // Přesný počet pracovních dnů pro rok 2025
+    const workingDays2025: { [key: string]: number } = {
+      'August': 21,      // srpen 2025
+      'September': 22,   // září 2025  
+      'October': 23,     // říjen 2025
+      'November': 20,    // listopad 2025
+      'December': 22     // prosinec 2025
+    };
+    return workingDays2025[month] || 22;
   };
 
-  // Přesnější mapování týdnů na měsíce s poměrným rozdělením pro rok 2024
+  // Přesnější mapování týdnů na měsíce s poměrným rozdělením pro rok 2025
   const weekToMonthMapping: { [key: string]: { [month: string]: number } } = {
-    'CW32': { 'August': 1.0 },           // 5-11 srpna (celý týden)
-    'CW33': { 'August': 1.0 },           // 12-18 srpna (celý týden)  
-    'CW34': { 'August': 1.0 },           // 19-25 srpna (celý týden)
-    'CW35': { 'August': 0.8, 'September': 0.2 },  // 26 srpna - 1 září (4:1 dny)
-    'CW36': { 'September': 1.0 },        // 2-8 září (celý týden)
-    'CW37': { 'September': 1.0 },        // 9-15 září (celý týden)
-    'CW38': { 'September': 1.0 },        // 16-22 září (celý týden)
-    'CW39': { 'September': 1.0 },        // 23-29 září (celý týden)
-    'CW40': { 'September': 0.2, 'October': 0.8 },   // 30 září - 6 října (1:4 dny)
-    'CW41': { 'October': 1.0 },          // 7-13 října (celý týden)
-    'CW42': { 'October': 1.0 },          // 14-20 října (celý týden)
-    'CW43': { 'October': 1.0 },          // 21-27 října (celý týden)
-    'CW44': { 'October': 0.8, 'November': 0.2 },    // 28 října - 3 listopadu (4:1 dny)
-    'CW45': { 'November': 1.0 },         // 4-10 listopadu (celý týden)
-    'CW46': { 'November': 1.0 },         // 11-17 listopadu (celý týden)
-    'CW47': { 'November': 1.0 },         // 18-24 listopadu (celý týden)
-    'CW48': { 'November': 0.8, 'December': 0.2 },   // 25 listopadu - 1 prosince (4:1 dny)
-    'CW49': { 'December': 1.0 },         // 2-8 prosince (celý týden)
-    'CW50': { 'December': 1.0 },         // 9-15 prosince (celý týden)
-    'CW51': { 'December': 1.0 },         // 16-22 prosince (celý týden)
-    'CW52': { 'December': 1.0 }          // 23-29 prosince (celý týden)
+    'CW32': { 'August': 1.0 },           // 4-10 srpna 2025 (celý týden)
+    'CW33': { 'August': 1.0 },           // 11-17 srpna 2025 (celý týden)  
+    'CW34': { 'August': 1.0 },           // 18-24 srpna 2025 (celý týden)
+    'CW35': { 'August': 0.6, 'September': 0.4 },  // 25-31 srpna 2025 (3:2 dny)
+    'CW36': { 'September': 1.0 },        // 1-7 září 2025 (celý týden)
+    'CW37': { 'September': 1.0 },        // 8-14 září 2025 (celý týden)
+    'CW38': { 'September': 1.0 },        // 15-21 září 2025 (celý týden)
+    'CW39': { 'September': 1.0 },        // 22-28 září 2025 (celý týden)
+    'CW40': { 'September': 0.4, 'October': 0.6 },   // 29 září - 5 října 2025 (2:3 dny)
+    'CW41': { 'October': 1.0 },          // 6-12 října 2025 (celý týden)
+    'CW42': { 'October': 1.0 },          // 13-19 října 2025 (celý týden)
+    'CW43': { 'October': 1.0 },          // 20-26 října 2025 (celý týden)
+    'CW44': { 'October': 0.8, 'November': 0.2 },    // 27 října - 2 listopadu 2025 (4:1 dny)
+    'CW45': { 'November': 1.0 },         // 3-9 listopadu 2025 (celý týden)
+    'CW46': { 'November': 1.0 },         // 10-16 listopadu 2025 (celý týden)
+    'CW47': { 'November': 1.0 },         // 17-23 listopadu 2025 (celý týden)
+    'CW48': { 'November': 0.6, 'December': 0.4 },   // 24-30 listopadu 2025 (3:2 dny)
+    'CW49': { 'December': 1.0 },         // 1-7 prosince 2025 (celý týden)
+    'CW50': { 'December': 1.0 },         // 8-14 prosince 2025 (celý týden)
+    'CW51': { 'December': 1.0 },         // 15-21 prosince 2025 (celý týden)
+    'CW52': { 'December': 1.0 }          // 22-28 prosince 2025 (celý týden)
   };
 
   // Filtrovaná data podle vybraného filtru
