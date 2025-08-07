@@ -208,7 +208,10 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
                 height={80}
                 interval={0}
               />
-              <YAxis tick={{ fontSize: 12 }} />
+              <YAxis 
+                tick={{ fontSize: 12 }} 
+                domain={[0, Math.max(...filteredChartData.map(d => Math.max(d.usage, d.available))) + 2]}
+              />
               <ChartTooltip 
                 content={({ active, payload, label }) => {
                   if (active && payload && payload.length) {
