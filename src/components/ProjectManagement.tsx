@@ -319,13 +319,15 @@ export const ProjectManagement = () => {
                     </Select>
                   </div>
                   <div>
-                    <Label htmlFor="budget">Budget (Kč)</Label>
+                    <Label htmlFor="budget">
+                      {formData.projectType === 'WP' ? 'Budget (hodiny)' : 'Hodinová cena (Kč)'}
+                    </Label>
                     <Input
                       id="budget"
                       type="number"
                       value={formData.budget || ''}
                       onChange={(e) => setFormData({ ...formData, budget: parseInt(e.target.value) || 0 })}
-                      placeholder="1000000"
+                      placeholder={formData.projectType === 'WP' ? '200' : '1500'}
                     />
                   </div>
                 </div>
@@ -428,7 +430,11 @@ export const ProjectManagement = () => {
                   )}
                 </TableCell>
                 <TableCell>
-                  {item.project?.budget ? `${item.project.budget.toLocaleString('cs-CZ')} Kč` : 'N/A'}
+                  {item.project?.budget ? (
+                    item.project.projectType === 'WP' 
+                      ? `${item.project.budget} hod` 
+                      : `${item.project.budget.toLocaleString('cs-CZ')} Kč/hod`
+                  ) : 'N/A'}
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-wrap gap-1">
