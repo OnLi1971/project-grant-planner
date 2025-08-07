@@ -17,6 +17,7 @@ import {
   projectManagers, 
   programs 
 } from '@/data/projectsData';
+import { getProjectColor, getCustomerByProjectCode } from '@/utils/colorSystem';
 
 interface License {
   id: string;
@@ -208,12 +209,21 @@ export const ProjectManagement = () => {
   const getProjectBadge = (code: string) => {
     if (!code || code === 'FREE') return <Badge variant="secondary">Volný</Badge>;
     if (code === 'DOVOLENÁ') return <Badge variant="outline" className="border-accent">Dovolená</Badge>;
-    if (code.startsWith('ST_')) return <Badge className="bg-primary">ST Projekt</Badge>;
-    if (code.startsWith('NU_')) return <Badge className="bg-warning text-warning-foreground">NUVIA</Badge>;
-    if (code.startsWith('WA_')) return <Badge className="bg-success">WABTEC</Badge>;
-    if (code.startsWith('SAF_')) return <Badge style={{backgroundColor: 'hsl(280 100% 70%)', color: 'white'}}>SAFRAN</Badge>;
-    if (code.startsWith('BUCH_')) return <Badge className="bg-info">BUCHER</Badge>;
-    if (code.startsWith('AIRB_')) return <Badge className="bg-accent">AIRBUS</Badge>;
+    
+    const customer = getCustomerByProjectCode(code);
+    if (customer) {
+      return (
+        <Badge 
+          style={{
+            backgroundColor: getProjectColor(code),
+            color: 'white',
+            border: 'none'
+          }}
+        >
+          {customer.name}
+        </Badge>
+      );
+    }
     return <Badge variant="outline">{code}</Badge>;
   };
 

@@ -6,6 +6,7 @@ import { usePlanning } from '@/contexts/PlanningContext';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { getProjectColorWithIndex } from '@/utils/colorSystem';
 
 interface License {
   id: string;
@@ -150,10 +151,21 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
     const config: ChartConfig = {};
     
     licenses.forEach((license, index) => {
-      const hue = (index * 137.5) % 360; // Golden angle approximation for good color distribution
+      // Použijeme fallback barvu z našeho systému, protože licence nejsou přímo vázané na projekty
+      const fallbackColors = [
+        'hsl(213 88% 45%)',    // primary
+        'hsl(35 80% 55%)',     // orange
+        'hsl(262 83% 58%)',    // purple
+        'hsl(142 80% 35%)',    // green
+        'hsl(0 84% 60%)',      // red
+        'hsl(48 96% 53%)',     // yellow
+        'hsl(200 85% 50%)',    // cyan
+        'hsl(280 75% 55%)',    // violet
+      ];
+      
       config[license.name] = {
         label: license.name,
-        color: `hsl(${hue}, 70%, 50%)`,
+        color: fallbackColors[index % fallbackColors.length],
       };
     });
     

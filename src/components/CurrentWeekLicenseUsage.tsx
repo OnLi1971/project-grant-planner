@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { usePlanning } from '@/contexts/PlanningContext';
 import { Calendar, Users, AlertTriangle } from 'lucide-react';
+import { getProjectColor, getCustomerByProjectCode } from '@/utils/colorSystem';
 
 interface License {
   id: string;

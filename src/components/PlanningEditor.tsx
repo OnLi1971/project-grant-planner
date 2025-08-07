@@ -8,6 +8,7 @@ import { Calendar, Edit, Save, X, Plus, MousePointer, MousePointer2, FolderPlus 
 import { usePlanning } from '@/contexts/PlanningContext';
 import { ProjectManagement } from '@/components/ProjectManagement';
 import { projects, customers, projectManagers, programs, type Project } from '@/data/projectsData';
+import { getProjectColor, getCustomerByProjectCode } from '@/utils/colorSystem';
 
 interface WeekPlan {
   cw: string;
@@ -123,10 +124,21 @@ export const PlanningEditor: React.FC = () => {
   const getProjectBadge = (projekt: string) => {
     if (!projekt || projekt === 'FREE') return <Badge variant="secondary">Volný</Badge>;
     if (projekt === 'DOVOLENÁ') return <Badge variant="outline" className="border-accent">Dovolená</Badge>;
-    if (projekt.startsWith('ST_')) return <Badge className="bg-primary">ST Projekt</Badge>;
-    if (projekt.startsWith('NU_')) return <Badge className="bg-warning text-warning-foreground">NUVIA</Badge>;
-    if (projekt.startsWith('WA_')) return <Badge className="bg-success">WABTEC</Badge>;
-    if (projekt.startsWith('SAF_')) return <Badge style={{backgroundColor: 'hsl(280 100% 70%)', color: 'white'}}>SAFRAN</Badge>;
+    
+    const customer = getCustomerByProjectCode(projekt);
+    if (customer) {
+      return (
+        <Badge 
+          style={{
+            backgroundColor: getProjectColor(projekt),
+            color: 'white',
+            border: 'none'
+          }}
+        >
+          {customer.name}
+        </Badge>
+      );
+    }
     return <Badge variant="outline">{projekt}</Badge>;
   };
 

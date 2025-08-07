@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { TrendingUp, Filter } from 'lucide-react';
+import { getProjectColorWithIndex } from '@/utils/colorSystem';
 
 export const RevenueOverview = () => {
   const { planningData } = usePlanning();
@@ -109,26 +110,6 @@ export const RevenueOverview = () => {
     });
 
     return monthlyData;
-  };
-
-  // Barvy pro jednotlivé projekty/programy
-  const getProjectColor = (projectCode: string, index: number) => {
-    const colors = [
-      'hsl(213 88% 45%)',    // primary
-      'hsl(35 80% 55%)',     // orange
-      'hsl(262 83% 58%)',    // purple
-      'hsl(142 80% 35%)',    // green
-      'hsl(0 84% 60%)',      // red
-      'hsl(48 96% 53%)',     // yellow
-      'hsl(200 85% 50%)',    // cyan
-      'hsl(280 75% 55%)',    // violet
-      'hsl(15 85% 55%)',     // orange-red
-      'hsl(120 70% 45%)',    // lime
-      'hsl(300 70% 50%)',    // magenta
-      'hsl(190 80% 45%)',    // teal
-    ];
-    
-    return colors[index % colors.length];
   };
 
   const monthlyRevenueByProject = calculateMonthlyRevenueByProject();
@@ -283,7 +264,7 @@ export const RevenueOverview = () => {
                     key={projectCode}
                     dataKey={projectCode} 
                     stackId="revenue"
-                    fill={getProjectColor(projectCode, index)}
+                    fill={getProjectColorWithIndex(projectCode, index)}
                     name={projectCode}
                   />
                 ))}
@@ -352,7 +333,7 @@ export const RevenueOverview = () => {
                           <div className="flex items-center gap-2">
                             <div 
                               className="w-3 h-3 rounded" 
-                              style={{ backgroundColor: getProjectColor(projectCode, index) }}
+                              style={{ backgroundColor: getProjectColorWithIndex(projectCode, index) }}
                             />
                             {projectCode}
                           </div>
