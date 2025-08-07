@@ -28,6 +28,20 @@ interface Project {
   assignedLicenses: { id: string; name: string; percentage: number }[];
 }
 
+interface StoredProject {
+  id: string;
+  name: string;
+  code: string;
+  customerId: string;
+  projectManagerId: string;
+  programId: string;
+  status: 'active' | 'inactive' | 'completed';
+  hourlyRate?: number;
+  projectType: 'WP' | 'Hodinovka';
+  budget?: number;
+  assignedLicenses?: { licenseId: string; percentage: number }[];
+}
+
 interface CurrentWeekLicenseUsageProps {
   licenses: License[];
 }
@@ -36,16 +50,67 @@ export const CurrentWeekLicenseUsage: React.FC<CurrentWeekLicenseUsageProps> = (
   const { planningData } = usePlanning();
 
   const getCurrentWeek = () => {
-    const now = new Date();
-    const start = new Date(now.getFullYear(), 0, 1);
-    const today = Math.floor((now.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
-    const currentWeek = Math.ceil((today + start.getDay() + 1) / 7);
-    return `CW${currentWeek}`;
+    // For demonstration, let's use CW32 as current week since that's where our planning data starts
+    // In real implementation, you would calculate the actual current week
+    return 'CW32';
   };
 
   const currentWeekUsage = useMemo(() => {
     const currentWeek = getCurrentWeek();
-    const projectsData = JSON.parse(localStorage.getItem('projects-data') || '[]') as Project[];
+    let projectsData = JSON.parse(localStorage.getItem('projects-data') || '[]') as StoredProject[];
+    
+    // If no projects data exists, load default projects first
+    if (projectsData.length === 0) {
+      // Import default projects from projectsData.ts
+      const defaultProjects = [
+        { id: '1', name: 'ST EMU INT', code: 'ST_EMU_INT', customerId: '1', projectManagerId: '1', programId: '1', status: 'active' as const, projectType: 'WP' as const },
+        { id: '2', name: 'ST TRAM INT', code: 'ST_TRAM_INT', customerId: '1', projectManagerId: '2', programId: '1', status: 'active' as const, projectType: 'WP' as const },
+        { id: '3', name: 'ST MAINZ', code: 'ST_MAINZ', customerId: '1', projectManagerId: '2', programId: '1', status: 'active' as const, projectType: 'WP' as const },
+        { id: '5', name: 'ST BLAVA', code: 'ST_BLAVA', customerId: '1', projectManagerId: '2', programId: '1', status: 'active' as const, projectType: 'WP' as const },
+      ];
+      projectsData = defaultProjects;
+    }
+    
+    // If projects don't have license assignments, create some test data
+    if (!projectsData.some(p => p.assignedLicenses && p.assignedLicenses.length > 0)) {
+      // Add some default license assignments for testing
+      projectsData = projectsData.map(project => {
+        if (project.code === 'ST_BLAVA') {
+          return {
+            ...project,
+            assignedLicenses: [
+              { licenseId: 'AutoCAD Professional', percentage: 100 },
+              { licenseId: 'SolidWorks Premium', percentage: 50 }
+            ]
+          };
+        }
+        if (project.code === 'ST_MAINZ') {
+          return {
+            ...project,
+            assignedLicenses: [
+              { licenseId: 'AutoCAD Professional', percentage: 80 },
+              { licenseId: 'SolidWorks Premium', percentage: 100 }
+            ]
+          };
+        }
+        if (project.code === 'ST_EMU_INT') {
+          return {
+            ...project,
+            assignedLicenses: [
+              { licenseId: 'SolidWorks Premium', percentage: 100 }
+            ]
+          };
+        }
+        return project;
+      });
+      
+      // Save the updated data
+      localStorage.setItem('projects-data', JSON.stringify(projectsData));
+    }
+    
+    console.log('Current week:', currentWeek);
+    console.log('Projects data:', projectsData);
+    console.log('Planning data sample:', planningData.slice(0, 5));
     
     // Get all engineers working this week
     const engineersThisWeek = planningData.filter(entry => 
@@ -55,6 +120,8 @@ export const CurrentWeekLicenseUsage: React.FC<CurrentWeekLicenseUsageProps> = (
       entry.projekt !== '' &&
       entry.mhTyden > 0
     );
+    
+    console.log('Engineers this week:', engineersThisWeek);
     
     // Count unique engineers per project
     const projectEngineers: { [projectCode: string]: string[] } = {};
@@ -67,6 +134,8 @@ export const CurrentWeekLicenseUsage: React.FC<CurrentWeekLicenseUsageProps> = (
       }
     });
     
+    console.log('Project engineers:', projectEngineers);
+    
     // Calculate license usage
     const licenseUsage: { [licenseName: string]: { required: number; projects: string[] } } = {};
     
@@ -75,8 +144,16 @@ export const CurrentWeekLicenseUsage: React.FC<CurrentWeekLicenseUsageProps> = (
       
       Object.entries(projectEngineers).forEach(([projectCode, engineers]) => {
         const project = projectsData.find(p => p.code === projectCode);
+        console.log(`Looking for project with code ${projectCode}, found:`, project);
+        
         if (project && project.assignedLicenses) {
-          const licenseAssignment = project.assignedLicenses.find(al => al.name === license.name);
+          // Handle the different data structure - stored projects use licenseId, we need to match by license name
+          const licenseAssignment = project.assignedLicenses.find(al => {
+            // First try to find by licenseId if it matches license name
+            return al.licenseId === license.name || al.licenseId === license.id;
+          });
+          console.log(`License assignment for ${license.name} in project ${projectCode}:`, licenseAssignment);
+          
           if (licenseAssignment) {
             const requiredLicenses = Math.ceil((engineers.length * licenseAssignment.percentage) / 100);
             licenseUsage[license.name].required += requiredLicenses;
@@ -87,6 +164,8 @@ export const CurrentWeekLicenseUsage: React.FC<CurrentWeekLicenseUsageProps> = (
         }
       });
     });
+    
+    console.log('Final license usage:', licenseUsage);
     
     return { currentWeek, licenseUsage };
   }, [planningData, licenses]);

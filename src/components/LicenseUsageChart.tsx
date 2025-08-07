@@ -30,6 +30,20 @@ interface Project {
   assignedLicenses: { id: string; name: string; percentage: number }[];
 }
 
+interface StoredProject {
+  id: string;
+  name: string;
+  code: string;
+  customerId: string;
+  projectManagerId: string;
+  programId: string;
+  status: 'active' | 'inactive' | 'completed';
+  hourlyRate?: number;
+  projectType: 'WP' | 'Hodinovka';
+  budget?: number;
+  assignedLicenses?: { licenseId: string; percentage: number }[];
+}
+
 interface LicenseUsageChartProps {
   licenses: License[];
 }
@@ -39,7 +53,7 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
 
   const chartData = useMemo(() => {
     // Get projects data from localStorage
-    const projectsData = JSON.parse(localStorage.getItem('projects-data') || '[]') as Project[];
+    const projectsData = JSON.parse(localStorage.getItem('projects-data') || '[]') as StoredProject[];
     
     // Get all weeks from CW32 to CW52
     const weeks = ['CW32', 'CW33', 'CW34', 'CW35', 'CW36', 'CW37', 'CW38', 'CW39', 'CW40', 'CW41', 'CW42', 'CW43', 'CW44', 'CW45', 'CW46', 'CW47', 'CW48', 'CW49', 'CW50', 'CW51', 'CW52'];
@@ -73,7 +87,9 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
         Object.entries(projectEngineers).forEach(([projectCode, engineerCount]) => {
           const project = projectsData.find(p => p.code === projectCode);
           if (project && project.assignedLicenses) {
-            const licenseAssignment = project.assignedLicenses.find(al => al.name === license.name);
+            const licenseAssignment = project.assignedLicenses.find(al => 
+              al.licenseId === license.name || al.licenseId === license.id
+            );
             if (licenseAssignment) {
               const requiredLicenses = Math.ceil((engineerCount * licenseAssignment.percentage) / 100);
               totalUsage += requiredLicenses;
