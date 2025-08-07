@@ -35,13 +35,29 @@ export const RevenueOverview = () => {
     return Math.round((totalDays * 5) / 7);
   };
 
-  // Mapování kalendářních týdnů na měsíce
-  const weekToMonthMapping: { [key: string]: string } = {
-    'CW32': 'August', 'CW33': 'August', 'CW34': 'August', 'CW35': 'August',
-    'CW36': 'September', 'CW37': 'September', 'CW38': 'September', 'CW39': 'September',
-    'CW40': 'October', 'CW41': 'October', 'CW42': 'October', 'CW43': 'October', 'CW44': 'October',
-    'CW45': 'November', 'CW46': 'November', 'CW47': 'November', 'CW48': 'November',
-    'CW49': 'December', 'CW50': 'December', 'CW51': 'December', 'CW52': 'December'
+  // Přesnější mapování týdnů na měsíce s poměrným rozdělením pro rok 2024
+  const weekToMonthMapping: { [key: string]: { [month: string]: number } } = {
+    'CW32': { 'August': 1.0 },           // 5-11 srpna (celý týden)
+    'CW33': { 'August': 1.0 },           // 12-18 srpna (celý týden)  
+    'CW34': { 'August': 1.0 },           // 19-25 srpna (celý týden)
+    'CW35': { 'August': 0.8, 'September': 0.2 },  // 26 srpna - 1 září (4:1 dny)
+    'CW36': { 'September': 1.0 },        // 2-8 září (celý týden)
+    'CW37': { 'September': 1.0 },        // 9-15 září (celý týden)
+    'CW38': { 'September': 1.0 },        // 16-22 září (celý týden)
+    'CW39': { 'September': 1.0 },        // 23-29 září (celý týden)
+    'CW40': { 'September': 0.2, 'October': 0.8 },   // 30 září - 6 října (1:4 dny)
+    'CW41': { 'October': 1.0 },          // 7-13 října (celý týden)
+    'CW42': { 'October': 1.0 },          // 14-20 října (celý týden)
+    'CW43': { 'October': 1.0 },          // 21-27 října (celý týden)
+    'CW44': { 'October': 0.8, 'November': 0.2 },    // 28 října - 3 listopadu (4:1 dny)
+    'CW45': { 'November': 1.0 },         // 4-10 listopadu (celý týden)
+    'CW46': { 'November': 1.0 },         // 11-17 listopadu (celý týden)
+    'CW47': { 'November': 1.0 },         // 18-24 listopadu (celý týden)
+    'CW48': { 'November': 0.8, 'December': 0.2 },   // 25 listopadu - 1 prosince (4:1 dny)
+    'CW49': { 'December': 1.0 },         // 2-8 prosince (celý týden)
+    'CW50': { 'December': 1.0 },         // 9-15 prosince (celý týden)
+    'CW51': { 'December': 1.0 },         // 16-22 prosince (celý týden)
+    'CW52': { 'December': 1.0 }          // 23-29 prosince (celý týden)
   };
 
   // Filtrovaná data podle vybraného filtru
@@ -67,22 +83,20 @@ export const RevenueOverview = () => {
     });
   }, [planningData, filterType, filterValue]);
 
-  // Výpočet revenue po měsících s rozložením podle projektů
+  // Výpočet revenue po měsících s rozložením podle projektů a poměrným rozdělením týdnů
   const calculateMonthlyRevenueByProject = (data = filteredData) => {
     const monthlyData: { [month: string]: { [projectCode: string]: number } } = {};
 
-    // Inicializace struktur
-    Object.keys(weekToMonthMapping).forEach(week => {
-      const month = weekToMonthMapping[week];
-      if (!monthlyData[month]) {
-        monthlyData[month] = {};
-      }
+    // Inicializace struktur pro všechny měsíce
+    const months = ['August', 'September', 'October', 'November', 'December'];
+    months.forEach(month => {
+      monthlyData[month] = {};
     });
 
     // Projdeme všechny záznamy v plánovacích datech
     data.forEach(entry => {
-      const month = weekToMonthMapping[entry.cw];
-      if (!month || entry.mhTyden === 0) return;
+      const weekMapping = weekToMonthMapping[entry.cw];
+      if (!weekMapping || entry.mhTyden === 0) return;
 
       // Najdeme projekt podle kódu
       const project = projects.find(p => p.code === entry.projekt);
@@ -100,13 +114,17 @@ export const RevenueOverview = () => {
       // Pokud nemáme sazbu, přeskočíme
       if (hourlyRate === 0) return;
 
-      // Inicializace projektu v měsíci
-      if (!monthlyData[month][entry.projekt]) {
-        monthlyData[month][entry.projekt] = 0;
-      }
+      // Rozdělíme týdenní výkon podle poměru dnů v měsících
+      Object.entries(weekMapping).forEach(([month, ratio]) => {
+        // Inicializace projektu v měsíci
+        if (!monthlyData[month][entry.projekt]) {
+          monthlyData[month][entry.projekt] = 0;
+        }
 
-      // Přičteme týdenní revenue k měsíčnímu součtu pro projekt
-      monthlyData[month][entry.projekt] += entry.mhTyden * hourlyRate;
+        // Přičteme poměrnou část týdenního revenue k měsíčnímu součtu
+        const monthlyRevenue = entry.mhTyden * hourlyRate * ratio;
+        monthlyData[month][entry.projekt] += monthlyRevenue;
+      });
     });
 
     return monthlyData;
