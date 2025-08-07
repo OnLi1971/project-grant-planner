@@ -43,6 +43,7 @@ export const ProjectManagement = () => {
     programId: '',
     projectType: 'WP' as 'WP' | 'Hodinovka',
     budget: 0,
+    averageHourlyRate: 0,
     assignedLicenses: [] as ProjectLicense[]
   });
   const { toast } = useToast();
@@ -140,6 +141,7 @@ export const ProjectManagement = () => {
       programId: '',
       projectType: 'WP',
       budget: 0,
+      averageHourlyRate: 0,
       assignedLicenses: []
     });
     setIsAddDialogOpen(false);
@@ -177,6 +179,7 @@ export const ProjectManagement = () => {
       programId: project.programId,
       projectType: project.projectType,
       budget: project.budget || 0,
+      averageHourlyRate: project.averageHourlyRate || 0,
       assignedLicenses: project.assignedLicenses || []
     });
     setIsAddDialogOpen(true);
@@ -331,6 +334,18 @@ export const ProjectManagement = () => {
                     />
                   </div>
                 </div>
+                {formData.projectType === 'WP' && (
+                  <div>
+                    <Label htmlFor="averageHourlyRate">Průměrná hodinová cena (Kč)</Label>
+                    <Input
+                      id="averageHourlyRate"
+                      type="number"
+                      value={formData.averageHourlyRate || ''}
+                      onChange={(e) => setFormData({ ...formData, averageHourlyRate: parseInt(e.target.value) || 0 })}
+                      placeholder="1200"
+                    />
+                  </div>
+                )}
                 <div>
                   <div className="flex justify-between items-center mb-2">
                     <Label>Přiřazené licence</Label>
@@ -431,9 +446,18 @@ export const ProjectManagement = () => {
                 </TableCell>
                 <TableCell>
                   {item.project?.budget ? (
-                    item.project.projectType === 'WP' 
-                      ? `${item.project.budget} hod` 
-                      : `${item.project.budget.toLocaleString('cs-CZ')} Kč/hod`
+                    <div className="flex flex-col gap-1">
+                      <span>
+                        {item.project.projectType === 'WP' 
+                          ? `${item.project.budget} hod` 
+                          : `${item.project.budget.toLocaleString('cs-CZ')} Kč/hod`}
+                      </span>
+                      {item.project.projectType === 'WP' && item.project.averageHourlyRate && (
+                        <span className="text-xs text-muted-foreground">
+                          Ø {item.project.averageHourlyRate.toLocaleString('cs-CZ')} Kč/hod
+                        </span>
+                      )}
+                    </div>
                   ) : 'N/A'}
                 </TableCell>
                 <TableCell>

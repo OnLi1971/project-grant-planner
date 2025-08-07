@@ -34,6 +34,7 @@ export interface Project {
   hourlyRate?: number;
   projectType: 'WP' | 'Hodinovka';
   budget?: number;
+  averageHourlyRate?: number; // Průměrná hodinová cena pro WP projekty
   assignedLicenses?: ProjectLicense[];
 }
 
