@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Edit, Trash2, Shield, Calendar } from 'lucide-react';
+import { CurrentWeekLicenseUsage } from './CurrentWeekLicenseUsage';
+import { LicenseUsageChart } from './LicenseUsageChart';
 
 interface License {
   id: string;
@@ -208,12 +210,20 @@ export const LicenseManagement = () => {
   };
 
   return (
-    <Card className="p-6 shadow-card-custom">
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center gap-2">
-          <Shield className="h-5 w-5" />
-          <h2 className="text-xl font-semibold">Správa licencí</h2>
-        </div>
+    <div className="space-y-6">
+      {/* Current Week Usage */}
+      <CurrentWeekLicenseUsage licenses={licenses} />
+      
+      {/* Future Usage Chart */}
+      <LicenseUsageChart licenses={licenses} />
+      
+      {/* License Management Table */}
+      <Card className="p-6 shadow-card-custom">
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            <h2 className="text-xl font-semibold">Správa licencí</h2>
+          </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
             <Button className="flex items-center gap-2">
@@ -369,5 +379,6 @@ export const LicenseManagement = () => {
         </TableBody>
       </Table>
     </Card>
+    </div>
   );
 };
