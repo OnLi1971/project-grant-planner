@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { ChartContainer, ChartConfig, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Legend, ReferenceLine, Cell } from 'recharts';
 import { usePlanning } from '@/contexts/PlanningContext';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
@@ -163,7 +163,7 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
         
         <ChartContainer config={chartConfig} className="h-80">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+            <BarChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
               <XAxis 
                 dataKey="week" 
                 tick={{ fontSize: 12 }}
@@ -176,17 +176,37 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
               <Legend />
               
               {licenses.map((license) => (
-                <Line
+                <Bar
                   key={license.name}
-                  type="monotone"
                   dataKey={license.name}
-                  stroke={chartConfig[license.name]?.color}
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                  connectNulls={false}
+                  fill={chartConfig[license.name]?.color}
+                  name={license.name}
+                  radius={[2, 2, 0, 0]}
+                >
+                  {chartData.map((entry, index) => {
+                    const usage = entry[license.name] || 0;
+                    const available = license.totalSeats;
+                    const isOverLimit = usage > available;
+                    return (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={isOverLimit ? 'hsl(var(--destructive))' : chartConfig[license.name]?.color} 
+                      />
+                    );
+                  })}
+                </Bar>
+              ))}
+              
+              {licenses.map((license) => (
+                <ReferenceLine
+                  key={`ref-${license.name}`}
+                  y={license.totalSeats}
+                  stroke="hsl(var(--muted-foreground))"
+                  strokeDasharray="3 3"
+                  label={{ value: `${license.name} limit: ${license.totalSeats}`, position: 'insideTopRight' }}
                 />
               ))}
-            </LineChart>
+            </BarChart>
           </ResponsiveContainer>
         </ChartContainer>
       </Card>
