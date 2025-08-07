@@ -41,7 +41,7 @@ const Index = () => {
               </TabsTrigger>
               <TabsTrigger value="management" className="flex items-center gap-2">
                 <Settings className="h-4 w-4" />
-                Plánování kapacit
+                Správa utilit
               </TabsTrigger>
             </TabsList>
             
