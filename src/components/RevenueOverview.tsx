@@ -255,10 +255,6 @@ export const RevenueOverview = () => {
                     borderRadius: '6px'
                   }}
                 />
-                <Legend 
-                  wrapperStyle={{ paddingTop: '20px' }}
-                  iconType="rect"
-                />
                 {projectList.map((projectCode, index) => (
                   <Bar 
                     key={projectCode}
