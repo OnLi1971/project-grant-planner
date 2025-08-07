@@ -46,14 +46,32 @@ const CUSTOMER_COLORS = {
   }
 };
 
+// Specifické barvy pro jednotlivé ST projekty - různé odstíny modré
+const ST_PROJECT_COLORS: { [key: string]: string } = {
+  'ST_EMU_INT': 'hsl(211 100% 50%)',      // bg-blue-500
+  'ST_TRAM_INT': 'hsl(211 100% 43%)',     // bg-blue-600  
+  'ST_MAINZ': 'hsl(211 100% 56%)',        // bg-blue-400
+  'ST_KASSEL': 'hsl(211 100% 35%)',       // bg-blue-700
+  'ST_BLAVA': 'hsl(188 95% 50%)',         // bg-cyan-500
+  'ST_FEM': 'hsl(211 100% 71%)',          // bg-blue-300
+  'ST_POZAR': 'hsl(231 83% 53%)',         // bg-indigo-500
+  'ST_JIGS': 'hsl(197 71% 52%)',          // bg-sky-500
+  'ST_TRAM_HS': 'hsl(211 100% 27%)',      // bg-blue-800
+};
+
 // Získání barvy zákazníka podle kódu
 export const getCustomerColor = (customerCode: string, variant: 'primary' | 'light' | 'dark' | 'accent' = 'primary'): string => {
   const colors = CUSTOMER_COLORS[customerCode as keyof typeof CUSTOMER_COLORS];
   return colors ? colors[variant] : CUSTOMER_COLORS['N/A'][variant];
 };
 
-// Získání barvy projektu na základě zákazníka
+// Získání barvy projektu na základě zákazníka nebo specifické barvy pro ST projekty
 export const getProjectColor = (projectCode: string, variant: 'primary' | 'light' | 'dark' | 'accent' = 'primary'): string => {
+  // Pro ST projekty používáme specifické odstíny modré
+  if (ST_PROJECT_COLORS[projectCode]) {
+    return ST_PROJECT_COLORS[projectCode];
+  }
+
   // Najdeme projekt
   const project = projects.find(p => p.code === projectCode);
   if (!project) {
