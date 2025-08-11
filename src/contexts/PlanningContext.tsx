@@ -121,7 +121,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       konstrukter: name,
       cw: week,
       mesic: months[index],
-      mh_tyden: 0,
+      mh_tyden: 36, // Defaultní hodnota 36 hodin
       projekt: 'FREE'
     }));
 
