@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Edit, Save, X, Plus, MousePointer, MousePointer2, FolderPlus } from 'lucide-react';
-import { usePlanning } from '@/contexts/PlanningContext';
+import { useSupabasePlanning } from '@/contexts/SupabasePlanningContext';
 import { ProjectManagement } from '@/components/ProjectManagement';
 import { projects, customers, projectManagers, programs, type Project } from '@/data/projectsData';
 import { getProjectColor, getCustomerByProjectCode } from '@/utils/colorSystem';
@@ -42,7 +42,7 @@ const generatePlanningDataForEditor = (data: any[]): { [key: string]: WeekPlan[]
     result[entry.konstrukter].push({
       cw: entry.cw,
       mesic: entry.mesic,
-      mhTyden: entry.mhTyden,
+      mhTyden: entry.mh_tyden || entry.mhTyden || 0, // Handle both formats
       projekt: entry.projekt
     });
   });
@@ -60,7 +60,7 @@ const generatePlanningDataForEditor = (data: any[]): { [key: string]: WeekPlan[]
 };
 
 export const PlanningEditor: React.FC = () => {
-  const { planningData, updatePlanningEntry, addEngineer, savePlan, resetToOriginal } = usePlanning();
+  const { planningData, loading, updatePlanningEntry, addEngineer, refreshData, canEdit } = useSupabasePlanning();
   
   const planData = useMemo(() => generatePlanningDataForEditor(planningData), [planningData]);
   const konstrukteri = useMemo(() => Object.keys(planData).sort(), [planData]);
@@ -87,8 +87,9 @@ export const PlanningEditor: React.FC = () => {
     });
   };
 
-  const updateCell = (konstrukter: string, cw: string, field: 'projekt' | 'mhTyden', value: string | number) => {
-    updatePlanningEntry(konstrukter, cw, field, value);
+  const updateCell = async (konstrukter: string, cw: string, field: 'projekt' | 'mhTyden', value: string | number) => {
+    if (!canEdit) return;
+    await updatePlanningEntry(konstrukter, cw, field === 'mhTyden' ? 'mh_tyden' : 'projekt', value);
   };
 
   const toggleWeekSelection = (cw: string) => {
@@ -107,17 +108,19 @@ export const PlanningEditor: React.FC = () => {
     setSelectedWeeks(new Set());
   };
 
-  const bulkUpdateProject = (projekt: string) => {
-    selectedWeeks.forEach(cw => {
-      updateCell(selectedKonstrukter, cw, 'projekt', projekt);
-    });
+  const bulkUpdateProject = async (projekt: string) => {
+    if (!canEdit) return;
+    for (const cw of selectedWeeks) {
+      await updateCell(selectedKonstrukter, cw, 'projekt', projekt);
+    }
     clearSelection();
   };
 
-  const bulkUpdateHours = (hours: number) => {
-    selectedWeeks.forEach(cw => {
-      updateCell(selectedKonstrukter, cw, 'mhTyden', hours);
-    });
+  const bulkUpdateHours = async (hours: number) => {
+    if (!canEdit) return;
+    for (const cw of selectedWeeks) {
+      await updateCell(selectedKonstrukter, cw, 'mhTyden', hours);
+    }
     clearSelection();
   };
 
@@ -144,13 +147,25 @@ export const PlanningEditor: React.FC = () => {
 
   const currentPlan = planData[selectedKonstrukter] || [];
 
-  const addNewEngineer = () => {
+  const addNewEngineer = async () => {
+    if (!canEdit) return;
     const newName = prompt('Zadejte jméno nového konstruktéra:');
     if (newName && !konstrukteri.includes(newName)) {
-      addEngineer(newName);
+      await addEngineer(newName);
       setSelectedKonstrukter(newName);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Načítání dat...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 p-6 bg-background min-h-screen">
@@ -171,19 +186,21 @@ export const PlanningEditor: React.FC = () => {
                 setIsMultiSelectMode(!isMultiSelectMode);
                 if (isMultiSelectMode) clearSelection();
               }}
+              disabled={!canEdit}
               className="bg-white/10 hover:bg-white/20 text-white border-white/30 hover:border-white/50"
             >
               <MousePointer2 className="h-4 w-4 mr-2" />
               {isMultiSelectMode ? 'Ukončit výběr' : 'Vybrat více týdnů'}
             </Button>
-            <Button variant="outline" onClick={savePlan} className="bg-white/10 hover:bg-white/20 text-white border-white/30 hover:border-white/50">
+            <Button variant="outline" onClick={refreshData} className="bg-white/10 hover:bg-white/20 text-white border-white/30 hover:border-white/50">
               <Save className="h-4 w-4 mr-2" />
-              Uložit plán
+              Obnovit data
             </Button>
-            <Button variant="outline" onClick={resetToOriginal} className="bg-white/10 hover:bg-white/20 text-white border-white/30 hover:border-white/50">
-              <X className="h-4 w-4 mr-2" />
-              Obnovit původní
-            </Button>
+            {!canEdit && (
+              <Badge variant="secondary" className="ml-2">
+                Pouze čtení
+              </Badge>
+            )}
           </div>
         </div>
       </div>

@@ -7,7 +7,7 @@ import { RevenueOverview } from '@/components/RevenueOverview';
 import { ResourceManagement } from '@/components/ResourceManagement';
 import { LicenseManagement } from '@/components/LicenseManagement';
 import { ProjectManagement } from '@/components/ProjectManagement';
-import { PlanningProvider } from '@/contexts/PlanningContext';
+import { SupabasePlanningProvider } from '@/contexts/SupabasePlanningContext';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { UserMenu } from '@/components/auth/UserMenu';
 import { Button } from '@/components/ui/button';
@@ -20,7 +20,7 @@ const Index = () => {
   const [managementView, setManagementView] = useState<'projects' | 'resources' | 'licenses'>('projects');
 
   return (
-    <PlanningProvider>
+    <SupabasePlanningProvider>
       <div className="min-h-screen bg-background">
         <Card className="m-6 p-4 shadow-card-custom">
           <div className="flex justify-between items-center">
@@ -143,7 +143,7 @@ const Index = () => {
           </Tabs>
         </div>
       </div>
-    </PlanningProvider>
+    </SupabasePlanningProvider>
   );
 };
 
