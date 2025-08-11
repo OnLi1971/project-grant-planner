@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { supabase, type PlanningEntry } from '@/lib/supabase';
+import { supabase, isSupabaseConfigured, type PlanningEntry } from '@/lib/supabase';
+import { usePlanning } from '@/contexts/PlanningContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { planningData as fallbackData } from '@/data/planningData';
@@ -37,6 +38,14 @@ export const SupabasePlanningProvider: React.FC<{ children: React.ReactNode }> =
   const fetchPlanningData = useCallback(async () => {
     try {
       setLoading(true);
+      
+      // If Supabase is not configured, use fallback localStorage context
+      if (!isSupabaseConfigured || !supabase) {
+        console.log('Using localStorage fallback');
+        // Just use empty data for now, fallback will handle this
+        setPlanningData([]);
+        return;
+      }
       const { data, error } = await supabase
         .from('planning_entries')
         .select('*')
@@ -97,6 +106,15 @@ export const SupabasePlanningProvider: React.FC<{ children: React.ReactNode }> =
       return;
     }
 
+    if (!isSupabaseConfigured || !supabase) {
+      toast({
+        title: "Supabase není připojen",
+        description: "Klikněte na zelené tlačítko Supabase pro připojení databáze.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const updateField = field === 'mh_tyden' ? 'mh_tyden' : 'projekt';
       const { error } = await supabase
@@ -138,6 +156,15 @@ export const SupabasePlanningProvider: React.FC<{ children: React.ReactNode }> =
       toast({
         title: "Nedostatečná oprávnění",
         description: "Nemáte oprávnění k přidávání konstruktérů.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!isSupabaseConfigured || !supabase) {
+      toast({
+        title: "Supabase není připojen",
+        description: "Klikněte na zelené tlačítko Supabase pro připojení databáze.",
         variant: "destructive",
       });
       return;
@@ -188,20 +215,22 @@ export const SupabasePlanningProvider: React.FC<{ children: React.ReactNode }> =
   useEffect(() => {
     fetchPlanningData();
 
-    // Set up real-time subscription
-    const subscription = supabase
-      .channel('planning-changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'planning_entries' },
-        () => {
-          fetchPlanningData();
-        }
-      )
-      .subscribe();
+    // Set up real-time subscription only if Supabase is configured
+    if (isSupabaseConfigured && supabase) {
+      const subscription = supabase
+        .channel('planning-changes')
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'planning_entries' },
+          () => {
+            fetchPlanningData();
+          }
+        )
+        .subscribe();
 
-    return () => {
-      subscription.unsubscribe();
-    };
+      return () => {
+        subscription.unsubscribe();
+      };
+    }
   }, [fetchPlanningData]);
 
   return (

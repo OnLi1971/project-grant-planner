@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { User, Session } from '@supabase/supabase-js'
-import { supabase, type Profile } from '@/lib/supabase'
+import { supabase, isSupabaseConfigured, type Profile } from '@/lib/supabase'
 import { useToast } from '@/hooks/use-toast'
 
 interface AuthContextType {
@@ -31,6 +31,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { toast } = useToast()
 
   useEffect(() => {
+    // If Supabase is not configured, create a mock user for demo mode
+    if (!isSupabaseConfigured || !supabase) {
+      const mockUser = {
+        id: 'demo-user',
+        email: 'demo@grantplaner.com',
+      } as User;
+      
+      const mockProfile: Profile = {
+        id: 'demo-user',
+        email: 'demo@grantplaner.com',
+        full_name: 'Demo Uživatel',
+        role: 'admin' as const,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      setUser(mockUser);
+      setProfile(mockProfile);
+      setLoading(false);
+      return;
+    }
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
@@ -78,6 +99,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   const signIn = async (email: string, password: string) => {
+    if (!isSupabaseConfigured || !supabase) {
+      toast({
+        title: "Supabase není připojen",
+        description: "Pro přihlášení je potřeba připojit Supabase databázi.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -103,6 +133,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   const signUp = async (email: string, password: string, fullName: string) => {
+    if (!isSupabaseConfigured || !supabase) {
+      toast({
+        title: "Supabase není připojen", 
+        description: "Pro registraci je potřeba připojit Supabase databázi.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -133,6 +172,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   const signOut = async () => {
+    if (!isSupabaseConfigured || !supabase) {
+      return; // In demo mode, just stay logged in
+    }
+    
     try {
       const { error } = await supabase.auth.signOut()
       if (error) {

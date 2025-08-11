@@ -3,11 +3,18 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error('Missing Supabase environment variables')
-}
+// Check if Supabase is configured
+export const isSupabaseConfigured = !!(supabaseUrl && supabaseKey);
 
-export const supabase = createClient(supabaseUrl, supabaseKey)
+// Create client only if configured, otherwise use null
+export const supabase = isSupabaseConfigured 
+  ? createClient(supabaseUrl, supabaseKey)
+  : null;
+
+// Show warning if not configured
+if (!isSupabaseConfigured) {
+  console.warn('⚠️ Supabase not configured. Using localStorage fallback. Click the green Supabase button to connect your database.');
+}
 
 // Database types
 export interface PlanningEntry {
