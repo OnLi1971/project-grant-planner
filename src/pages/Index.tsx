@@ -9,6 +9,7 @@ import { LicenseManagement } from '@/components/LicenseManagement';
 import { ProjectManagement } from '@/components/ProjectManagement';
 import { PlanningProvider } from '@/contexts/PlanningContext';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { UserMenu } from '@/components/auth/UserMenu';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -23,8 +24,11 @@ const Index = () => {
       <div className="min-h-screen bg-background">
         <Card className="m-6 p-4 shadow-card-custom">
           <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold">Plánování kapacit</h1>
-            <ThemeToggle />
+            <h1 className="text-2xl font-bold">Grant Planer</h1>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <UserMenu />
+            </div>
           </div>
         </Card>
 
