@@ -29,30 +29,61 @@ const availableProjects = [
   'NU_CRAIN', 'WA_HVAC', 'ST_JIGS', 'ST_TRAM_HS', 'SAF_FEM', 'FREE', 'DOVOLENÁ'
 ];
 
+// Funkce pro generování všech týdnů roku
+const generateAllWeeks = (): WeekPlan[] => {
+  const weeks: WeekPlan[] = [];
+  const months = [
+    'leden', 'únor', 'březen', 'duben', 'květen', 'červen',
+    'červenec', 'srpen', 'září', 'říjen', 'listopad', 'prosinec'
+  ];
+  
+  for (let cw = 1; cw <= 52; cw++) {
+    const monthIndex = Math.floor((cw - 1) / 4.33); // Přibližné rozdělení týdnů do měsíců
+    const mesic = months[Math.min(monthIndex, 11)];
+    
+    weeks.push({
+      cw: `CW${cw.toString().padStart(2, '0')}`,
+      mesic,
+      mhTyden: 0,
+      projekt: 'FREE'
+    });
+  }
+  
+  return weeks;
+};
+
 // Transformace dat z contextu do formátu editoru
 const generatePlanningDataForEditor = (data: any[]): { [key: string]: WeekPlan[] } => {
   const result: { [key: string]: WeekPlan[] } = {};
   
-  // Skupina konstruktérů podle jmen
+  // Vytvoříme mapu existujících dat
+  const existingDataMap: { [key: string]: { [key: string]: WeekPlan } } = {};
   data.forEach(entry => {
-    if (!result[entry.konstrukter]) {
-      result[entry.konstrukter] = [];
+    if (!existingDataMap[entry.konstrukter]) {
+      existingDataMap[entry.konstrukter] = {};
     }
-    
-    result[entry.konstrukter].push({
+    existingDataMap[entry.konstrukter][entry.cw] = {
       cw: entry.cw,
       mesic: entry.mesic,
       mhTyden: entry.mhTyden,
       projekt: entry.projekt
-    });
+    };
   });
   
-  // Seřadí týdny podle CW
-  Object.keys(result).forEach(konstrukter => {
-    result[konstrukter].sort((a, b) => {
-      const aNum = parseInt(a.cw.replace('CW', ''));
-      const bNum = parseInt(b.cw.replace('CW', ''));
-      return aNum - bNum;
+  // Získáme seznam všech konstruktérů
+  const allKonstrukteri = [...new Set(data.map(entry => entry.konstrukter))];
+  
+  // Pro každého konstruktéra vytvoříme kompletní rok
+  allKonstrukteri.forEach(konstrukter => {
+    const allWeeks = generateAllWeeks();
+    
+    result[konstrukter] = allWeeks.map(week => {
+      // Pokud máme existující data pro tento týden, použijeme je
+      if (existingDataMap[konstrukter] && existingDataMap[konstrukter][week.cw]) {
+        return existingDataMap[konstrukter][week.cw];
+      }
+      // Jinak použijeme default hodnoty
+      return week;
     });
   });
   
