@@ -29,7 +29,7 @@ const availableProjects = [
   'NU_CRAIN', 'WA_HVAC', 'ST_JIGS', 'ST_TRAM_HS', 'SAF_FEM', 'FREE', 'DOVOLENÁ'
 ];
 
-// Funkce pro generování všech týdnů roku
+// Funkce pro generování všech týdnů od CW32 do konce roku
 const generateAllWeeks = (): WeekPlan[] => {
   const weeks: WeekPlan[] = [];
   const months = [
@@ -37,9 +37,17 @@ const generateAllWeeks = (): WeekPlan[] => {
     'červenec', 'srpen', 'září', 'říjen', 'listopad', 'prosinec'
   ];
   
-  for (let cw = 1; cw <= 52; cw++) {
-    const monthIndex = Math.floor((cw - 1) / 4.33); // Přibližné rozdělení týdnů do měsíců
-    const mesic = months[Math.min(monthIndex, 11)];
+  // Začínáme od CW32 do CW52
+  for (let cw = 32; cw <= 52; cw++) {
+    // CW32 je obvykle srpen, CW52 je prosinec
+    let monthIndex;
+    if (cw <= 35) monthIndex = 7; // srpen
+    else if (cw <= 39) monthIndex = 8; // září  
+    else if (cw <= 43) monthIndex = 9; // říjen
+    else if (cw <= 47) monthIndex = 10; // listopad
+    else monthIndex = 11; // prosinec
+    
+    const mesic = months[monthIndex];
     
     weeks.push({
       cw: `CW${cw.toString().padStart(2, '0')}`,
