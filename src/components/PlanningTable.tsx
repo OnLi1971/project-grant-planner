@@ -10,7 +10,7 @@ interface EngineerOverview {
   konstrukter: string;
   spolecnost: string;
   orgVedouci: string;
-  planNa4Tydny: Array<{ cw: string; projekt: string }>;
+  planDoKonceRoku: Array<{ cw: string; projekt: string }>;
   status: 'VOLNY' | 'CASTECNE' | 'PLNE' | 'DOVOLENA';
 }
 
@@ -22,10 +22,9 @@ const getCurrentWeek = (): number => {
   return Math.ceil((days + start.getDay() + 1) / 7);
 };
 
-// Funkce pro generování následujících 4 týdnů
-const getNext4Weeks = (): string[] => {
-  const currentWeek = getCurrentWeek();
-  return Array.from({ length: 4 }, (_, i) => `CW${currentWeek + i}`);
+// Funkce pro generování všech týdnů do konce roku
+const getAllWeeksToEndOfYear = (): string[] => {
+  return ['CW32', 'CW33', 'CW34', 'CW35', 'CW36', 'CW37', 'CW38', 'CW39', 'CW40', 'CW41', 'CW42', 'CW43', 'CW44', 'CW45', 'CW46', 'CW47', 'CW48', 'CW49', 'CW50', 'CW51', 'CW52'];
 };
 
 // Seznam konstruktérů - všech 45 skutečných jmen
@@ -81,12 +80,12 @@ export const PlanningTable: React.FC = () => {
   const { planningData } = usePlanning();
   
   const overviewData = useMemo(() => {
-    const next4Weeks = getNext4Weeks();
+    const allWeeksToEndOfYear = getAllWeeksToEndOfYear();
     
     return konstrukteri
       .sort((a, b) => a.jmeno.localeCompare(b.jmeno)) // Seřadit podle abecedy
       .map(konstrukter => {
-        const planNa4Tydny = next4Weeks.map(cw => {
+        const planDoKonceRoku = allWeeksToEndOfYear.map(cw => {
           const entry = planningData.find(p => 
             p.konstrukter === konstrukter.jmeno && p.cw === cw
           );
@@ -96,9 +95,10 @@ export const PlanningTable: React.FC = () => {
           };
         });
         
-        // Určení statusu na základě plánu
-        const freeCount = planNa4Tydny.filter(p => p.projekt === 'FREE' || !p.projekt).length;
-        const vacationCount = planNa4Tydny.filter(p => p.projekt === 'DOVOLENÁ').length;
+        // Určení statusu na základě plánu (prvních 4 týdnů)
+        const first4Weeks = planDoKonceRoku.slice(0, 4);
+        const freeCount = first4Weeks.filter(p => p.projekt === 'FREE' || !p.projekt).length;
+        const vacationCount = first4Weeks.filter(p => p.projekt === 'DOVOLENÁ').length;
         
         let status: 'VOLNY' | 'CASTECNE' | 'PLNE' | 'DOVOLENA';
         
@@ -116,7 +116,7 @@ export const PlanningTable: React.FC = () => {
           konstrukter: konstrukter.jmeno,
           spolecnost: konstrukter.spolecnost,
           orgVedouci: konstrukter.orgVedouci,
-          planNa4Tydny,
+          planDoKonceRoku,
           status
         };
       });
@@ -229,7 +229,7 @@ export const PlanningTable: React.FC = () => {
                 <th className="p-3 text-left font-medium sticky top-0 bg-planning-header">Konstruktér</th>
                 <th className="p-3 text-left font-medium sticky top-0 bg-planning-header">Společnost</th>
                 <th className="p-3 text-left font-medium sticky top-0 bg-planning-header">Organizační vedoucí</th>
-                {getNext4Weeks().map(cw => (
+                {getAllWeeksToEndOfYear().map(cw => (
                   <th key={cw} className="p-3 text-center font-medium min-w-[100px] sticky top-0 bg-planning-header">{cw}</th>
                 ))}
                 <th className="p-3 text-left font-medium sticky top-0 bg-planning-header">Status</th>
@@ -247,7 +247,7 @@ export const PlanningTable: React.FC = () => {
                   <td className="p-3 font-medium text-foreground">{engineer.konstrukter}</td>
                   <td className="p-3 text-muted-foreground">{engineer.spolecnost}</td>
                   <td className="p-3 text-muted-foreground font-medium">{engineer.orgVedouci}</td>
-                  {engineer.planNa4Tydny.map((weekPlan, weekIndex) => (
+                  {engineer.planDoKonceRoku.map((weekPlan, weekIndex) => (
                     <td key={weekIndex} className="p-3 text-center">
                       {getProjectBadge(weekPlan.projekt)}
                     </td>
