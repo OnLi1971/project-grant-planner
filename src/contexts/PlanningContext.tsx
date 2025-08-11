@@ -74,23 +74,86 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const updatePlanningEntry = useCallback(async (konstrukter: string, cw: string, field: 'projekt' | 'mhTyden', value: string | number) => {
     try {
-      const { error } = await supabase
+      // Nejdříve zkusíme aktualizovat existující záznam
+      const { data: existingData, error: selectError } = await supabase
         .from('planning_entries')
-        .update({ [field === 'mhTyden' ? 'mh_tyden' : field]: value })
+        .select('*')
         .eq('konstrukter', konstrukter)
-        .eq('cw', cw);
+        .eq('cw', cw)
+        .single();
 
-      if (error) {
-        console.error('Error updating planning entry:', error);
+      if (selectError && selectError.code !== 'PGRST116') { // PGRST116 = no rows found
+        console.error('Error checking existing entry:', selectError);
         toast({
-          title: "Chyba při ukládání",
-          description: "Nepodařilo se uložit změnu.",
+          title: "Chyba při kontrole dat",
+          description: "Nepodařilo se zkontrolovat existující záznam.",
           variant: "destructive",
         });
         return;
       }
 
-      // Update local state
+      if (existingData) {
+        // Záznam existuje, aktualizujeme ho
+        const { error } = await supabase
+          .from('planning_entries')
+          .update({ [field === 'mhTyden' ? 'mh_tyden' : field]: value })
+          .eq('konstrukter', konstrukter)
+          .eq('cw', cw);
+
+        if (error) {
+          console.error('Error updating planning entry:', error);
+          toast({
+            title: "Chyba při ukládání",
+            description: "Nepodařilo se uložit změnu.",
+            variant: "destructive",
+          });
+          return;
+        }
+      } else {
+        // Záznam neexistuje, vytvoříme nový
+        const cwNum = parseInt(cw.replace('CW', ''));
+        let mesic = 'August';
+        
+        if (cwNum <= 35) mesic = 'August';
+        else if (cwNum <= 39) mesic = 'září';
+        else if (cwNum <= 43) mesic = 'říjen';
+        else if (cwNum <= 47) mesic = 'listopad';
+        else mesic = 'prosinec';
+
+        const newEntry = {
+          konstrukter,
+          cw,
+          mesic,
+          mh_tyden: field === 'mhTyden' ? (typeof value === 'number' ? value : parseInt(value.toString())) : 36,
+          projekt: field === 'projekt' ? value.toString() : 'FREE'
+        };
+
+        const { error } = await supabase
+          .from('planning_entries')
+          .insert([newEntry]);
+
+        if (error) {
+          console.error('Error creating planning entry:', error);
+          toast({
+            title: "Chyba při vytváření",
+            description: "Nepodařilo se vytvořit nový záznam.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Přidáme záznam do lokálního stavu
+        const newLocalEntry: PlanningEntry = { 
+          konstrukter: newEntry.konstrukter,
+          cw: newEntry.cw,
+          mesic: newEntry.mesic,
+          mhTyden: newEntry.mh_tyden,
+          projekt: newEntry.projekt
+        };
+        setPlanningData(prev => [...prev, newLocalEntry]);
+      }
+
+      // Aktualizujeme lokální stav
       setPlanningData(prev => 
         prev.map(entry => 
           entry.konstrukter === konstrukter && entry.cw === cw
@@ -115,7 +178,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const addEngineer = useCallback(async (name: string) => {
     const weeks = ['CW32', 'CW33', 'CW34', 'CW35', 'CW36', 'CW37', 'CW38', 'CW39', 'CW40', 'CW41', 'CW42', 'CW43', 'CW44', 'CW45', 'CW46', 'CW47', 'CW48', 'CW49', 'CW50', 'CW51', 'CW52'];
-    const months = ['August', 'August', 'August', 'August', 'September', 'September', 'September', 'September', 'October', 'October', 'October', 'October', 'October', 'November', 'November', 'November', 'November', 'December', 'December', 'December', 'December'];
+    const months = ['August', 'August', 'August', 'August', 'září', 'září', 'září', 'září', 'říjen', 'říjen', 'říjen', 'říjen', 'říjen', 'listopad', 'listopad', 'listopad', 'listopad', 'prosinec', 'prosinec', 'prosinec', 'prosinec'];
     
     const newEntries = weeks.map((week, index) => ({
       konstrukter: name,
