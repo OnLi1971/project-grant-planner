@@ -34,14 +34,14 @@ const generateAllWeeks = (): WeekPlan[] => {
   const weeks: WeekPlan[] = [];
   const months = [
     'leden', 'únor', 'březen', 'duben', 'květen', 'červen',
-    'červenec', 'srpen', 'září', 'říjen', 'listopad', 'prosinec'
+    'červenec', 'August', 'září', 'říjen', 'listopad', 'prosinec'
   ];
   
   // Začínáme od CW32 do CW52
   for (let cw = 32; cw <= 52; cw++) {
     // CW32 je obvykle srpen, CW52 je prosinec
     let monthIndex;
-    if (cw <= 35) monthIndex = 7; // srpen
+    if (cw <= 35) monthIndex = 7; // August
     else if (cw <= 39) monthIndex = 8; // září  
     else if (cw <= 43) monthIndex = 9; // říjen
     else if (cw <= 47) monthIndex = 10; // listopad
