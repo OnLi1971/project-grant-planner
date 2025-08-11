@@ -7,6 +7,8 @@ import { RevenueOverview } from '@/components/RevenueOverview';
 import { ResourceManagement } from '@/components/ResourceManagement';
 import { LicenseManagement } from '@/components/LicenseManagement';
 import { ProjectManagement } from '@/components/ProjectManagement';
+import { UserManagement } from '@/components/UserManagement';
+import { WelcomeMessage } from '@/components/WelcomeMessage';
 import { SupabasePlanningProvider } from '@/contexts/SupabasePlanningContext';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { UserMenu } from '@/components/auth/UserMenu';
@@ -17,7 +19,7 @@ import { Calendar, Edit, Users, Grid3x3, Database, TrendingUp, Settings, Shield,
 
 const Index = () => {
   const [outputView, setOutputView] = useState<'overview' | 'free-capacity' | 'matrix' | 'revenue'>('overview');
-  const [managementView, setManagementView] = useState<'projects' | 'resources' | 'licenses'>('projects');
+  const [managementView, setManagementView] = useState<'projects' | 'resources' | 'licenses' | 'users'>('projects');
 
   return (
     <SupabasePlanningProvider>
@@ -32,6 +34,10 @@ const Index = () => {
           </div>
         </Card>
 
+        <div className="mx-6 mb-6">
+          <WelcomeMessage />
+        </div>
+        
         <div className="mx-6">
           <Tabs defaultValue="editor" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
@@ -129,6 +135,14 @@ const Index = () => {
                     <Shield className="h-4 w-4" />
                     Správa licencí
                   </Button>
+                  <Button
+                    variant={managementView === 'users' ? 'default' : 'outline'}
+                    onClick={() => setManagementView('users')}
+                    className="flex items-center gap-2"
+                  >
+                    <Users className="h-4 w-4" />
+                    Správa uživatelů
+                  </Button>
                 </div>
               </Card>
               
@@ -136,8 +150,10 @@ const Index = () => {
                 <ProjectManagement />
               ) : managementView === 'resources' ? (
                 <ResourceManagement />
-              ) : (
+              ) : managementView === 'licenses' ? (
                 <LicenseManagement />
+              ) : (
+                <UserManagement />
               )}
             </TabsContent>
           </Tabs>

@@ -23,9 +23,17 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 ### 3. Nastavení prvního admin uživatele
 
+**Způsob 1: Automaticky při první registraci**
 1. **Registrujte se** v aplikaci pomocí formuláře
+2. **Klikněte na "Stát se administrátorem"** - objeví se při první registraci
+3. Máte admin práva! 🎉
+
+**Způsob 2: Ručně přes SQL (pokud potřebujete)**
+1. **Registrujte se** v aplikaci pomocí formuláře  
 2. **Najděte svoje User ID** v Supabase Auth > Users
-3. **Spusťte SQL příkaz** v Supabase SQL editoru:
+3. **Otevřete** `database/setup-admin.sql`
+4. **Nahraďte** `YOUR_USER_ID_HERE` svým User ID
+5. **Spusťte SQL příkaz** v Supabase SQL editoru
 
 ```sql
 UPDATE public.profiles 
