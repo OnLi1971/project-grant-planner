@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useSupabasePlanning } from '@/contexts/SupabasePlanningContext';
+import { usePlanning } from '@/contexts/PlanningContext';
 import { projects, customers, programs } from '@/data/projectsData';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -10,7 +10,7 @@ import { TrendingUp, Filter } from 'lucide-react';
 import { getProjectColorWithIndex } from '@/utils/colorSystem';
 
 export const RevenueOverview = () => {
-  const { planningData, loading } = useSupabasePlanning();
+  const { planningData } = usePlanning();
   const [filterType, setFilterType] = useState<'all' | 'customer' | 'program' | 'project'>('all');
   const [filterValue, setFilterValue] = useState<string>('all');
 
@@ -102,7 +102,7 @@ export const RevenueOverview = () => {
     // Projdeme všechny záznamy v plánovacích datech
     data.forEach(entry => {
       const weekMapping = weekToMonthMapping[entry.cw];
-      if (!weekMapping || entry.mh_tyden === 0) return;
+      if (!weekMapping || entry.mhTyden === 0) return;
 
       // Najdeme projekt podle kódu
       const project = projects.find(p => p.code === entry.projekt);
@@ -128,7 +128,7 @@ export const RevenueOverview = () => {
         }
 
         // Přičteme poměrnou část týdenního revenue k měsíčnímu součtu
-        const monthlyRevenue = entry.mh_tyden * hourlyRate * ratio;
+        const monthlyRevenue = entry.mhTyden * hourlyRate * ratio;
         monthlyData[month][entry.projekt] += monthlyRevenue;
       });
     });
@@ -188,17 +188,6 @@ export const RevenueOverview = () => {
     setFilterType(value as any);
     setFilterValue('all');
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Načítání dat...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">

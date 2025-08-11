@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Edit, Briefcase, Building, Trash2, X, Eye, Save } from 'lucide-react';
-import { useSupabasePlanning } from '@/contexts/SupabasePlanningContext';
+import { usePlanning } from '@/contexts/PlanningContext';
 import { 
   Project, ProjectLicense, Customer, ProjectManager, Program, 
   projects as initialProjects, 
@@ -48,7 +48,7 @@ export const ProjectManagement = () => {
     assignedLicenses: [] as ProjectLicense[]
   });
   const { toast } = useToast();
-  const { planningData } = useSupabasePlanning();
+  const { planningData } = usePlanning();
 
   // Load projects and licenses from localStorage
   useEffect(() => {

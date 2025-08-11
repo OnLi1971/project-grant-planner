@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Filter, Users } from 'lucide-react';
-import { useSupabasePlanning } from '@/contexts/SupabasePlanningContext';
+import { usePlanning } from '@/contexts/PlanningContext';
 
 interface EngineerOverview {
   konstrukter: string;
@@ -78,7 +78,7 @@ const konstrukteri = [
 ];
 
 export const PlanningTable: React.FC = () => {
-  const { planningData, loading } = useSupabasePlanning();
+  const { planningData } = usePlanning();
   
   const overviewData = useMemo(() => {
     const next4Weeks = getNext4Weeks();
@@ -175,17 +175,6 @@ export const PlanningTable: React.FC = () => {
       </Badge>
     );
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Načítání dat...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6 p-6 bg-background min-h-screen">
