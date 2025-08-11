@@ -6,7 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { ChevronDown } from 'lucide-react';
-import { usePlanning } from '@/contexts/PlanningContext';
+import { useSupabasePlanning } from '@/contexts/SupabasePlanningContext';
 import { customers, projectManagers, programs, projects } from '@/data/projectsData';
 
 // Organizational structure and project mappings
@@ -121,7 +121,7 @@ const getProjectBadgeStyle = (projekt: string) => {
 };
 
 export const ProjectAssignmentMatrix = () => {
-  const { planningData } = usePlanning();
+  const { planningData, loading } = useSupabasePlanning();
   const [viewMode, setViewMode] = useState<'weeks' | 'months'>('weeks');
   const [filterOrgVedouci, setFilterOrgVedouci] = useState<string[]>(['Všichni']);
   const [filterPM, setFilterPM] = useState<string[]>(['Všichni']);
@@ -193,7 +193,7 @@ export const ProjectAssignmentMatrix = () => {
         month.weeks.forEach(week => {
           const entry = planningData.find(e => e.konstrukter === engineer && e.cw === week);
           if (entry && entry.projekt) {
-            const hours = typeof entry.mhTyden === 'number' ? entry.mhTyden : 0;
+            const hours = typeof entry.mh_tyden === 'number' ? entry.mh_tyden : 0;
             monthProjects[entry.projekt] = (monthProjects[entry.projekt] || 0) + hours;
             totalHours += hours;
           }
@@ -326,6 +326,17 @@ export const ProjectAssignmentMatrix = () => {
     
     return engineers.sort();
   }, [displayData, matrixData, monthlyData, viewMode, filterOrgVedouci, filterPM, filterZakaznik, filterProgram]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Načítání dat...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -558,14 +569,14 @@ export const ProjectAssignmentMatrix = () => {
                         
                         // Sort projects by hours descending
                         const sortedProjects = monthData.projects.sort((a, b) => {
-                          const aHours = month.weeks.reduce((sum, week) => {
-                            const entry = planningData.find(e => e.konstrukter === engineer && e.cw === week && e.projekt === a);
-                            return sum + (typeof entry?.mhTyden === 'number' ? entry.mhTyden : 0);
-                          }, 0);
-                          const bHours = month.weeks.reduce((sum, week) => {
-                            const entry = planningData.find(e => e.konstrukter === engineer && e.cw === week && e.projekt === b);
-                            return sum + (typeof entry?.mhTyden === 'number' ? entry.mhTyden : 0);
-                          }, 0);
+          const aHours = month.weeks.reduce((sum, week) => {
+            const entry = planningData.find(e => e.konstrukter === engineer && e.cw === week && e.projekt === a);
+            return sum + (typeof entry?.mh_tyden === 'number' ? entry.mh_tyden : 0);
+          }, 0);
+          const bHours = month.weeks.reduce((sum, week) => {
+            const entry = planningData.find(e => e.konstrukter === engineer && e.cw === week && e.projekt === b);
+            return sum + (typeof entry?.mh_tyden === 'number' ? entry.mh_tyden : 0);
+          }, 0);
                           return bHours - aHours;
                         });
                         

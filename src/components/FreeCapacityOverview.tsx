@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Users, Calendar, Filter } from 'lucide-react';
-import { usePlanning } from '@/contexts/PlanningContext';
+import { useSupabasePlanning } from '@/contexts/SupabasePlanningContext';
 
 const weeks = ['CW32', 'CW33', 'CW34', 'CW35', 'CW36', 'CW37', 'CW38', 'CW39', 'CW40', 'CW41', 'CW42', 'CW43', 'CW44', 'CW45', 'CW46', 'CW47', 'CW48', 'CW49', 'CW50', 'CW51', 'CW52'];
 
@@ -43,7 +43,7 @@ const getProjectBadge = (projekt: string) => {
 };
 
 export const FreeCapacityOverview = () => {
-  const { planningData } = usePlanning();
+  const { planningData, loading } = useSupabasePlanning();
   
   // Filter states
   const [selectedWeeks, setSelectedWeeks] = useState<string[]>([]);
@@ -141,6 +141,17 @@ export const FreeCapacityOverview = () => {
   const avgFreePercentage = engineersWithFree > 0 
     ? Math.round(engineersWithFreeCapacity.reduce((sum, eng) => sum + eng.freePercentage, 0) / engineersWithFree)
     : 0;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Načítání dat...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 p-6 bg-background min-h-screen">
