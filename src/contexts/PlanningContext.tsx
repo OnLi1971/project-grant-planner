@@ -56,7 +56,16 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           return;
         }
 
-        setPlanningData(data || []);
+        // Mapujeme názvy sloupců z databáze na interface
+        const mappedData = (data || []).map(entry => ({
+          konstrukter: entry.konstrukter,
+          cw: entry.cw,
+          mesic: entry.mesic,
+          mhTyden: entry.mh_tyden, // Mapování z mh_tyden na mhTyden
+          projekt: entry.projekt
+        }));
+        
+        setPlanningData(mappedData);
       } catch (error) {
         console.error('Error loading planning data:', error);
         toast({
