@@ -1,11 +1,20 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { planningData as initialPlanningData, type PlanningEntry } from '@/data/planningData';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+
+export interface PlanningEntry {
+  konstrukter: string;
+  cw: string;
+  mesic: string;
+  mhTyden?: number;
+  projekt: string;
+}
 
 interface PlanningContextType {
   planningData: PlanningEntry[];
-  updatePlanningEntry: (konstrukter: string, cw: string, field: 'projekt' | 'mhTyden', value: string | number) => void;
-  addEngineer: (name: string) => void;
+  loading: boolean;
+  updatePlanningEntry: (konstrukter: string, cw: string, field: 'projekt' | 'mhTyden', value: string | number) => Promise<void>;
+  addEngineer: (name: string) => Promise<void>;
   savePlan: () => void;
   resetToOriginal: () => void;
 }
@@ -24,28 +33,87 @@ const STORAGE_KEY = 'planning-data';
 
 export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { toast } = useToast();
-  
-  // Load data from localStorage or use initial data
-  const [planningData, setPlanningData] = useState<PlanningEntry[]>(() => {
+  const [planningData, setPlanningData] = useState<PlanningEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Load data from Supabase
+  useEffect(() => {
+    const loadPlanningData = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('planning_entries')
+          .select('*')
+          .order('konstrukter')
+          .order('cw');
+
+        if (error) {
+          console.error('Error loading planning data:', error);
+          toast({
+            title: "Chyba při načítání dat",
+            description: "Nepodařilo se načíst data z databáze.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        setPlanningData(data || []);
+      } catch (error) {
+        console.error('Error loading planning data:', error);
+        toast({
+          title: "Chyba při načítání dat",
+          description: "Nepodařilo se načíst data z databáze.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPlanningData();
+  }, [toast]);
+
+  const updatePlanningEntry = useCallback(async (konstrukter: string, cw: string, field: 'projekt' | 'mhTyden', value: string | number) => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? JSON.parse(saved) : initialPlanningData;
-    } catch {
-      return initialPlanningData;
+      const { error } = await supabase
+        .from('planning_entries')
+        .update({ [field === 'mhTyden' ? 'mh_tyden' : field]: value })
+        .eq('konstrukter', konstrukter)
+        .eq('cw', cw);
+
+      if (error) {
+        console.error('Error updating planning entry:', error);
+        toast({
+          title: "Chyba při ukládání",
+          description: "Nepodařilo se uložit změnu.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Update local state
+      setPlanningData(prev => 
+        prev.map(entry => 
+          entry.konstrukter === konstrukter && entry.cw === cw
+            ? { ...entry, [field]: value }
+            : entry
+        )
+      );
+
+      toast({
+        title: "Změna uložena",
+        description: "Vaše změna byla úspěšně uložena.",
+      });
+    } catch (error) {
+      console.error('Error updating planning entry:', error);
+      toast({
+        title: "Chyba při ukládání",
+        description: "Nepodařilo se uložit změnu.",
+        variant: "destructive",
+      });
     }
-  });
+  }, [toast]);
 
-  const updatePlanningEntry = useCallback((konstrukter: string, cw: string, field: 'projekt' | 'mhTyden', value: string | number) => {
-    setPlanningData(prev => 
-      prev.map(entry => 
-        entry.konstrukter === konstrukter && entry.cw === cw
-          ? { ...entry, [field]: value }
-          : entry
-      )
-    );
-  }, []);
-
-  const addEngineer = useCallback((name: string) => {
+  const addEngineer = useCallback(async (name: string) => {
     const weeks = ['CW32', 'CW33', 'CW34', 'CW35', 'CW36', 'CW37', 'CW38', 'CW39', 'CW40', 'CW41', 'CW42', 'CW43', 'CW44', 'CW45', 'CW46', 'CW47', 'CW48', 'CW49', 'CW50', 'CW51', 'CW52'];
     const months = ['August', 'August', 'August', 'August', 'September', 'September', 'September', 'September', 'October', 'October', 'October', 'October', 'October', 'November', 'November', 'November', 'November', 'December', 'December', 'December', 'December'];
     
@@ -53,41 +121,73 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       konstrukter: name,
       cw: week,
       mesic: months[index],
-      mhTyden: 0,
+      mh_tyden: 0,
       projekt: 'FREE'
     }));
 
-    setPlanningData(prev => [...prev, ...newEntries]);
-  }, []);
-
-  const savePlan = useCallback(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(planningData));
+      const { error } = await supabase
+        .from('planning_entries')
+        .insert(newEntries);
+
+      if (error) {
+        console.error('Error adding engineer:', error);
+        toast({
+          title: "Chyba při přidávání",
+          description: "Nepodařilo se přidat nového konstruktéra.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Update local state
+      setPlanningData(prev => [...prev, ...newEntries.map(entry => ({ 
+        ...entry, 
+        mhTyden: entry.mh_tyden 
+      }))]);
+
       toast({
-        title: "Plán uložen",
-        description: "Vaše změny byly úspěšně uloženy.",
+        title: "Konstruktér přidán",
+        description: `Konstruktér ${name} byl úspěšně přidán.`,
       });
     } catch (error) {
+      console.error('Error adding engineer:', error);
       toast({
-        title: "Chyba při ukládání",
-        description: "Nepodařilo se uložit změny.",
+        title: "Chyba při přidávání",
+        description: "Nepodařilo se přidat nového konstruktéra.",
         variant: "destructive",
       });
     }
-  }, [planningData, toast]);
+  }, [toast]);
 
-  const resetToOriginal = useCallback(() => {
-    setPlanningData(initialPlanningData);
-    localStorage.removeItem(STORAGE_KEY);
+  const savePlan = useCallback(() => {
     toast({
-      title: "Plán obnoven",
-      description: "Data byla obnovena na původní stav.",
+      title: "Plán uložen",
+      description: "Změny jsou automaticky ukládány do databáze.",
     });
+  }, [toast]);
+
+  const resetToOriginal = useCallback(async () => {
+    try {
+      // This would reset to original data if needed
+      toast({
+        title: "Reset není dostupný",
+        description: "Data jsou načítána z databáze a nelze je resetovat.",
+        variant: "destructive",
+      });
+    } catch (error) {
+      toast({
+        title: "Chyba při resetu",
+        description: "Nepodařilo se obnovit data.",
+        variant: "destructive",
+      });
+    }
   }, [toast]);
 
   return (
     <PlanningContext.Provider value={{
       planningData,
+      loading,
       updatePlanningEntry,
       addEngineer,
       savePlan,
