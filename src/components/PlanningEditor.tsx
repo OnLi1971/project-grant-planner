@@ -373,9 +373,9 @@ export const PlanningEditor: React.FC = () => {
                           <span className={`font-medium ${
                             week.mhTyden >= 40 ? 'text-success' :
                             week.mhTyden >= 20 ? 'text-warning' :
-                            week.mhTyden > 0 ? 'text-foreground' : 'text-muted-foreground'
+                            week.mhTyden >= 0 ? 'text-foreground' : 'text-muted-foreground'
                           }`}>
-                            {week.mhTyden}h
+                            {week.mhTyden || 0}h
                           </span>
                           {!isMultiSelectMode && <Edit className="h-3 w-3 opacity-50" />}
                         </div>
