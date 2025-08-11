@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '@/components/AuthProvider';
 import { PlanningTable } from '@/components/PlanningTable';
 import { PlanningEditor } from '@/components/PlanningEditor';
 import { FreeCapacityOverview } from '@/components/FreeCapacityOverview';
@@ -12,11 +14,29 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Edit, Users, Grid3x3, Database, TrendingUp, Settings, Shield, UserPlus, DollarSign } from 'lucide-react';
+import { Calendar, Edit, Users, Grid3x3, Database, TrendingUp, Settings, Shield, UserPlus, DollarSign, LogOut } from 'lucide-react';
 
 const Index = () => {
+  const { user, loading, signOut } = useAuth();
   const [outputView, setOutputView] = useState<'overview' | 'free-capacity' | 'matrix' | 'revenue'>('overview');
   const [managementView, setManagementView] = useState<'projects' | 'resources' | 'licenses'>('projects');
+
+  // Show loading while checking auth
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Načítám...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect to auth if not logged in
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
 
   return (
     <PlanningProvider>
@@ -24,7 +44,21 @@ const Index = () => {
         <Card className="m-6 p-4 shadow-card-custom">
           <div className="flex justify-between items-center">
             <h1 className="text-2xl font-bold">Plánování kapacit</h1>
-            <ThemeToggle />
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">
+                {user.email}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={signOut}
+                className="flex items-center gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                Odhlásit se
+              </Button>
+              <ThemeToggle />
+            </div>
           </div>
         </Card>
 
