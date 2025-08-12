@@ -45,7 +45,9 @@ export const ProjectManagement = () => {
     projectType: 'WP' as 'WP' | 'Hodinovka',
     budget: 0,
     averageHourlyRate: 0,
-    assignedLicenses: [] as ProjectLicense[]
+    assignedLicenses: [] as ProjectLicense[],
+    projectStatus: 'Realizace' as 'Pre sales' | 'Realizace',
+    probability: 0
   });
   const { toast } = useToast();
   const { planningData } = usePlanning();
@@ -143,7 +145,9 @@ export const ProjectManagement = () => {
       projectType: 'WP',
       budget: 0,
       averageHourlyRate: 0,
-      assignedLicenses: []
+      assignedLicenses: [],
+      projectStatus: 'Realizace',
+      probability: 0
     });
     setIsAddDialogOpen(false);
     setEditingProject(null);
@@ -181,7 +185,9 @@ export const ProjectManagement = () => {
       projectType: project.projectType,
       budget: project.budget || 0,
       averageHourlyRate: project.averageHourlyRate || 0,
-      assignedLicenses: project.assignedLicenses || []
+      assignedLicenses: project.assignedLicenses || [],
+      projectStatus: project.projectStatus || 'Realizace',
+      probability: project.probability || 0
     });
     setIsAddDialogOpen(true);
   };
@@ -318,7 +324,7 @@ export const ProjectManagement = () => {
                     </Select>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <div>
                     <Label htmlFor="projectType">Typ projektu *</Label>
                     <Select value={formData.projectType} onValueChange={(value: 'WP' | 'Hodinovka') => setFormData({ ...formData, projectType: value })}>
@@ -331,6 +337,32 @@ export const ProjectManagement = () => {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div>
+                    <Label htmlFor="projectStatus">Status *</Label>
+                    <Select value={formData.projectStatus} onValueChange={(value: 'Pre sales' | 'Realizace') => setFormData({ ...formData, projectStatus: value })}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Pre sales">Pre sales</SelectItem>
+                        <SelectItem value="Realizace">Realizace</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {formData.projectStatus === 'Pre sales' && (
+                    <div>
+                      <Label htmlFor="probability">Pravděpodobnost (%)</Label>
+                      <Input
+                        id="probability"
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={formData.probability || ''}
+                        onChange={(e) => setFormData({ ...formData, probability: parseInt(e.target.value) || 0 })}
+                        placeholder="75"
+                      />
+                    </div>
+                  )}
                   <div>
                     <Label htmlFor="budget">
                       {formData.projectType === 'WP' ? 'Budget (hodiny)' : 'Hodinová cena (Kč)'}
@@ -429,6 +461,7 @@ export const ProjectManagement = () => {
               <TableHead>PM</TableHead>
               <TableHead>Program</TableHead>
               <TableHead>Typ</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead>Budget</TableHead>
               <TableHead>Licence</TableHead>
               <TableHead>Použití</TableHead>
@@ -452,6 +485,20 @@ export const ProjectManagement = () => {
                     <Badge variant={item.project.projectType === 'WP' ? 'default' : 'secondary'}>
                       {item.project.projectType}
                     </Badge>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {item.project?.projectStatus && (
+                    <div className="flex flex-col gap-1">
+                      <Badge variant={item.project.projectStatus === 'Pre sales' ? 'outline' : 'default'}>
+                        {item.project.projectStatus}
+                      </Badge>
+                      {item.project.projectStatus === 'Pre sales' && item.project.probability && (
+                        <span className="text-xs text-muted-foreground">
+                          {item.project.probability}%
+                        </span>
+                      )}
+                    </div>
                   )}
                 </TableCell>
                 <TableCell>
@@ -501,7 +548,7 @@ export const ProjectManagement = () => {
             ))}
             {usedProjects.length === 0 && (
               <TableRow>
-                <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
                   Zatím nejsou používány žádné projekty
                 </TableCell>
               </TableRow>

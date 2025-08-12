@@ -36,6 +36,8 @@ export interface Project {
   budget?: number;
   averageHourlyRate?: number; // Průměrná hodinová cena pro WP projekty
   assignedLicenses?: ProjectLicense[];
+  projectStatus?: 'Pre sales' | 'Realizace';
+  probability?: number; // Pravděpodobnost v % pro Pre sales projekty
 }
 
 // Výchozí zákazníci
