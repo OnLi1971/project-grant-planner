@@ -321,11 +321,11 @@ export const PlanningEditor: React.FC = () => {
       </Card>
 
       {/* Kopírování plánu */}
-      <Card className="p-4 shadow-card-custom border-orange-200 bg-orange-50/50">
+      <Card className="p-4 shadow-card-custom">
         <div className="flex items-center gap-4 flex-wrap">
           <div className="flex items-center gap-2">
-            <Copy className="h-4 w-4 text-orange-600" />
-            <label className="text-sm font-medium text-orange-900">Převzít plán od:</label>
+            <Copy className="h-4 w-4" />
+            <label className="text-sm font-medium">Převzít plán od:</label>
           </div>
           <Select value={copyFromKonstrukter} onValueChange={setCopyFromKonstrukter}>
             <SelectTrigger className="w-64">
@@ -343,12 +343,11 @@ export const PlanningEditor: React.FC = () => {
             onClick={handleCopyPlan}
             disabled={!copyFromKonstrukter || !selectedKonstrukter}
             variant="outline"
-            className="border-orange-300 text-orange-700 hover:bg-orange-100"
           >
             <Copy className="h-4 w-4 mr-2" />
             Zkopírovat plán
           </Button>
-          <div className="text-xs text-orange-700 max-w-md">
+          <div className="text-xs text-muted-foreground max-w-md">
             Zkopíruje celý plán vybraného konstruktéra do aktuálně editovaného konstruktéra. <strong>Přepíše všechny stávající data!</strong>
           </div>
         </div>
