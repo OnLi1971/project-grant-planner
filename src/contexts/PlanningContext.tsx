@@ -144,10 +144,10 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         // Používáme stejné mapování jako v addEngineer funkci
         const weekToMonthMap: { [key: number]: string } = {
           32: 'August', 33: 'August', 34: 'August', 35: 'August',
-          36: 'září', 37: 'září', 38: 'září', 39: 'září',
-          40: 'říjen', 41: 'říjen', 42: 'říjen', 43: 'říjen', 44: 'říjen',
-          45: 'listopad', 46: 'listopad', 47: 'listopad', 48: 'listopad',
-          49: 'prosinec', 50: 'prosinec', 51: 'prosinec', 52: 'prosinec'
+          36: 'September', 37: 'September', 38: 'September', 39: 'September',
+          40: 'October', 41: 'October', 42: 'October', 43: 'October', 44: 'October',
+          45: 'November', 46: 'November', 47: 'November', 48: 'November',
+          49: 'December', 50: 'December', 51: 'December', 52: 'December'
         };
         
         const mesic = weekToMonthMap[cwNum] || 'August';
@@ -210,7 +210,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const addEngineer = useCallback(async (name: string) => {
     const weeks = ['CW32', 'CW33', 'CW34', 'CW35', 'CW36', 'CW37', 'CW38', 'CW39', 'CW40', 'CW41', 'CW42', 'CW43', 'CW44', 'CW45', 'CW46', 'CW47', 'CW48', 'CW49', 'CW50', 'CW51', 'CW52'];
-    const months = ['August', 'August', 'August', 'August', 'září', 'září', 'září', 'září', 'říjen', 'říjen', 'říjen', 'říjen', 'říjen', 'listopad', 'listopad', 'listopad', 'listopad', 'prosinec', 'prosinec', 'prosinec', 'prosinec'];
+    const months = ['August', 'August', 'August', 'August', 'September', 'September', 'September', 'September', 'October', 'October', 'October', 'October', 'October', 'November', 'November', 'November', 'November', 'December', 'December', 'December', 'December'];
     
     const newEntries = weeks.map((week, index) => ({
       konstrukter: name,
