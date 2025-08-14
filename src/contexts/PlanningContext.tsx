@@ -140,13 +140,17 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       } else {
         // Záznam neexistuje, vytvoříme nový
         const cwNum = parseInt(cw.replace('CW', ''));
-        let mesic = 'August';
         
-        if (cwNum <= 35) mesic = 'August';
-        else if (cwNum <= 39) mesic = 'září';
-        else if (cwNum <= 43) mesic = 'říjen';
-        else if (cwNum <= 47) mesic = 'listopad';
-        else mesic = 'prosinec';
+        // Používáme stejné mapování jako v addEngineer funkci
+        const weekToMonthMap: { [key: number]: string } = {
+          32: 'August', 33: 'August', 34: 'August', 35: 'August',
+          36: 'září', 37: 'září', 38: 'září', 39: 'září',
+          40: 'říjen', 41: 'říjen', 42: 'říjen', 43: 'říjen', 44: 'říjen',
+          45: 'listopad', 46: 'listopad', 47: 'listopad', 48: 'listopad',
+          49: 'prosinec', 50: 'prosinec', 51: 'prosinec', 52: 'prosinec'
+        };
+        
+        const mesic = weekToMonthMap[cwNum] || 'August';
 
         const newEntry = {
           konstrukter,
