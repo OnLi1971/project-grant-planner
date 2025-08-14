@@ -11,10 +11,10 @@ const weeks = ['CW32', 'CW33', 'CW34', 'CW35', 'CW36', 'CW37', 'CW38', 'CW39', '
 
 const months = [
   { name: 'August', weeks: ['CW32', 'CW33', 'CW34', 'CW35'] },
-  { name: 'September', weeks: ['CW36', 'CW37', 'CW38', 'CW39'] },
-  { name: 'October', weeks: ['CW40', 'CW41', 'CW42', 'CW43', 'CW44'] },
-  { name: 'November', weeks: ['CW45', 'CW46', 'CW47', 'CW48'] },
-  { name: 'December', weeks: ['CW49', 'CW50', 'CW51', 'CW52'] }
+  { name: 'září', weeks: ['CW36', 'CW37', 'CW38', 'CW39'] },
+  { name: 'říjen', weeks: ['CW40', 'CW41', 'CW42', 'CW43', 'CW44'] },
+  { name: 'listopad', weeks: ['CW45', 'CW46', 'CW47', 'CW48'] },
+  { name: 'prosinec', weeks: ['CW49', 'CW50', 'CW51', 'CW52'] }
 ];
 
 // Updated project badge styling function using semantic tokens
