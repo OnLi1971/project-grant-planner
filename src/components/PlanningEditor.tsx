@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Edit, Save, X, Plus, MousePointer, MousePointer2, FolderPlus } from 'lucide-react';
+import { Calendar, Edit, Save, X, Plus, MousePointer, MousePointer2, FolderPlus, Copy } from 'lucide-react';
 import { usePlanning } from '@/contexts/PlanningContext';
 import { ProjectManagement } from '@/components/ProjectManagement';
 import { projects, customers, projectManagers, programs, type Project } from '@/data/projectsData';
@@ -99,7 +99,7 @@ const generatePlanningDataForEditor = (data: any[]): { [key: string]: WeekPlan[]
 };
 
 export const PlanningEditor: React.FC = () => {
-  const { planningData, updatePlanningEntry, addEngineer, savePlan, resetToOriginal } = usePlanning();
+  const { planningData, updatePlanningEntry, addEngineer, copyPlan, savePlan, resetToOriginal } = usePlanning();
   
   const planData = useMemo(() => generatePlanningDataForEditor(planningData), [planningData]);
   const konstrukteri = useMemo(() => Object.keys(planData).sort(), [planData]);
@@ -109,6 +109,7 @@ export const PlanningEditor: React.FC = () => {
   const [isMultiSelectMode, setIsMultiSelectMode] = useState<boolean>(false);
   const [selectedWeeks, setSelectedWeeks] = useState<Set<string>>(new Set());
   const [availableProjectsLocal, setAvailableProjectsLocal] = useState<string[]>(availableProjects);
+  const [copyFromKonstrukter, setCopyFromKonstrukter] = useState<string>('');
 
   // Dynamicky aktualizujeme seznam projektů
   const allProjectCodes = useMemo(() => {
@@ -188,6 +189,26 @@ export const PlanningEditor: React.FC = () => {
     if (newName && !konstrukteri.includes(newName)) {
       addEngineer(newName);
       setSelectedKonstrukter(newName);
+    }
+  };
+
+  const handleCopyPlan = () => {
+    if (!copyFromKonstrukter || !selectedKonstrukter) {
+      return;
+    }
+    
+    if (copyFromKonstrukter === selectedKonstrukter) {
+      alert('Nelze kopírovat plán sám do sebe!');
+      return;
+    }
+    
+    const confirmed = confirm(
+      `Opravdu chcete zkopírovat plán konstruktéra "${copyFromKonstrukter}" do "${selectedKonstrukter}"? Tento krok přepíše celý stávající plán konstruktéra "${selectedKonstrukter}".`
+    );
+    
+    if (confirmed) {
+      copyPlan(copyFromKonstrukter, selectedKonstrukter);
+      setCopyFromKonstrukter('');
     }
   };
 
@@ -273,7 +294,7 @@ export const PlanningEditor: React.FC = () => {
 
       {/* Selector konstruktéra */}
       <Card className="p-4 shadow-card-custom">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
           <label className="text-sm font-medium">Konstruktér:</label>
           <Select value={selectedKonstrukter} onValueChange={(value) => {
             setSelectedKonstrukter(value);
@@ -296,6 +317,40 @@ export const PlanningEditor: React.FC = () => {
               Režim výběru více týdnů
             </Badge>
           )}
+        </div>
+      </Card>
+
+      {/* Kopírování plánu */}
+      <Card className="p-4 shadow-card-custom border-orange-200 bg-orange-50/50">
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Copy className="h-4 w-4 text-orange-600" />
+            <label className="text-sm font-medium text-orange-900">Převzít plán od:</label>
+          </div>
+          <Select value={copyFromKonstrukter} onValueChange={setCopyFromKonstrukter}>
+            <SelectTrigger className="w-64">
+              <SelectValue placeholder="Vyberte konstruktéra" />
+            </SelectTrigger>
+            <SelectContent>
+              {konstrukteri
+                .filter(k => k !== selectedKonstrukter)
+                .map(konstrukter => (
+                  <SelectItem key={konstrukter} value={konstrukter}>{konstrukter}</SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+          <Button 
+            onClick={handleCopyPlan}
+            disabled={!copyFromKonstrukter || !selectedKonstrukter}
+            variant="outline"
+            className="border-orange-300 text-orange-700 hover:bg-orange-100"
+          >
+            <Copy className="h-4 w-4 mr-2" />
+            Zkopírovat plán
+          </Button>
+          <div className="text-xs text-orange-700 max-w-md">
+            Zkopíruje celý plán vybraného konstruktéra do aktuálně editovaného konstruktéra. <strong>Přepíše všechny stávající data!</strong>
+          </div>
         </div>
       </Card>
 

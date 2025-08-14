@@ -15,6 +15,7 @@ interface PlanningContextType {
   loading: boolean;
   updatePlanningEntry: (konstrukter: string, cw: string, field: 'projekt' | 'mhTyden', value: string | number) => Promise<void>;
   addEngineer: (name: string) => Promise<void>;
+  copyPlan: (fromKonstrukter: string, toKonstrukter: string) => Promise<void>;
   savePlan: () => void;
   resetToOriginal: () => void;
 }
@@ -232,6 +233,89 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, [toast]);
 
+  const copyPlan = useCallback(async (fromKonstrukter: string, toKonstrukter: string) => {
+    try {
+      // Najdeme všechny záznamy pro zdrojového konstruktéra
+      const sourcePlan = planningData.filter(entry => entry.konstrukter === fromKonstrukter);
+      
+      if (sourcePlan.length === 0) {
+        toast({
+          title: "Chyba při kopírování",
+          description: `Nebyl nalezen žádný plán pro konstruktéra ${fromKonstrukter}.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Připravíme nové záznamy pro cílového konstruktéra
+      const targetEntries = sourcePlan.map(entry => ({
+        konstrukter: toKonstrukter,
+        cw: entry.cw,
+        mesic: entry.mesic,
+        mh_tyden: entry.mhTyden || 36,
+        projekt: entry.projekt || 'FREE'
+      }));
+
+      // Nejdříve smažeme existující záznamy pro cílového konstruktéra
+      const { error: deleteError } = await supabase
+        .from('planning_entries')
+        .delete()
+        .eq('konstrukter', toKonstrukter);
+
+      if (deleteError) {
+        console.error('Error deleting existing entries:', deleteError);
+        toast({
+          title: "Chyba při kopírování",
+          description: "Nepodařilo se smazat existující plán.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Vložíme nové záznamy
+      const { error: insertError } = await supabase
+        .from('planning_entries')
+        .insert(targetEntries);
+
+      if (insertError) {
+        console.error('Error inserting copied entries:', insertError);
+        toast({
+          title: "Chyba při kopírování",
+          description: "Nepodařilo se vložit kopírovaný plán.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Aktualizujeme lokální stav
+      setPlanningData(prev => {
+        // Odstraníme staré záznamy pro cílového konstruktéra
+        const filtered = prev.filter(entry => entry.konstrukter !== toKonstrukter);
+        // Přidáme nové záznamy
+        const newEntries = targetEntries.map(entry => ({
+          konstrukter: entry.konstrukter,
+          cw: entry.cw,
+          mesic: entry.mesic,
+          mhTyden: entry.mh_tyden,
+          projekt: entry.projekt
+        }));
+        return [...filtered, ...newEntries];
+      });
+
+      toast({
+        title: "Plán zkopírován",
+        description: `Plán konstruktéra ${fromKonstrukter} byl úspěšně zkopírován do ${toKonstrukter}.`,
+      });
+    } catch (error) {
+      console.error('Error copying plan:', error);
+      toast({
+        title: "Chyba při kopírování",
+        description: "Nepodařilo se zkopírovat plán.",
+        variant: "destructive",
+      });
+    }
+  }, [planningData, toast]);
+
   const savePlan = useCallback(() => {
     toast({
       title: "Plán uložen",
@@ -262,6 +346,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       loading,
       updatePlanningEntry,
       addEngineer,
+      copyPlan,
       savePlan,
       resetToOriginal
     }}>
