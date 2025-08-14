@@ -37,7 +37,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [planningData, setPlanningData] = useState<PlanningEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Load data from Supabase
+  // Load data from Supabase with realtime updates
   useEffect(() => {
     const loadPlanningData = async () => {
       try {
@@ -67,6 +67,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         }));
         
         setPlanningData(mappedData);
+        console.log('Planning data loaded:', mappedData.length, 'entries');
       } catch (error) {
         console.error('Error loading planning data:', error);
         toast({
@@ -80,6 +81,23 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
 
     loadPlanningData();
+
+    // Setup realtime subscription for planning_entries table
+    const subscription = supabase
+      .channel('planning_entries_changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'planning_entries' },
+        (payload) => {
+          console.log('Realtime change detected:', payload.eventType);
+          // Reload data when any change occurs
+          loadPlanningData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [toast]);
 
   const updatePlanningEntry = useCallback(async (konstrukter: string, cw: string, field: 'projekt' | 'mhTyden', value: string | number) => {
