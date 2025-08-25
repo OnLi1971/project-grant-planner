@@ -10,13 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Edit, Briefcase, Building, Trash2, X, Eye, Save } from 'lucide-react';
 import { usePlanning } from '@/contexts/PlanningContext';
-import { 
-  Project, ProjectLicense, Customer, ProjectManager, Program, 
-  projects as initialProjects, 
-  customers, 
-  projectManagers, 
-  programs 
-} from '@/data/projectsData';
 import { getProjectColor, getCustomerByProjectCode } from '@/utils/colorSystem';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -32,11 +25,59 @@ interface License {
   status: string;
 }
 
+interface DatabaseProject {
+  id: string;
+  name: string;
+  code: string;
+  customer_id: string;
+  project_manager_id: string;
+  program_id: string;
+  start_date?: string;
+  end_date?: string;
+  status: string;
+  hourly_rate?: number;
+  project_type: string;
+  budget?: number;
+  average_hourly_rate?: number;
+  project_status?: string;
+  probability?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+interface Customer {
+  id: string;
+  name: string;
+  code: string;
+}
+
+interface ProjectManager {
+  id: string;
+  name: string;
+  email: string;
+}
+
+interface Program {
+  id: string;
+  name: string;
+  code: string;
+}
+
+interface ProjectLicense {
+  id?: string;
+  project_id?: string;
+  license_id: string;
+  percentage: number;
+}
+
 export const ProjectManagement = () => {
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<DatabaseProject[]>([]);
   const [licenses, setLicenses] = useState<License[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [projectManagers, setProjectManagers] = useState<ProjectManager[]>([]);
+  const [programs, setPrograms] = useState<Program[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [editingProject, setEditingProject] = useState<DatabaseProject | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     code: '',
@@ -53,18 +94,32 @@ export const ProjectManagement = () => {
   const { toast } = useToast();
   const { planningData } = usePlanning();
 
-  // Load projects from localStorage and licenses from database
+  // Load data from database
   useEffect(() => {
-    const savedProjects = localStorage.getItem('projects-data');
-    if (savedProjects) {
-      setProjects(JSON.parse(savedProjects));
-    } else {
-      setProjects(initialProjects);
-      localStorage.setItem('projects-data', JSON.stringify(initialProjects));
-    }
-
+    loadProjects();
     loadLicenses();
+    loadCustomers();
+    loadProjectManagers();
+    loadPrograms();
   }, []);
+
+  const loadProjects = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .order('name');
+
+      if (error) {
+        console.error('Error loading projects:', error);
+        return;
+      }
+
+      setProjects(data || []);
+    } catch (error) {
+      console.error('Error loading projects:', error);
+    }
+  };
 
   const loadLicenses = async () => {
     try {
@@ -84,7 +139,61 @@ export const ProjectManagement = () => {
     }
   };
 
-  const handleSubmit = () => {
+  const loadCustomers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('customers')
+        .select('*')
+        .order('name');
+
+      if (error) {
+        console.error('Error loading customers:', error);
+        return;
+      }
+
+      setCustomers(data || []);
+    } catch (error) {
+      console.error('Error loading customers:', error);
+    }
+  };
+
+  const loadProjectManagers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('project_managers')
+        .select('*')
+        .order('name');
+
+      if (error) {
+        console.error('Error loading project managers:', error);
+        return;
+      }
+
+      setProjectManagers(data || []);
+    } catch (error) {
+      console.error('Error loading project managers:', error);
+    }
+  };
+
+  const loadPrograms = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('programs')
+        .select('*')
+        .order('name');
+
+      if (error) {
+        console.error('Error loading programs:', error);
+        return;
+      }
+
+      setPrograms(data || []);
+    } catch (error) {
+      console.error('Error loading programs:', error);
+    }
+  };
+
+  const handleSubmit = async () => {
     if (!formData.name || !formData.code || !formData.customerId || !formData.projectManagerId || !formData.programId) {
       toast({
         title: "Chyba",
@@ -94,34 +203,124 @@ export const ProjectManagement = () => {
       return;
     }
 
-    if (editingProject) {
-      const updatedProjects = projects.map(project => 
-        project.id === editingProject.id 
-          ? { ...project, ...formData }
-          : project
-      );
-      setProjects(updatedProjects);
-      localStorage.setItem('projects-data', JSON.stringify(updatedProjects));
+    try {
+      if (editingProject) {
+        // Update existing project
+        const { error } = await supabase
+          .from('projects')
+          .update({
+            name: formData.name,
+            code: formData.code,
+            customer_id: formData.customerId,
+            project_manager_id: formData.projectManagerId,
+            program_id: formData.programId,
+            project_type: formData.projectType,
+            budget: formData.budget || null,
+            average_hourly_rate: formData.averageHourlyRate || null,
+            project_status: formData.projectStatus,
+            probability: formData.projectStatus === 'Pre sales' ? formData.probability : null,
+            updated_by: (await supabase.auth.getUser()).data.user?.id
+          })
+          .eq('id', editingProject.id);
+
+        if (error) {
+          console.error('Error updating project:', error);
+          toast({
+            title: "Chyba",
+            description: "Nepodařilo se upravit projekt.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Handle project licenses
+        await saveProjectLicenses(editingProject.id);
+
+        toast({
+          title: "Projekt upraven",
+          description: "Údaje projektu byly úspěšně aktualizovány.",
+        });
+      } else {
+        // Create new project
+        const { data: newProject, error } = await supabase
+          .from('projects')
+          .insert({
+            name: formData.name,
+            code: formData.code,
+            customer_id: formData.customerId,
+            project_manager_id: formData.projectManagerId,
+            program_id: formData.programId,
+            project_type: formData.projectType,
+            budget: formData.budget || null,
+            average_hourly_rate: formData.averageHourlyRate || null,
+            project_status: formData.projectStatus,
+            probability: formData.projectStatus === 'Pre sales' ? formData.probability : null,
+            status: 'active',
+            created_by: (await supabase.auth.getUser()).data.user?.id
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Error creating project:', error);
+          toast({
+            title: "Chyba",
+            description: "Nepodařilo se přidat projekt.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Handle project licenses
+        if (newProject) {
+          await saveProjectLicenses(newProject.id);
+        }
+
+        toast({
+          title: "Projekt přidán",
+          description: "Nový projekt byl úspěšně přidán.",
+        });
+      }
+
+      await loadProjects();
+      resetForm();
+    } catch (error) {
+      console.error('Error saving project:', error);
       toast({
-        title: "Projekt upraven",
-        description: "Údaje projektu byly úspěšně aktualizovány.",
-      });
-    } else {
-      const newProject: Project = {
-        id: Date.now().toString(),
-        ...formData,
-        status: 'active'
-      };
-      const updatedProjects = [...projects, newProject];
-      setProjects(updatedProjects);
-      localStorage.setItem('projects-data', JSON.stringify(updatedProjects));
-      toast({
-        title: "Projekt přidán",
-        description: "Nový projekt byl úspěšně přidán.",
+        title: "Chyba",
+        description: "Nepodařilo se uložit projekt.",
+        variant: "destructive",
       });
     }
+  };
 
-    resetForm();
+  const saveProjectLicenses = async (projectId: string) => {
+    try {
+      // Delete existing project licenses
+      await supabase
+        .from('project_licenses')
+        .delete()
+        .eq('project_id', projectId);
+
+      // Insert new project licenses
+      if (formData.assignedLicenses.length > 0) {
+        const { error } = await supabase
+          .from('project_licenses')
+          .insert(
+            formData.assignedLicenses.map(license => ({
+              project_id: projectId,
+              license_id: license.license_id,
+              percentage: license.percentage
+            }))
+          );
+
+        if (error) {
+          console.error('Error saving project licenses:', error);
+        }
+      }
+    } catch (error) {
+      console.error('Error saving project licenses:', error);
+    }
   };
 
   const resetForm = () => {
@@ -145,7 +344,7 @@ export const ProjectManagement = () => {
   const addLicenseToProject = () => {
     setFormData({
       ...formData,
-      assignedLicenses: [...formData.assignedLicenses, { licenseId: '', percentage: 0 }]
+      assignedLicenses: [...formData.assignedLicenses, { license_id: '', percentage: 0 }]
     });
   };
 
@@ -156,29 +355,46 @@ export const ProjectManagement = () => {
     });
   };
 
-  const updateProjectLicense = (index: number, field: 'licenseId' | 'percentage', value: string | number) => {
+  const updateProjectLicense = (index: number, field: 'license_id' | 'percentage', value: string | number) => {
     const updated = formData.assignedLicenses.map((license, i) => 
       i === index ? { ...license, [field]: value } : license
     );
     setFormData({ ...formData, assignedLicenses: updated });
   };
 
-  const handleEdit = (project: Project) => {
-    setEditingProject(project);
-    setFormData({
-      name: project.name,
-      code: project.code,
-      customerId: project.customerId,
-      projectManagerId: project.projectManagerId,
-      programId: project.programId,
-      projectType: project.projectType,
-      budget: project.budget || 0,
-      averageHourlyRate: project.averageHourlyRate || 0,
-      assignedLicenses: project.assignedLicenses || [],
-      projectStatus: project.projectStatus || 'Realizace',
-      probability: project.probability || 0
-    });
-    setIsAddDialogOpen(true);
+  const handleEdit = async (project: DatabaseProject) => {
+    try {
+      // Load project licenses
+      const { data: projectLicenses, error } = await supabase
+        .from('project_licenses')
+        .select('*')
+        .eq('project_id', project.id);
+
+      if (error) {
+        console.error('Error loading project licenses:', error);
+      }
+
+      setEditingProject(project);
+      setFormData({
+        name: project.name,
+        code: project.code,
+        customerId: project.customer_id,
+        projectManagerId: project.project_manager_id,
+        programId: project.program_id,
+        projectType: project.project_type as 'WP' | 'Hodinovka',
+        budget: project.budget || 0,
+        averageHourlyRate: project.average_hourly_rate || 0,
+        assignedLicenses: projectLicenses?.map(pl => ({
+          license_id: pl.license_id,
+          percentage: pl.percentage
+        })) || [],
+        projectStatus: (project.project_status as 'Pre sales' | 'Realizace') || 'Realizace',
+        probability: project.probability || 0
+      });
+      setIsAddDialogOpen(true);
+    } catch (error) {
+      console.error('Error loading project for edit:', error);
+    }
   };
 
   // Získej všechny používané projekty z plánovacích dat
@@ -186,9 +402,9 @@ export const ProjectManagement = () => {
     const projectCodes = Array.from(new Set(planningData.map(entry => entry.projekt).filter(Boolean)));
     return projectCodes.map(code => {
       const projectData = projects.find(p => p.code === code);
-      const customer = customers.find(c => c.id === projectData?.customerId);
-      const pm = projectManagers.find(p => p.id === projectData?.projectManagerId);
-      const program = programs.find(p => p.id === projectData?.programId);
+      const customer = customers.find(c => c.id === projectData?.customer_id);
+      const pm = projectManagers.find(p => p.id === projectData?.project_manager_id);
+      const program = programs.find(p => p.id === projectData?.program_id);
       
       return {
         code,
@@ -199,7 +415,7 @@ export const ProjectManagement = () => {
         usage: planningData.filter(entry => entry.projekt === code).length
       };
     }).sort((a, b) => b.usage - a.usage);
-  }, [planningData, projects]);
+  }, [planningData, projects, customers, projectManagers, programs]);
 
   const getProjectBadge = (code: string) => {
     if (!code || code === 'FREE') return <Badge variant="secondary">Volný</Badge>;
@@ -389,10 +605,10 @@ export const ProjectManagement = () => {
                     {formData.assignedLicenses.map((projectLicense, index) => (
                       <div key={index} className="flex items-center gap-2 p-2 border rounded">
                         <div className="flex-1">
-                          <Select 
-                            value={projectLicense.licenseId} 
-                            onValueChange={(value) => updateProjectLicense(index, 'licenseId', value)}
-                          >
+                           <Select 
+                             value={projectLicense.license_id} 
+                             onValueChange={(value) => updateProjectLicense(index, 'license_id', value)}
+                           >
                             <SelectTrigger className="h-8">
                               <SelectValue placeholder="Vyberte licenci" />
                             </SelectTrigger>
@@ -469,55 +685,44 @@ export const ProjectManagement = () => {
                 <TableCell>{item.customer?.name || 'N/A'}</TableCell>
                 <TableCell>{item.pm?.name || 'N/A'}</TableCell>
                 <TableCell>{item.program?.name || 'N/A'}</TableCell>
-                <TableCell>
-                  {item.project?.projectType && (
-                    <Badge variant={item.project.projectType === 'WP' ? 'default' : 'secondary'}>
-                      {item.project.projectType}
-                    </Badge>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {item.project?.projectStatus && (
-                    <div className="flex flex-col gap-1">
-                      <Badge variant={item.project.projectStatus === 'Pre sales' ? 'outline' : 'default'}>
-                        {item.project.projectStatus}
-                      </Badge>
-                      {item.project.projectStatus === 'Pre sales' && item.project.probability && (
-                        <span className="text-xs text-muted-foreground">
-                          {item.project.probability}%
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {item.project?.budget ? (
-                    <div className="flex flex-col gap-1">
-                      <span>
-                        {item.project.projectType === 'WP' 
-                          ? `${item.project.budget} hod` 
-                          : `${item.project.budget.toLocaleString('cs-CZ')} Kč/hod`}
-                      </span>
-                      {item.project.projectType === 'WP' && item.project.averageHourlyRate && (
-                        <span className="text-xs text-muted-foreground">
-                          Ø {item.project.averageHourlyRate.toLocaleString('cs-CZ')} Kč/hod
-                        </span>
-                      )}
-                    </div>
-                  ) : 'N/A'}
-                </TableCell>
-                <TableCell>
-                  <div className="flex flex-wrap gap-1">
-                    {item.project?.assignedLicenses?.map((projectLicense, index) => {
-                      const license = licenses.find(l => l.id === projectLicense.licenseId);
-                      return (
-                        <Badge key={index} variant="outline" className="text-xs">
-                          {license?.name || 'Neznámá licence'} ({projectLicense.percentage}%)
-                        </Badge>
-                      );
-                    })}
-                  </div>
-                </TableCell>
+                 <TableCell>
+                   <Badge variant={item.project?.project_type === 'WP' ? 'default' : 'secondary'}>
+                     {item.project?.project_type}
+                   </Badge>
+                 </TableCell>
+                 <TableCell>
+                   {item.project?.project_status && (
+                     <div className="flex flex-col gap-1">
+                       <Badge variant={item.project.project_status === 'Pre sales' ? 'outline' : 'default'}>
+                         {item.project.project_status}
+                       </Badge>
+                       {item.project.project_status === 'Pre sales' && item.project.probability && (
+                         <span className="text-xs text-muted-foreground">
+                           {item.project.probability}%
+                         </span>
+                       )}
+                     </div>
+                   )}
+                 </TableCell>
+                 <TableCell>
+                   {item.project?.budget ? (
+                     <div className="flex flex-col gap-1">
+                       <span>
+                         {item.project.project_type === 'WP' 
+                           ? `${item.project.budget} hod` 
+                           : `${item.project.budget.toLocaleString('cs-CZ')} Kč/hod`}
+                       </span>
+                       {item.project.project_type === 'WP' && item.project.average_hourly_rate && (
+                         <span className="text-xs text-muted-foreground">
+                           Ø {item.project.average_hourly_rate.toLocaleString('cs-CZ')} Kč/hod
+                         </span>
+                       )}
+                     </div>
+                   ) : 'N/A'}
+                 </TableCell>
+                 <TableCell>
+                   <span className="text-sm text-muted-foreground">Licence načítají...</span>
+                 </TableCell>
                 <TableCell>
                   <Badge variant="outline" className="font-mono">
                     {item.usage}x
