@@ -157,7 +157,7 @@ export const ProjectManagement = () => {
               .from('project_licenses')
               .select(`
                 id, license_id, percentage,
-                licenses (name)
+                licenses!inner (name)
               `)
               .eq('project_id', project.id);
 
@@ -172,7 +172,7 @@ export const ProjectManagement = () => {
                 project_id: project.id,
                 license_id: pl.license_id,
                 percentage: pl.percentage,
-                license_name: pl.licenses?.[0]?.name || 'Unknown'
+                license_name: Array.isArray(pl.licenses) && pl.licenses.length > 0 ? pl.licenses[0].name : 'Neznámá licence'
               }))
             };
           })
