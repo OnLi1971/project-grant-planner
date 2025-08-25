@@ -287,7 +287,7 @@ export const FreeCapacityOverview = () => {
           </p>
         </div>
         
-        <div className="overflow-x-auto overflow-y-auto max-h-[70vh]">
+        <div className="overflow-x-auto overflow-y-auto max-h-[85vh]">
           <table className="w-full">
             <thead className="bg-planning-header text-white sticky top-0 z-10">
               <tr>
