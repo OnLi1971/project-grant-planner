@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      licenses: {
+        Row: {
+          cost: number
+          created_at: string
+          created_by: string | null
+          expiration_date: string
+          id: string
+          name: string
+          provider: string
+          status: string
+          total_seats: number
+          type: string
+          updated_at: string
+          updated_by: string | null
+          used_seats: number
+        }
+        Insert: {
+          cost?: number
+          created_at?: string
+          created_by?: string | null
+          expiration_date: string
+          id?: string
+          name: string
+          provider: string
+          status?: string
+          total_seats?: number
+          type: string
+          updated_at?: string
+          updated_by?: string | null
+          used_seats?: number
+        }
+        Update: {
+          cost?: number
+          created_at?: string
+          created_by?: string | null
+          expiration_date?: string
+          id?: string
+          name?: string
+          provider?: string
+          status?: string
+          total_seats?: number
+          type?: string
+          updated_at?: string
+          updated_by?: string | null
+          used_seats?: number
+        }
+        Relationships: []
+      }
       planning_entries: {
         Row: {
           created_at: string | null

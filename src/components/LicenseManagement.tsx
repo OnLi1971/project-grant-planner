@@ -8,9 +8,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Edit, Trash2, Shield, Calendar } from 'lucide-react';
+import { Plus, Edit, Trash2, Shield, Calendar, Loader2 } from 'lucide-react';
 import { CurrentWeekLicenseUsage } from './CurrentWeekLicenseUsage';
 import { LicenseUsageChart } from './LicenseUsageChart';
+import { supabase } from '@/integrations/supabase/client';
 
 interface License {
   id: string;
@@ -28,6 +29,7 @@ export const LicenseManagement = () => {
   const [licenses, setLicenses] = useState<License[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingLicense, setEditingLicense] = useState<License | null>(null);
+  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     name: '',
     type: 'software' as 'software' | 'certification' | 'training',
@@ -39,77 +41,109 @@ export const LicenseManagement = () => {
   });
   const { toast } = useToast();
 
-  // Load licenses from localStorage
+  // Load licenses from database
   useEffect(() => {
-    const saved = localStorage.getItem('licenses-data');
-    if (saved) {
-      setLicenses(JSON.parse(saved));
-    } else {
-      // Default licenses
-      const defaultLicenses: License[] = [
-        {
-          id: '1',
-          name: 'AutoCAD Professional',
-          type: 'software',
-          provider: 'Autodesk',
-          totalSeats: 10,
-          usedSeats: 8,
-          expirationDate: '2024-12-31',
-          cost: 150000,
-          status: 'active'
-        },
-        {
-          id: '2',
-          name: 'SolidWorks Premium',
-          type: 'software',
-          provider: 'Dassault Systèmes',
-          totalSeats: 5,
-          usedSeats: 5,
-          expirationDate: '2024-06-15',
-          cost: 200000,
-          status: 'expiring-soon'
-        },
-        {
-          id: '3',
-          name: 'Certifikace ISO 9001',
-          type: 'certification',
-          provider: 'TÜV SÜD',
-          totalSeats: 1,
-          usedSeats: 1,
-          expirationDate: '2025-03-20',
-          cost: 80000,
-          status: 'active'
-        }
-      ];
-      setLicenses(defaultLicenses);
-      localStorage.setItem('licenses-data', JSON.stringify(defaultLicenses));
-    }
+    loadLicenses();
   }, []);
 
-  const saveLicenses = (updatedLicenses: License[]) => {
-    // Update status based on expiration date
-    const today = new Date();
-    const updated = updatedLicenses.map(license => {
-      const expDate = new Date(license.expirationDate);
-      const daysUntilExpiry = Math.ceil((expDate.getTime() - today.getTime()) / (1000 * 3600 * 24));
-      
-      let status: 'active' | 'expired' | 'expiring-soon';
-      if (daysUntilExpiry < 0) {
-        status = 'expired';
-      } else if (daysUntilExpiry <= 30) {
-        status = 'expiring-soon';
-      } else {
-        status = 'active';
-      }
-      
-      return { ...license, status };
-    });
-    
-    setLicenses(updated);
-    localStorage.setItem('licenses-data', JSON.stringify(updated));
+  const loadLicenses = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('licenses')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
+
+      const mappedLicenses: License[] = (data || []).map(license => ({
+        id: license.id,
+        name: license.name,
+        type: license.type as 'software' | 'certification' | 'training',
+        provider: license.provider,
+        totalSeats: license.total_seats,
+        usedSeats: license.used_seats,
+        expirationDate: license.expiration_date,
+        cost: license.cost,
+        status: calculateStatus(new Date(license.expiration_date))
+      }));
+
+      setLicenses(mappedLicenses);
+    } catch (error) {
+      console.error('Error loading licenses:', error);
+      toast({
+        title: "Chyba",
+        description: "Nepodařilo se načíst licence z databáze.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSubmit = () => {
+  const calculateStatus = (expirationDate: Date): 'active' | 'expired' | 'expiring-soon' => {
+    const today = new Date();
+    const daysUntilExpiry = Math.ceil((expirationDate.getTime() - today.getTime()) / (1000 * 3600 * 24));
+    
+    if (daysUntilExpiry < 0) {
+      return 'expired';
+    } else if (daysUntilExpiry <= 30) {
+      return 'expiring-soon';
+    } else {
+      return 'active';
+    }
+  };
+
+  const saveLicense = async (licenseData: Omit<License, 'id' | 'status'>, isEdit: boolean = false, editId?: string) => {
+    try {
+      const status = calculateStatus(new Date(licenseData.expirationDate));
+      
+      if (isEdit && editId) {
+        const { error } = await supabase
+          .from('licenses')
+          .update({
+            name: licenseData.name,
+            type: licenseData.type,
+            provider: licenseData.provider,
+            total_seats: licenseData.totalSeats,
+            used_seats: licenseData.usedSeats,
+            expiration_date: licenseData.expirationDate,
+            cost: licenseData.cost,
+            status: status
+          })
+          .eq('id', editId);
+
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('licenses')
+          .insert({
+            name: licenseData.name,
+            type: licenseData.type,
+            provider: licenseData.provider,
+            total_seats: licenseData.totalSeats,
+            used_seats: licenseData.usedSeats,
+            expiration_date: licenseData.expirationDate,
+            cost: licenseData.cost,
+            status: status
+          });
+
+        if (error) throw error;
+      }
+
+      await loadLicenses();
+      return true;
+    } catch (error) {
+      console.error('Error saving license:', error);
+      toast({
+        title: "Chyba",
+        description: "Nepodařilo se uložit licenci.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
+  const handleSubmit = async () => {
     if (!formData.name || !formData.provider || !formData.expirationDate) {
       toast({
         title: "Chyba",
@@ -119,31 +153,17 @@ export const LicenseManagement = () => {
       return;
     }
 
-    if (editingLicense) {
-      const updatedLicenses = licenses.map(lic => 
-        lic.id === editingLicense.id 
-          ? { ...lic, ...formData, status: 'active' as const }
-          : lic
-      );
-      saveLicenses(updatedLicenses);
+    const success = await saveLicense(formData, !!editingLicense, editingLicense?.id);
+    
+    if (success) {
       toast({
-        title: "Licence upravena",
-        description: "Údaje licence byly úspěšně aktualizovány.",
+        title: editingLicense ? "Licence upravena" : "Licence přidána",
+        description: editingLicense 
+          ? "Údaje licence byly úspěšně aktualizovány." 
+          : "Nová licence byla úspěšně přidána.",
       });
-    } else {
-      const newLicense: License = {
-        id: Date.now().toString(),
-        ...formData,
-        status: 'active'
-      };
-      saveLicenses([...licenses, newLicense]);
-      toast({
-        title: "Licence přidána",
-        description: "Nová licence byla úspěšně přidána.",
-      });
+      resetForm();
     }
-
-    resetForm();
   };
 
   const resetForm = () => {
@@ -174,13 +194,28 @@ export const LicenseManagement = () => {
     setIsAddDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    const updatedLicenses = licenses.filter(lic => lic.id !== id);
-    saveLicenses(updatedLicenses);
-    toast({
-      title: "Licence smazána",
-      description: "Licence byla úspěšně odstraněna.",
-    });
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('licenses')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      await loadLicenses();
+      toast({
+        title: "Licence smazána",
+        description: "Licence byla úspěšně odstraněna.",
+      });
+    } catch (error) {
+      console.error('Error deleting license:', error);
+      toast({
+        title: "Chyba",
+        description: "Nepodařilo se smazat licenci.",
+        variant: "destructive",
+      });
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -208,6 +243,15 @@ export const LicenseManagement = () => {
         return <Badge variant="outline">{type}</Badge>;
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Načítám licence...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
