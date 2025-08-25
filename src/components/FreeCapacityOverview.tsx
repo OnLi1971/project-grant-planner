@@ -56,7 +56,7 @@ const getProjectBadge = (projekt: string | null) => {
   if (!projekt || projekt === 'FREE') return <Badge variant="secondary" className="bg-success/20 text-success">Volný</Badge>;
   if (projekt === 'DOVOLENÁ') return <Badge variant="outline" className="border-accent">Dovolená</Badge>;
   if (projekt === 'NEMOC') return <Badge variant="outline" className="border-destructive text-destructive">Nemoc</Badge>;
-  if (projekt === 'OVER') return <Badge variant="outline" className="border-warning text-warning">Over</Badge>;
+  if (projekt === 'OVER') return <Badge variant="outline" className="border-warning text-warning">Režie</Badge>;
   
   return <Badge variant="outline">{projekt}</Badge>;
 };
@@ -408,8 +408,8 @@ export const FreeCapacityOverview = () => {
               <span>Nemoc</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="bg-yellow-100 text-yellow-800 border border-yellow-300 px-2 py-1 rounded-md text-xs">OVER</div>
-              <span>Přesčas</span>
+              <div className="bg-yellow-100 text-yellow-800 border border-yellow-300 px-2 py-1 rounded-md text-xs">Režie</div>
+              <span>Režijní aktivity</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="bg-purple-100 text-purple-800 border border-purple-300 px-2 py-1 rounded-md text-xs">ST_XXX</div>

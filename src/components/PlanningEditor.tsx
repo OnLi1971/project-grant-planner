@@ -186,7 +186,7 @@ export const PlanningEditor: React.FC = () => {
     if (!projekt || projekt === 'FREE') return <Badge variant="secondary">Volný</Badge>;
     if (projekt === 'DOVOLENÁ') return <Badge variant="outline" className="border-accent">Dovolená</Badge>;
     if (projekt === 'NEMOC') return <Badge variant="outline" className="border-destructive text-destructive">Nemoc</Badge>;
-    if (projekt === 'OVER') return <Badge variant="outline" className="border-warning text-warning">Over</Badge>;
+    if (projekt === 'OVER') return <Badge variant="outline" className="border-warning text-warning">Režie</Badge>;
     
     const customer = getCustomerByProjectCode(projekt);
     if (customer) {
