@@ -12,6 +12,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { getProjectColorWithIndex } from '@/utils/colorSystem';
 import { supabase } from '@/integrations/supabase/client';
 
+// Konstruktéři od dodavatele MB Idea - nečerpají naše licence
+const MB_IDEA_CONTRACTORS = [
+  'Bohušík Martin',
+  'Chrenko Daniel', 
+  'Chrenko Peter',
+  'Jurčišin Peter',
+  'Púpava Marián'
+];
+
 interface License {
   id: string;
   name: string;
@@ -152,19 +161,25 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
       });
     });
     
-    // Get engineers for this week
+    // Get engineers for this week (excluding MB Idea contractors)
     const engineersThisWeek = planningData.filter(entry => 
       entry.cw === weekOnly && 
       entry.projekt !== 'FREE' && 
       entry.projekt !== 'DOVOLENÁ' && 
       entry.projekt !== '' &&
-      entry.mhTyden > 0
+      entry.mhTyden > 0 &&
+      !MB_IDEA_CONTRACTORS.includes(entry.konstrukter)
     );
     
-    // Calculate details for selected license
+    // Calculate details for selected license (excluding MB Idea contractors)
     const details: EngineerDetail[] = [];
     
     engineersThisWeek.forEach(entry => {
+      // Skip MB Idea contractors
+      if (MB_IDEA_CONTRACTORS.includes(entry.konstrukter)) {
+        return;
+      }
+      
       const projectLicensesForProject = projectLicenseMap[entry.projekt];
       if (projectLicensesForProject) {
         const licenseAssignment = projectLicensesForProject.find(al => 
@@ -247,13 +262,14 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
       licenses.forEach(license => {
         let totalUsage = 0;
         
-        // Get all engineers working this week
+        // Get all engineers working this week (excluding MB Idea contractors)
         const engineersThisWeek = planningData.filter(entry => 
           entry.cw === weekOnly && 
           entry.projekt !== 'FREE' && 
           entry.projekt !== 'DOVOLENÁ' && 
           entry.projekt !== '' &&
-          entry.mhTyden > 0
+          entry.mhTyden > 0 &&
+          !MB_IDEA_CONTRACTORS.includes(entry.konstrukter)
         );
         
         // Count unique engineers per project

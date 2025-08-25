@@ -6,6 +6,15 @@ import { Calendar, Users, AlertTriangle } from 'lucide-react';
 import { getProjectColor, getCustomerByProjectCode } from '@/utils/colorSystem';
 import { supabase } from '@/integrations/supabase/client';
 
+// Konstruktéři od dodavatele MB Idea - nečerpají naše licence
+const MB_IDEA_CONTRACTORS = [
+  'Bohušík Martin',
+  'Chrenko Daniel', 
+  'Chrenko Peter',
+  'Jurčišin Peter',
+  'Púpava Marián'
+];
+
 interface License {
   id: string;
   name: string;
@@ -129,20 +138,26 @@ export const CurrentWeekLicenseUsage: React.FC<CurrentWeekLicenseUsageProps> = (
     console.log('Current week:', currentWeek);
     console.log('Planning data sample:', planningData.slice(0, 5));
     
-    // Get all engineers working this week
+    // Get all engineers working this week (excluding MB Idea contractors)
     const engineersThisWeek = planningData.filter(entry => 
       entry.cw === currentWeek && 
       entry.projekt !== 'FREE' && 
       entry.projekt !== 'DOVOLENÁ' && 
       entry.projekt !== '' &&
-      entry.mhTyden > 0
+      entry.mhTyden > 0 &&
+      !MB_IDEA_CONTRACTORS.includes(entry.konstrukter)
     );
     
     console.log('Engineers this week:', engineersThisWeek);
     
-    // Count unique engineers per project
+    // Count unique engineers per project (excluding MB Idea contractors)
     const projectEngineers: { [projectCode: string]: string[] } = {};
     engineersThisWeek.forEach(entry => {
+      // Skip MB Idea contractors
+      if (MB_IDEA_CONTRACTORS.includes(entry.konstrukter)) {
+        return;
+      }
+      
       if (!projectEngineers[entry.projekt]) {
         projectEngineers[entry.projekt] = [];
       }
