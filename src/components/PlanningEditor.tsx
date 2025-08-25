@@ -9,6 +9,7 @@ import { usePlanning } from '@/contexts/PlanningContext';
 import { ProjectManagement } from '@/components/ProjectManagement';
 import { projects, customers, projectManagers, programs, type Project } from '@/data/projectsData';
 import { getProjectColor, getCustomerByProjectCode } from '@/utils/colorSystem';
+import { getWeek } from 'date-fns';
 
 interface WeekPlan {
   cw: string;
@@ -29,23 +30,31 @@ const availableProjects = [
   'NU_CRAIN', 'WA_HVAC', 'ST_JIGS', 'ST_TRAM_HS', 'SAF_FEM', 'FREE', 'DOVOLENÁ'
 ];
 
-// Funkce pro generování všech týdnů od CW32 do konce roku
+// Funkce pro zjištění aktuálního týdne
+const getCurrentWeek = (): number => {
+  return getWeek(new Date(), { weekStartsOn: 1 });
+};
+
+// Funkce pro generování týdnů od aktuálního týdne do konce roku
 const generateAllWeeks = (): WeekPlan[] => {
   const weeks: WeekPlan[] = [];
   const months = [
     'leden', 'únor', 'březen', 'duben', 'květen', 'červen',
-    'červenec', 'August', 'září', 'říjen', 'listopad', 'prosinec'
+    'červenec', 'August', 'September', 'October', 'November', 'December'
   ];
   
-  // Začínáme od CW32 do CW52
-  for (let cw = 32; cw <= 52; cw++) {
+  const currentWeek = getCurrentWeek();
+  const startWeek = Math.max(32, currentWeek); // Začneme od aktuálního týdne, ale minimálně od CW32
+  
+  // Začínáme od aktuálního týdne do CW52
+  for (let cw = startWeek; cw <= 52; cw++) {
     // CW32 je obvykle srpen, CW52 je prosinec
     let monthIndex;
     if (cw <= 35) monthIndex = 7; // August
-    else if (cw <= 39) monthIndex = 8; // září  
-    else if (cw <= 43) monthIndex = 9; // říjen
-    else if (cw <= 47) monthIndex = 10; // listopad
-    else monthIndex = 11; // prosinec
+    else if (cw <= 39) monthIndex = 8; // September  
+    else if (cw <= 43) monthIndex = 9; // October
+    else if (cw <= 47) monthIndex = 10; // November
+    else monthIndex = 11; // December
     
     const mesic = months[monthIndex];
     
@@ -81,14 +90,26 @@ const generatePlanningDataForEditor = (data: any[]): { [key: string]: WeekPlan[]
   // Získáme seznam všech konstruktérů
   const allKonstrukteri = [...new Set(data.map(entry => entry.konstrukter))];
   
-  // Pro každého konstruktéra vytvoříme kompletní rok
+  // Pro každého konstruktéra vytvoříme týdny od aktuálního týdne do konce roku
   allKonstrukteri.forEach(konstrukter => {
     const allWeeks = generateAllWeeks();
+    const currentWeek = getCurrentWeek();
+    
+    // Filtrujeme pouze existující data pro aktuální a budoucí týdny
+    const relevantExistingData = Object.keys(existingDataMap[konstrukter] || {})
+      .filter(cw => {
+        const cwNum = parseInt(cw.replace('CW', ''));
+        return cwNum >= Math.max(32, currentWeek);
+      })
+      .reduce((acc, cw) => {
+        acc[cw] = existingDataMap[konstrukter][cw];
+        return acc;
+      }, {} as { [key: string]: WeekPlan });
     
     result[konstrukter] = allWeeks.map(week => {
       // Pokud máme existující data pro tento týden, použijeme je
-      if (existingDataMap[konstrukter] && existingDataMap[konstrukter][week.cw]) {
-        return existingDataMap[konstrukter][week.cw];
+      if (relevantExistingData[week.cw]) {
+        return relevantExistingData[week.cw];
       }
       // Jinak použijeme default hodnoty
       return week;
