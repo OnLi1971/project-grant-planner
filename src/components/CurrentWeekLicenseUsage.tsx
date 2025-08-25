@@ -1,9 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { usePlanning } from '@/contexts/PlanningContext';
 import { Calendar, Users, AlertTriangle } from 'lucide-react';
 import { getProjectColor, getCustomerByProjectCode } from '@/utils/colorSystem';
+import { supabase } from '@/integrations/supabase/client';
 
 interface License {
   id: string;
@@ -29,18 +30,12 @@ interface Project {
   assignedLicenses: { id: string; name: string; percentage: number }[];
 }
 
-interface StoredProject {
-  id: string;
-  name: string;
-  code: string;
-  customerId: string;
-  projectManagerId: string;
-  programId: string;
-  status: 'active' | 'inactive' | 'completed';
-  hourlyRate?: number;
-  projectType: 'WP' | 'Hodinovka';
-  budget?: number;
-  assignedLicenses?: { licenseId: string; percentage: number }[];
+interface ProjectLicense {
+  project_id: string;
+  license_id: string;
+  percentage: number;
+  project_code: string;
+  license_name: string;
 }
 
 interface CurrentWeekLicenseUsageProps {
@@ -49,29 +44,87 @@ interface CurrentWeekLicenseUsageProps {
 
 export const CurrentWeekLicenseUsage: React.FC<CurrentWeekLicenseUsageProps> = ({ licenses }) => {
   const { planningData } = usePlanning();
+  const [projectLicenses, setProjectLicenses] = useState<ProjectLicense[]>([]);
+
+  // Load project licenses from database
+  useEffect(() => {
+    const loadProjectLicenses = async () => {
+      // Get project licenses
+      const { data: projectLicensesData, error: plError } = await supabase
+        .from('project_licenses')
+        .select('project_id, license_id, percentage');
+
+      if (plError) {
+        console.error('Error loading project licenses:', plError);
+        return;
+      }
+
+      // Get projects
+      const { data: projectsData, error: projectsError } = await supabase
+        .from('projects')
+        .select('id, code');
+
+      if (projectsError) {
+        console.error('Error loading projects:', projectsError);
+        return;
+      }
+
+      // Get licenses
+      const { data: licensesData, error: licensesError } = await supabase
+        .from('licenses')
+        .select('id, name');
+
+      if (licensesError) {
+        console.error('Error loading licenses:', licensesError);
+        return;
+      }
+
+      // Combine data
+      const formattedData: ProjectLicense[] = (projectLicensesData || []).map(pl => {
+        const project = projectsData?.find(p => p.id === pl.project_id);
+        const license = licensesData?.find(l => l.id === pl.license_id);
+        
+        return {
+          project_id: pl.project_id,
+          license_id: pl.license_id,
+          percentage: pl.percentage,
+          project_code: project?.code || '',
+          license_name: license?.name || ''
+        };
+      });
+
+      console.log('Loaded project licenses for current week:', formattedData);
+      setProjectLicenses(formattedData);
+    };
+
+    loadProjectLicenses();
+  }, []);
 
   const getCurrentWeek = () => {
-    // For demonstration, let's use CW32 as current week since that's where our planning data starts
-    // In real implementation, you would calculate the actual current week
-    return 'CW32';
+    // Use current week CW35
+    return 'CW35';
   };
 
   const currentWeekUsage = useMemo(() => {
     const currentWeek = getCurrentWeek();
     
-    // Create basic project assignments for demonstration
-    // In a real implementation, this would come from a project management system
-    const projectLicenseMap: { [projectCode: string]: { licenseId: string; percentage: number }[] } = {
-      'ST_BLAVA': [
-        { licenseId: 'SmarTeam Integrace', percentage: 100 }
-      ],
-      'ST_MAINZ': [
-        { licenseId: 'SmarTeam Integrace', percentage: 80 }
-      ],
-      'ST_EMU_INT': [
-        { licenseId: 'SmarTeam Integrace', percentage: 60 }
-      ]
-    };
+    if (projectLicenses.length === 0) {
+      return { currentWeek, licenseUsage: {} };
+    }
+    
+    // Create project license map from database data
+    const projectLicenseMap: { [projectCode: string]: { licenseId: string; licenseName: string; percentage: number }[] } = {};
+    
+    projectLicenses.forEach(pl => {
+      if (!projectLicenseMap[pl.project_code]) {
+        projectLicenseMap[pl.project_code] = [];
+      }
+      projectLicenseMap[pl.project_code].push({
+        licenseId: pl.license_id,
+        licenseName: pl.license_name,
+        percentage: pl.percentage
+      });
+    });
     
     console.log('Current week:', currentWeek);
     console.log('Planning data sample:', planningData.slice(0, 5));
@@ -106,13 +159,13 @@ export const CurrentWeekLicenseUsage: React.FC<CurrentWeekLicenseUsageProps> = (
     licenses.forEach(license => {
       licenseUsage[license.name] = { required: 0, projects: [] };
       
-    Object.entries(projectEngineers).forEach(([projectCode, engineers]) => {
-        const projectLicenses = projectLicenseMap[projectCode];
-        console.log(`Project licenses for ${projectCode}:`, projectLicenses);
+      Object.entries(projectEngineers).forEach(([projectCode, engineers]) => {
+        const projectLicensesForProject = projectLicenseMap[projectCode];
+        console.log(`Project licenses for ${projectCode}:`, projectLicensesForProject);
         
-        if (projectLicenses) {
-          const licenseAssignment = projectLicenses.find(al => 
-            al.licenseId === license.name || al.licenseId === license.id
+        if (projectLicensesForProject) {
+          const licenseAssignment = projectLicensesForProject.find(al => 
+            al.licenseName === license.name
           );
           console.log(`License assignment for ${license.name} in project ${projectCode}:`, licenseAssignment);
           
@@ -130,7 +183,7 @@ export const CurrentWeekLicenseUsage: React.FC<CurrentWeekLicenseUsageProps> = (
     console.log('Final license usage:', licenseUsage);
     
     return { currentWeek, licenseUsage };
-  }, [planningData, licenses]);
+  }, [planningData, licenses, projectLicenses]);
 
   return (
     <Card className="p-6">
@@ -142,7 +195,7 @@ export const CurrentWeekLicenseUsage: React.FC<CurrentWeekLicenseUsageProps> = (
       
       <div className="space-y-3">
         {licenses.map(license => {
-          const usage = currentWeekUsage.licenseUsage[license.name];
+          const usage = currentWeekUsage.licenseUsage[license.name] || { required: 0, projects: [] };
           const isOverAllocated = usage.required > license.totalSeats;
           
           return (
