@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Filter, Users } from 'lucide-react';
 import { usePlanning } from '@/contexts/PlanningContext';
+import { getWeek } from 'date-fns';
 
 interface EngineerOverview {
   konstrukter: string;
@@ -16,15 +17,19 @@ interface EngineerOverview {
 
 // Funkce pro výpočet aktuálního kalendářního týdne
 const getCurrentWeek = (): number => {
-  const now = new Date();
-  const start = new Date(now.getFullYear(), 0, 1);
-  const days = Math.floor((now.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
-  return Math.ceil((days + start.getDay() + 1) / 7);
+  return getWeek(new Date(), { weekStartsOn: 1 });
 };
 
-// Funkce pro generování všech týdnů do konce roku
+// Funkce pro generování týdnů od aktuálního týdne do konce roku
 const getAllWeeksToEndOfYear = (): string[] => {
-  return ['CW32', 'CW33', 'CW34', 'CW35', 'CW36', 'CW37', 'CW38', 'CW39', 'CW40', 'CW41', 'CW42', 'CW43', 'CW44', 'CW45', 'CW46', 'CW47', 'CW48', 'CW49', 'CW50', 'CW51', 'CW52'];
+  const currentWeek = getCurrentWeek();
+  const startWeek = Math.max(32, currentWeek); // Začneme od aktuálního týdne, ale minimálně od CW32
+  
+  const weeks = [];
+  for (let cw = startWeek; cw <= 52; cw++) {
+    weeks.push(`CW${cw.toString().padStart(2, '0')}`);
+  }
+  return weeks;
 };
 
 // Seznam konstruktérů - všech 45 skutečných jmen

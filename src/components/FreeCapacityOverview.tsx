@@ -6,8 +6,26 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Checkbox } from '@/components/ui/checkbox';
 import { Users, Calendar, Filter } from 'lucide-react';
 import { usePlanning } from '@/contexts/PlanningContext';
+import { getWeek } from 'date-fns';
 
-const weeks = ['CW32', 'CW33', 'CW34', 'CW35', 'CW36', 'CW37', 'CW38', 'CW39', 'CW40', 'CW41', 'CW42', 'CW43', 'CW44', 'CW45', 'CW46', 'CW47', 'CW48', 'CW49', 'CW50', 'CW51', 'CW52'];
+// Funkce pro výpočet aktuálního kalendářního týdne
+const getCurrentWeek = (): number => {
+  return getWeek(new Date(), { weekStartsOn: 1 });
+};
+
+// Funkce pro generování týdnů od aktuálního týdne do konce roku
+const getAllWeeks = (): string[] => {
+  const currentWeek = getCurrentWeek();
+  const startWeek = Math.max(32, currentWeek); // Začneme od aktuálního týdne, ale minimálně od CW32
+  
+  const weeks = [];
+  for (let cw = startWeek; cw <= 52; cw++) {
+    weeks.push(`CW${cw.toString().padStart(2, '0')}`);
+  }
+  return weeks;
+};
+
+const weeks = getAllWeeks();
 
 const months = [
   { name: 'August', weeks: ['CW32', 'CW33', 'CW34', 'CW35'] },
@@ -15,7 +33,10 @@ const months = [
   { name: 'October', weeks: ['CW40', 'CW41', 'CW42', 'CW43', 'CW44'] },
   { name: 'November', weeks: ['CW45', 'CW46', 'CW47', 'CW48'] },
   { name: 'December', weeks: ['CW49', 'CW50', 'CW51', 'CW52'] }
-];
+].map(month => ({
+  ...month,
+  weeks: month.weeks.filter(week => weeks.includes(week))
+})).filter(month => month.weeks.length > 0);
 
 // Updated project badge styling function using semantic tokens
 const getProjectBadgeStyle = (projekt: string) => {
