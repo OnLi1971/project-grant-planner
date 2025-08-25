@@ -528,6 +528,8 @@ export const ProjectManagement = () => {
   const getProjectBadge = (code: string) => {
     if (!code || code === 'FREE') return <Badge variant="secondary">Volný</Badge>;
     if (code === 'DOVOLENÁ') return <Badge variant="outline" className="border-accent">Dovolená</Badge>;
+    if (code === 'NEMOC') return <Badge variant="outline" className="border-destructive text-destructive">Nemoc</Badge>;
+    if (code === 'OVER') return <Badge variant="outline" className="border-warning text-warning">Over</Badge>;
     
     const projectData = projects.find(p => p.code === code);
     const customer = customers.find(c => c.id === projectData?.customer_id);

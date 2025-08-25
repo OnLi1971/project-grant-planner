@@ -102,7 +102,12 @@ export const PlanningTable: React.FC = () => {
         
         // Určení statusu na základě plánu (prvních 4 týdnů)
         const first4Weeks = planDoKonceRoku.slice(0, 4);
-        const freeCount = first4Weeks.filter(p => p.projekt === 'FREE' || !p.projekt).length;
+        const freeCount = first4Weeks.filter(p => 
+          p.projekt === 'FREE' || 
+          p.projekt === 'NEMOC' || 
+          p.projekt === 'OVER' || 
+          !p.projekt
+        ).length;
         const vacationCount = first4Weeks.filter(p => p.projekt === 'DOVOLENÁ').length;
         
         let status: 'VOLNY' | 'CASTECNE' | 'PLNE' | 'DOVOLENA';
@@ -173,6 +178,8 @@ export const PlanningTable: React.FC = () => {
   const getProjectBadge = (projekt: string) => {
     if (projekt === 'FREE') return <Badge variant="secondary" className="bg-success/20 text-success">FREE</Badge>;
     if (projekt === 'DOVOLENÁ') return <Badge variant="outline" className="bg-accent text-accent-foreground border-accent">Dovolená</Badge>;
+    if (projekt === 'NEMOC') return <Badge variant="outline" className="bg-destructive/20 text-destructive border-destructive">Nemoc</Badge>;
+    if (projekt === 'OVER') return <Badge variant="outline" className="bg-warning/20 text-warning border-warning">Over</Badge>;
     
     return (
       <Badge variant="outline" className="bg-muted text-muted-foreground border-border">

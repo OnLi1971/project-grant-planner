@@ -161,11 +161,13 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
       });
     });
     
-    // Get engineers for this week (excluding MB Idea contractors)
+    // Get engineers for this week (excluding MB Idea contractors and non-license consuming projects)
     const engineersThisWeek = planningData.filter(entry => 
       entry.cw === weekOnly && 
       entry.projekt !== 'FREE' && 
-      entry.projekt !== 'DOVOLENÁ' && 
+      entry.projekt !== 'DOVOLENÁ' &&
+      entry.projekt !== 'NEMOC' &&
+      entry.projekt !== 'OVER' &&
       entry.projekt !== '' &&
       entry.mhTyden > 0 &&
       !MB_IDEA_CONTRACTORS.includes(entry.konstrukter)
@@ -262,11 +264,13 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
       licenses.forEach(license => {
         let totalUsage = 0;
         
-        // Get all engineers working this week (excluding MB Idea contractors)
+        // Get all engineers working this week (excluding MB Idea contractors and non-license consuming projects)
         const engineersThisWeek = planningData.filter(entry => 
           entry.cw === weekOnly && 
           entry.projekt !== 'FREE' && 
-          entry.projekt !== 'DOVOLENÁ' && 
+          entry.projekt !== 'DOVOLENÁ' &&
+          entry.projekt !== 'NEMOC' &&
+          entry.projekt !== 'OVER' &&
           entry.projekt !== '' &&
           entry.mhTyden > 0 &&
           !MB_IDEA_CONTRACTORS.includes(entry.konstrukter)

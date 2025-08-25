@@ -38,29 +38,27 @@ const months = [
   weeks: month.weeks.filter(week => weeks.includes(week))
 })).filter(month => month.weeks.length > 0);
 
-// Updated project badge styling function using semantic tokens
 const getProjectBadgeStyle = (projekt: string) => {
-  if (!projekt || projekt === 'FREE') return 'bg-success/20 text-success border-success/30';
+  if (!projekt || projekt === 'FREE' || projekt === 'NEMOC' || projekt === 'OVER') return 'bg-success/20 text-success border-success/30';
   if (projekt === 'DOVOLENÁ') return 'bg-accent text-accent-foreground border-accent';
+  if (projekt === 'NEMOC') return 'bg-destructive/20 text-destructive border-destructive/30';
+  if (projekt === 'OVER') return 'bg-warning/20 text-warning border-warning/30';
   if (projekt.startsWith('ST_')) return 'bg-primary/20 text-primary border-primary/30';
   if (projekt.startsWith('NU_')) return 'bg-warning/20 text-warning-foreground border-warning/30';
   if (projekt.startsWith('WA_')) return 'bg-success/30 text-success-foreground border-success/40';
   if (projekt.startsWith('SAF_')) return 'bg-accent/30 text-accent-foreground border-accent/40';
   if (projekt.startsWith('BUCH_')) return 'bg-muted text-muted-foreground border-muted-foreground/30';
   if (projekt.startsWith('AIRB_')) return 'bg-secondary text-secondary-foreground border-secondary';
-  if (projekt === 'OVER') return 'bg-destructive/20 text-destructive border-destructive/30';
   return 'bg-muted text-muted-foreground border-border';
 };
 
-const getProjectBadge = (projekt: string) => {
+const getProjectBadge = (projekt: string | null) => {
   if (!projekt || projekt === 'FREE') return <Badge variant="secondary" className="bg-success/20 text-success">Volný</Badge>;
-  if (projekt === 'DOVOLENÁ') return <Badge variant="outline" className="bg-accent text-accent-foreground border-accent">Dovolená</Badge>;
+  if (projekt === 'DOVOLENÁ') return <Badge variant="outline" className="border-accent">Dovolená</Badge>;
+  if (projekt === 'NEMOC') return <Badge variant="outline" className="border-destructive text-destructive">Nemoc</Badge>;
+  if (projekt === 'OVER') return <Badge variant="outline" className="border-warning text-warning">Over</Badge>;
   
-  return (
-    <div className={`text-xs px-2 py-1 rounded-md border inline-flex items-center ${getProjectBadgeStyle(projekt)}`}>
-      {projekt}
-    </div>
-  );
+  return <Badge variant="outline">{projekt}</Badge>;
 };
 
 export const FreeCapacityOverview = () => {
@@ -351,7 +349,11 @@ export const FreeCapacityOverview = () => {
                   </td>
                  {filteredWeeks.map(week => {
                     const weekData = engineer.weeks.find(w => w.cw === week);
-                    const isFree = weekData?.projekt === 'FREE' || weekData?.projekt === '' || !weekData?.projekt;
+                    const isFree = weekData?.projekt === 'FREE' || 
+                                   weekData?.projekt === 'NEMOC' || 
+                                   weekData?.projekt === 'OVER' || 
+                                   weekData?.projekt === '' || 
+                                   !weekData?.projekt;
                     return (
                       <td key={week} className="p-1 text-center border-l">
                          {weekData && (
@@ -400,6 +402,14 @@ export const FreeCapacityOverview = () => {
             <div className="flex items-center gap-2">
               <div className="bg-blue-100 text-blue-800 border border-blue-300 px-2 py-1 rounded-md text-xs">DOVOLENÁ</div>
               <span>Dovolená</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="bg-red-100 text-red-800 border border-red-300 px-2 py-1 rounded-md text-xs">NEMOC</div>
+              <span>Nemoc</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="bg-yellow-100 text-yellow-800 border border-yellow-300 px-2 py-1 rounded-md text-xs">OVER</div>
+              <span>Přesčas</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="bg-purple-100 text-purple-800 border border-purple-300 px-2 py-1 rounded-md text-xs">ST_XXX</div>

@@ -27,7 +27,7 @@ interface EditableCell {
 // Dostupné projekty
 const availableProjects = [
   'ST_EMU_INT', 'ST_TRAM_INT', 'ST_MAINZ', 'ST_KASSEL', 'ST_BLAVA', 'ST_FEM', 'ST_POZAR', 
-  'NU_CRAIN', 'WA_HVAC', 'ST_JIGS', 'ST_TRAM_HS', 'SAF_FEM', 'FREE', 'DOVOLENÁ'
+  'NU_CRAIN', 'WA_HVAC', 'ST_JIGS', 'ST_TRAM_HS', 'SAF_FEM', 'FREE', 'DOVOLENÁ', 'NEMOC', 'OVER'
 ];
 
 // Funkce pro zjištění aktuálního týdne
@@ -185,6 +185,8 @@ export const PlanningEditor: React.FC = () => {
   const getProjectBadge = (projekt: string) => {
     if (!projekt || projekt === 'FREE') return <Badge variant="secondary">Volný</Badge>;
     if (projekt === 'DOVOLENÁ') return <Badge variant="outline" className="border-accent">Dovolená</Badge>;
+    if (projekt === 'NEMOC') return <Badge variant="outline" className="border-destructive text-destructive">Nemoc</Badge>;
+    if (projekt === 'OVER') return <Badge variant="outline" className="border-warning text-warning">Over</Badge>;
     
     const customer = getCustomerByProjectCode(projekt);
     if (customer) {
