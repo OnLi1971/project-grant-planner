@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { ChartContainer, ChartConfig, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Legend, ReferenceLine, Cell } from 'recharts';
@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getProjectColorWithIndex } from '@/utils/colorSystem';
+import { supabase } from '@/integrations/supabase/client';
 
 interface License {
   id: string;
@@ -18,6 +19,14 @@ interface License {
   expirationDate: string;
   cost: number;
   status: 'active' | 'expired' | 'expiring-soon';
+}
+
+interface ProjectLicense {
+  project_id: string;
+  license_id: string;
+  percentage: number;
+  project_code: string;
+  license_name: string;
 }
 
 interface Project {
@@ -53,26 +62,105 @@ interface LicenseUsageChartProps {
 export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }) => {
   const { planningData } = usePlanning();
   const [selectedLicense, setSelectedLicense] = useState<string>(licenses[0]?.name || '');
+  const [projectLicenses, setProjectLicenses] = useState<ProjectLicense[]>([]);
+
+  // Load project licenses from database
+  useEffect(() => {
+    const loadProjectLicenses = async () => {
+      // Get project licenses
+      const { data: projectLicensesData, error: plError } = await supabase
+        .from('project_licenses')
+        .select('project_id, license_id, percentage');
+
+      if (plError) {
+        console.error('Error loading project licenses:', plError);
+        return;
+      }
+
+      // Get projects
+      const { data: projectsData, error: projectsError } = await supabase
+        .from('projects')
+        .select('id, code');
+
+      if (projectsError) {
+        console.error('Error loading projects:', projectsError);
+        return;
+      }
+
+      // Get licenses
+      const { data: licensesData, error: licensesError } = await supabase
+        .from('licenses')
+        .select('id, name');
+
+      if (licensesError) {
+        console.error('Error loading licenses:', licensesError);
+        return;
+      }
+
+      // Combine data
+      const formattedData: ProjectLicense[] = (projectLicensesData || []).map(pl => {
+        const project = projectsData?.find(p => p.id === pl.project_id);
+        const license = licensesData?.find(l => l.id === pl.license_id);
+        
+        return {
+          project_id: pl.project_id,
+          license_id: pl.license_id,
+          percentage: pl.percentage,
+          project_code: project?.code || '',
+          license_name: license?.name || ''
+        };
+      });
+
+      console.log('Loaded project licenses:', formattedData);
+      setProjectLicenses(formattedData);
+    };
+
+    loadProjectLicenses();
+  }, []);
+
+  // Generate weeks starting from current week
+  const generateWeeks = useMemo(() => {
+    const weeks: string[] = [];
+    const currentWeek = 32; // CW32 as current week from console logs
+    
+    // Generate 22 weeks from current week
+    for (let i = 0; i < 22; i++) {
+      let weekNum = currentWeek + i;
+      let year = '';
+      
+      if (weekNum > 52) {
+        weekNum = weekNum - 52;
+        year = ' (next year)';
+      }
+      
+      weeks.push(`CW${weekNum}${year}`);
+    }
+    
+    return weeks;
+  }, []);
 
   const chartData = useMemo(() => {
-    // Create basic project assignments for demonstration
-    const projectLicenseMap: { [projectCode: string]: { licenseId: string; percentage: number }[] } = {
-      'ST_BLAVA': [
-        { licenseId: 'SmarTeam Integrace', percentage: 100 }
-      ],
-      'ST_MAINZ': [
-        { licenseId: 'SmarTeam Integrace', percentage: 80 }
-      ],
-      'ST_EMU_INT': [
-        { licenseId: 'SmarTeam Integrace', percentage: 60 }
-      ]
-    };
+    if (projectLicenses.length === 0) return [];
     
-    // Get all weeks from CW32 to CW1 (next year)
-    const weeks = ['CW32', 'CW33', 'CW34', 'CW35', 'CW36', 'CW37', 'CW38', 'CW39', 'CW40', 'CW41', 'CW42', 'CW43', 'CW44', 'CW45', 'CW46', 'CW47', 'CW48', 'CW49', 'CW50', 'CW51', 'CW52', 'CW1'];
+    // Create project license map from database data
+    const projectLicenseMap: { [projectCode: string]: { licenseId: string; licenseName: string; percentage: number }[] } = {};
     
-    return weeks.map(week => {
+    projectLicenses.forEach(pl => {
+      if (!projectLicenseMap[pl.project_code]) {
+        projectLicenseMap[pl.project_code] = [];
+      }
+      projectLicenseMap[pl.project_code].push({
+        licenseId: pl.license_id,
+        licenseName: pl.license_name,
+        percentage: pl.percentage
+      });
+    });
+    
+    console.log('Project license map:', projectLicenseMap);
+    
+    return generateWeeks.map(week => {
       const weekData: any = { week };
+      const weekOnly = week.replace(' (next year)', '');
       
       // For each license, calculate usage for this week
       licenses.forEach(license => {
@@ -80,7 +168,7 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
         
         // Get all engineers working this week
         const engineersThisWeek = planningData.filter(entry => 
-          entry.cw === week && 
+          entry.cw === weekOnly && 
           entry.projekt !== 'FREE' && 
           entry.projekt !== 'DOVOLENÁ' && 
           entry.projekt !== '' &&
@@ -96,16 +184,19 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
           projectEngineers[entry.projekt]++;
         });
         
+        console.log(`Week ${weekOnly} project engineers:`, projectEngineers);
+        
         // Calculate license usage based on project assignments
         Object.entries(projectEngineers).forEach(([projectCode, engineerCount]) => {
-          const projectLicenses = projectLicenseMap[projectCode];
-          if (projectLicenses) {
-            const licenseAssignment = projectLicenses.find(al => 
-              al.licenseId === license.name || al.licenseId === license.id
+          const projectLicensesForProject = projectLicenseMap[projectCode];
+          if (projectLicensesForProject) {
+            const licenseAssignment = projectLicensesForProject.find(al => 
+              al.licenseName === license.name
             );
             if (licenseAssignment) {
               const requiredLicenses = Math.ceil((engineerCount * licenseAssignment.percentage) / 100);
               totalUsage += requiredLicenses;
+              console.log(`Project ${projectCode}: ${engineerCount} engineers, ${licenseAssignment.percentage}% = ${requiredLicenses} ${license.name} licenses`);
             }
           }
         });
@@ -116,7 +207,7 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
       
       return weekData;
     });
-  }, [planningData, licenses]);
+  }, [planningData, licenses, projectLicenses, generateWeeks]);
 
   // Filter chart data for selected license only
   const filteredChartData = useMemo(() => {
