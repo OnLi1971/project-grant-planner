@@ -18,17 +18,18 @@ import {
   programs 
 } from '@/data/projectsData';
 import { getProjectColor, getCustomerByProjectCode } from '@/utils/colorSystem';
+import { supabase } from '@/integrations/supabase/client';
 
 interface License {
   id: string;
   name: string;
-  type: 'software' | 'certification' | 'training';
+  type: string;
   provider: string;
-  totalSeats: number;
-  usedSeats: number;
-  expirationDate: string;
+  total_seats: number;
+  used_seats: number;
+  expiration_date: string;
   cost: number;
-  status: 'active' | 'expired' | 'expiring-soon';
+  status: string;
 }
 
 export const ProjectManagement = () => {
@@ -52,7 +53,7 @@ export const ProjectManagement = () => {
   const { toast } = useToast();
   const { planningData } = usePlanning();
 
-  // Load projects and licenses from localStorage
+  // Load projects from localStorage and licenses from database
   useEffect(() => {
     const savedProjects = localStorage.getItem('projects-data');
     if (savedProjects) {
@@ -62,38 +63,26 @@ export const ProjectManagement = () => {
       localStorage.setItem('projects-data', JSON.stringify(initialProjects));
     }
 
-    const savedLicenses = localStorage.getItem('licenses-data');
-    if (savedLicenses) {
-      setLicenses(JSON.parse(savedLicenses));
-    } else {
-      // Default licenses if none exist
-      const defaultLicenses: License[] = [
-        {
-          id: '1',
-          name: 'AutoCAD Professional',
-          type: 'software',
-          provider: 'Autodesk',
-          totalSeats: 10,
-          usedSeats: 8,
-          expirationDate: '2024-12-31',
-          cost: 150000,
-          status: 'active'
-        },
-        {
-          id: '2',
-          name: 'SolidWorks Premium',
-          type: 'software',
-          provider: 'Dassault Systèmes',
-          totalSeats: 5,
-          usedSeats: 5,
-          expirationDate: '2024-06-15',
-          cost: 200000,
-          status: 'expiring-soon'
-        }
-      ];
-      setLicenses(defaultLicenses);
-    }
+    loadLicenses();
   }, []);
+
+  const loadLicenses = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('licenses')
+        .select('*')
+        .order('name');
+
+      if (error) {
+        console.error('Error loading licenses:', error);
+        return;
+      }
+
+      setLicenses(data || []);
+    } catch (error) {
+      console.error('Error loading licenses:', error);
+    }
+  };
 
   const handleSubmit = () => {
     if (!formData.name || !formData.code || !formData.customerId || !formData.projectManagerId || !formData.programId) {
