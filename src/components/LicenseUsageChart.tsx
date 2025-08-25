@@ -121,7 +121,18 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
   // Generate weeks starting from current week
   const generateWeeks = useMemo(() => {
     const weeks: string[] = [];
-    const currentWeek = 32; // CW32 as current week from console logs
+    
+    // Get current week dynamically
+    const getCurrentWeek = () => {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), 0, 1);
+      const diff = now.getTime() - start.getTime();
+      const oneWeek = 1000 * 60 * 60 * 24 * 7;
+      const weekNumber = Math.ceil(diff / oneWeek);
+      return Math.min(weekNumber, 52);
+    };
+    
+    const currentWeek = 35; // CW35 as current week
     
     // Generate 22 weeks from current week
     for (let i = 0; i < 22; i++) {
