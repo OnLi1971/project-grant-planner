@@ -41,23 +41,23 @@ interface DatabaseProject {
   average_hourly_rate?: number;
   project_status?: string;
   probability?: number;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
-interface Customer {
+interface DatabaseCustomer {
   id: string;
   name: string;
   code: string;
 }
 
-interface ProjectManager {
+interface DatabaseProjectManager {
   id: string;
   name: string;
   email: string;
 }
 
-interface Program {
+interface DatabaseProgram {
   id: string;
   name: string;
   code: string;
@@ -73,11 +73,12 @@ interface ProjectLicense {
 export const ProjectManagement = () => {
   const [projects, setProjects] = useState<DatabaseProject[]>([]);
   const [licenses, setLicenses] = useState<License[]>([]);
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [projectManagers, setProjectManagers] = useState<ProjectManager[]>([]);
-  const [programs, setPrograms] = useState<Program[]>([]);
+  const [customers, setCustomers] = useState<DatabaseCustomer[]>([]);
+  const [projectManagers, setProjectManagers] = useState<DatabaseProjectManager[]>([]);
+  const [programs, setPrograms] = useState<DatabaseProgram[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<DatabaseProject | null>(null);
+  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     name: '',
     code: '',
@@ -94,14 +95,28 @@ export const ProjectManagement = () => {
   const { toast } = useToast();
   const { planningData } = usePlanning();
 
-  // Load data from database
+  // Load all data from database
   useEffect(() => {
-    loadProjects();
-    loadLicenses();
-    loadCustomers();
-    loadProjectManagers();
-    loadPrograms();
+    loadAllData();
   }, []);
+
+  const loadLicenses = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('licenses')
+        .select('*')
+        .order('name');
+
+      if (error) {
+        console.error('Error loading licenses:', error);
+        return;
+      }
+
+      setLicenses(data || []);
+    } catch (error) {
+      console.error('Error loading licenses:', error);
+    }
+  };
 
   const loadProjects = async () => {
     try {
@@ -121,21 +136,75 @@ export const ProjectManagement = () => {
     }
   };
 
-  const loadLicenses = async () => {
+  const loadAllData = async () => {
+    setLoading(true);
     try {
-      const { data, error } = await supabase
+      // Load projects with related data
+      const { data: projectsData, error: projectsError } = await supabase
+        .from('projects')
+        .select('*')
+        .order('name');
+
+      if (projectsError) {
+        console.error('Error loading projects:', projectsError);
+      } else {
+        // Convert database format to frontend format
+        const formattedProjects: DatabaseProject[] = (projectsData || []);
+        setProjects(formattedProjects);
+      }
+
+      // Load customers
+      const { data: customersData, error: customersError } = await supabase
+        .from('customers')
+        .select('*')
+        .order('name');
+
+      if (customersError) {
+        console.error('Error loading customers:', customersError);
+      } else {
+        setCustomers(customersData || []);
+      }
+
+      // Load project managers
+      const { data: pmData, error: pmError } = await supabase
+        .from('project_managers')
+        .select('*')
+        .order('name');
+
+      if (pmError) {
+        console.error('Error loading project managers:', pmError);
+      } else {
+        setProjectManagers(pmData || []);
+      }
+
+      // Load programs
+      const { data: programsData, error: programsError } = await supabase
+        .from('programs')
+        .select('*')
+        .order('name');
+
+      if (programsError) {
+        console.error('Error loading programs:', programsError);
+      } else {
+        setPrograms(programsData || []);
+      }
+
+      // Load licenses
+      const { data: licensesData, error: licensesError } = await supabase
         .from('licenses')
         .select('*')
         .order('name');
 
-      if (error) {
-        console.error('Error loading licenses:', error);
-        return;
+      if (licensesError) {
+        console.error('Error loading licenses:', licensesError);
+      } else {
+        setLicenses(licensesData || []);
       }
 
-      setLicenses(data || []);
     } catch (error) {
-      console.error('Error loading licenses:', error);
+      console.error('Error loading data:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -282,7 +351,8 @@ export const ProjectManagement = () => {
         });
       }
 
-      await loadProjects();
+      // Reload data and reset form
+      await loadAllData();
       resetForm();
     } catch (error) {
       console.error('Error saving project:', error);
@@ -421,7 +491,8 @@ export const ProjectManagement = () => {
     if (!code || code === 'FREE') return <Badge variant="secondary">Volný</Badge>;
     if (code === 'DOVOLENÁ') return <Badge variant="outline" className="border-accent">Dovolená</Badge>;
     
-    const customer = getCustomerByProjectCode(code);
+    const projectData = projects.find(p => p.code === code);
+    const customer = customers.find(c => c.id === projectData?.customer_id);
     if (customer) {
       return (
         <Badge 
@@ -437,6 +508,18 @@ export const ProjectManagement = () => {
     }
     return <Badge variant="outline">{code}</Badge>;
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <Card className="p-6 shadow-card-custom">
+          <div className="flex items-center justify-center py-8">
+            <div className="text-muted-foreground">Načítání projektů...</div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
