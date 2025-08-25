@@ -43,6 +43,7 @@ interface DatabaseProject {
   probability?: number;
   created_at?: string;
   updated_at?: string;
+  project_licenses?: ProjectLicense[];
 }
 
 interface DatabaseCustomer {
@@ -68,6 +69,7 @@ interface ProjectLicense {
   project_id?: string;
   license_id: string;
   percentage: number;
+  license_name?: string;
 }
 
 export const ProjectManagement = () => {
@@ -148,9 +150,35 @@ export const ProjectManagement = () => {
       if (projectsError) {
         console.error('Error loading projects:', projectsError);
       } else {
-        // Convert database format to frontend format
-        const formattedProjects: DatabaseProject[] = (projectsData || []);
-        setProjects(formattedProjects);
+        // Load project licenses for each project
+        const projectsWithLicenses = await Promise.all(
+          (projectsData || []).map(async (project) => {
+            const { data: licensesData, error: licensesError } = await supabase
+              .from('project_licenses')
+              .select(`
+                id, license_id, percentage,
+                licenses (name)
+              `)
+              .eq('project_id', project.id);
+
+            if (licensesError) {
+              console.error('Error loading project licenses:', licensesError);
+            }
+
+            return {
+              ...project,
+              project_licenses: (licensesData || []).map(pl => ({
+                id: pl.id,
+                project_id: project.id,
+                license_id: pl.license_id,
+                percentage: pl.percentage,
+                license_name: pl.licenses?.[0]?.name || 'Unknown'
+              }))
+            };
+          })
+        );
+
+        setProjects(projectsWithLicenses);
       }
 
       // Load customers
@@ -804,7 +832,22 @@ export const ProjectManagement = () => {
                    ) : 'N/A'}
                  </TableCell>
                  <TableCell>
-                   <span className="text-sm text-muted-foreground">Licence načítají...</span>
+                   {item.project?.project_licenses && item.project.project_licenses.length > 0 ? (
+                     <div className="flex flex-col gap-1">
+                       {item.project.project_licenses.map((license, idx) => (
+                         <div key={idx} className="flex items-center gap-1 text-xs">
+                           <Badge variant="outline" className="text-xs">
+                             {license.license_name}
+                           </Badge>
+                           <span className="text-muted-foreground">
+                             {license.percentage}%
+                           </span>
+                         </div>
+                       ))}
+                     </div>
+                   ) : (
+                     <span className="text-sm text-muted-foreground">Bez licencí</span>
+                   )}
                  </TableCell>
                 <TableCell>
                   <Badge variant="outline" className="font-mono">
