@@ -58,59 +58,22 @@ export const CurrentWeekLicenseUsage: React.FC<CurrentWeekLicenseUsageProps> = (
 
   const currentWeekUsage = useMemo(() => {
     const currentWeek = getCurrentWeek();
-    let projectsData = JSON.parse(localStorage.getItem('projects-data') || '[]') as StoredProject[];
     
-    // If no projects data exists, load default projects first
-    if (projectsData.length === 0) {
-      // Import default projects from projectsData.ts
-      const defaultProjects = [
-        { id: '1', name: 'ST EMU INT', code: 'ST_EMU_INT', customerId: '1', projectManagerId: '1', programId: '1', status: 'active' as const, projectType: 'WP' as const },
-        { id: '2', name: 'ST TRAM INT', code: 'ST_TRAM_INT', customerId: '1', projectManagerId: '2', programId: '1', status: 'active' as const, projectType: 'WP' as const },
-        { id: '3', name: 'ST MAINZ', code: 'ST_MAINZ', customerId: '1', projectManagerId: '2', programId: '1', status: 'active' as const, projectType: 'WP' as const },
-        { id: '5', name: 'ST BLAVA', code: 'ST_BLAVA', customerId: '1', projectManagerId: '2', programId: '1', status: 'active' as const, projectType: 'WP' as const },
-      ];
-      projectsData = defaultProjects;
-    }
-    
-    // If projects don't have license assignments, create some test data
-    if (!projectsData.some(p => p.assignedLicenses && p.assignedLicenses.length > 0)) {
-      // Add some default license assignments for testing
-      projectsData = projectsData.map(project => {
-        if (project.code === 'ST_BLAVA') {
-          return {
-            ...project,
-            assignedLicenses: [
-              { licenseId: 'AutoCAD Professional', percentage: 100 },
-              { licenseId: 'SolidWorks Premium', percentage: 50 }
-            ]
-          };
-        }
-        if (project.code === 'ST_MAINZ') {
-          return {
-            ...project,
-            assignedLicenses: [
-              { licenseId: 'AutoCAD Professional', percentage: 80 },
-              { licenseId: 'SolidWorks Premium', percentage: 100 }
-            ]
-          };
-        }
-        if (project.code === 'ST_EMU_INT') {
-          return {
-            ...project,
-            assignedLicenses: [
-              { licenseId: 'SolidWorks Premium', percentage: 100 }
-            ]
-          };
-        }
-        return project;
-      });
-      
-      // Save the updated data
-      localStorage.setItem('projects-data', JSON.stringify(projectsData));
-    }
+    // Create basic project assignments for demonstration
+    // In a real implementation, this would come from a project management system
+    const projectLicenseMap: { [projectCode: string]: { licenseId: string; percentage: number }[] } = {
+      'ST_BLAVA': [
+        { licenseId: 'SmarTeam Integrace', percentage: 100 }
+      ],
+      'ST_MAINZ': [
+        { licenseId: 'SmarTeam Integrace', percentage: 80 }
+      ],
+      'ST_EMU_INT': [
+        { licenseId: 'SmarTeam Integrace', percentage: 60 }
+      ]
+    };
     
     console.log('Current week:', currentWeek);
-    console.log('Projects data:', projectsData);
     console.log('Planning data sample:', planningData.slice(0, 5));
     
     // Get all engineers working this week
@@ -143,23 +106,21 @@ export const CurrentWeekLicenseUsage: React.FC<CurrentWeekLicenseUsageProps> = (
     licenses.forEach(license => {
       licenseUsage[license.name] = { required: 0, projects: [] };
       
-      Object.entries(projectEngineers).forEach(([projectCode, engineers]) => {
-        const project = projectsData.find(p => p.code === projectCode);
-        console.log(`Looking for project with code ${projectCode}, found:`, project);
+    Object.entries(projectEngineers).forEach(([projectCode, engineers]) => {
+        const projectLicenses = projectLicenseMap[projectCode];
+        console.log(`Project licenses for ${projectCode}:`, projectLicenses);
         
-        if (project && project.assignedLicenses) {
-          // Handle the different data structure - stored projects use licenseId, we need to match by license name
-          const licenseAssignment = project.assignedLicenses.find(al => {
-            // First try to find by licenseId if it matches license name
-            return al.licenseId === license.name || al.licenseId === license.id;
-          });
+        if (projectLicenses) {
+          const licenseAssignment = projectLicenses.find(al => 
+            al.licenseId === license.name || al.licenseId === license.id
+          );
           console.log(`License assignment for ${license.name} in project ${projectCode}:`, licenseAssignment);
           
           if (licenseAssignment) {
             const requiredLicenses = Math.ceil((engineers.length * licenseAssignment.percentage) / 100);
             licenseUsage[license.name].required += requiredLicenses;
             if (requiredLicenses > 0) {
-              licenseUsage[license.name].projects.push(`${project.name} (${requiredLicenses})`);
+              licenseUsage[license.name].projects.push(`${projectCode} (${requiredLicenses})`);
             }
           }
         }

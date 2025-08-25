@@ -55,8 +55,18 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
   const [selectedLicense, setSelectedLicense] = useState<string>(licenses[0]?.name || '');
 
   const chartData = useMemo(() => {
-    // Get projects data from localStorage
-    const projectsData = JSON.parse(localStorage.getItem('projects-data') || '[]') as StoredProject[];
+    // Create basic project assignments for demonstration
+    const projectLicenseMap: { [projectCode: string]: { licenseId: string; percentage: number }[] } = {
+      'ST_BLAVA': [
+        { licenseId: 'SmarTeam Integrace', percentage: 100 }
+      ],
+      'ST_MAINZ': [
+        { licenseId: 'SmarTeam Integrace', percentage: 80 }
+      ],
+      'ST_EMU_INT': [
+        { licenseId: 'SmarTeam Integrace', percentage: 60 }
+      ]
+    };
     
     // Get all weeks from CW32 to CW1 (next year)
     const weeks = ['CW32', 'CW33', 'CW34', 'CW35', 'CW36', 'CW37', 'CW38', 'CW39', 'CW40', 'CW41', 'CW42', 'CW43', 'CW44', 'CW45', 'CW46', 'CW47', 'CW48', 'CW49', 'CW50', 'CW51', 'CW52', 'CW1'];
@@ -88,9 +98,9 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
         
         // Calculate license usage based on project assignments
         Object.entries(projectEngineers).forEach(([projectCode, engineerCount]) => {
-          const project = projectsData.find(p => p.code === projectCode);
-          if (project && project.assignedLicenses) {
-            const licenseAssignment = project.assignedLicenses.find(al => 
+          const projectLicenses = projectLicenseMap[projectCode];
+          if (projectLicenses) {
+            const licenseAssignment = projectLicenses.find(al => 
               al.licenseId === license.name || al.licenseId === license.id
             );
             if (licenseAssignment) {
