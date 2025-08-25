@@ -4,8 +4,11 @@ import { ChartContainer, ChartConfig, ChartTooltip, ChartTooltipContent } from '
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Legend, ReferenceLine, Cell } from 'recharts';
 import { usePlanning } from '@/contexts/PlanningContext';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Users, Info } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { getProjectColorWithIndex } from '@/utils/colorSystem';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -27,6 +30,13 @@ interface ProjectLicense {
   percentage: number;
   project_code: string;
   license_name: string;
+}
+
+interface EngineerDetail {
+  name: string;
+  project: string;
+  licensePercentage: number;
+  requiredLicenses: number;
 }
 
 interface Project {
@@ -63,6 +73,9 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
   const { planningData } = usePlanning();
   const [selectedLicense, setSelectedLicense] = useState<string>(licenses[0]?.name || '');
   const [projectLicenses, setProjectLicenses] = useState<ProjectLicense[]>([]);
+  const [selectedWeek, setSelectedWeek] = useState<string>('');
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
+  const [weekDetails, setWeekDetails] = useState<EngineerDetail[]>([]);
 
   // Load project licenses from database
   useEffect(() => {
@@ -118,6 +131,63 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
     loadProjectLicenses();
   }, []);
 
+  // Handle bar click to show details
+  const handleBarClick = (data: any) => {
+    const week = data.week;
+    const weekOnly = week.replace(' (next year)', '');
+    
+    if (!selectedLicense || !projectLicenses.length) return;
+    
+    // Create project license map
+    const projectLicenseMap: { [projectCode: string]: { licenseId: string; licenseName: string; percentage: number }[] } = {};
+    
+    projectLicenses.forEach(pl => {
+      if (!projectLicenseMap[pl.project_code]) {
+        projectLicenseMap[pl.project_code] = [];
+      }
+      projectLicenseMap[pl.project_code].push({
+        licenseId: pl.license_id,
+        licenseName: pl.license_name,
+        percentage: pl.percentage
+      });
+    });
+    
+    // Get engineers for this week
+    const engineersThisWeek = planningData.filter(entry => 
+      entry.cw === weekOnly && 
+      entry.projekt !== 'FREE' && 
+      entry.projekt !== 'DOVOLENÁ' && 
+      entry.projekt !== '' &&
+      entry.mhTyden > 0
+    );
+    
+    // Calculate details for selected license
+    const details: EngineerDetail[] = [];
+    
+    engineersThisWeek.forEach(entry => {
+      const projectLicensesForProject = projectLicenseMap[entry.projekt];
+      if (projectLicensesForProject) {
+        const licenseAssignment = projectLicensesForProject.find(al => 
+          al.licenseName === selectedLicense
+        );
+        if (licenseAssignment) {
+          const requiredLicenses = Math.ceil(licenseAssignment.percentage / 100);
+          details.push({
+            name: entry.konstrukter,
+            project: entry.projekt,
+            licensePercentage: licenseAssignment.percentage,
+            requiredLicenses: requiredLicenses
+          });
+        }
+      }
+    });
+    
+    console.log('Week details for', week, ':', details);
+    
+    setSelectedWeek(week);
+    setWeekDetails(details);
+    setIsDetailDialogOpen(true);
+  };
   // Generate weeks starting from current week
   const generateWeeks = useMemo(() => {
     const weeks: string[] = [];
@@ -319,6 +389,11 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
               </SelectContent>
             </Select>
           </div>
+          
+          <div className="text-xs text-muted-foreground flex items-center gap-1">
+            <Info className="h-3 w-3" />
+            Klikněte na sloupec pro zobrazení detailů konstruktérů
+          </div>
         </div>
         
         <ChartContainer config={chartConfig} className="h-96">
@@ -365,6 +440,8 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
                 dataKey="usage"
                 name="Požadované licence"
                 radius={[2, 2, 0, 0]}
+                onClick={handleBarClick}
+                style={{ cursor: 'pointer' }}
               >
                 {filteredChartData.map((entry, index) => {
                   const isOverLimit = entry.usage > entry.available;
@@ -392,6 +469,77 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
           </ResponsiveContainer>
         </ChartContainer>
       </Card>
+      
+      {/* Week Detail Dialog */}
+      <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Detail využití licencí - {selectedWeek}
+              <Badge variant="outline">{selectedLicense}</Badge>
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {weekDetails.length > 0 ? (
+              <>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Info className="h-4 w-4" />
+                  Celkem {weekDetails.length} konstruktérů potřebuje licenci {selectedLicense}
+                </div>
+                
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Konstruktér</TableHead>
+                      <TableHead>Projekt</TableHead>
+                      <TableHead>Využití licence</TableHead>
+                      <TableHead>Požadované licence</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {weekDetails.map((detail, index) => (
+                      <TableRow key={`${detail.name}-${detail.project}-${index}`}>
+                        <TableCell className="font-medium">{detail.name}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{detail.project}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">{detail.licensePercentage}%</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <span className="font-mono">{detail.requiredLicenses}</span>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                
+                <div className="mt-4 p-4 bg-muted/50 rounded-lg">
+                  <h4 className="font-medium mb-2">Souhrn využití</h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Celkový počet licencí:</span>
+                      <span className="ml-2 font-mono">{weekDetails.reduce((sum, d) => sum + d.requiredLicenses, 0)}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Průměrné využití:</span>
+                      <span className="ml-2 font-mono">
+                        {Math.round(weekDetails.reduce((sum, d) => sum + d.licensePercentage, 0) / weekDetails.length)}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                V týdnu {selectedWeek} není potřeba licence {selectedLicense}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
