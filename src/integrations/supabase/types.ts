@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      customers: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       licenses: {
         Row: {
           cost: number
@@ -142,6 +166,184 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      programs: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      project_licenses: {
+        Row: {
+          created_at: string
+          id: string
+          license_id: string
+          percentage: number
+          project_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          license_id: string
+          percentage?: number
+          project_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          license_id?: string
+          percentage?: number
+          project_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_project_licenses_license_id"
+            columns: ["license_id"]
+            isOneToOne: false
+            referencedRelation: "licenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_project_licenses_project_id"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_managers: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      projects: {
+        Row: {
+          average_hourly_rate: number | null
+          budget: number | null
+          code: string
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          end_date: string | null
+          hourly_rate: number | null
+          id: string
+          name: string
+          probability: number | null
+          program_id: string
+          project_manager_id: string
+          project_status: string | null
+          project_type: string
+          start_date: string | null
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          average_hourly_rate?: number | null
+          budget?: number | null
+          code: string
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          end_date?: string | null
+          hourly_rate?: number | null
+          id?: string
+          name: string
+          probability?: number | null
+          program_id: string
+          project_manager_id: string
+          project_status?: string | null
+          project_type?: string
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          average_hourly_rate?: number | null
+          budget?: number | null
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          end_date?: string | null
+          hourly_rate?: number | null
+          id?: string
+          name?: string
+          probability?: number | null
+          program_id?: string
+          project_manager_id?: string
+          project_status?: string | null
+          project_type?: string
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_projects_customer_id"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_projects_program_id"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_projects_project_manager_id"
+            columns: ["project_manager_id"]
+            isOneToOne: false
+            referencedRelation: "project_managers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
