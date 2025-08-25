@@ -4,7 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Users, Calendar, Filter } from 'lucide-react';
+import { Users, Calendar, Filter, Download } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { usePlanning } from '@/contexts/PlanningContext';
 import { getWeek } from 'date-fns';
 
@@ -161,6 +162,77 @@ export const FreeCapacityOverview = () => {
     ? Math.round(engineersWithFreeCapacity.reduce((sum, eng) => sum + eng.freePercentage, 0) / engineersWithFree)
     : 0;
 
+  // Funkce pro export do Excelu
+  const exportToExcel = () => {
+    if (engineersWithFreeCapacity.length === 0) {
+      return;
+    }
+
+    // Připravení dat pro export
+    const exportData = [];
+    
+    // Hlavičky
+    const headers = [
+      'Konstruktér',
+      'Volné týdny',
+      'Vytížené týdny', 
+      'Volná kapacita %',
+      ...filteredWeeks
+    ];
+    exportData.push(headers);
+
+    // Data konstruktérů
+    engineersWithFreeCapacity.forEach(engineer => {
+      const row = [
+        engineer.name,
+        engineer.freeWeeks,
+        engineer.busyWeeks,
+        engineer.freePercentage + '%',
+        ...filteredWeeks.map(week => {
+          const weekData = engineer.weeks.find(w => w.cw === week);
+          const isFree = weekData?.projekt === 'FREE' || 
+                         weekData?.projekt === 'NEMOC' || 
+                         weekData?.projekt === 'OVER' || 
+                         weekData?.projekt === '' || 
+                         !weekData?.projekt;
+          return isFree ? 'FREE' : (weekData?.projekt || '');
+        })
+      ];
+      exportData.push(row);
+    });
+
+    // Vytvoření workbooku a worksheetu
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(exportData);
+
+    // Nastavení šířky sloupců
+    const columnWidths = [
+      { wch: 20 }, // Konstruktér
+      { wch: 12 }, // Volné týdny
+      { wch: 15 }, // Vytížené týdny
+      { wch: 15 }, // Volná kapacita %
+      ...filteredWeeks.map(() => ({ wch: 8 })) // Týdny
+    ];
+    ws['!cols'] = columnWidths;
+
+    // Přidání worksheetu do workbooku
+    XLSX.utils.book_append_sheet(wb, ws, 'Volné kapacity');
+
+    // Generování názvu souboru s aktuálním datem
+    const currentDate = new Date().toISOString().split('T')[0];
+    let fileName = `volne-kapacity-${currentDate}.xlsx`;
+    
+    // Přidání filtru do názvu souboru
+    if (selectedWeeks.length > 0) {
+      fileName = `volne-kapacity-${selectedWeeks.join('-')}-${currentDate}.xlsx`;
+    } else if (selectedMonths.length > 0) {
+      fileName = `volne-kapacity-${selectedMonths.join('-')}-${currentDate}.xlsx`;
+    }
+
+    // Export souboru
+    XLSX.writeFile(wb, fileName);
+  };
+
   return (
     <div className="space-y-6 p-6 bg-background min-h-screen">
 
@@ -271,6 +343,18 @@ export const FreeCapacityOverview = () => {
               Zrušit všechny filtry
             </Button>
           )}
+
+          {/* Export to Excel Button */}
+          <div className="ml-auto">
+            <Button 
+              onClick={exportToExcel}
+              disabled={engineersWithFreeCapacity.length === 0}
+              className="gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Export do Excel
+            </Button>
+          </div>
         </div>
       </Card>
 
