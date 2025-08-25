@@ -155,25 +155,35 @@ export const ProjectManagement = () => {
           (projectsData || []).map(async (project) => {
             const { data: licensesData, error: licensesError } = await supabase
               .from('project_licenses')
-              .select(`
-                id, license_id, percentage,
-                licenses!inner (name)
-              `)
+              .select('id, license_id, percentage')
               .eq('project_id', project.id);
 
             if (licensesError) {
-              console.error('Error loading project licenses:', licensesError);
+              console.error('Error loading project licenses for project', project.id, ':', licensesError);
             }
+
+            // Get license names separately
+            const projectLicenses = await Promise.all(
+              (licensesData || []).map(async (pl) => {
+                const { data: licenseData } = await supabase
+                  .from('licenses')
+                  .select('name')
+                  .eq('id', pl.license_id)
+                  .single();
+
+                return {
+                  id: pl.id,
+                  project_id: project.id,
+                  license_id: pl.license_id,
+                  percentage: pl.percentage,
+                  license_name: licenseData?.name || 'Neznámá licence'
+                };
+              })
+            );
 
             return {
               ...project,
-              project_licenses: (licensesData || []).map(pl => ({
-                id: pl.id,
-                project_id: project.id,
-                license_id: pl.license_id,
-                percentage: pl.percentage,
-                license_name: Array.isArray(pl.licenses) && pl.licenses.length > 0 ? pl.licenses[0].name : 'Neznámá licence'
-              }))
+              project_licenses: projectLicenses
             };
           })
         );
