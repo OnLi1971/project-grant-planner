@@ -6,7 +6,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Edit, Save, X, Plus, MousePointer, MousePointer2, FolderPlus, Copy } from 'lucide-react';
 import { usePlanning } from '@/contexts/PlanningContext';
-import { ProjectManagement } from '@/components/ProjectManagement';
 import { getProjectColor, getCustomerByProjectCode } from '@/utils/colorSystem';
 import { getWeek } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';

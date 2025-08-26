@@ -1,5 +1,3 @@
-import { customers, projects } from '@/data/projectsData';
-
 // Definice barev pro jednotlivé zákazníky
 const CUSTOMER_COLORS = {
   'ST': {
@@ -59,6 +57,22 @@ const ST_PROJECT_COLORS: { [key: string]: string } = {
   'ST_TRAM_HS': 'hsl(211 100% 27%)',      // bg-blue-800
 };
 
+// Mapování projektů na zákazníky (statické fallback)
+const PROJECT_TO_CUSTOMER_MAP: { [key: string]: string } = {
+  'ST_EMU_INT': 'ST',
+  'ST_TRAM_INT': 'ST',
+  'ST_MAINZ': 'ST',
+  'ST_KASSEL': 'ST',
+  'ST_BLAVA': 'ST',
+  'ST_FEM': 'ST',
+  'ST_POZAR': 'ST',
+  'ST_JIGS': 'ST',
+  'ST_TRAM_HS': 'ST',
+  'NU_CRAIN': 'NUVIA',
+  'WA_HVAC': 'WABTEC',
+  'SAF_FEM': 'SAFRAN'
+};
+
 // Získání barvy zákazníka podle kódu
 export const getCustomerColor = (customerCode: string, variant: 'primary' | 'light' | 'dark' | 'accent' = 'primary'): string => {
   const colors = CUSTOMER_COLORS[customerCode as keyof typeof CUSTOMER_COLORS];
@@ -72,29 +86,18 @@ export const getProjectColor = (projectCode: string, variant: 'primary' | 'light
     return ST_PROJECT_COLORS[projectCode];
   }
 
-  // Najdeme projekt
-  const project = projects.find(p => p.code === projectCode);
-  if (!project) {
-    return CUSTOMER_COLORS['N/A'][variant];
+  // Použijeme statické mapování jako fallback
+  const customerCode = PROJECT_TO_CUSTOMER_MAP[projectCode];
+  if (customerCode) {
+    return getCustomerColor(customerCode, variant);
   }
 
-  // Najdeme zákazníka
-  const customer = customers.find(c => c.id === project.customerId);
-  if (!customer) {
-    return CUSTOMER_COLORS['N/A'][variant];
-  }
-
-  // Vrátíme barvu zákazníka
-  return getCustomerColor(customer.code, variant);
+  return CUSTOMER_COLORS['N/A'][variant];
 };
 
-// Získání barvy podle zákazníka ID
+// Získání barvy podle zákazníka ID (fallback implementace)
 export const getColorByCustomerId = (customerId: string, variant: 'primary' | 'light' | 'dark' | 'accent' = 'primary'): string => {
-  const customer = customers.find(c => c.id === customerId);
-  if (!customer) {
-    return CUSTOMER_COLORS['N/A'][variant];
-  }
-  return getCustomerColor(customer.code, variant);
+  return CUSTOMER_COLORS['N/A'][variant];
 };
 
 // Získání barvy s indexem pro fallback (pro zachování kompatibility)
@@ -131,10 +134,15 @@ export const getAllCustomerColors = () => {
   }));
 };
 
-// Získání zákazníka podle projektu kódu
+// Získání zákazníka podle projektu kódu (fallback implementace)
 export const getCustomerByProjectCode = (projectCode: string) => {
-  const project = projects.find(p => p.code === projectCode);
-  if (!project) return null;
-  
-  return customers.find(c => c.id === project.customerId) || null;
+  const customerCode = PROJECT_TO_CUSTOMER_MAP[projectCode];
+  if (customerCode) {
+    return {
+      id: customerCode,
+      code: customerCode,
+      name: customerCode
+    };
+  }
+  return null;
 };
