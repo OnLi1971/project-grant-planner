@@ -68,9 +68,11 @@ const PROJECT_TO_CUSTOMER_MAP: { [key: string]: string } = {
   'ST_POZAR': 'ST',
   'ST_JIGS': 'ST',
   'ST_TRAM_HS': 'ST',
+  'ST_ELEKTRO': 'ST',
   'NU_CRAIN': 'NUVIA',
   'WA_HVAC': 'WABTEC',
-  'SAF_FEM': 'SAFRAN'
+  'SAF_FEM': 'SAFRAN',
+  'AIRB_INT': 'Zakazni Airbus'
 };
 
 // Získání barvy zákazníka podle kódu

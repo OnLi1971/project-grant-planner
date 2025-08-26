@@ -12,7 +12,7 @@ interface EngineerOverview {
   spolecnost: string;
   orgVedouci: string;
   planDoKonceRoku: Array<{ cw: string; projekt: string }>;
-  status: 'VOLNY' | 'CASTECNE' | 'PLNE' | 'DOVOLENA';
+  status: string;
 }
 
 // Funkce pro výpočet aktuálního kalendářního týdne
@@ -100,26 +100,64 @@ export const PlanningTable: React.FC = () => {
           };
         });
         
-        // Určení statusu na základě plánu (prvních 4 týdnů)
+        // Určení statusu na základě dominujícího zákazníka (prvních 4 týdnů)
         const first4Weeks = planDoKonceRoku.slice(0, 4);
-        const freeCount = first4Weeks.filter(p => 
-          p.projekt === 'FREE' || 
-          p.projekt === 'NEMOC' || 
-          p.projekt === 'OVER' || 
-          !p.projekt
-        ).length;
-        const vacationCount = first4Weeks.filter(p => p.projekt === 'DOVOLENÁ').length;
+        const projectCounts: { [key: string]: number } = {};
         
-        let status: 'VOLNY' | 'CASTECNE' | 'PLNE' | 'DOVOLENA';
+        first4Weeks.forEach(week => {
+          if (week.projekt && week.projekt !== 'FREE' && week.projekt !== 'NEMOC' && week.projekt !== 'OVER') {
+            projectCounts[week.projekt] = (projectCounts[week.projekt] || 0) + 1;
+          }
+        });
         
-        if (vacationCount >= 2) {
+        // Najdi dominující projekt
+        let dominantProject = '';
+        let maxCount = 0;
+        Object.entries(projectCounts).forEach(([project, count]) => {
+          if (count > maxCount) {
+            maxCount = count;
+            dominantProject = project;
+          }
+        });
+        
+        let status: string;
+        
+        if (first4Weeks.filter(p => p.projekt === 'DOVOLENÁ').length >= 2) {
           status = 'DOVOLENA';
-        } else if (freeCount >= 3) {
-          status = 'VOLNY';
-        } else if (freeCount >= 1) {
-          status = 'CASTECNE';
+        } else if (dominantProject && maxCount >= 2) {
+          // Mapování projektů na zákazníky
+          const projectToCustomer: { [key: string]: string } = {
+            'ST_EMU_INT': 'ST',
+            'ST_TRAM_INT': 'ST', 
+            'ST_MAINZ': 'ST',
+            'ST_KASSEL': 'ST',
+            'ST_BLAVA': 'ST',
+            'ST_FEM': 'ST',
+            'ST_POZAR': 'ST',
+            'ST_JIGS': 'ST',
+            'ST_TRAM_HS': 'ST',
+            'ST_ELEKTRO': 'ST',
+            'NU_CRAIN': 'NUVIA',
+            'WA_HVAC': 'WABTEC',
+            'SAF_FEM': 'SAFRAN',
+            'AIRB_INT': 'Zakazni Airbus'
+          };
+          status = projectToCustomer[dominantProject] || dominantProject;
         } else {
-          status = 'PLNE';
+          const freeCount = first4Weeks.filter(p => 
+            p.projekt === 'FREE' || 
+            p.projekt === 'NEMOC' || 
+            p.projekt === 'OVER' || 
+            !p.projekt
+          ).length;
+          
+          if (freeCount >= 3) {
+            status = 'VOLNY';
+          } else if (freeCount >= 1) {
+            status = 'CASTECNE';
+          } else {
+            status = 'PLNE';
+          }
         }
         
         return {
@@ -160,7 +198,7 @@ export const PlanningTable: React.FC = () => {
     setFilteredData(filtered);
   }, [overviewData, filterOrgVedouci, filterSpolecnost, searchKonstrukter]);
 
-  const getStatusBadge = (status: EngineerOverview['status']) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
       case 'VOLNY':
         return <Badge className="bg-success/20 text-success border-success/30">Volný</Badge>;
@@ -170,8 +208,18 @@ export const PlanningTable: React.FC = () => {
         return <Badge className="bg-primary/20 text-primary border-primary/30">Plně vytížen</Badge>;
       case 'DOVOLENA':
         return <Badge variant="outline" className="bg-accent text-accent-foreground border-accent">Dovolená</Badge>;
+      case 'ST':
+        return <Badge className="bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30">ST</Badge>;
+      case 'NUVIA':
+        return <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30">NUVIA</Badge>;
+      case 'WABTEC':
+        return <Badge className="bg-purple-500/20 text-purple-600 dark:text-purple-400 border-purple-500/30">WABTEC</Badge>;
+      case 'SAFRAN':
+        return <Badge className="bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30">SAFRAN</Badge>;
+      case 'Zakazni Airbus':
+        return <Badge className="bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border-indigo-500/30">Zakazni Airbus</Badge>;
       default:
-        return <Badge variant="secondary">Neznámý</Badge>;
+        return <Badge variant="secondary">{status}</Badge>;
     }
   };
 
