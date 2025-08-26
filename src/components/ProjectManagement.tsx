@@ -505,25 +505,24 @@ export const ProjectManagement = () => {
     }
   };
 
-  // Získej všechny používané projekty z plánovacích dat
-  const usedProjects = useMemo(() => {
-    const projectCodes = Array.from(new Set(planningData.map(entry => entry.projekt).filter(Boolean)));
-    return projectCodes.map(code => {
-      const projectData = projects.find(p => p.code === code);
-      const customer = customers.find(c => c.id === projectData?.customer_id);
-      const pm = projectManagers.find(p => p.id === projectData?.project_manager_id);
-      const program = programs.find(p => p.id === projectData?.program_id);
+  // Získej všechny projekty s informací o jejich použití
+  const allProjects = useMemo(() => {
+    return projects.map(project => {
+      const customer = customers.find(c => c.id === project.customer_id);
+      const pm = projectManagers.find(p => p.id === project.project_manager_id);
+      const program = programs.find(p => p.id === project.program_id);
+      const usage = planningData.filter(entry => entry.projekt === project.code).length;
       
       return {
-        code,
-        project: projectData,
+        code: project.code,
+        project,
         customer,
         pm,
         program,
-        usage: planningData.filter(entry => entry.projekt === code).length
+        usage
       };
     }).sort((a, b) => b.usage - a.usage);
-  }, [planningData, projects, customers, projectManagers, programs]);
+  }, [projects, customers, projectManagers, programs, planningData]);
 
   const getProjectBadge = (code: string) => {
     if (!code || code === 'FREE') return <Badge variant="secondary">Volný</Badge>;
@@ -568,8 +567,8 @@ export const ProjectManagement = () => {
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-2">
             <Briefcase className="h-5 w-5" />
-            <h2 className="text-xl font-semibold">Používané projekty</h2>
-            <Badge variant="outline">{usedProjects.length} projektů</Badge>
+            <h2 className="text-xl font-semibold">Správa projektů</h2>
+            <Badge variant="outline">{allProjects.length} projektů</Badge>
           </div>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
@@ -797,7 +796,7 @@ export const ProjectManagement = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {usedProjects.map((item, index) => (
+            {allProjects.map((item, index) => (
               <TableRow key={item.code} className={index % 2 === 1 ? 'bg-muted/30' : 'bg-background'}>
                 <TableCell className="font-medium">
                   <div className="flex flex-col gap-1">
@@ -878,10 +877,10 @@ export const ProjectManagement = () => {
                 </TableCell>
               </TableRow>
             ))}
-            {usedProjects.length === 0 && (
+            {allProjects.length === 0 && (
               <TableRow>
                 <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
-                  Zatím nejsou používány žádné projekty
+                  Zatím nejsou vytvořeny žádné projekty
                 </TableCell>
               </TableRow>
             )}
