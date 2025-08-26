@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,15 +7,33 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, Edit, Save, X, Plus, MousePointer, MousePointer2, FolderPlus, Copy } from 'lucide-react';
 import { usePlanning } from '@/contexts/PlanningContext';
 import { ProjectManagement } from '@/components/ProjectManagement';
-import { projects, customers, projectManagers, programs, type Project } from '@/data/projectsData';
 import { getProjectColor, getCustomerByProjectCode } from '@/utils/colorSystem';
 import { getWeek } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
 
 interface WeekPlan {
   cw: string;
   mesic: string;
   mhTyden: number;
   projekt: string;
+}
+
+interface DatabaseProject {
+  id: string;
+  name: string;
+  code: string;
+  customer_id: string;
+  project_manager_id: string;
+  program_id: string;
+  start_date?: string;
+  end_date?: string;
+  status: string;
+  hourly_rate?: number;
+  project_type: string;
+  budget?: number;
+  average_hourly_rate?: number;
+  project_status?: string;
+  probability?: number;
 }
 
 interface EditableCell {
@@ -122,6 +140,9 @@ const generatePlanningDataForEditor = (data: any[]): { [key: string]: WeekPlan[]
 export const PlanningEditor: React.FC = () => {
   const { planningData, updatePlanningEntry, addEngineer, copyPlan, savePlan, resetToOriginal } = usePlanning();
   
+  const [projects, setProjects] = useState<DatabaseProject[]>([]);
+  const [loading, setLoading] = useState(true);
+  
   const planData = useMemo(() => generatePlanningDataForEditor(planningData), [planningData]);
   const konstrukteri = useMemo(() => Object.keys(planData).sort(), [planData]);
   
@@ -132,14 +153,39 @@ export const PlanningEditor: React.FC = () => {
   const [availableProjectsLocal, setAvailableProjectsLocal] = useState<string[]>(availableProjects);
   const [copyFromKonstrukter, setCopyFromKonstrukter] = useState<string>('');
 
+  // Načteme projekty z databáze
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('projects')
+          .select('*')
+          .eq('status', 'active');
+        
+        if (error) {
+          console.error('Error fetching projects:', error);
+        } else {
+          setProjects(data || []);
+        }
+      } catch (error) {
+        console.error('Error fetching projects:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProjects();
+  }, []);
+
   // Dynamicky aktualizujeme seznam projektů
   const allProjectCodes = useMemo(() => {
     const staticProjects = availableProjects;
     const dynamicProjects = projects.map(p => p.code);
     return Array.from(new Set([...staticProjects, ...dynamicProjects]));
-  }, []);
+  }, [projects]);
 
-  const handleProjectCreated = (newProject: Project) => {
+  const handleProjectCreated = (newProject: DatabaseProject) => {
+    setProjects(prev => [...prev, newProject]);
     setAvailableProjectsLocal(prev => {
       if (!prev.includes(newProject.code)) {
         return [...prev, newProject.code];
