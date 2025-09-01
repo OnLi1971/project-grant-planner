@@ -4,8 +4,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Users, Calendar, Filter, Download } from 'lucide-react';
+import { Users, Calendar, Filter, Download, FileText } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { usePlanning } from '@/contexts/PlanningContext';
 import { getWeek } from 'date-fns';
 
@@ -233,6 +235,176 @@ export const FreeCapacityOverview = () => {
     XLSX.writeFile(wb, fileName);
   };
 
+  // Funkce pro export do PDF
+  const exportToPDF = async () => {
+    if (engineersWithFreeCapacity.length === 0) {
+      return;
+    }
+
+    const pdf = new jsPDF('l', 'mm', 'a4'); // Landscape orientation
+    
+    // Nastavení fontu a základních stylů
+    pdf.setFont('helvetica');
+    
+    // Hlavička
+    pdf.setFontSize(20);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Přehled volných kapacit konstruktérů', 20, 20);
+    
+    // Datum a filtry
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'normal');
+    const currentDate = new Date().toLocaleDateString('cs-CZ');
+    let filterText = '';
+    if (selectedWeeks.length > 0) {
+      filterText = ` | Filtr: ${selectedWeeks.join(', ')}`;
+    } else if (selectedMonths.length > 0) {
+      filterText = ` | Filtr: ${selectedMonths.join(', ')}`;
+    }
+    pdf.text(`Vygenerováno: ${currentDate}${filterText}`, 20, 30);
+    
+    // Souhrnné statistiky
+    pdf.setFontSize(14);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Souhrnné statistiky', 20, 45);
+    
+    pdf.setFontSize(11);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(`Celkem konstruktérů s volnými kapacitami: ${engineersWithFree}`, 20, 55);
+    pdf.text(`Celkem volných týdnů: ${totalFreeWeeks}`, 20, 62);
+    pdf.text(`Průměrná volná kapacita: ${avgFreePercentage}%`, 20, 69);
+    
+    // Tabulka - hlavičky
+    let yPos = 85;
+    const colWidths = [40, 20, 25, 25]; // Konstruktér, Volné týdny, Vytížené týdny, Kapacita %
+    const weekColWidth = (297 - 20 - colWidths.reduce((a, b) => a + b, 0) - 10) / filteredWeeks.length; // Zbývající prostor pro týdny
+    
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'bold');
+    
+    // Hlavička tabulky
+    pdf.rect(20, yPos - 5, colWidths[0], 8);
+    pdf.text('Konstruktér', 22, yPos);
+    
+    pdf.rect(20 + colWidths[0], yPos - 5, colWidths[1], 8);
+    pdf.text('Volné', 22 + colWidths[0], yPos);
+    
+    pdf.rect(20 + colWidths[0] + colWidths[1], yPos - 5, colWidths[2], 8);
+    pdf.text('Vytížené', 22 + colWidths[0] + colWidths[1], yPos);
+    
+    pdf.rect(20 + colWidths[0] + colWidths[1] + colWidths[2], yPos - 5, colWidths[3], 8);
+    pdf.text('Kapacita %', 22 + colWidths[0] + colWidths[1] + colWidths[2], yPos);
+    
+    // Týdny
+    let weekXPos = 20 + colWidths.reduce((a, b) => a + b, 0);
+    filteredWeeks.forEach((week, index) => {
+      pdf.rect(weekXPos, yPos - 5, weekColWidth, 8);
+      pdf.text(week, weekXPos + 1, yPos);
+      weekXPos += weekColWidth;
+    });
+    
+    yPos += 10;
+    
+    // Data konstruktérů
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(9);
+    
+    engineersWithFreeCapacity.forEach((engineer, index) => {
+      if (yPos > 190) { // Nová stránka
+        pdf.addPage();
+        yPos = 20;
+      }
+      
+      // Alternující barvy řádků
+      if (index % 2 === 0) {
+        pdf.setFillColor(245, 245, 245);
+        pdf.rect(20, yPos - 5, 297 - 40, 8, 'F');
+      }
+      
+      // Konstruktér
+      pdf.text(engineer.name.length > 25 ? engineer.name.substring(0, 22) + '...' : engineer.name, 22, yPos);
+      
+      // Volné týdny
+      pdf.text(engineer.freeWeeks.toString(), 22 + colWidths[0], yPos);
+      
+      // Vytížené týdny
+      pdf.text(engineer.busyWeeks.toString(), 22 + colWidths[0] + colWidths[1], yPos);
+      
+      // Kapacita %
+      pdf.text(`${engineer.freePercentage}%`, 22 + colWidths[0] + colWidths[1] + colWidths[2], yPos);
+      
+      // Projekty po týdnech
+      weekXPos = 20 + colWidths.reduce((a, b) => a + b, 0);
+      filteredWeeks.forEach(week => {
+        const weekData = engineer.weeks.find(w => w.cw === week);
+        const isFree = weekData?.projekt === 'FREE' || 
+                       weekData?.projekt === 'NEMOC' || 
+                       weekData?.projekt === 'OVER' || 
+                       weekData?.projekt === '' || 
+                       !weekData?.projekt;
+        
+        if (isFree) {
+          pdf.setTextColor(0, 128, 0); // Zelená pro volné
+          pdf.text('FREE', weekXPos + 1, yPos);
+        } else {
+          pdf.setTextColor(0, 0, 0); // Černá pro projekty
+          const projektText = weekData?.projekt || '';
+          const shortProjekt = projektText.length > 6 ? projektText.substring(0, 6) : projektText;
+          pdf.text(shortProjekt, weekXPos + 1, yPos);
+        }
+        pdf.setTextColor(0, 0, 0); // Reset barvy
+        weekXPos += weekColWidth;
+      });
+      
+      yPos += 8;
+    });
+    
+    // Legenda na poslední stránce
+    if (yPos > 150) {
+      pdf.addPage();
+      yPos = 20;
+    } else {
+      yPos += 15;
+    }
+    
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Legenda:', 20, yPos);
+    
+    yPos += 10;
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'normal');
+    
+    const legendItems = [
+      { code: 'FREE', desc: 'Volný týden', color: [0, 128, 0] },
+      { code: 'DOVOLENÁ', desc: 'Dovolená', color: [0, 0, 255] },
+      { code: 'NEMOC', desc: 'Nemoc', color: [255, 0, 0] },
+      { code: 'ST_XXX', desc: 'ST projekt', color: [128, 0, 128] },
+      { code: 'NU_XXX', desc: 'NUVIA projekt', color: [255, 165, 0] }
+    ];
+    
+    legendItems.forEach((item, index) => {
+      pdf.setTextColor(item.color[0], item.color[1], item.color[2]);
+      pdf.text(item.code, 20, yPos);
+      pdf.setTextColor(0, 0, 0);
+      pdf.text(` - ${item.desc}`, 45, yPos);
+      yPos += 7;
+    });
+    
+    // Generování názvu souboru
+    const currentDateStr = new Date().toISOString().split('T')[0];
+    let fileName = `volne-kapacity-${currentDateStr}.pdf`;
+    
+    if (selectedWeeks.length > 0) {
+      fileName = `volne-kapacity-${selectedWeeks.join('-')}-${currentDateStr}.pdf`;
+    } else if (selectedMonths.length > 0) {
+      fileName = `volne-kapacity-${selectedMonths.join('-')}-${currentDateStr}.pdf`;
+    }
+    
+    // Uložení PDF
+    pdf.save(fileName);
+  };
+
   return (
     <div className="space-y-6 p-6 bg-background min-h-screen">
 
@@ -344,8 +516,8 @@ export const FreeCapacityOverview = () => {
             </Button>
           )}
 
-          {/* Export to Excel Button */}
-          <div className="ml-auto">
+          {/* Export Buttons */}
+          <div className="ml-auto flex gap-2">
             <Button 
               onClick={exportToExcel}
               disabled={engineersWithFreeCapacity.length === 0}
@@ -353,6 +525,16 @@ export const FreeCapacityOverview = () => {
             >
               <Download className="h-4 w-4" />
               Export do Excel
+            </Button>
+            
+            <Button 
+              onClick={exportToPDF}
+              disabled={engineersWithFreeCapacity.length === 0}
+              className="gap-2"
+              variant="outline"
+            >
+              <FileText className="h-4 w-4" />
+              Export do PDF
             </Button>
           </div>
         </div>
