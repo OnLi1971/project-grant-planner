@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -30,7 +30,6 @@ export const OrganizationalStructure = () => {
 
   const loadEmployees = async () => {
     try {
-      setLoading(true);
       const { data, error } = await supabase
         .from('employees')
         .select('*')
@@ -49,18 +48,10 @@ export const OrganizationalStructure = () => {
     }
   };
 
-  // Extract unique values from loaded data
-  const { organizationalLeaders, companies, programs } = useMemo(() => {
-    const leaders = [...new Set(employees.map(e => e.organizational_leader))].sort();
-    const companiesList = [...new Set(employees.map(e => e.company))].sort();
-    const programsList = [...new Set(employees.map(e => e.program).filter(p => p && p !== 'N/A'))].sort();
-    
-    return {
-      organizationalLeaders: leaders,
-      companies: companiesList,
-      programs: programsList
-    };
-  }, [employees]);
+  // Generate unique values for filters from data
+  const organizationalLeaders = Array.from(new Set(employees.map(e => e.organizational_leader))).sort();
+  const companies = Array.from(new Set(employees.map(e => e.company))).sort();
+  const programs = Array.from(new Set(employees.map(e => e.program).filter(p => p && p !== 'N/A'))).sort();
 
   const filteredEmployees = employees.filter(employee => {
     const matchesSearch = employee.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -109,6 +100,18 @@ export const OrganizationalStructure = () => {
     
     return <Badge variant="outline">{shortPrograms[program] || program}</Badge>;
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <Card className="p-6 shadow-card-custom">
+          <div className="flex items-center justify-center py-8">
+            <div className="text-muted-foreground">Načítání zaměstnanců...</div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -166,18 +169,12 @@ export const OrganizationalStructure = () => {
               {programs.map(program => (
                 <SelectItem key={program} value={program}>{program}</SelectItem>
               ))}
-              <SelectItem value="N/A">N/A</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
-        {loading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="text-muted-foreground">Načítání zaměstnanců...</div>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <Table>
+        <div className="overflow-x-auto">
+          <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Jméno</TableHead>
@@ -210,8 +207,7 @@ export const OrganizationalStructure = () => {
               )}
             </TableBody>
           </Table>
-          </div>
-        )}
+        </div>
 
         {/* Statistics */}
         <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -257,7 +253,7 @@ export const OrganizationalStructure = () => {
               <div>
                 <p className="text-sm font-medium">Programy</p>
                 <p className="text-xl font-bold text-muted-foreground">
-                  {programs.filter(p => p !== 'N/A').length}
+                  {programs.length}
                 </p>
               </div>
             </div>
