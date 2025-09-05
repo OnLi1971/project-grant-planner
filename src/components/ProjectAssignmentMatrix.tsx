@@ -206,7 +206,7 @@ export const ProjectAssignmentMatrix = () => {
   // Create monthly aggregated data
   const monthlyData = useMemo(() => {
     const engineers = [...new Set(planningData.map(entry => entry.konstrukter))];
-    const monthlyMatrix: { [engineer: string]: { [month: string]: { projects: string[], totalHours: number, dominantProject: string, utilization: number } } } = {};
+    const monthlyMatrix: { [engineer: string]: { [month: string]: { projects: string[], totalHours: number, dominantProject: string } } } = {};
     
     engineers.forEach(engineer => {
       monthlyMatrix[engineer] = {};
@@ -228,15 +228,10 @@ export const ProjectAssignmentMatrix = () => {
           monthProjects[a] > monthProjects[b] ? a : b, projects[0] || ''
         );
         
-        // Calculate utilization percentage (40 hours per week * number of weeks)
-        const expectedHours = month.weeks.length * 40;
-        const utilization = expectedHours > 0 ? Math.round((totalHours / expectedHours) * 100) : 0;
-        
         monthlyMatrix[engineer][month.name] = {
           projects,
           totalHours,
-          dominantProject,
-          utilization
+          dominantProject
         };
       });
     });
@@ -605,42 +600,30 @@ export const ProjectAssignmentMatrix = () => {
                                monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                              }`}
                            >
-                             {hasProjects && (
-                               <div className="flex flex-col gap-1">
-                                 {/* Utilization percentage */}
-                                 <div className="mb-1">
-                                   <span className={`text-xs font-bold px-2 py-1 rounded-full ${
-                                     monthData.utilization >= 100 ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' :
-                                     monthData.utilization >= 90 ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
-                                     monthData.utilization >= 70 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
-                                     'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                                   }`}>
-                                     {monthData.utilization}%
-                                   </span>
-                                 </div>
-                                 
-                                 {/* Main project */}
-                                 <div 
-                                   className={`text-xs px-2 py-1 w-full justify-center font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-md inline-flex items-center ${getProjectBadgeStyle(sortedProjects[0])}`}
-                                 >
-                                   <span className="truncate max-w-[100px]" title={sortedProjects[0]}>
-                                     {sortedProjects[0]}
-                                   </span>
-                                 </div>
-                                 
-                                 {/* Additional projects */}
-                                 {sortedProjects.slice(1).map((project, index) => (
-                                   <div 
-                                     key={index}
-                                     className={`text-xs px-1.5 py-0.5 w-full justify-center font-normal opacity-75 rounded-sm inline-flex items-center ${getProjectBadgeStyle(project)}`}
-                                   >
-                                     <span className="truncate max-w-[90px] text-xs" title={project}>
-                                       {project}
-                                     </span>
-                                   </div>
-                                 ))}
-                               </div>
-                             )}
+                              {hasProjects && (
+                                <div className="flex flex-col gap-1">
+                                  {/* Main project */}
+                                  <div 
+                                    className={`text-xs px-2 py-1 w-full justify-center font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-md inline-flex items-center ${getProjectBadgeStyle(sortedProjects[0])}`}
+                                  >
+                                    <span className="truncate max-w-[100px]" title={sortedProjects[0]}>
+                                      {sortedProjects[0]}
+                                    </span>
+                                  </div>
+                                  
+                                  {/* Additional projects */}
+                                  {sortedProjects.slice(1).map((project, index) => (
+                                    <div 
+                                      key={index}
+                                      className={`text-xs px-1.5 py-0.5 w-full justify-center font-normal opacity-75 rounded-sm inline-flex items-center ${getProjectBadgeStyle(project)}`}
+                                    >
+                                      <span className="truncate max-w-[90px] text-xs" title={project}>
+                                        {project}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                            </td>
                         );
                       })
