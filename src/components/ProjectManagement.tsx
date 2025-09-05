@@ -7,11 +7,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Edit, Briefcase, Building, Trash2, X, Eye, Save } from 'lucide-react';
+import { Plus, Edit, Briefcase, Building, Trash2, X, Eye, Save, Users } from 'lucide-react';
 import { usePlanning } from '@/contexts/PlanningContext';
 import { getProjectColor, getCustomerByProjectCode } from '@/utils/colorSystem';
 import { supabase } from '@/integrations/supabase/client';
+import { OrganizationalStructure } from '@/components/OrganizationalStructure';
 
 interface License {
   id: string;
@@ -562,14 +564,26 @@ export const ProjectManagement = () => {
 
   return (
     <div className="space-y-6">
-      {/* Přehled používaných projektů */}
-      <Card className="p-6 shadow-card-custom">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-2">
-            <Briefcase className="h-5 w-5" />
-            <h2 className="text-xl font-semibold">Správa projektů</h2>
-            <Badge variant="outline">{allProjects.length} projektů</Badge>
-          </div>
+      <Tabs defaultValue="projekty" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="projekty" className="flex items-center gap-2">
+            <Briefcase className="h-4 w-4" />
+            Správa projektů
+          </TabsTrigger>
+          <TabsTrigger value="organizace" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Organizační struktura
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="projekty" className="space-y-6">
+          <Card className="p-6 shadow-card-custom">
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex items-center gap-2">
+                <Briefcase className="h-5 w-5" />
+                <h2 className="text-xl font-semibold">Správa projektů</h2>
+                <Badge variant="outline">{allProjects.length} projektů</Badge>
+              </div>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button className="flex items-center gap-2">
@@ -886,7 +900,13 @@ export const ProjectManagement = () => {
             )}
           </TableBody>
         </Table>
-      </Card>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="organizace">
+          <OrganizationalStructure />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
