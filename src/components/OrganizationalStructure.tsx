@@ -1,21 +1,70 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Users, Building, Search } from 'lucide-react';
-import { employees, organizationalLeaders, companies, programs } from '@/data/organizationalStructure';
+import { supabase } from '@/integrations/supabase/client';
+
+interface Employee {
+  id: string;
+  name: string;
+  company: string;
+  program: string;
+  organizational_leader: string;
+}
 
 export const OrganizationalStructure = () => {
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterLeader, setFilterLeader] = useState('all');
   const [filterCompany, setFilterCompany] = useState('all');
   const [filterProgram, setFilterProgram] = useState('all');
 
+  // Load employees from database
+  useEffect(() => {
+    loadEmployees();
+  }, []);
+
+  const loadEmployees = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('employees')
+        .select('*')
+        .order('name');
+
+      if (error) {
+        console.error('Error loading employees:', error);
+        return;
+      }
+
+      setEmployees(data || []);
+    } catch (error) {
+      console.error('Error loading employees:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Extract unique values from loaded data
+  const { organizationalLeaders, companies, programs } = useMemo(() => {
+    const leaders = [...new Set(employees.map(e => e.organizational_leader))].sort();
+    const companiesList = [...new Set(employees.map(e => e.company))].sort();
+    const programsList = [...new Set(employees.map(e => e.program).filter(p => p && p !== 'N/A'))].sort();
+    
+    return {
+      organizationalLeaders: leaders,
+      companies: companiesList,
+      programs: programsList
+    };
+  }, [employees]);
+
   const filteredEmployees = employees.filter(employee => {
     const matchesSearch = employee.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesLeader = filterLeader === 'all' || employee.organizationalLeader === filterLeader;
+    const matchesLeader = filterLeader === 'all' || employee.organizational_leader === filterLeader;
     const matchesCompany = filterCompany === 'all' || employee.company === filterCompany;
     const matchesProgram = filterProgram === 'all' || employee.program === filterProgram;
     
@@ -117,12 +166,18 @@ export const OrganizationalStructure = () => {
               {programs.map(program => (
                 <SelectItem key={program} value={program}>{program}</SelectItem>
               ))}
+              <SelectItem value="N/A">N/A</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
-        <div className="overflow-x-auto">
-          <Table>
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="text-muted-foreground">Načítání zaměstnanců...</div>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Jméno</TableHead>
@@ -139,9 +194,9 @@ export const OrganizationalStructure = () => {
                   <TableCell>{getProgramBadge(employee.program)}</TableCell>
                   <TableCell>
                     <Badge 
-                      className={`${getLeaderBadgeColor(employee.organizationalLeader)} text-white border-none`}
+                      className={`${getLeaderBadgeColor(employee.organizational_leader)} text-white border-none`}
                     >
-                      {employee.organizationalLeader}
+                      {employee.organizational_leader}
                     </Badge>
                   </TableCell>
                 </TableRow>
@@ -155,7 +210,8 @@ export const OrganizationalStructure = () => {
               )}
             </TableBody>
           </Table>
-        </div>
+          </div>
+        )}
 
         {/* Statistics */}
         <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">

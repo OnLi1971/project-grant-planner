@@ -38,6 +38,42 @@ export type Database = {
         }
         Relationships: []
       }
+      employees: {
+        Row: {
+          company: string
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          organizational_leader: string
+          program: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          company: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          organizational_leader: string
+          program?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          company?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          organizational_leader?: string
+          program?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       licenses: {
         Row: {
           cost: number
