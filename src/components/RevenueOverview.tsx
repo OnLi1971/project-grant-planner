@@ -575,35 +575,26 @@ export const RevenueOverview = () => {
           </div>
           
           {/* Celkové hodnoty pod grafem */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div className="flex justify-center gap-8 mb-6">
             {viewType === 'kvartal' ? (
               [
-                { key: 'Q3-2025', label: 'Q3 2025', months: ['srpen', 'září'] },
-                { key: 'Q4-2025', label: 'Q4 2025', months: ['říjen', 'listopad', 'prosinec'] },
-                { key: 'Q1-2026', label: 'Q1 2026', months: ['leden', 'únor', 'březen'] },
-                { key: 'Q2-2026', label: 'Q2 2026', months: ['duben', 'květen', 'červen'] }
+                { key: 'Q3-2025', label: 'Q3 25', months: ['srpen', 'září'] },
+                { key: 'Q4-2025', label: 'Q4 25', months: ['říjen', 'listopad', 'prosinec'] },
+                { key: 'Q1-2026', label: 'Q1 26', months: ['leden', 'únor', 'březen'] },
+                { key: 'Q2-2026', label: 'Q2 26', months: ['duben', 'květen', 'červen'] }
               ].map(({ key, label, months }) => {
                 const quarterTotal = months.reduce((sum, month) => {
                   const monthData = monthlyRevenueByProject[month] || {};
                   return sum + Object.values(monthData).reduce((monthSum: number, value: number) => monthSum + value, 0);
                 }, 0);
                 
-                const monthBreakdown = months.map(month => {
-                  const monthData = monthlyRevenueByProject[month] || {};
-                  const monthTotal = Object.values(monthData).reduce((sum: number, value: number) => sum + value, 0);
-                  return `${month.slice(0, 3)}: ${monthTotal.toLocaleString('cs-CZ', { maximumFractionDigits: 0 })}`;
-                }).join(' + ');
-                
                 return (
-                  <div key={key} className="p-3 bg-muted/50 rounded-lg">
-                    <div className="text-sm font-medium text-muted-foreground mb-1">
+                  <div key={key} className="text-center">
+                    <div className="text-sm font-medium text-muted-foreground">
                       {label}
                     </div>
-                    <div className="text-lg font-bold mb-1">
+                    <div className="text-lg font-bold">
                       {quarterTotal.toLocaleString('cs-CZ', { maximumFractionDigits: 0 })} Kč
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      ({monthBreakdown})
                     </div>
                   </div>
                 );
@@ -613,7 +604,7 @@ export const RevenueOverview = () => {
                 const monthData = monthlyRevenueByProject[month] || {};
                 const monthTotal = Object.values(monthData).reduce((sum: number, value: number) => sum + value, 0);
                 return (
-                  <div key={month} className="text-center p-3 bg-muted/50 rounded-lg">
+                  <div key={month} className="text-center">
                     <div className="text-sm font-medium text-muted-foreground">
                       {month.slice(0, 3)}
                     </div>
