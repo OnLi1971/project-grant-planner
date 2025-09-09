@@ -35,7 +35,7 @@ interface DatabaseProgram {
 
 export const RevenueOverview = () => {
   const { planningData } = usePlanning();
-  const [filterType, setFilterType] = useState<'all' | 'customer' | 'program' | 'project'>('all');
+  const [filterType, setFilterType] = useState<'all' | 'customer' | 'program' | 'project' | 'kvartal'>('all');
   const [filterValue, setFilterValue] = useState<string>('all');
   const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
   const [projects, setProjects] = useState<DatabaseProject[]>([]);
@@ -154,8 +154,23 @@ export const RevenueOverview = () => {
 
   // Filtrovaná data podle vybraného filtru
   const filteredData = useMemo(() => {
-    if (filterType === 'all' || (filterType !== 'program' && filterValue === 'all')) {
+    if (filterType === 'all' || (filterType !== 'program' && filterType !== 'kvartal' && filterValue === 'all')) {
       return planningData;
+    }
+
+    // Kvartální filtrování
+    if (filterType === 'kvartal') {
+      if (filterValue === 'all') return planningData;
+      
+      const quarterMonths: { [key: string]: string[] } = {
+        'Q3-2025': ['srpen', 'září'],
+        'Q4-2025': ['říjen', 'listopad', 'prosinec'],
+        'Q1-2026': ['leden', 'únor', 'březen'],
+        'Q2-2026': ['duben', 'květen', 'červen']
+      };
+      
+      const months = quarterMonths[filterValue] || [];
+      return planningData.filter(entry => months.includes(entry.mesic));
     }
 
     return planningData.filter(entry => {
@@ -264,6 +279,13 @@ export const RevenueOverview = () => {
         return programs.map(p => ({ value: p.id, label: p.name }));
       case 'project':
         return projects.filter(p => (p.project_type === 'WP' && p.average_hourly_rate) || (p.project_type === 'Hodinovka' && p.budget)).map(p => ({ value: p.id, label: p.name }));
+      case 'kvartal':
+        return [
+          { value: 'Q3-2025', label: 'Q3 2025 (srpen-září)' },
+          { value: 'Q4-2025', label: 'Q4 2025 (říjen-prosinec)' },
+          { value: 'Q1-2026', label: 'Q1 2026 (leden-březen)' },
+          { value: 'Q2-2026', label: 'Q2 2026 (duben-červen)' }
+        ];
       default:
         return [];
     }
@@ -318,12 +340,13 @@ export const RevenueOverview = () => {
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Vše</SelectItem>
-                    <SelectItem value="customer">Zákazník</SelectItem>
-                    <SelectItem value="program">Program</SelectItem>
-                    <SelectItem value="project">Projekt</SelectItem>
-                  </SelectContent>
+                   <SelectContent>
+                     <SelectItem value="all">Vše</SelectItem>
+                     <SelectItem value="customer">Zákazník</SelectItem>
+                     <SelectItem value="program">Program</SelectItem>
+                     <SelectItem value="project">Projekt</SelectItem>
+                     <SelectItem value="kvartal">Kvartal</SelectItem>
+                   </SelectContent>
                 </Select>
               </div>
               {filterType === 'program' ? (
@@ -375,14 +398,19 @@ export const RevenueOverview = () => {
             <div className="text-2xl font-bold text-primary">
               Celkový obrat: {totalRevenue.toLocaleString('cs-CZ')} Kč
             </div>
-            <p className="text-sm text-muted-foreground mt-1">
-              {filterType === 'program' && selectedPrograms.length > 0
-                ? `Filtrováno podle programů: ${selectedPrograms.map(id => programs.find(p => p.id === id)?.name).join(', ')}`
-                : filterType !== 'all' && filterValue !== 'all' 
-                ? `Filtrováno podle: ${filterType === 'customer' ? 'zákazník' : filterType === 'project' ? 'projekt' : 'program'}`
-                : 'Všechny projekty s revenue'
-              }
-            </p>
+             <p className="text-sm text-muted-foreground mt-1">
+               {filterType === 'program' && selectedPrograms.length > 0
+                 ? `Filtrováno podle programů: ${selectedPrograms.map(id => programs.find(p => p.id === id)?.name).join(', ')}`
+                 : filterType !== 'all' && filterValue !== 'all' 
+                 ? `Filtrováno podle: ${
+                     filterType === 'customer' ? 'zákazník' : 
+                     filterType === 'project' ? 'projekt' : 
+                     filterType === 'kvartal' ? 'kvartal' : 
+                     'program'
+                   }`
+                 : 'Všechny projekty s revenue'
+               }
+             </p>
           </div>
 
           {/* Graf */}
