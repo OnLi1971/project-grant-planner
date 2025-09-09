@@ -840,22 +840,31 @@ export const ProjectManagement = () => {
                      </div>
                    )}
                  </TableCell>
-                 <TableCell>
-                   {item.project?.budget ? (
-                     <div className="flex flex-col gap-1">
-                       <span>
-                         {item.project.project_type === 'WP' 
-                           ? `${item.project.budget} hod` 
-                           : `${item.project.budget.toLocaleString('cs-CZ')} Kč/hod`}
-                       </span>
-                       {item.project.project_type === 'WP' && item.project.average_hourly_rate && (
-                         <span className="text-xs text-muted-foreground">
-                           Ø {item.project.average_hourly_rate.toLocaleString('cs-CZ')} Kč/hod
-                         </span>
-                       )}
-                     </div>
-                   ) : 'N/A'}
-                 </TableCell>
+                  <TableCell>
+                    {/* Pro WP projekty: budget v hodinách NEBO průměrná hodinová sazba */}
+                    {/* Pro Hodinovka projekty: budget jako hodinová sazba */}
+                    {item.project && (
+                      (item.project.project_type === 'WP' && (item.project.budget || item.project.average_hourly_rate)) ||
+                      (item.project.project_type === 'Hodinovka' && item.project.budget)
+                    ) ? (
+                      <div className="flex flex-col gap-1">
+                        <span>
+                          {item.project.project_type === 'WP' ? (
+                            item.project.budget 
+                              ? `${item.project.budget} hod`
+                              : `Ø ${item.project.average_hourly_rate?.toLocaleString('cs-CZ')} Kč/hod`
+                          ) : (
+                            `${item.project.budget?.toLocaleString('cs-CZ')} Kč/hod`
+                          )}
+                        </span>
+                        {item.project.project_type === 'WP' && item.project.budget && item.project.average_hourly_rate && (
+                          <span className="text-xs text-muted-foreground">
+                            Ø {item.project.average_hourly_rate.toLocaleString('cs-CZ')} Kč/hod
+                          </span>
+                        )}
+                      </div>
+                    ) : 'N/A'}
+                  </TableCell>
                  <TableCell>
                    {item.project?.project_licenses && item.project.project_licenses.length > 0 ? (
                      <div className="flex flex-col gap-1">
