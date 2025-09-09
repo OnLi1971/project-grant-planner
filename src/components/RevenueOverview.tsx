@@ -35,9 +35,11 @@ interface DatabaseProgram {
 
 export const RevenueOverview = () => {
   const { planningData } = usePlanning();
-  const [filterType, setFilterType] = useState<'all' | 'customer' | 'program' | 'project' | 'kvartal'>('all');
+  const [filterType, setFilterType] = useState<'all' | 'customer' | 'program' | 'project'>('all');
   const [filterValue, setFilterValue] = useState<string>('all');
   const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
+  const [viewType, setViewType] = useState<'mesic' | 'kvartal'>('mesic');
+  const [quarterFilter, setQuarterFilter] = useState<string>('all');
   const [projects, setProjects] = useState<DatabaseProject[]>([]);
   const [customers, setCustomers] = useState<DatabaseCustomer[]>([]);
   const [programs, setPrograms] = useState<DatabaseProgram[]>([]);
@@ -154,14 +156,35 @@ export const RevenueOverview = () => {
 
   // Filtrovaná data podle vybraného filtru
   const filteredData = useMemo(() => {
-    if (filterType === 'all' || (filterType !== 'program' && filterType !== 'kvartal' && filterValue === 'all')) {
-      return planningData;
+    let data = planningData;
+
+    // Nejprve aplikujeme standardní filtry
+    if (filterType !== 'all' && filterType !== 'program' && filterValue !== 'all') {
+      data = data.filter(entry => {
+        const project = projects.find(p => p.code === entry.projekt);
+        if (!project) return false;
+
+        switch (filterType) {
+          case 'customer':
+            return project.customer_id === filterValue;
+          case 'project':
+            return project.id === filterValue;
+          default:
+            return true;
+        }
+      });
     }
 
-    // Kvartální filtrování
-    if (filterType === 'kvartal') {
-      if (filterValue === 'all') return planningData;
-      
+    // Program filtr
+    if (filterType === 'program' && selectedPrograms.length > 0) {
+      data = data.filter(entry => {
+        const project = projects.find(p => p.code === entry.projekt);
+        return project && selectedPrograms.includes(project.program_id);
+      });
+    }
+
+    // Kvartální/měsíční filtrování
+    if (viewType === 'kvartal' && quarterFilter !== 'all') {
       const quarterMonths: { [key: string]: string[] } = {
         'Q3-2025': ['srpen', 'září'],
         'Q4-2025': ['říjen', 'listopad', 'prosinec'],
@@ -169,26 +192,12 @@ export const RevenueOverview = () => {
         'Q2-2026': ['duben', 'květen', 'červen']
       };
       
-      const months = quarterMonths[filterValue] || [];
-      return planningData.filter(entry => months.includes(entry.mesic));
+      const months = quarterMonths[quarterFilter] || [];
+      data = data.filter(entry => months.includes(entry.mesic));
     }
 
-    return planningData.filter(entry => {
-      const project = projects.find(p => p.code === entry.projekt);
-      if (!project) return false;
-
-      switch (filterType) {
-        case 'customer':
-          return project.customer_id === filterValue;
-        case 'program':
-          return selectedPrograms.length === 0 || selectedPrograms.includes(project.program_id);
-        case 'project':
-          return project.id === filterValue;
-        default:
-          return true;
-      }
-    });
-  }, [planningData, filterType, filterValue, selectedPrograms, projects]);
+    return data;
+  }, [planningData, filterType, filterValue, selectedPrograms, projects, viewType, quarterFilter]);
 
   // Výpočet revenue po měsících s rozložením podle projektů a poměrným rozdělením týdnů
   const calculateMonthlyRevenueByProject = (data = filteredData) => {
@@ -279,25 +288,33 @@ export const RevenueOverview = () => {
         return programs.map(p => ({ value: p.id, label: p.name }));
       case 'project':
         return projects.filter(p => (p.project_type === 'WP' && p.average_hourly_rate) || (p.project_type === 'Hodinovka' && p.budget)).map(p => ({ value: p.id, label: p.name }));
-      case 'kvartal':
-        return [
-          { value: 'Q3-2025', label: 'Q3 2025 (srpen-září)' },
-          { value: 'Q4-2025', label: 'Q4 2025 (říjen-prosinec)' },
-          { value: 'Q1-2026', label: 'Q1 2026 (leden-březen)' },
-          { value: 'Q2-2026', label: 'Q2 2026 (duben-červen)' }
-        ];
       default:
         return [];
     }
   };
 
+  // Možnosti pro kvartální filtr
+  const getQuarterOptions = () => [
+    { value: 'Q3-2025', label: 'Q3 2025 (srpen-září)' },
+    { value: 'Q4-2025', label: 'Q4 2025 (říjen-prosinec)' },
+    { value: 'Q1-2026', label: 'Q1 2026 (leden-březen)' },
+    { value: 'Q2-2026', label: 'Q2 2026 (duben-červen)' }
+  ];
+
   const filterOptions = getFilterOptions();
+  const quarterOptions = getQuarterOptions();
 
   // Reset filter value when filter type changes
   const handleFilterTypeChange = (value: string) => {
     setFilterType(value as any);
     setFilterValue('all');
     setSelectedPrograms([]);
+  };
+
+  // Handle view type change
+  const handleViewTypeChange = (value: 'mesic' | 'kvartal') => {
+    setViewType(value);
+    setQuarterFilter('all');
   };
 
   // Handle program checkbox changes
@@ -333,6 +350,44 @@ export const RevenueOverview = () => {
               <Filter className="h-4 w-4" />
               <Label className="font-medium">Filtrovat podle:</Label>
             </div>
+            
+            {/* Pohled (Měsíc/Kvartal) */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="viewType">Pohled</Label>
+                <Select value={viewType} onValueChange={handleViewTypeChange}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border z-50">
+                    <SelectItem value="mesic">Měsíční</SelectItem>
+                    <SelectItem value="kvartal">Kvartální</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Kvartální filtr */}
+              {viewType === 'kvartal' && (
+                <div>
+                  <Label htmlFor="quarterFilter">Kvartal</Label>
+                  <Select value={quarterFilter} onValueChange={setQuarterFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Vyberte kvartal..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background border z-50">
+                      <SelectItem value="all">Všechny kvartály</SelectItem>
+                      {quarterOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+
+            {/* Standardní filtry */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="filterType">Typ filtru</Label>
@@ -340,13 +395,12 @@ export const RevenueOverview = () => {
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                   <SelectContent>
-                     <SelectItem value="all">Vše</SelectItem>
-                     <SelectItem value="customer">Zákazník</SelectItem>
-                     <SelectItem value="program">Program</SelectItem>
-                     <SelectItem value="project">Projekt</SelectItem>
-                     <SelectItem value="kvartal">Kvartal</SelectItem>
-                   </SelectContent>
+                  <SelectContent className="bg-background border z-50">
+                    <SelectItem value="all">Vše</SelectItem>
+                    <SelectItem value="customer">Zákazník</SelectItem>
+                    <SelectItem value="program">Program</SelectItem>
+                    <SelectItem value="project">Projekt</SelectItem>
+                  </SelectContent>
                 </Select>
               </div>
               {filterType === 'program' ? (
@@ -379,7 +433,7 @@ export const RevenueOverview = () => {
                     <SelectTrigger>
                       <SelectValue placeholder="Vyberte..." />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-background border z-50">
                       <SelectItem value="all">Vše</SelectItem>
                       {filterOptions.map(option => (
                         <SelectItem key={option.value} value={option.value}>
@@ -405,11 +459,11 @@ export const RevenueOverview = () => {
                  ? `Filtrováno podle: ${
                      filterType === 'customer' ? 'zákazník' : 
                      filterType === 'project' ? 'projekt' : 
-                     filterType === 'kvartal' ? 'kvartal' : 
                      'program'
                    }`
                  : 'Všechny projekty s revenue'
-               }
+               } | Pohled: {viewType === 'mesic' ? 'Měsíční' : 'Kvartální'}
+               {viewType === 'kvartal' && quarterFilter !== 'all' ? ` - ${quarterOptions.find(q => q.value === quarterFilter)?.label}` : ''}
              </p>
           </div>
 
