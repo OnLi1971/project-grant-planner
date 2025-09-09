@@ -26,7 +26,12 @@ const getAllWeeksToEndOfYear = (): string[] => {
   const startWeek = Math.max(32, currentWeek); // Začneme od aktuálního týdne, ale minimálně od CW32
   
   const weeks = [];
+  // CW32-52 pro rok 2025
   for (let cw = startWeek; cw <= 52; cw++) {
+    weeks.push(`CW${cw.toString().padStart(2, '0')}`);
+  }
+  // CW01-26 pro rok 2026
+  for (let cw = 1; cw <= 26; cw++) {
     weeks.push(`CW${cw.toString().padStart(2, '0')}`);
   }
   return weeks;

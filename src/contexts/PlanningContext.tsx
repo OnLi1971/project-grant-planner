@@ -158,7 +158,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           24: 'červen', 25: 'červen', 26: 'červen'
         };
         
-        const mesic = weekToMonthMap[cwNum] || 'August';
+        const mesic = weekToMonthMap[cwNum] || 'srpen';
 
         const newEntry = {
           konstrukter,

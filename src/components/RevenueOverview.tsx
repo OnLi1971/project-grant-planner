@@ -70,53 +70,86 @@ export const RevenueOverview = () => {
   // Funkce pro výpočet počtu dnů v měsíci
   const getDaysInMonth = (month: string, year: number = 2025): number => {
     const monthMapping: { [key: string]: number } = {
-      'August': 8,
-      'September': 9,
-      'October': 10,
-      'November': 11,
-      'December': 12
+      'srpen': 8, 'září': 9, 'říjen': 10, 'listopad': 11, 'prosinec': 12,
+      'leden': 1, 'únor': 2, 'březen': 3, 'duben': 4, 'květen': 5, 'červen': 6
     };
     
     const monthNum = monthMapping[month];
-    return new Date(year, monthNum, 0).getDate();
+    // Pro 2026 měsíce použij rok 2026
+    const actualYear = ['leden', 'únor', 'březen', 'duben', 'květen', 'červen'].includes(month) ? 2026 : year;
+    return new Date(actualYear, monthNum, 0).getDate();
   };
 
-  // Funkce pro výpočet pracovních dnů v měsíci (5 dnů v týdnu) pro rok 2025
+  // Funkce pro výpočet pracovních dnů v měsíci (5 dnů v týdnu) pro roky 2025-2026
   const getWorkingDaysInMonth = (month: string): number => {
-    // Přesný počet pracovních dnů pro rok 2025
-    const workingDays2025: { [key: string]: number } = {
-      'August': 21,      // srpen 2025
-      'September': 22,   // září 2025  
-      'October': 23,     // říjen 2025
-      'November': 20,    // listopad 2025
-      'December': 22     // prosinec 2025
+    // Přesný počet pracovních dnů pro roky 2025-2026
+    const workingDays: { [key: string]: number } = {
+      'srpen': 21,      // srpen 2025
+      'září': 22,       // září 2025  
+      'říjen': 23,      // říjen 2025
+      'listopad': 20,   // listopad 2025
+      'prosinec': 22,   // prosinec 2025
+      'leden': 22,      // leden 2026
+      'únor': 20,       // únor 2026
+      'březen': 21,     // březen 2026
+      'duben': 22,      // duben 2026
+      'květen': 21,     // květen 2026
+      'červen': 21      // červen 2026
     };
-    return workingDays2025[month] || 22;
+    return workingDays[month] || 22;
   };
 
-  // Přesnější mapování týdnů na měsíce s poměrným rozdělením pro rok 2025
+  // Přesnější mapování týdnů na měsíce s poměrným rozdělením pro roky 2025-2026
   const weekToMonthMapping: { [key: string]: { [month: string]: number } } = {
-    'CW32': { 'August': 1.0 },           // 4-10 srpna 2025 (celý týden)
-    'CW33': { 'August': 1.0 },           // 11-17 srpna 2025 (celý týden)  
-    'CW34': { 'August': 1.0 },           // 18-24 srpna 2025 (celý týden)
-    'CW35': { 'August': 0.6, 'September': 0.4 },  // 25-31 srpna 2025 (3:2 dny)
-    'CW36': { 'September': 1.0 },        // 1-7 září 2025 (celý týden)
-    'CW37': { 'September': 1.0 },        // 8-14 září 2025 (celý týden)
-    'CW38': { 'September': 1.0 },        // 15-21 září 2025 (celý týden)
-    'CW39': { 'September': 1.0 },        // 22-28 září 2025 (celý týden)
-    'CW40': { 'September': 0.4, 'October': 0.6 },   // 29 září - 5 října 2025 (2:3 dny)
-    'CW41': { 'October': 1.0 },          // 6-12 října 2025 (celý týden)
-    'CW42': { 'October': 1.0 },          // 13-19 října 2025 (celý týden)
-    'CW43': { 'October': 1.0 },          // 20-26 října 2025 (celý týden)
-    'CW44': { 'October': 0.8, 'November': 0.2 },    // 27 října - 2 listopadu 2025 (4:1 dny)
-    'CW45': { 'November': 1.0 },         // 3-9 listopadu 2025 (celý týden)
-    'CW46': { 'November': 1.0 },         // 10-16 listopadu 2025 (celý týden)
-    'CW47': { 'November': 1.0 },         // 17-23 listopadu 2025 (celý týden)
-    'CW48': { 'November': 0.6, 'December': 0.4 },   // 24-30 listopadu 2025 (3:2 dny)
-    'CW49': { 'December': 1.0 },         // 1-7 prosince 2025 (celý týden)
-    'CW50': { 'December': 1.0 },         // 8-14 prosince 2025 (celý týden)
-    'CW51': { 'December': 1.0 },         // 15-21 prosince 2025 (celý týden)
-    'CW52': { 'December': 1.0 }          // 22-28 prosince 2025 (celý týden)
+    // Rok 2025 (CW32-52)
+    'CW32': { 'srpen': 1.0 },           // 4-10 srpna 2025 (celý týden)
+    'CW33': { 'srpen': 1.0 },           // 11-17 srpna 2025 (celý týden)  
+    'CW34': { 'srpen': 1.0 },           // 18-24 srpna 2025 (celý týden)
+    'CW35': { 'srpen': 0.6, 'září': 0.4 },  // 25-31 srpna 2025 (3:2 dny)
+    'CW36': { 'září': 1.0 },        // 1-7 září 2025 (celý týden)
+    'CW37': { 'září': 1.0 },        // 8-14 září 2025 (celý týden)
+    'CW38': { 'září': 1.0 },        // 15-21 září 2025 (celý týden)
+    'CW39': { 'září': 1.0 },        // 22-28 září 2025 (celý týden)
+    'CW40': { 'září': 0.4, 'říjen': 0.6 },   // 29 září - 5 října 2025 (2:3 dny)
+    'CW41': { 'říjen': 1.0 },          // 6-12 října 2025 (celý týden)
+    'CW42': { 'říjen': 1.0 },          // 13-19 října 2025 (celý týden)
+    'CW43': { 'říjen': 1.0 },          // 20-26 října 2025 (celý týden)
+    'CW44': { 'říjen': 0.8, 'listopad': 0.2 },    // 27 října - 2 listopadu 2025 (4:1 dny)
+    'CW45': { 'listopad': 1.0 },         // 3-9 listopadu 2025 (celý týden)
+    'CW46': { 'listopad': 1.0 },         // 10-16 listopadu 2025 (celý týden)
+    'CW47': { 'listopad': 1.0 },         // 17-23 listopadu 2025 (celý týden)
+    'CW48': { 'listopad': 0.6, 'prosinec': 0.4 },   // 24-30 listopadu 2025 (3:2 dny)
+    'CW49': { 'prosinec': 1.0 },         // 1-7 prosince 2025 (celý týden)
+    'CW50': { 'prosinec': 1.0 },         // 8-14 prosince 2025 (celý týden)
+    'CW51': { 'prosinec': 1.0 },         // 15-21 prosince 2025 (celý týden)
+    'CW52': { 'prosinec': 1.0 },         // 22-28 prosince 2025 (celý týden)
+    // Rok 2026 (CW01-26) - všichni budou FREE
+    'CW01': { 'leden': 1.0 },            // 29 prosince 2025 - 4 ledna 2026 (celý týden)
+    'CW02': { 'leden': 1.0 },            // 5-11 ledna 2026 (celý týden)
+    'CW03': { 'leden': 1.0 },            // 12-18 ledna 2026 (celý týden)
+    'CW04': { 'leden': 1.0 },            // 19-25 ledna 2026 (celý týden)
+    'CW05': { 'leden': 0.8, 'únor': 0.2 },   // 26 ledna - 1 února 2026 (4:1 dny)
+    'CW06': { 'únor': 1.0 },             // 2-8 února 2026 (celý týden)
+    'CW07': { 'únor': 1.0 },             // 9-15 února 2026 (celý týden)
+    'CW08': { 'únor': 1.0 },             // 16-22 února 2026 (celý týden)
+    'CW09': { 'únor': 0.6, 'březen': 0.4 },  // 23 února - 1 března 2026 (3:2 dny)
+    'CW10': { 'březen': 1.0 },           // 2-8 března 2026 (celý týden)
+    'CW11': { 'březen': 1.0 },           // 9-15 března 2026 (celý týden)
+    'CW12': { 'březen': 1.0 },           // 16-22 března 2026 (celý týden)
+    'CW13': { 'březen': 1.0 },           // 23-29 března 2026 (celý týden)
+    'CW14': { 'březen': 0.4, 'duben': 0.6 },     // 30 března - 5 dubna 2026 (2:3 dny)
+    'CW15': { 'duben': 1.0 },            // 6-12 dubna 2026 (celý týden)
+    'CW16': { 'duben': 1.0 },            // 13-19 dubna 2026 (celý týden)
+    'CW17': { 'duben': 1.0 },            // 20-26 dubna 2026 (celý týden)
+    'CW18': { 'duben': 0.6, 'květen': 0.4 },     // 27 dubna - 3 května 2026 (3:2 dny)
+    'CW19': { 'květen': 1.0 },           // 4-10 května 2026 (celý týden)
+    'CW20': { 'květen': 1.0 },           // 11-17 května 2026 (celý týden)
+    'CW21': { 'květen': 1.0 },           // 18-24 května 2026 (celý týden)
+    'CW22': { 'květen': 1.0 },           // 25-31 května 2026 (celý týden)
+    'CW23': { 'květen': 0.2, 'červen': 0.8 },    // 1-7 června 2026 (1:4 dny)
+    'CW24': { 'červen': 1.0 },           // 8-14 června 2026 (celý týden)
+    'CW25': { 'červen': 1.0 },           // 15-21 června 2026 (celý týden)
+    'CW26': { 'červen': 1.0 }            // 22-28 června 2026 (celý týden)
   };
 
   // Filtrovaná data podle vybraného filtru
@@ -147,7 +180,7 @@ export const RevenueOverview = () => {
     const monthlyData: { [month: string]: { [projectCode: string]: number } } = {};
 
     // Inicializace struktur pro všechny měsíce
-    const months = ['August', 'September', 'October', 'November', 'December'];
+    const months = ['srpen', 'září', 'říjen', 'listopad', 'prosinec', 'leden', 'únor', 'březen', 'duben', 'květen', 'červen'];
     months.forEach(month => {
       monthlyData[month] = {};
     });
@@ -192,7 +225,7 @@ export const RevenueOverview = () => {
   };
 
   const monthlyRevenueByProject = calculateMonthlyRevenueByProject();
-  const months = ['August', 'September', 'October', 'November', 'December'];
+  const months = ['srpen', 'září', 'říjen', 'listopad', 'prosinec', 'leden', 'únor', 'březen', 'duben', 'květen', 'červen'];
   
   // Získání všech unikátních projektů s revenue
   const allProjects = new Set<string>();

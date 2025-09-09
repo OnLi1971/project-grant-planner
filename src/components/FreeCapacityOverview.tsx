@@ -16,13 +16,18 @@ const getCurrentWeek = (): number => {
   return getWeek(new Date(), { weekStartsOn: 1 });
 };
 
-// Funkce pro generování týdnů od aktuálního týdne do konce roku
+// Funkce pro generování týdnů od aktuálního týdne do půlky příštího roku
 const getAllWeeks = (): string[] => {
   const currentWeek = getCurrentWeek();
   const startWeek = Math.max(32, currentWeek); // Začneme od aktuálního týdne, ale minimálně od CW32
   
   const weeks = [];
+  // CW32-52 pro rok 2025
   for (let cw = startWeek; cw <= 52; cw++) {
+    weeks.push(`CW${cw.toString().padStart(2, '0')}`);
+  }
+  // CW01-26 pro rok 2026
+  for (let cw = 1; cw <= 26; cw++) {
     weeks.push(`CW${cw.toString().padStart(2, '0')}`);
   }
   return weeks;
@@ -31,11 +36,17 @@ const getAllWeeks = (): string[] => {
 const weeks = getAllWeeks();
 
 const months = [
-  { name: 'August', weeks: ['CW32', 'CW33', 'CW34', 'CW35'] },
-  { name: 'September', weeks: ['CW36', 'CW37', 'CW38', 'CW39'] },
-  { name: 'October', weeks: ['CW40', 'CW41', 'CW42', 'CW43', 'CW44'] },
-  { name: 'November', weeks: ['CW45', 'CW46', 'CW47', 'CW48'] },
-  { name: 'December', weeks: ['CW49', 'CW50', 'CW51', 'CW52'] }
+  { name: 'srpen', weeks: ['CW32', 'CW33', 'CW34', 'CW35'] },
+  { name: 'září', weeks: ['CW36', 'CW37', 'CW38', 'CW39'] },
+  { name: 'říjen', weeks: ['CW40', 'CW41', 'CW42', 'CW43', 'CW44'] },
+  { name: 'listopad', weeks: ['CW45', 'CW46', 'CW47', 'CW48'] },
+  { name: 'prosinec', weeks: ['CW49', 'CW50', 'CW51', 'CW52'] },
+  { name: 'leden', weeks: ['CW01', 'CW02', 'CW03', 'CW04', 'CW05'] },
+  { name: 'únor', weeks: ['CW06', 'CW07', 'CW08', 'CW09'] },
+  { name: 'březen', weeks: ['CW10', 'CW11', 'CW12', 'CW13', 'CW14'] },
+  { name: 'duben', weeks: ['CW15', 'CW16', 'CW17', 'CW18'] },
+  { name: 'květen', weeks: ['CW19', 'CW20', 'CW21', 'CW22', 'CW23'] },
+  { name: 'červen', weeks: ['CW24', 'CW25', 'CW26'] }
 ].map(month => ({
   ...month,
   weeks: month.weeks.filter(week => weeks.includes(week))

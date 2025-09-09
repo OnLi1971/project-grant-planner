@@ -12,11 +12,18 @@ export interface PlanningEntry {
 const weeks = ['CW32', 'CW33', 'CW34', 'CW35', 'CW36', 'CW37', 'CW38', 'CW39', 'CW40', 'CW41', 'CW42', 'CW43', 'CW44', 'CW45', 'CW46', 'CW47', 'CW48', 'CW49', 'CW50', 'CW51', 'CW52'];
 
 const monthMapping: { [key: string]: string } = {
-  'CW32': 'August', 'CW33': 'August', 'CW34': 'August', 'CW35': 'August',
-  'CW36': 'September', 'CW37': 'September', 'CW38': 'September', 'CW39': 'September',
-  'CW40': 'October', 'CW41': 'October', 'CW42': 'October', 'CW43': 'October', 'CW44': 'October',
-  'CW45': 'November', 'CW46': 'November', 'CW47': 'November', 'CW48': 'November',
-  'CW49': 'December', 'CW50': 'December', 'CW51': 'December', 'CW52': 'December'
+  'CW32': 'srpen', 'CW33': 'srpen', 'CW34': 'srpen', 'CW35': 'srpen',
+  'CW36': 'září', 'CW37': 'září', 'CW38': 'září', 'CW39': 'září',
+  'CW40': 'říjen', 'CW41': 'říjen', 'CW42': 'říjen', 'CW43': 'říjen', 'CW44': 'říjen',
+  'CW45': 'listopad', 'CW46': 'listopad', 'CW47': 'listopad', 'CW48': 'listopad',
+  'CW49': 'prosinec', 'CW50': 'prosinec', 'CW51': 'prosinec', 'CW52': 'prosinec',
+  // 2026 months
+  'CW01': 'leden', 'CW02': 'leden', 'CW03': 'leden', 'CW04': 'leden', 'CW05': 'leden',
+  'CW06': 'únor', 'CW07': 'únor', 'CW08': 'únor', 'CW09': 'únor',
+  'CW10': 'březen', 'CW11': 'březen', 'CW12': 'březen', 'CW13': 'březen', 'CW14': 'březen',
+  'CW15': 'duben', 'CW16': 'duben', 'CW17': 'duben', 'CW18': 'duben',
+  'CW19': 'květen', 'CW20': 'květen', 'CW21': 'květen', 'CW22': 'květen', 'CW23': 'květen',
+  'CW24': 'červen', 'CW25': 'červen', 'CW26': 'červen'
 };
 
 // Complete planning data based on your original message
