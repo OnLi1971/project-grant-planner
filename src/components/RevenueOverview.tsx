@@ -111,6 +111,8 @@ export const RevenueOverview = () => {
       let hourlyRate = 0;
       
       // Určíme hodinovou sazbu podle typu projektu
+      // Pro WP projekty používáme averageHourlyRate
+      // Pro Hodinovka projekty používáme budget jako hodinovou sazbu
       if (project.projectType === 'WP' && project.averageHourlyRate) {
         hourlyRate = project.averageHourlyRate;
       } else if (project.projectType === 'Hodinovka' && project.budget) {
