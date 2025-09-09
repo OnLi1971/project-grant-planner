@@ -78,7 +78,7 @@ const generateAllWeeks = (): WeekPlan[] => {
       cw: `CW${cw.toString().padStart(2, '0')}`,
       mesic,
       mhTyden: 36, // Defaultní hodnota 36 hodin
-      projekt: 'FREE'
+      projekt: cw === 52 ? 'DOVOLENÁ' : 'FREE'  // CW52 defaultně "DOVOLENÁ"
     });
   }
   
