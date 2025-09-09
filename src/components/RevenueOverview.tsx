@@ -39,7 +39,7 @@ export const RevenueOverview = () => {
   const [filterValue, setFilterValue] = useState<string>('all');
   const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
   const [viewType, setViewType] = useState<'mesic' | 'kvartal'>('mesic');
-  const [quarterFilter, setQuarterFilter] = useState<string>('all');
+  const [selectedQuarters, setSelectedQuarters] = useState<string[]>(['Q3-2025', 'Q4-2025', 'Q1-2026', 'Q2-2026']);
   const [projects, setProjects] = useState<DatabaseProject[]>([]);
   const [customers, setCustomers] = useState<DatabaseCustomer[]>([]);
   const [programs, setPrograms] = useState<DatabaseProgram[]>([]);
@@ -184,7 +184,7 @@ export const RevenueOverview = () => {
     }
 
     // Kvartální/měsíční filtrování
-    if (viewType === 'kvartal' && quarterFilter !== 'all') {
+    if (viewType === 'kvartal' && selectedQuarters.length > 0) {
       const quarterMonths: { [key: string]: string[] } = {
         'Q3-2025': ['srpen', 'září'],
         'Q4-2025': ['říjen', 'listopad', 'prosinec'],
@@ -192,12 +192,12 @@ export const RevenueOverview = () => {
         'Q2-2026': ['duben', 'květen', 'červen']
       };
       
-      const months = quarterMonths[quarterFilter] || [];
-      data = data.filter(entry => months.includes(entry.mesic));
+      const allSelectedMonths = selectedQuarters.flatMap(quarter => quarterMonths[quarter] || []);
+      data = data.filter(entry => allSelectedMonths.includes(entry.mesic));
     }
 
     return data;
-  }, [planningData, filterType, filterValue, selectedPrograms, projects, viewType, quarterFilter]);
+  }, [planningData, filterType, filterValue, selectedPrograms, projects, viewType, selectedQuarters]);
 
   // Výpočet revenue po měsících s rozložením podle projektů a poměrným rozdělením týdnů
   const calculateMonthlyRevenueByProject = (data = filteredData) => {
@@ -314,7 +314,19 @@ export const RevenueOverview = () => {
   // Handle view type change
   const handleViewTypeChange = (value: 'mesic' | 'kvartal') => {
     setViewType(value);
-    setQuarterFilter('all');
+    // Reset to all quarters when switching to quarter view
+    if (value === 'kvartal') {
+      setSelectedQuarters(['Q3-2025', 'Q4-2025', 'Q1-2026', 'Q2-2026']);
+    }
+  };
+
+  // Handle quarter checkbox changes
+  const handleQuarterChange = (quarterId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedQuarters(prev => [...prev, quarterId]);
+    } else {
+      setSelectedQuarters(prev => prev.filter(id => id !== quarterId));
+    }
   };
 
   // Handle program checkbox changes
@@ -369,20 +381,26 @@ export const RevenueOverview = () => {
               {/* Kvartální filtr */}
               {viewType === 'kvartal' && (
                 <div>
-                  <Label htmlFor="quarterFilter">Kvartal</Label>
-                  <Select value={quarterFilter} onValueChange={setQuarterFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Vyberte kvartal..." />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background border z-50">
-                      <SelectItem value="all">Všechny kvartály</SelectItem>
-                      {quarterOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>Kvartály</Label>
+                  <div className="grid grid-cols-2 gap-2 mt-2 p-3 border rounded-md bg-background max-h-32 overflow-y-auto">
+                    {quarterOptions.map((quarter) => (
+                      <div key={quarter.value} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id={`quarter-${quarter.value}`}
+                          checked={selectedQuarters.includes(quarter.value)}
+                          onChange={(e) => handleQuarterChange(quarter.value, e.target.checked)}
+                          className="rounded border-gray-300 text-primary focus:ring-primary"
+                        />
+                        <Label 
+                          htmlFor={`quarter-${quarter.value}`} 
+                          className="text-sm font-normal cursor-pointer"
+                        >
+                          {quarter.label}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -462,9 +480,9 @@ export const RevenueOverview = () => {
                      'program'
                    }`
                  : 'Všechny projekty s revenue'
-               } | Pohled: {viewType === 'mesic' ? 'Měsíční' : 'Kvartální'}
-               {viewType === 'kvartal' && quarterFilter !== 'all' ? ` - ${quarterOptions.find(q => q.value === quarterFilter)?.label}` : ''}
-             </p>
+                } | Pohled: {viewType === 'mesic' ? 'Měsíční' : 'Kvartální'}
+                {viewType === 'kvartal' && selectedQuarters.length > 0 && selectedQuarters.length < quarterOptions.length ? ` - ${selectedQuarters.map(q => quarterOptions.find(opt => opt.value === q)?.label).join(', ')}` : ''}
+              </p>
           </div>
 
           {/* Graf */}
