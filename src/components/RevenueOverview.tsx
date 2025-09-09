@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { usePlanning } from '@/contexts/PlanningContext';
-import { projects, customers, programs } from '@/data/projectsData';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -9,10 +9,62 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { TrendingUp, Filter } from 'lucide-react';
 import { getProjectColorWithIndex } from '@/utils/colorSystem';
 
+interface DatabaseProject {
+  id: string;
+  name: string;
+  code: string;
+  customer_id: string;
+  project_manager_id: string;
+  program_id: string;
+  project_type: string;
+  budget?: number;
+  average_hourly_rate?: number;
+}
+
+interface DatabaseCustomer {
+  id: string;
+  name: string;
+  code: string;
+}
+
+interface DatabaseProgram {
+  id: string;
+  name: string;
+  code: string;
+}
+
 export const RevenueOverview = () => {
   const { planningData } = usePlanning();
   const [filterType, setFilterType] = useState<'all' | 'customer' | 'program' | 'project'>('all');
   const [filterValue, setFilterValue] = useState<string>('all');
+  const [projects, setProjects] = useState<DatabaseProject[]>([]);
+  const [customers, setCustomers] = useState<DatabaseCustomer[]>([]);
+  const [programs, setPrograms] = useState<DatabaseProgram[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Načtení dat z databáze
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [projectsRes, customersRes, programsRes] = await Promise.all([
+        supabase.from('projects').select('*').order('name'),
+        supabase.from('customers').select('*').order('name'),
+        supabase.from('programs').select('*').order('name')
+      ]);
+
+      if (projectsRes.data) setProjects(projectsRes.data);
+      if (customersRes.data) setCustomers(customersRes.data);
+      if (programsRes.data) setPrograms(programsRes.data);
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Funkce pro výpočet počtu dnů v měsíci
   const getDaysInMonth = (month: string, year: number = 2025): number => {
@@ -78,16 +130,16 @@ export const RevenueOverview = () => {
 
       switch (filterType) {
         case 'customer':
-          return project.customerId === filterValue;
+          return project.customer_id === filterValue;
         case 'program':
-          return project.programId === filterValue;
+          return project.program_id === filterValue;
         case 'project':
           return project.id === filterValue;
         default:
           return true;
       }
     });
-  }, [planningData, filterType, filterValue]);
+  }, [planningData, filterType, filterValue, projects]);
 
   // Výpočet revenue po měsících s rozložením podle projektů a poměrným rozdělením týdnů
   const calculateMonthlyRevenueByProject = (data = filteredData) => {
@@ -110,12 +162,12 @@ export const RevenueOverview = () => {
 
       let hourlyRate = 0;
       
-      // Určíme hodinovou sazbu podle typu projektu
-      // Pro WP projekty používáme averageHourlyRate
+      // Určíme hodinovou sazbu podle typu projektu z databáze
+      // Pro WP projekty používáme average_hourly_rate
       // Pro Hodinovka projekty používáme budget jako hodinovou sazbu
-      if (project.projectType === 'WP' && project.averageHourlyRate) {
-        hourlyRate = project.averageHourlyRate;
-      } else if (project.projectType === 'Hodinovka' && project.budget) {
+      if (project.project_type === 'WP' && project.average_hourly_rate) {
+        hourlyRate = project.average_hourly_rate;
+      } else if (project.project_type === 'Hodinovka' && project.budget) {
         hourlyRate = project.budget;
       }
 
@@ -177,7 +229,7 @@ export const RevenueOverview = () => {
       case 'program':
         return programs.map(p => ({ value: p.id, label: p.name }));
       case 'project':
-        return projects.filter(p => p.projectType === 'WP' && p.averageHourlyRate).map(p => ({ value: p.id, label: p.name }));
+        return projects.filter(p => (p.project_type === 'WP' && p.average_hourly_rate) || (p.project_type === 'Hodinovka' && p.budget)).map(p => ({ value: p.id, label: p.name }));
       default:
         return [];
     }
@@ -190,6 +242,14 @@ export const RevenueOverview = () => {
     setFilterType(value as any);
     setFilterValue('all');
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-8">Načítám data...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
