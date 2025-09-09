@@ -37,6 +37,7 @@ export const RevenueOverview = () => {
   const { planningData } = usePlanning();
   const [filterType, setFilterType] = useState<'all' | 'customer' | 'program' | 'project'>('all');
   const [filterValue, setFilterValue] = useState<string>('all');
+  const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
   const [projects, setProjects] = useState<DatabaseProject[]>([]);
   const [customers, setCustomers] = useState<DatabaseCustomer[]>([]);
   const [programs, setPrograms] = useState<DatabaseProgram[]>([]);
@@ -120,7 +121,7 @@ export const RevenueOverview = () => {
 
   // Filtrovaná data podle vybraného filtru
   const filteredData = useMemo(() => {
-    if (filterType === 'all' || filterValue === 'all') {
+    if (filterType === 'all' || (filterType !== 'program' && filterValue === 'all')) {
       return planningData;
     }
 
@@ -132,14 +133,14 @@ export const RevenueOverview = () => {
         case 'customer':
           return project.customer_id === filterValue;
         case 'program':
-          return project.program_id === filterValue;
+          return selectedPrograms.length === 0 || selectedPrograms.includes(project.program_id);
         case 'project':
           return project.id === filterValue;
         default:
           return true;
       }
     });
-  }, [planningData, filterType, filterValue, projects]);
+  }, [planningData, filterType, filterValue, selectedPrograms, projects]);
 
   // Výpočet revenue po měsících s rozložením podle projektů a poměrným rozdělením týdnů
   const calculateMonthlyRevenueByProject = (data = filteredData) => {
@@ -241,6 +242,16 @@ export const RevenueOverview = () => {
   const handleFilterTypeChange = (value: string) => {
     setFilterType(value as any);
     setFilterValue('all');
+    setSelectedPrograms([]);
+  };
+
+  // Handle program checkbox changes
+  const handleProgramChange = (programId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedPrograms(prev => [...prev, programId]);
+    } else {
+      setSelectedPrograms(prev => prev.filter(id => id !== programId));
+    }
   };
 
   if (loading) {
@@ -262,12 +273,12 @@ export const RevenueOverview = () => {
         </CardHeader>
         <CardContent>
           {/* Filtry */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 p-4 bg-muted rounded-lg">
+          <div className="grid grid-cols-1 gap-4 mb-6 p-4 bg-muted rounded-lg">
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4" />
               <Label className="font-medium">Filtrovat podle:</Label>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="filterType">Typ filtru</Label>
                 <Select value={filterType} onValueChange={handleFilterTypeChange}>
@@ -282,7 +293,30 @@ export const RevenueOverview = () => {
                   </SelectContent>
                 </Select>
               </div>
-              {filterType !== 'all' && (
+              {filterType === 'program' ? (
+                <div>
+                  <Label>Programy</Label>
+                  <div className="grid grid-cols-2 gap-2 mt-2 p-3 border rounded-md bg-background max-h-32 overflow-y-auto">
+                    {programs.map((program) => (
+                      <div key={program.id} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id={`program-${program.id}`}
+                          checked={selectedPrograms.includes(program.id)}
+                          onChange={(e) => handleProgramChange(program.id, e.target.checked)}
+                          className="rounded border-gray-300 text-primary focus:ring-primary"
+                        />
+                        <Label 
+                          htmlFor={`program-${program.id}`} 
+                          className="text-sm font-normal cursor-pointer"
+                        >
+                          {program.name}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : filterType !== 'all' && (
                 <div>
                   <Label htmlFor="filterValue">Hodnota</Label>
                   <Select value={filterValue} onValueChange={setFilterValue}>
@@ -309,8 +343,10 @@ export const RevenueOverview = () => {
               Celkový obrat: {totalRevenue.toLocaleString('cs-CZ')} Kč
             </div>
             <p className="text-sm text-muted-foreground mt-1">
-              {filterType !== 'all' && filterValue !== 'all' 
-                ? `Filtrováno podle: ${filterType === 'customer' ? 'zákazník' : filterType === 'program' ? 'program' : 'projekt'}`
+              {filterType === 'program' && selectedPrograms.length > 0
+                ? `Filtrováno podle programů: ${selectedPrograms.map(id => programs.find(p => p.id === id)?.name).join(', ')}`
+                : filterType !== 'all' && filterValue !== 'all' 
+                ? `Filtrováno podle: ${filterType === 'customer' ? 'zákazník' : filterType === 'project' ? 'projekt' : 'program'}`
                 : 'Všechny projekty s revenue'
               }
             </p>
