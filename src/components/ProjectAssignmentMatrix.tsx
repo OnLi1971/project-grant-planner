@@ -207,7 +207,8 @@ export const ProjectAssignmentMatrix = () => {
       matrix[engineer] = {};
       weeks.forEach(week => {
         const entry = planningData.find(e => e.konstrukter === engineer && e.cw === week);
-        matrix[engineer][week] = entry?.projekt || '';
+        // Default to 'DOVOLENÁ' for CW52, otherwise 'FREE' if no entry exists
+        matrix[engineer][week] = entry?.projekt || (week === 'CW52' ? 'DOVOLENÁ' : 'FREE');
       });
     });
     
@@ -227,11 +228,20 @@ export const ProjectAssignmentMatrix = () => {
         
         month.weeks.forEach(week => {
           const entry = planningData.find(e => e.konstrukter === engineer && e.cw === week);
+          let projekt: string;
+          let hours: number;
+          
           if (entry && entry.projekt) {
-            const hours = typeof entry.mhTyden === 'number' ? entry.mhTyden : 0;
-            monthProjects[entry.projekt] = (monthProjects[entry.projekt] || 0) + hours;
-            totalHours += hours;
+            projekt = entry.projekt;
+            hours = typeof entry.mhTyden === 'number' ? entry.mhTyden : 0;
+          } else {
+            // Default values for weeks without entries
+            projekt = week === 'CW52' ? 'DOVOLENÁ' : 'FREE';
+            hours = 36; // Default hours
           }
+          
+          monthProjects[projekt] = (monthProjects[projekt] || 0) + hours;
+          totalHours += hours;
         });
         
         const projects = Object.keys(monthProjects);
