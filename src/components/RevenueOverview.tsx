@@ -264,20 +264,70 @@ export const RevenueOverview = () => {
   }, 0);
 
   // Data pro stackovaný graf
-  const chartData = months.map(month => {
-    const monthData = monthlyRevenueByProject[month] || {};
-    const data: any = {
-      month: month.slice(0, 3),
-      total: Object.values(monthData).reduce((sum: number, value: number) => sum + value, 0)
-    };
-    
-    // Přidáme data pro každý projekt
-    projectList.forEach(projectCode => {
-      data[projectCode] = monthData[projectCode] || 0;
-    });
-    
-    return data;
-  });
+  const chartData = useMemo(() => {
+    if (viewType === 'kvartal') {
+      // Kvartální data
+      const quarterData = [
+        {
+          quarter: 'Q3 2025',
+          months: ['srpen', 'září'],
+          label: 'Q3 25'
+        },
+        {
+          quarter: 'Q4 2025', 
+          months: ['říjen', 'listopad', 'prosinec'],
+          label: 'Q4 25'
+        },
+        {
+          quarter: 'Q1 2026',
+          months: ['leden', 'únor', 'březen'], 
+          label: 'Q1 26'
+        },
+        {
+          quarter: 'Q2 2026',
+          months: ['duben', 'květen', 'červen'],
+          label: 'Q2 26'
+        }
+      ];
+
+      return quarterData.map(({ quarter, months, label }) => {
+        const data: any = {
+          month: label,
+          total: 0
+        };
+        
+        // Sečteme data za všechny měsíce v kvartálu
+        months.forEach(month => {
+          const monthData = monthlyRevenueByProject[month] || {};
+          data.total += Object.values(monthData).reduce((sum: number, value: number) => sum + value, 0);
+          
+          // Přidáme data pro každý projekt
+          projectList.forEach(projectCode => {
+            if (!data[projectCode]) data[projectCode] = 0;
+            data[projectCode] += monthData[projectCode] || 0;
+          });
+        });
+        
+        return data;
+      });
+    } else {
+      // Měsíční data
+      return months.map(month => {
+        const monthData = monthlyRevenueByProject[month] || {};
+        const data: any = {
+          month: month.slice(0, 3),
+          total: Object.values(monthData).reduce((sum: number, value: number) => sum + value, 0)
+        };
+        
+        // Přidáme data pro každý projekt
+        projectList.forEach(projectCode => {
+          data[projectCode] = monthData[projectCode] || 0;
+        });
+        
+        return data;
+      });
+    }
+  }, [monthlyRevenueByProject, projectList, viewType, months]);
 
   // Možnosti pro filtrování
   const getFilterOptions = () => {
@@ -504,7 +554,7 @@ export const RevenueOverview = () => {
                     `${value.toLocaleString('cs-CZ')} Kč`, 
                     name === 'total' ? 'Celkem' : name
                   ]}
-                  labelFormatter={(label) => `Měsíc: ${label}`}
+                  labelFormatter={(label) => `${viewType === 'kvartal' ? 'Kvartal' : 'Měsíc'}: ${label}`}
                   contentStyle={{
                     backgroundColor: 'hsl(var(--card))',
                     border: '1px solid hsl(var(--border))',
@@ -525,21 +575,46 @@ export const RevenueOverview = () => {
           </div>
           
           {/* Celkové hodnoty pod grafem */}
-          <div className="grid grid-cols-3 md:grid-cols-5 gap-4 mb-6">
-            {months.map((month) => {
-              const monthData = monthlyRevenueByProject[month] || {};
-              const monthTotal = Object.values(monthData).reduce((sum: number, value: number) => sum + value, 0);
-              return (
-                <div key={month} className="text-center p-3 bg-muted/50 rounded-lg">
-                  <div className="text-sm font-medium text-muted-foreground">
-                    {month.slice(0, 3)}
+          <div className="grid grid-cols-3 md:grid-cols-4 gap-4 mb-6">
+            {viewType === 'kvartal' ? (
+              [
+                { key: 'Q3-2025', label: 'Q3 25', months: ['srpen', 'září'] },
+                { key: 'Q4-2025', label: 'Q4 25', months: ['říjen', 'listopad', 'prosinec'] },
+                { key: 'Q1-2026', label: 'Q1 26', months: ['leden', 'únor', 'březen'] },
+                { key: 'Q2-2026', label: 'Q2 26', months: ['duben', 'květen', 'červen'] }
+              ].map(({ key, label, months }) => {
+                const quarterTotal = months.reduce((sum, month) => {
+                  const monthData = monthlyRevenueByProject[month] || {};
+                  return sum + Object.values(monthData).reduce((monthSum: number, value: number) => monthSum + value, 0);
+                }, 0);
+                
+                return (
+                  <div key={key} className="text-center p-3 bg-muted/50 rounded-lg">
+                    <div className="text-sm font-medium text-muted-foreground">
+                      {label}
+                    </div>
+                    <div className="text-lg font-bold">
+                      {quarterTotal.toLocaleString('cs-CZ', { maximumFractionDigits: 0 })} Kč
+                    </div>
                   </div>
-                  <div className="text-lg font-bold">
-                    {monthTotal.toLocaleString('cs-CZ', { maximumFractionDigits: 0 })} Kč
+                );
+              })
+            ) : (
+              months.map((month) => {
+                const monthData = monthlyRevenueByProject[month] || {};
+                const monthTotal = Object.values(monthData).reduce((sum: number, value: number) => sum + value, 0);
+                return (
+                  <div key={month} className="text-center p-3 bg-muted/50 rounded-lg">
+                    <div className="text-sm font-medium text-muted-foreground">
+                      {month.slice(0, 3)}
+                    </div>
+                    <div className="text-lg font-bold">
+                      {monthTotal.toLocaleString('cs-CZ', { maximumFractionDigits: 0 })} Kč
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })  
+            )}
           </div>
         </CardContent>
       </Card>
