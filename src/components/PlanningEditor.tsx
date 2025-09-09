@@ -52,26 +52,45 @@ const getCurrentWeek = (): number => {
   return getWeek(new Date(), { weekStartsOn: 1 });
 };
 
-// Funkce pro generování týdnů od aktuálního týdne do konce roku
+// Funkce pro generování týdnů od aktuálního týdne do půlky příštího roku
 const generateAllWeeks = (): WeekPlan[] => {
   const weeks: WeekPlan[] = [];
   const months = [
     'leden', 'únor', 'březen', 'duben', 'květen', 'červen',
-    'červenec', 'August', 'September', 'October', 'November', 'December'
+    'červenec', 'srpen', 'září', 'říjen', 'listopad', 'prosinec'
   ];
   
   const currentWeek = getCurrentWeek();
   const startWeek = Math.max(32, currentWeek); // Začneme od aktuálního týdne, ale minimálně od CW32
   
-  // Začínáme od aktuálního týdne do CW52
+  // Nejprve generujeme týdny do konce roku 2025 (CW32-52)
   for (let cw = startWeek; cw <= 52; cw++) {
-    // CW32 je obvykle srpen, CW52 je prosinec
     let monthIndex;
-    if (cw <= 35) monthIndex = 7; // August
-    else if (cw <= 39) monthIndex = 8; // September  
-    else if (cw <= 43) monthIndex = 9; // October
-    else if (cw <= 47) monthIndex = 10; // November
-    else monthIndex = 11; // December
+    if (cw <= 35) monthIndex = 7; // srpen
+    else if (cw <= 39) monthIndex = 8; // září  
+    else if (cw <= 43) monthIndex = 9; // říjen
+    else if (cw <= 47) monthIndex = 10; // listopad
+    else monthIndex = 11; // prosinec
+    
+    const mesic = months[monthIndex];
+    
+    weeks.push({
+      cw: `CW${cw.toString().padStart(2, '0')}`,
+      mesic,
+      mhTyden: 36, // Defaultní hodnota 36 hodin
+      projekt: 'FREE'
+    });
+  }
+  
+  // Pak generujeme týdny pro první půlku roku 2026 (CW01-26)
+  for (let cw = 1; cw <= 26; cw++) {
+    let monthIndex;
+    if (cw <= 5) monthIndex = 0; // leden
+    else if (cw <= 9) monthIndex = 1; // únor
+    else if (cw <= 13) monthIndex = 2; // březen
+    else if (cw <= 17) monthIndex = 3; // duben
+    else if (cw <= 22) monthIndex = 4; // květen
+    else monthIndex = 5; // červen
     
     const mesic = months[monthIndex];
     

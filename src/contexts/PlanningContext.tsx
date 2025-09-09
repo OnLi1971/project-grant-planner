@@ -141,13 +141,21 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         // Záznam neexistuje, vytvoříme nový
         const cwNum = parseInt(cw.replace('CW', ''));
         
-        // Používáme stejné mapování jako v addEngineer funkci
+        // Používáme rozšířené mapování týdnů na měsíce (2025-2026)
         const weekToMonthMap: { [key: number]: string } = {
-          32: 'August', 33: 'August', 34: 'August', 35: 'August',
-          36: 'September', 37: 'September', 38: 'September', 39: 'September',
-          40: 'October', 41: 'October', 42: 'October', 43: 'October', 44: 'October',
-          45: 'November', 46: 'November', 47: 'November', 48: 'November',
-          49: 'December', 50: 'December', 51: 'December', 52: 'December'
+          // Rok 2025 (CW32-52)
+          32: 'srpen', 33: 'srpen', 34: 'srpen', 35: 'srpen',
+          36: 'září', 37: 'září', 38: 'září', 39: 'září',
+          40: 'říjen', 41: 'říjen', 42: 'říjen', 43: 'říjen', 44: 'říjen',
+          45: 'listopad', 46: 'listopad', 47: 'listopad', 48: 'listopad',
+          49: 'prosinec', 50: 'prosinec', 51: 'prosinec', 52: 'prosinec',
+          // Rok 2026 (CW01-26)
+          1: 'leden', 2: 'leden', 3: 'leden', 4: 'leden', 5: 'leden',
+          6: 'únor', 7: 'únor', 8: 'únor', 9: 'únor',
+          10: 'březen', 11: 'březen', 12: 'březen', 13: 'březen', 14: 'březen',
+          15: 'duben', 16: 'duben', 17: 'duben', 18: 'duben',
+          19: 'květen', 20: 'květen', 21: 'květen', 22: 'květen', 23: 'květen',
+          24: 'červen', 25: 'červen', 26: 'červen'
         };
         
         const mesic = weekToMonthMap[cwNum] || 'August';
@@ -209,8 +217,14 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [toast]);
 
   const addEngineer = useCallback(async (name: string) => {
-    const weeks = ['CW32', 'CW33', 'CW34', 'CW35', 'CW36', 'CW37', 'CW38', 'CW39', 'CW40', 'CW41', 'CW42', 'CW43', 'CW44', 'CW45', 'CW46', 'CW47', 'CW48', 'CW49', 'CW50', 'CW51', 'CW52'];
-    const months = ['August', 'August', 'August', 'August', 'September', 'September', 'September', 'September', 'October', 'October', 'October', 'October', 'October', 'November', 'November', 'November', 'November', 'December', 'December', 'December', 'December'];
+    // Týdny od CW32 do CW52 (2025) + CW01 do CW26 (2026)
+    const weeks2025 = ['CW32', 'CW33', 'CW34', 'CW35', 'CW36', 'CW37', 'CW38', 'CW39', 'CW40', 'CW41', 'CW42', 'CW43', 'CW44', 'CW45', 'CW46', 'CW47', 'CW48', 'CW49', 'CW50', 'CW51', 'CW52'];
+    const weeks2026 = ['CW01', 'CW02', 'CW03', 'CW04', 'CW05', 'CW06', 'CW07', 'CW08', 'CW09', 'CW10', 'CW11', 'CW12', 'CW13', 'CW14', 'CW15', 'CW16', 'CW17', 'CW18', 'CW19', 'CW20', 'CW21', 'CW22', 'CW23', 'CW24', 'CW25', 'CW26'];
+    const weeks = [...weeks2025, ...weeks2026];
+    
+    const months2025 = ['srpen', 'srpen', 'srpen', 'srpen', 'září', 'září', 'září', 'září', 'říjen', 'říjen', 'říjen', 'říjen', 'říjen', 'listopad', 'listopad', 'listopad', 'listopad', 'prosinec', 'prosinec', 'prosinec', 'prosinec'];
+    const months2026 = ['leden', 'leden', 'leden', 'leden', 'leden', 'únor', 'únor', 'únor', 'únor', 'březen', 'březen', 'březen', 'březen', 'březen', 'duben', 'duben', 'duben', 'duben', 'květen', 'květen', 'květen', 'květen', 'květen', 'červen', 'červen', 'červen'];
+    const months = [...months2025, ...months2026];
     
     const newEntries = weeks.map((week, index) => ({
       konstrukter: name,
