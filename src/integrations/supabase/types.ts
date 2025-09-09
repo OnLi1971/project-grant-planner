@@ -14,6 +14,78 @@ export type Database = {
   }
   public: {
     Tables: {
+      api_keys: {
+        Row: {
+          created_at: string
+          encrypted_key: string
+          id: string
+          service_name: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          encrypted_key: string
+          id?: string
+          service_name: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          encrypted_key?: string
+          id?: string
+          service_name?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      articles: {
+        Row: {
+          ai_summary_generated: boolean
+          canonical_url: string | null
+          created_at: string
+          id: string
+          is_selected: boolean
+          keywords: string[]
+          original_url: string
+          published_date: string | null
+          summary: string
+          title: string
+          updated_at: string
+          url_hash: string | null
+        }
+        Insert: {
+          ai_summary_generated?: boolean
+          canonical_url?: string | null
+          created_at?: string
+          id?: string
+          is_selected?: boolean
+          keywords?: string[]
+          original_url: string
+          published_date?: string | null
+          summary: string
+          title: string
+          updated_at?: string
+          url_hash?: string | null
+        }
+        Update: {
+          ai_summary_generated?: boolean
+          canonical_url?: string | null
+          created_at?: string
+          id?: string
+          is_selected?: boolean
+          keywords?: string[]
+          original_url?: string
+          published_date?: string | null
+          summary?: string
+          title?: string
+          updated_at?: string
+          url_hash?: string | null
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           code: string
@@ -71,6 +143,24 @@ export type Database = {
           program?: string | null
           updated_at?: string
           updated_by?: string | null
+        }
+        Relationships: []
+      }
+      idempotency_keys: {
+        Row: {
+          created_at: string
+          id: string
+          key: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key?: string
         }
         Relationships: []
       }
