@@ -40,6 +40,7 @@ export const RevenueOverview = () => {
   const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
   const [viewType, setViewType] = useState<'mesic' | 'kvartal'>('mesic');
   const [selectedQuarters, setSelectedQuarters] = useState<string[]>(['Q3-2025', 'Q4-2025', 'Q1-2026', 'Q2-2026']);
+  const [selectedMonths, setSelectedMonths] = useState<string[]>(['srpen', 'září', 'říjen', 'listopad', 'prosinec', 'leden', 'únor', 'březen', 'duben', 'květen', 'červen']);
   const [projects, setProjects] = useState<DatabaseProject[]>([]);
   const [customers, setCustomers] = useState<DatabaseCustomer[]>([]);
   const [programs, setPrograms] = useState<DatabaseProgram[]>([]);
@@ -194,10 +195,12 @@ export const RevenueOverview = () => {
       
       const allSelectedMonths = selectedQuarters.flatMap(quarter => quarterMonths[quarter] || []);
       data = data.filter(entry => allSelectedMonths.includes(entry.mesic));
+    } else if (viewType === 'mesic' && selectedMonths.length > 0) {
+      data = data.filter(entry => selectedMonths.includes(entry.mesic));
     }
 
     return data;
-  }, [planningData, filterType, filterValue, selectedPrograms, projects, viewType, selectedQuarters]);
+  }, [planningData, filterType, filterValue, selectedPrograms, projects, viewType, selectedQuarters, selectedMonths]);
 
   // Výpočet revenue po měsících s rozložením podle projektů a poměrným rozdělením týdnů
   const calculateMonthlyRevenueByProject = (data = filteredData) => {
@@ -351,8 +354,24 @@ export const RevenueOverview = () => {
     { value: 'Q2-2026', label: 'Q2 2026 (duben-červen)' }
   ];
 
+  // Možnosti pro měsíční filtr
+  const getMonthOptions = () => [
+    { value: 'srpen', label: 'Srpen 2025' },
+    { value: 'září', label: 'Září 2025' },
+    { value: 'říjen', label: 'Říjen 2025' },
+    { value: 'listopad', label: 'Listopad 2025' },
+    { value: 'prosinec', label: 'Prosinec 2025' },
+    { value: 'leden', label: 'Leden 2026' },
+    { value: 'únor', label: 'Únor 2026' },
+    { value: 'březen', label: 'Březen 2026' },
+    { value: 'duben', label: 'Duben 2026' },
+    { value: 'květen', label: 'Květen 2026' },
+    { value: 'červen', label: 'Červen 2026' }
+  ];
+
   const filterOptions = getFilterOptions();
   const quarterOptions = getQuarterOptions();
+  const monthOptions = getMonthOptions();
 
   // Reset filter value when filter type changes
   const handleFilterTypeChange = (value: string) => {
@@ -364,9 +383,11 @@ export const RevenueOverview = () => {
   // Handle view type change
   const handleViewTypeChange = (value: 'mesic' | 'kvartal') => {
     setViewType(value);
-    // Reset to all quarters when switching to quarter view
+    // Reset to all quarters/months when switching view type
     if (value === 'kvartal') {
       setSelectedQuarters(['Q3-2025', 'Q4-2025', 'Q1-2026', 'Q2-2026']);
+    } else {
+      setSelectedMonths(['srpen', 'září', 'říjen', 'listopad', 'prosinec', 'leden', 'únor', 'březen', 'duben', 'květen', 'červen']);
     }
   };
 
@@ -385,6 +406,15 @@ export const RevenueOverview = () => {
       setSelectedPrograms(prev => [...prev, programId]);
     } else {
       setSelectedPrograms(prev => prev.filter(id => id !== programId));
+    }
+  };
+
+  // Handle month checkbox changes
+  const handleMonthChange = (monthId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedMonths(prev => [...prev, monthId]);
+    } else {
+      setSelectedMonths(prev => prev.filter(id => id !== monthId));
     }
   };
 
@@ -447,6 +477,32 @@ export const RevenueOverview = () => {
                           className="text-sm font-normal cursor-pointer"
                         >
                           {quarter.label}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Měsíční filtr */}
+              {viewType === 'mesic' && (
+                <div>
+                  <Label>Měsíce</Label>
+                  <div className="grid grid-cols-2 gap-2 mt-2 p-3 border rounded-md bg-background max-h-40 overflow-y-auto">
+                    {monthOptions.map((month) => (
+                      <div key={month.value} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id={`month-${month.value}`}
+                          checked={selectedMonths.includes(month.value)}
+                          onChange={(e) => handleMonthChange(month.value, e.target.checked)}
+                          className="rounded border-gray-300 text-primary focus:ring-primary"
+                        />
+                        <Label 
+                          htmlFor={`month-${month.value}`} 
+                          className="text-sm font-normal cursor-pointer"
+                        >
+                          {month.label}
                         </Label>
                       </div>
                     ))}
@@ -530,8 +586,9 @@ export const RevenueOverview = () => {
                      'program'
                    }`
                  : 'Všechny projekty s revenue'
-                } | Pohled: {viewType === 'mesic' ? 'Měsíční' : 'Kvartální'}
-                {viewType === 'kvartal' && selectedQuarters.length > 0 && selectedQuarters.length < quarterOptions.length ? ` - ${selectedQuarters.map(q => quarterOptions.find(opt => opt.value === q)?.label).join(', ')}` : ''}
+                 } | Pohled: {viewType === 'mesic' ? 'Měsíční' : 'Kvartální'}
+                 {viewType === 'kvartal' && selectedQuarters.length > 0 && selectedQuarters.length < quarterOptions.length ? ` - ${selectedQuarters.map(q => quarterOptions.find(opt => opt.value === q)?.label).join(', ')}` : ''}
+                 {viewType === 'mesic' && selectedMonths.length > 0 && selectedMonths.length < monthOptions.length ? ` - ${selectedMonths.map(m => monthOptions.find(opt => opt.value === m)?.label).join(', ')}` : ''}
               </p>
           </div>
 
