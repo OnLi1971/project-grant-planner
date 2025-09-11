@@ -186,7 +186,7 @@ export const RevenueOverview = () => {
     // Kvartální/měsíční filtrování
     if (viewType === 'kvartal' && selectedQuarters.length > 0) {
       const quarterMonths: { [key: string]: string[] } = {
-        'Q3-2025': ['srpen', 'září'],
+        'Q3-2025': ['září'],
         'Q4-2025': ['říjen', 'listopad', 'prosinec'],
         'Q1-2026': ['leden', 'únor', 'březen'],
         'Q2-2026': ['duben', 'květen', 'červen']
@@ -204,7 +204,7 @@ export const RevenueOverview = () => {
     const monthlyData: { [month: string]: { [projectCode: string]: number } } = {};
 
     // Inicializace struktur pro všechny měsíce
-    const months = ['srpen', 'září', 'říjen', 'listopad', 'prosinec', 'leden', 'únor', 'březen', 'duben', 'květen', 'červen'];
+    const months = ['září', 'říjen', 'listopad', 'prosinec', 'leden', 'únor', 'březen', 'duben', 'květen', 'červen'];
     months.forEach(month => {
       monthlyData[month] = {};
     });
@@ -249,7 +249,7 @@ export const RevenueOverview = () => {
   };
 
   const monthlyRevenueByProject = calculateMonthlyRevenueByProject();
-  const months = ['srpen', 'září', 'říjen', 'listopad', 'prosinec', 'leden', 'únor', 'březen', 'duben', 'květen', 'červen'];
+  const months = ['září', 'říjen', 'listopad', 'prosinec', 'leden', 'únor', 'březen', 'duben', 'květen', 'červen'];
   
   // Získání všech unikátních projektů s revenue
   const allProjects = new Set<string>();
@@ -270,7 +270,7 @@ export const RevenueOverview = () => {
       const quarterData = [
         {
           quarter: 'Q3 2025',
-          months: ['srpen', 'září'],
+          months: ['září'],
           label: 'Q3 25'
         },
         {
@@ -345,7 +345,7 @@ export const RevenueOverview = () => {
 
   // Možnosti pro kvartální filtr
   const getQuarterOptions = () => [
-    { value: 'Q3-2025', label: 'Q3 2025 (srpen-září)' },
+    { value: 'Q3-2025', label: 'Q3 2025 (září)' },
     { value: 'Q4-2025', label: 'Q4 2025 (říjen-prosinec)' },
     { value: 'Q1-2026', label: 'Q1 2026 (leden-březen)' },
     { value: 'Q2-2026', label: 'Q2 2026 (duben-červen)' }
