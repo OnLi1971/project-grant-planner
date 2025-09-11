@@ -9,6 +9,7 @@ import { RevenueOverview } from '@/components/RevenueOverview';
 import { ResourceManagement } from '@/components/ResourceManagement';
 import { LicenseManagement } from '@/components/LicenseManagement';
 import { ProjectManagement } from '@/components/ProjectManagement';
+import UserManagement from '@/components/UserManagement';
 import { PlanningProvider } from '@/contexts/PlanningContext';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
@@ -19,7 +20,7 @@ import { Calendar, Edit, Users, Grid3x3, Database, TrendingUp, Settings, Shield,
 const Index = () => {
   const { user, loading, signOut } = useAuth();
   const [outputView, setOutputView] = useState<'overview' | 'free-capacity' | 'matrix' | 'revenue'>('overview');
-  const [managementView, setManagementView] = useState<'projects' | 'resources' | 'licenses'>('projects');
+  const [managementView, setManagementView] = useState<'projects' | 'resources' | 'licenses' | 'users'>('projects');
 
   // Show loading while checking auth
   if (loading) {
@@ -159,6 +160,14 @@ const Index = () => {
                     <Shield className="h-4 w-4" />
                     Správa licencí
                   </Button>
+                  <Button
+                    variant={managementView === 'users' ? 'default' : 'outline'}
+                    onClick={() => setManagementView('users')}
+                    className="flex items-center gap-2"
+                  >
+                    <Users className="h-4 w-4" />
+                    Správa uživatelů
+                  </Button>
                 </div>
               </Card>
               
@@ -166,8 +175,10 @@ const Index = () => {
                 <ProjectManagement />
               ) : managementView === 'resources' ? (
                 <ResourceManagement />
-              ) : (
+              ) : managementView === 'licenses' ? (
                 <LicenseManagement />
+              ) : (
+                <UserManagement />
               )}
             </TabsContent>
           </Tabs>
