@@ -290,8 +290,17 @@ export const RevenueOverview = () => {
           monthlyData[month][entry.projekt] = 0;
         }
 
-        // Přičteme poměrnou část týdenního revenue k měsíčnímu součtu
-        const monthlyRevenue = entry.mhTyden * hourlyRate * ratio;
+        // Koeficient pro snížení o státní svátky
+        const baseWorkingDays: { [key: string]: number } = {
+          'srpen': 21, 'září': 22, 'říjen': 23, 'listopad': 20, 'prosinec': 22,
+          'leden': 22, 'únor': 20, 'březen': 21, 'duben': 22, 'květen': 21, 'červen': 21
+        };
+        const workingDaysWithoutHolidays = getWorkingDaysInMonth(month);
+        const totalWorkingDays = baseWorkingDays[month] || 22;
+        const holidayCoefficient = workingDaysWithoutHolidays / totalWorkingDays;
+
+        // Přičteme poměrnou část týdenního revenue k měsíčnímu součtu (snížené o státní svátky)
+        const monthlyRevenue = entry.mhTyden * hourlyRate * ratio * holidayCoefficient;
         monthlyData[month][entry.projekt] += monthlyRevenue;
       });
     });
