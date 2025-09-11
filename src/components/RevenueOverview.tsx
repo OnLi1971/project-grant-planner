@@ -150,9 +150,6 @@ export const RevenueOverview = () => {
     return Math.max(0, baseCount - holidays);
   };
 
-  // Debug funkce pro ověření svátků
-  console.log('Checking holidays for září:', getHolidaysInMonth('září'));
-  console.log('Date check 28.9.2025:', new Date('2025-09-28').getDay()); // 0=neděle, 6=sobota
 
   // Přesnější mapování týdnů na měsíce s poměrným rozdělením pro roky 2025-2026
   const weekToMonthMapping: { [key: string]: { [month: string]: number } } = {
@@ -302,17 +299,6 @@ export const RevenueOverview = () => {
         const workingDaysWithoutHolidays = getWorkingDaysInMonth(month);
         const totalWorkingDays = baseWorkingDays[month] || 22;
         const holidayCoefficient = workingDaysWithoutHolidays / totalWorkingDays;
-
-        // Debug pro září
-        if (month === 'září' && entry.projekt === 'ST_MAINZ') {
-          console.log(`Debug ${month}:`, {
-            workingDaysWithoutHolidays,
-            totalWorkingDays,
-            holidayCoefficient,
-            originalRevenue: entry.mhTyden * hourlyRate * ratio,
-            adjustedRevenue: entry.mhTyden * hourlyRate * ratio * holidayCoefficient
-          });
-        }
 
         // Přičteme poměrnou část týdenního revenue k měsíčnímu součtu (snížené o státní svátky)
         const monthlyRevenue = entry.mhTyden * hourlyRate * ratio * holidayCoefficient;
@@ -703,48 +689,6 @@ export const RevenueOverview = () => {
             </ResponsiveContainer>
           </div>
           
-          {/* Celkové hodnoty pod grafem */}
-          <div className="grid grid-cols-3 md:grid-cols-4 gap-4 mb-6">
-            {viewType === 'kvartal' ? (
-              [
-                { key: 'Q3-2025', label: 'Q3 25', months: ['srpen', 'září'] },
-                { key: 'Q4-2025', label: 'Q4 25', months: ['říjen', 'listopad', 'prosinec'] },
-                { key: 'Q1-2026', label: 'Q1 26', months: ['leden', 'únor', 'březen'] },
-                { key: 'Q2-2026', label: 'Q2 26', months: ['duben', 'květen', 'červen'] }
-              ].map(({ key, label, months }) => {
-                const quarterTotal = months.reduce((sum, month) => {
-                  const monthData = monthlyRevenueByProject[month] || {};
-                  return sum + Object.values(monthData).reduce((monthSum: number, value: number) => monthSum + value, 0);
-                }, 0);
-                
-                return (
-                  <div key={key} className="text-center p-3 bg-muted/50 rounded-lg">
-                    <div className="text-sm font-medium text-muted-foreground">
-                      {label}
-                    </div>
-                    <div className="text-lg font-bold">
-                      {quarterTotal.toLocaleString('cs-CZ', { maximumFractionDigits: 0 })} Kč
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              months.map((month) => {
-                const monthData = monthlyRevenueByProject[month] || {};
-                const monthTotal = Object.values(monthData).reduce((sum: number, value: number) => sum + value, 0);
-                return (
-                  <div key={month} className="text-center p-3 bg-muted/50 rounded-lg">
-                    <div className="text-sm font-medium text-muted-foreground">
-                      {month.slice(0, 3)}
-                    </div>
-                    <div className="text-lg font-bold">
-                      {monthTotal.toLocaleString('cs-CZ', { maximumFractionDigits: 0 })} Kč
-                    </div>
-                  </div>
-                );
-              })  
-            )}
-          </div>
         </CardContent>
       </Card>
 
