@@ -150,6 +150,10 @@ export const RevenueOverview = () => {
     return Math.max(0, baseCount - holidays);
   };
 
+  // Debug funkce pro ověření svátků
+  console.log('Checking holidays for září:', getHolidaysInMonth('září'));
+  console.log('Date check 28.9.2025:', new Date('2025-09-28').getDay()); // 0=neděle, 6=sobota
+
   // Přesnější mapování týdnů na měsíce s poměrným rozdělením pro roky 2025-2026
   const weekToMonthMapping: { [key: string]: { [month: string]: number } } = {
     // Rok 2025 (CW32-52)
@@ -298,6 +302,17 @@ export const RevenueOverview = () => {
         const workingDaysWithoutHolidays = getWorkingDaysInMonth(month);
         const totalWorkingDays = baseWorkingDays[month] || 22;
         const holidayCoefficient = workingDaysWithoutHolidays / totalWorkingDays;
+
+        // Debug pro září
+        if (month === 'září' && entry.projekt === 'ST_MAINZ') {
+          console.log(`Debug ${month}:`, {
+            workingDaysWithoutHolidays,
+            totalWorkingDays,
+            holidayCoefficient,
+            originalRevenue: entry.mhTyden * hourlyRate * ratio,
+            adjustedRevenue: entry.mhTyden * hourlyRate * ratio * holidayCoefficient
+          });
+        }
 
         // Přičteme poměrnou část týdenního revenue k měsíčnímu součtu (snížené o státní svátky)
         const monthlyRevenue = entry.mhTyden * hourlyRate * ratio * holidayCoefficient;
@@ -477,7 +492,7 @@ export const RevenueOverview = () => {
 
   if (loading) {
     return (
-      <div className="space-y-6">
+    <div className="space-y-6">
         <div className="text-center py-8">Načítám data...</div>
       </div>
     );
@@ -816,7 +831,6 @@ export const RevenueOverview = () => {
           </div>
         </CardContent>
       </Card>
-
     </div>
   );
 };
