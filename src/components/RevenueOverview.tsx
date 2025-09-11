@@ -103,8 +103,11 @@ export const RevenueOverview = () => {
 
   // Přesnější mapování týdnů na měsíce s poměrným rozdělením pro roky 2025-2026
   const weekToMonthMapping: { [key: string]: { [month: string]: number } } = {
-    // Rok 2025 (CW35-52) - začínáme od září
-    'CW35': { 'září': 1.0 },        // 25-31 srpna / 1-7 září 2025
+    // Rok 2025 (CW32-52)
+    'CW32': { 'srpen': 1.0 },           // 4-10 srpna 2025 (celý týden)
+    'CW33': { 'srpen': 1.0 },           // 11-17 srpna 2025 (celý týden)  
+    'CW34': { 'srpen': 1.0 },           // 18-24 srpna 2025 (celý týden)
+    'CW35': { 'srpen': 0.6, 'září': 0.4 },  // 25-31 srpna 2025 (3:2 dny)
     'CW36': { 'září': 1.0 },        // 1-7 září 2025 (celý týden)
     'CW37': { 'září': 1.0 },        // 8-14 září 2025 (celý týden)
     'CW38': { 'září': 1.0 },        // 15-21 září 2025 (celý týden)
@@ -183,7 +186,7 @@ export const RevenueOverview = () => {
     // Kvartální/měsíční filtrování
     if (viewType === 'kvartal' && selectedQuarters.length > 0) {
       const quarterMonths: { [key: string]: string[] } = {
-        'Q3-2025': ['září'],
+        'Q3-2025': ['srpen', 'září'],
         'Q4-2025': ['říjen', 'listopad', 'prosinec'],
         'Q1-2026': ['leden', 'únor', 'březen'],
         'Q2-2026': ['duben', 'květen', 'červen']
@@ -201,7 +204,7 @@ export const RevenueOverview = () => {
     const monthlyData: { [month: string]: { [projectCode: string]: number } } = {};
 
     // Inicializace struktur pro všechny měsíce
-    const months = ['září', 'říjen', 'listopad', 'prosinec', 'leden', 'únor', 'březen', 'duben', 'květen', 'červen'];
+    const months = ['srpen', 'září', 'říjen', 'listopad', 'prosinec', 'leden', 'únor', 'březen', 'duben', 'květen', 'červen'];
     months.forEach(month => {
       monthlyData[month] = {};
     });
@@ -246,7 +249,7 @@ export const RevenueOverview = () => {
   };
 
   const monthlyRevenueByProject = calculateMonthlyRevenueByProject();
-  const months = ['září', 'říjen', 'listopad', 'prosinec', 'leden', 'únor', 'březen', 'duben', 'květen', 'červen'];
+  const months = ['srpen', 'září', 'říjen', 'listopad', 'prosinec', 'leden', 'únor', 'březen', 'duben', 'květen', 'červen'];
   
   // Získání všech unikátních projektů s revenue
   const allProjects = new Set<string>();
@@ -267,7 +270,7 @@ export const RevenueOverview = () => {
       const quarterData = [
         {
           quarter: 'Q3 2025',
-          months: ['září'],
+          months: ['srpen', 'září'],
           label: 'Q3 25'
         },
         {
@@ -342,7 +345,7 @@ export const RevenueOverview = () => {
 
   // Možnosti pro kvartální filtr
   const getQuarterOptions = () => [
-    { value: 'Q3-2025', label: 'Q3 2025 (září)' },
+    { value: 'Q3-2025', label: 'Q3 2025 (srpen-září)' },
     { value: 'Q4-2025', label: 'Q4 2025 (říjen-prosinec)' },
     { value: 'Q1-2026', label: 'Q1 2026 (leden-březen)' },
     { value: 'Q2-2026', label: 'Q2 2026 (duben-červen)' }
