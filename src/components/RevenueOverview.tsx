@@ -103,11 +103,8 @@ export const RevenueOverview = () => {
 
   // Přesnější mapování týdnů na měsíce s poměrným rozdělením pro roky 2025-2026
   const weekToMonthMapping: { [key: string]: { [month: string]: number } } = {
-    // Rok 2025 (CW32-52)
-    'CW32': { 'srpen': 1.0 },           // 4-10 srpna 2025 (celý týden)
-    'CW33': { 'srpen': 1.0 },           // 11-17 srpna 2025 (celý týden)  
-    'CW34': { 'srpen': 1.0 },           // 18-24 srpna 2025 (celý týden)
-    'CW35': { 'srpen': 0.6, 'září': 0.4 },  // 25-31 srpna 2025 (3:2 dny)
+    // Rok 2025 (CW35-52) - začínáme od září
+    'CW35': { 'září': 1.0 },        // 25-31 srpna / 1-7 září 2025
     'CW36': { 'září': 1.0 },        // 1-7 září 2025 (celý týden)
     'CW37': { 'září': 1.0 },        // 8-14 září 2025 (celý týden)
     'CW38': { 'září': 1.0 },        // 15-21 září 2025 (celý týden)
