@@ -83,10 +83,54 @@ export const RevenueOverview = () => {
     return new Date(actualYear, monthNum, 0).getDate();
   };
 
-  // Funkce pro výpočet pracovních dnů v měsíci (5 dnů v týdnu) pro roky 2025-2026
+  // Seznam státních svátků v ČR pro roky 2025-2026
+  const publicHolidays = {
+    '2025-09-28': 'Den české státnosti',
+    '2025-10-28': 'Den vzniku samostatného československého státu', 
+    '2025-11-17': 'Den boje za svobodu a demokracii',
+    '2025-12-24': 'Štědrý den',
+    '2025-12-25': '1. svátek vánoční',
+    '2025-12-26': '2. svátek vánoční',
+    '2026-01-01': 'Nový rok',
+    '2026-04-21': 'Velikonoční pondělí',
+    '2026-05-01': 'Svátek práce',
+    '2026-05-08': 'Den vítězství',
+    '2026-07-05': 'Den slovanských věrozvěstů Cyrila a Metoděje',
+    '2026-07-06': 'Den upálení mistra Jana Husa'
+  };
+
+  // Funkce pro počítání svátků připadajících na pracovní dny v daném měsíci
+  const getHolidaysInMonth = (month: string): number => {
+    const monthToNumber: { [key: string]: number } = {
+      'srpen': 8, 'září': 9, 'říjen': 10, 'listopad': 11, 'prosinec': 12,
+      'leden': 1, 'únor': 2, 'březen': 3, 'duben': 4, 'květen': 5, 'červen': 6, 'červenec': 7
+    };
+    
+    const monthNum = monthToNumber[month];
+    if (!monthNum) return 0;
+    
+    const year = ['leden', 'únor', 'březen', 'duben', 'květen', 'červen', 'červenec'].includes(month) ? 2026 : 2025;
+    
+    let holidayCount = 0;
+    
+    Object.keys(publicHolidays).forEach(dateStr => {
+      const date = new Date(dateStr);
+      if (date.getFullYear() === year && date.getMonth() + 1 === monthNum) {
+        // Kontrola, zda svátek připadá na pracovní den (pondělí = 1, pátek = 5)
+        const dayOfWeek = date.getDay();
+        if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+          holidayCount++;
+        }
+      }
+    });
+    
+    return holidayCount;
+  };
+
+  // Funkce pro výpočet pracovních dnů v měsíci (5 dnů v týdnu) minus státní svátky
   const getWorkingDaysInMonth = (month: string): number => {
-    // Přesný počet pracovních dnů pro roky 2025-2026
-    const workingDays: { [key: string]: number } = {
+    // Základní počet pracovních dnů pro roky 2025-2026
+    const baseWorkingDays: { [key: string]: number } = {
       'srpen': 21,      // srpen 2025
       'září': 22,       // září 2025  
       'říjen': 23,      // říjen 2025
@@ -99,7 +143,11 @@ export const RevenueOverview = () => {
       'květen': 21,     // květen 2026
       'červen': 21      // červen 2026
     };
-    return workingDays[month] || 22;
+    
+    const baseCount = baseWorkingDays[month] || 22;
+    const holidays = getHolidaysInMonth(month);
+    
+    return Math.max(0, baseCount - holidays);
   };
 
   // Přesnější mapování týdnů na měsíce s poměrným rozdělením pro roky 2025-2026
