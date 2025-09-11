@@ -310,7 +310,7 @@ export const RevenueOverview = () => {
   };
 
   const monthlyRevenueByProject = calculateMonthlyRevenueByProject();
-  const months = ['srpen', 'září', 'říjen', 'listopad', 'prosinec', 'leden', 'únor', 'březen', 'duben', 'květen', 'červen'];
+  const months = viewType === 'mesic' ? selectedMonths : ['srpen', 'září', 'říjen', 'listopad', 'prosinec', 'leden', 'únor', 'březen', 'duben', 'květen', 'červen'];
   
   // Získání všech unikátních projektů s revenue
   const allProjects = new Set<string>();
@@ -319,8 +319,9 @@ export const RevenueOverview = () => {
   });
   const projectList = Array.from(allProjects);
 
-  // Výpočet celkového revenue
-  const totalRevenue = Object.values(monthlyRevenueByProject).reduce((sum, monthData) => {
+  // Výpočet celkového revenue pouze pro vybrané měsíce
+  const totalRevenue = months.reduce((sum, month) => {
+    const monthData = monthlyRevenueByProject[month] || {};
     return sum + Object.values(monthData).reduce((monthSum, projectRevenue) => monthSum + projectRevenue, 0);
   }, 0);
 
