@@ -149,16 +149,19 @@ export type Database = {
       idempotency_keys: {
         Row: {
           created_at: string
+          expires_at: string | null
           id: string
           key: string
         }
         Insert: {
           created_at?: string
+          expires_at?: string | null
           id?: string
           key: string
         }
         Update: {
           created_at?: string
+          expires_at?: string | null
           id?: string
           key?: string
         }
@@ -476,6 +479,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_expired_idempotency_keys: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
