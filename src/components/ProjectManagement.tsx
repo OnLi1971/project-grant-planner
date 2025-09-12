@@ -319,6 +319,17 @@ export const ProjectManagement = () => {
     }
   };
 
+  // Helper functions to convert month format to date format
+  const monthToStartDate = (monthValue: string): string => {
+    return `${monthValue}-01`; // First day of the month
+  };
+
+  const monthToEndDate = (monthValue: string): string => {
+    const [year, month] = monthValue.split('-');
+    const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
+    return `${monthValue}-${lastDay.toString().padStart(2, '0')}`; // Last day of the month
+  };
+
   const handleSubmit = async () => {
     if (!formData.name || !formData.code || !formData.customerId || !formData.projectManagerId || !formData.programId) {
       toast({
@@ -346,8 +357,8 @@ export const ProjectManagement = () => {
             project_status: formData.projectStatus,
             probability: formData.projectStatus === 'Pre sales' ? formData.probability : null,
             presales_phase: formData.projectStatus === 'Pre sales' ? formData.presalesPhase : null,
-            presales_start_date: formData.projectStatus === 'Pre sales' && formData.presalesStartDate ? formData.presalesStartDate : null,
-            presales_end_date: formData.projectStatus === 'Pre sales' && formData.presalesEndDate ? formData.presalesEndDate : null,
+            presales_start_date: formData.projectStatus === 'Pre sales' && formData.presalesStartDate ? monthToStartDate(formData.presalesStartDate) : null,
+            presales_end_date: formData.projectStatus === 'Pre sales' && formData.presalesEndDate ? monthToEndDate(formData.presalesEndDate) : null,
             updated_by: (await supabase.auth.getUser()).data.user?.id
           })
           .eq('id', editingProject.id);
@@ -385,8 +396,8 @@ export const ProjectManagement = () => {
             project_status: formData.projectStatus,
             probability: formData.projectStatus === 'Pre sales' ? formData.probability : null,
             presales_phase: formData.projectStatus === 'Pre sales' ? formData.presalesPhase : null,
-            presales_start_date: formData.projectStatus === 'Pre sales' && formData.presalesStartDate ? formData.presalesStartDate : null,
-            presales_end_date: formData.projectStatus === 'Pre sales' && formData.presalesEndDate ? formData.presalesEndDate : null,
+            presales_start_date: formData.projectStatus === 'Pre sales' && formData.presalesStartDate ? monthToStartDate(formData.presalesStartDate) : null,
+            presales_end_date: formData.projectStatus === 'Pre sales' && formData.presalesEndDate ? monthToEndDate(formData.presalesEndDate) : null,
             status: 'active',
             created_by: (await supabase.auth.getUser()).data.user?.id
           })
