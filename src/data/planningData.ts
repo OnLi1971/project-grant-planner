@@ -23,7 +23,14 @@ const monthMapping: { [key: string]: string } = {
   'CW10': 'březen', 'CW11': 'březen', 'CW12': 'březen', 'CW13': 'březen', 'CW14': 'březen',
   'CW15': 'duben', 'CW16': 'duben', 'CW17': 'duben', 'CW18': 'duben',
   'CW19': 'květen', 'CW20': 'květen', 'CW21': 'květen', 'CW22': 'květen', 'CW23': 'květen',
-  'CW24': 'červen', 'CW25': 'červen', 'CW26': 'červen'
+  'CW24': 'červen', 'CW25': 'červen', 'CW26': 'červen',
+  // Second half of 2026
+  'CW27': 'červenec', 'CW28': 'červenec', 'CW29': 'červenec', 'CW30': 'červenec',
+  'CW31': 'srpen', 'CW32_2026': 'srpen', 'CW33_2026': 'srpen', 'CW34_2026': 'srpen', 'CW35_2026': 'srpen',
+  'CW36_2026': 'září', 'CW37_2026': 'září', 'CW38_2026': 'září', 'CW39_2026': 'září',
+  'CW40_2026': 'říjen', 'CW41_2026': 'říjen', 'CW42_2026': 'říjen', 'CW43_2026': 'říjen', 'CW44_2026': 'říjen',
+  'CW45_2026': 'listopad', 'CW46_2026': 'listopad', 'CW47_2026': 'listopad', 'CW48_2026': 'listopad',
+  'CW49_2026': 'prosinec', 'CW50_2026': 'prosinec', 'CW51_2026': 'prosinec', 'CW52_2026': 'prosinec'
 };
 
 // Complete planning data based on your original message
