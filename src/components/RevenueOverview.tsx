@@ -803,7 +803,21 @@ export const RevenueOverview = () => {
               <TableBody>
                 {projectList
                   .sort((a, b) => {
-                    // Seřadíme podle celkové revenue (sestupně)
+                    // Najdeme projekty podle kódu
+                    const projectA = projects.find(p => p.code === a);
+                    const projectB = projects.find(p => p.code === b);
+                    
+                    // Určíme status projektů (Realizace má prioritu)
+                    const statusA = projectA?.project_status || 'Realizace';
+                    const statusB = projectB?.project_status || 'Realizace';
+                    
+                    // Nejprve třídíme podle statusu (Realizace před Pre sales)
+                    if (statusA !== statusB) {
+                      if (statusA === 'Realizace' && statusB === 'Pre sales') return -1;
+                      if (statusA === 'Pre sales' && statusB === 'Realizace') return 1;
+                    }
+                    
+                    // V rámci stejného statusu třídíme podle celkové revenue (sestupně)
                     const totalA = Object.values(monthlyRevenueByProject).reduce((sum, monthData) => 
                       sum + (monthData[a] || 0), 0);
                     const totalB = Object.values(monthlyRevenueByProject).reduce((sum, monthData) => 
@@ -811,31 +825,47 @@ export const RevenueOverview = () => {
                     return totalB - totalA;
                   })
                   .map((projectCode, index) => {
+                    const project = projects.find(p => p.code === projectCode);
+                    const isPresales = project?.project_status === 'Pre sales';
                     const projectTotal = Object.values(monthlyRevenueByProject).reduce((sum, monthData) => 
                       sum + (monthData[projectCode] || 0), 0);
                     
                     if (projectTotal === 0) return null;
 
                     return (
-                      <TableRow key={projectCode}>
+                      <TableRow key={projectCode} className={isPresales ? "bg-muted/30" : ""}>
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
                             <div 
                               className="w-3 h-3 rounded" 
                               style={{ backgroundColor: getProjectColorWithIndex(projectCode, index) }}
                             />
-                            {projectCode}
+                            <div className="flex flex-col">
+                              <div className="flex items-center gap-2">
+                                {projectCode}
+                                {isPresales && (
+                                  <span className="text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full font-medium">
+                                    Presales
+                                  </span>
+                                )}
+                              </div>
+                              {isPresales && project?.presales_phase && (
+                                <span className="text-xs text-muted-foreground">
+                                  {project.presales_phase} • {project.probability}% pravděpodobnost
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </TableCell>
                         {months.map(month => {
                           const revenue = monthlyRevenueByProject[month]?.[projectCode] || 0;
                           return (
-                            <TableCell key={month} className="text-right font-mono">
+                            <TableCell key={month} className={`text-right font-mono ${isPresales ? 'text-muted-foreground' : ''}`}>
                               {revenue > 0 ? `${revenue.toLocaleString('cs-CZ')} Kč` : '-'}
                             </TableCell>
                           );
                         })}
-                        <TableCell className="text-right font-mono font-bold">
+                        <TableCell className={`text-right font-mono font-bold ${isPresales ? 'text-muted-foreground' : ''}`}>
                           {projectTotal.toLocaleString('cs-CZ')} Kč
                         </TableCell>
                       </TableRow>
