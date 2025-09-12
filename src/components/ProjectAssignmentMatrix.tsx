@@ -25,8 +25,9 @@ const organizacniVedouci = [
 ];
 
 // Mapping of engineers to organizational leaders derived from shared list
+const normalizeName = (s: string) => s.normalize('NFC').trim();
 const konstrukterVedouci: { [key: string]: string } = Object.fromEntries(
-  ENGINEERS.map(e => [e.jmeno, e.orgVedouci])
+  ENGINEERS.map(e => [normalizeName(e.jmeno), e.orgVedouci])
 );
 
 
@@ -121,6 +122,18 @@ export const ProjectAssignmentMatrix = () => {
   const [filterZakaznik, setFilterZakaznik] = useState<string[]>(['Všichni']);
   const [filterProgram, setFilterProgram] = useState<string[]>(['Všichni']);
 
+  const displayNameMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    ENGINEERS.forEach(e => {
+      map[normalizeName(e.jmeno)] = e.jmeno;
+    });
+    planningData.forEach(e => {
+      const key = normalizeName(e.konstrukter);
+      if (!map[key]) map[key] = e.konstrukter;
+    });
+    return map;
+  }, [planningData]);
+
   // Dynamic project mappings based on projectsData
   const projektInfo = useMemo(() => {
     const info: { [key: string]: { zakaznik: string, pm: string, program: string } } = {};
@@ -158,18 +171,18 @@ export const ProjectAssignmentMatrix = () => {
 
 // Create matrix data structure
   const matrixData = useMemo(() => {
-    const engineerNames = Array.from(new Set([
-      ...ENGINEERS.map(e => e.jmeno),
-      ...planningData.map(entry => entry.konstrukter)
+    const engineerKeys = Array.from(new Set([
+      ...ENGINEERS.map(e => normalizeName(e.jmeno)),
+      ...planningData.map(entry => normalizeName(entry.konstrukter))
     ]));
     const matrix: { [engineer: string]: { [week: string]: string } } = {};
     
-    engineerNames.forEach(engineer => {
-      matrix[engineer] = {};
+    engineerKeys.forEach(engineerKey => {
+      matrix[engineerKey] = {};
       weeks.forEach(week => {
-        const entry = planningData.find(e => e.konstrukter === engineer && e.cw === week);
+        const entry = planningData.find(e => normalizeName(e.konstrukter) === engineerKey && e.cw === week);
         // Default to 'DOVOLENÁ' for CW52, otherwise 'FREE' if no entry exists
-        matrix[engineer][week] = entry?.projekt || (week === 'CW52' ? 'DOVOLENÁ' : 'FREE');
+        matrix[engineerKey][week] = entry?.projekt || (week === 'CW52' ? 'DOVOLENÁ' : 'FREE');
       });
     });
     
@@ -178,20 +191,20 @@ export const ProjectAssignmentMatrix = () => {
 
 // Create monthly aggregated data
   const monthlyData = useMemo(() => {
-    const engineerNames = Array.from(new Set([
-      ...ENGINEERS.map(e => e.jmeno),
-      ...planningData.map(entry => entry.konstrukter)
+    const engineerKeys = Array.from(new Set([
+      ...ENGINEERS.map(e => normalizeName(e.jmeno)),
+      ...planningData.map(entry => normalizeName(entry.konstrukter))
     ]));
     const monthlyMatrix: { [engineer: string]: { [month: string]: { projects: string[], totalHours: number, dominantProject: string } } } = {};
     
-    engineerNames.forEach(engineer => {
-      monthlyMatrix[engineer] = {};
+    engineerKeys.forEach(engineerKey => {
+      monthlyMatrix[engineerKey] = {};
       months.forEach(month => {
         const monthProjects: { [project: string]: number } = {};
         let totalHours = 0;
         
         month.weeks.forEach(week => {
-          const entry = planningData.find(e => e.konstrukter === engineer && e.cw === week);
+          const entry = planningData.find(e => normalizeName(e.konstrukter) === engineerKey && e.cw === week);
           let projekt: string;
           let hours: number;
           
@@ -213,7 +226,7 @@ export const ProjectAssignmentMatrix = () => {
           monthProjects[a] > monthProjects[b] ? a : b, projects[0] || ''
         );
         
-        monthlyMatrix[engineer][month.name] = {
+        monthlyMatrix[engineerKey][month.name] = {
           projects,
           totalHours,
           dominantProject
@@ -534,7 +547,7 @@ export const ProjectAssignmentMatrix = () => {
                 {filteredEngineers.map((engineer, index) => (
                   <tr key={engineer} className={`transition-colors hover:bg-muted/20 ${index % 2 === 1 ? 'bg-muted/30' : 'bg-background'}`}>
                     <td className="border border-border p-3 font-semibold sticky left-0 bg-inherit z-10 text-foreground">
-                      {engineer}
+                      {displayNameMap[engineer] || engineer}
                     </td>
                     {viewMode === 'weeks' ? (
                       months.map((month, monthIndex) => 
@@ -568,11 +581,11 @@ export const ProjectAssignmentMatrix = () => {
                         // Sort projects by hours descending
                         const sortedProjects = monthData.projects.sort((a, b) => {
                           const aHours = month.weeks.reduce((sum, week) => {
-                            const entry = planningData.find(e => e.konstrukter === engineer && e.cw === week && e.projekt === a);
+                            const entry = planningData.find(e => normalizeName(e.konstrukter) === engineer && e.cw === week && e.projekt === a);
                             return sum + (typeof entry?.mhTyden === 'number' ? entry.mhTyden : 0);
                           }, 0);
                           const bHours = month.weeks.reduce((sum, week) => {
-                            const entry = planningData.find(e => e.konstrukter === engineer && e.cw === week && e.projekt === b);
+                            const entry = planningData.find(e => normalizeName(e.konstrukter) === engineer && e.cw === week && e.projekt === b);
                             return sum + (typeof entry?.mhTyden === 'number' ? entry.mhTyden : 0);
                           }, 0);
                           return bHours - aHours;
