@@ -317,6 +317,81 @@ export const RevenueOverview = () => {
       });
     });
 
+    // Přidáme presales projekty, které nemají plánovaná data, ale mají definované období
+    projects.forEach(project => {
+      if (project.project_status === 'Pre sales' && 
+          project.presales_start_date && 
+          project.presales_end_date &&
+          project.budget &&
+          (project.project_type === 'Hodinovka' || project.average_hourly_rate)) {
+        
+        // Zkontrolujeme, zda projekt už není zahrnut v plánovaných datech
+        const hasPlannedData = data.some(entry => entry.projekt === project.code);
+        if (hasPlannedData) return;
+
+        const startDate = new Date(project.presales_start_date);
+        const endDate = new Date(project.presales_end_date);
+        
+        // Určíme hodinovou sazbu
+        let hourlyRate = 0;
+        if (project.project_type === 'WP' && project.average_hourly_rate) {
+          hourlyRate = project.average_hourly_rate;
+        } else if (project.project_type === 'Hodinovka') {
+          hourlyRate = 1000; // Default hourly rate for Hodinovka presales
+        }
+
+        // Celkový objem v hodinách (budget pro WP projekty, nebo odhad pro Hodinovka)
+        const totalHours = project.project_type === 'WP' ? project.budget : 100; // Default 100h pro Hodinovka presales
+
+        // Koeficient pravděpodobnosti
+        const probabilityCoefficient = project.probability ? project.probability / 100 : 0.5;
+
+        // Mapování měsíců
+        const monthToNumber: { [key: string]: number } = {
+          'srpen': 8, 'září': 9, 'říjen': 10, 'listopad': 11, 'prosinec': 12,
+          'leden': 1, 'únor': 2, 'březen': 3, 'duben': 4, 'květen': 5, 'červen': 6
+        };
+        
+        const numberToMonth: { [key: number]: string } = {
+          1: 'leden', 2: 'únor', 3: 'březen', 4: 'duben', 5: 'květen', 6: 'červen',
+          8: 'srpen', 9: 'září', 10: 'říjen', 11: 'listopad', 12: 'prosinec'
+        };
+
+        // Spočítáme celkový počet pracovních dnů v období
+        let totalWorkingDays = 0;
+        const monthsInPeriod: string[] = [];
+        
+        const current = new Date(startDate);
+        while (current <= endDate) {
+          const monthNum = current.getMonth() + 1;
+          const year = current.getFullYear();
+          const monthName = numberToMonth[monthNum];
+          
+          if (monthName && !monthsInPeriod.includes(monthName)) {
+            monthsInPeriod.push(monthName);
+            totalWorkingDays += getWorkingDaysInMonth(monthName);
+          }
+          
+          current.setMonth(current.getMonth() + 1);
+        }
+
+        if (totalWorkingDays === 0) return;
+
+        // Rozdělíme revenue poměrně mezi měsíce
+        monthsInPeriod.forEach(monthName => {
+          const workingDaysInMonth = getWorkingDaysInMonth(monthName);
+          const monthRatio = workingDaysInMonth / totalWorkingDays;
+          const monthHours = totalHours * monthRatio;
+          const monthRevenue = monthHours * hourlyRate * probabilityCoefficient;
+
+          if (!monthlyData[monthName][project.code]) {
+            monthlyData[monthName][project.code] = 0;
+          }
+          monthlyData[monthName][project.code] += monthRevenue;
+        });
+      }
+    });
+
     return monthlyData;
   };
 
