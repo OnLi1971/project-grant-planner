@@ -131,11 +131,12 @@ const generatePlanningDataForEditor = (data: any[]): { [key: string]: WeekPlan[]
     const allWeeks = generateAllWeeks();
     const currentWeek = getCurrentWeek();
     
-    // Filtrujeme pouze existující data pro aktuální a budoucí týdny
+    // Filtrujeme pouze relevantní týdny (CW32-52 + CW01-26)
     const relevantExistingData = Object.keys(existingDataMap[konstrukter] || {})
       .filter(cw => {
         const cwNum = parseInt(cw.replace('CW', ''));
-        return cwNum >= Math.max(32, currentWeek);
+        // Zahrnujeme CW32-52 (konec 2025) a CW01-26 (začátek 2026)
+        return (cwNum >= 32 && cwNum <= 52) || (cwNum >= 1 && cwNum <= 26);
       })
       .reduce((acc, cw) => {
         acc[cw] = existingDataMap[konstrukter][cw];
