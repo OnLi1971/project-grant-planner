@@ -41,25 +41,33 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   useEffect(() => {
     const loadPlanningData = async () => {
       try {
-        const { data, error } = await supabase
-          .from('planning_entries')
-          .select('*')
-          .order('konstrukter')
-          .order('cw')
-          .range(0, 5000);
+        const pageSize = 1000;
+        let offset = 0;
+        let allRows: any[] = [];
+        let page = 0;
 
-        if (error) {
-          console.error('Error loading planning data:', error);
-          toast({
-            title: "Chyba při načítání dat",
-            description: "Nepodařilo se načíst data z databáze.",
-            variant: "destructive",
-          });
-          return;
+        while (true) {
+          const { data, error } = await supabase
+            .from('planning_entries')
+            .select('*')
+            .order('konstrukter')
+            .order('cw')
+            .range(offset, offset + pageSize - 1);
+
+          if (error) {
+            throw error;
+          }
+
+          const batch = data || [];
+          allRows = allRows.concat(batch);
+          page++;
+
+          if (batch.length < pageSize) break;
+          offset += pageSize;
         }
 
         // Mapujeme názvy sloupců z databáze na interface
-        const mappedData = (data || []).map(entry => ({
+        const mappedData = allRows.map((entry: any) => ({
           konstrukter: entry.konstrukter,
           cw: entry.cw,
           mesic: entry.mesic,
@@ -68,7 +76,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         }));
         
         setPlanningData(mappedData);
-        console.log('Planning data loaded:', mappedData.length, 'entries');
+        console.log('Planning data loaded:', mappedData.length, 'entries (paginated)');
       } catch (error) {
         console.error('Error loading planning data:', error);
         toast({
