@@ -817,7 +817,7 @@ export const ProjectManagement = () => {
                           <Label htmlFor="presalesStartDate">Předpokládané období od</Label>
                           <Input
                             id="presalesStartDate"
-                            type="date"
+                            type="month"
                             value={formData.presalesStartDate}
                             onChange={(e) => setFormData({ ...formData, presalesStartDate: e.target.value })}
                           />
@@ -826,7 +826,7 @@ export const ProjectManagement = () => {
                           <Label htmlFor="presalesEndDate">Předpokládané období do</Label>
                           <Input
                             id="presalesEndDate"
-                            type="date"
+                            type="month"
                             value={formData.presalesEndDate}
                             onChange={(e) => setFormData({ ...formData, presalesEndDate: e.target.value })}
                           />
