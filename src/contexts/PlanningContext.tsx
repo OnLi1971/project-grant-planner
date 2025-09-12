@@ -45,7 +45,8 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           .from('planning_entries')
           .select('*')
           .order('konstrukter')
-          .order('cw');
+          .order('cw')
+          .range(0, 5000);
 
         if (error) {
           console.error('Error loading planning data:', error);
