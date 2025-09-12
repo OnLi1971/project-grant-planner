@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -319,17 +319,25 @@ export const ProjectManagement = () => {
     }
   };
 
-  // Helper functions to convert month format to date format
-  const monthToStartDate = (monthValue: string): string => {
-    return `${monthValue}-01`; // First day of the month
+  // Helper functions to convert month format to date format (accepts "YYYY-MM" or "YYYY-MM-DD")
+  const normalizeYearMonth = (value: string): string => {
+    if (!value) return '';
+    // Ensure format YYYY-MM
+    return value.slice(0, 7);
   };
 
-  const monthToEndDate = (monthValue: string): string => {
-    const [year, month] = monthValue.split('-');
+  const monthToStartDate = (value: string): string => {
+    const ym = normalizeYearMonth(value);
+    return ym ? `${ym}-01` : '';
+  };
+
+  const monthToEndDate = (value: string): string => {
+    const ym = normalizeYearMonth(value);
+    if (!ym) return '';
+    const [year, month] = ym.split('-');
     const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
-    return `${monthValue}-${lastDay.toString().padStart(2, '0')}`; // Last day of the month
+    return `${ym}-${lastDay.toString().padStart(2, '0')}`; // Last day of the month
   };
-
   const handleSubmit = async () => {
     if (!formData.name || !formData.code || !formData.customerId || !formData.projectManagerId || !formData.programId) {
       toast({
@@ -585,8 +593,8 @@ export const ProjectManagement = () => {
         projectStatus: (project.project_status as 'Pre sales' | 'Realizace') || 'Realizace',
         probability: project.probability || 0,
         presalesPhase: (project as any).presales_phase || 'P0',
-        presalesStartDate: (project as any).presales_start_date || '',
-        presalesEndDate: (project as any).presales_end_date || ''
+        presalesStartDate: (project as any).presales_start_date ? normalizeYearMonth((project as any).presales_start_date) : '',
+        presalesEndDate: (project as any).presales_end_date ? normalizeYearMonth((project as any).presales_end_date) : ''
       });
       setIsAddDialogOpen(true);
     } catch (error) {
@@ -709,14 +717,10 @@ export const ProjectManagement = () => {
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <Label htmlFor="customer">Zákazník *</Label>
-                      <Dialog open={isAddCustomerDialogOpen} onOpenChange={setIsAddCustomerDialogOpen}>
-                        <DialogTrigger asChild>
-                          <Button type="button" variant="outline" size="sm" className="h-6 px-2">
-                            <Plus className="h-3 w-3 mr-1" />
-                            Nový
-                          </Button>
-                        </DialogTrigger>
-                      </Dialog>
+                      <Button type="button" variant="outline" size="sm" className="h-6 px-2" onClick={() => setIsAddCustomerDialogOpen(true)}>
+                        <Plus className="h-3 w-3 mr-1" />
+                        Nový
+                      </Button>
                     </div>
                     <Select value={formData.customerId} onValueChange={(value) => setFormData({ ...formData, customerId: value })}>
                       <SelectTrigger>
@@ -1078,6 +1082,7 @@ export const ProjectManagement = () => {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Přidat zákazníka</DialogTitle>
+            <DialogDescription>Formulář pro přidání nového zákazníka.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
