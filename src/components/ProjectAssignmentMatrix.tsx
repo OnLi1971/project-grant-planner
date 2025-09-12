@@ -9,6 +9,7 @@ import { ChevronDown } from 'lucide-react';
 import { usePlanning } from '@/contexts/PlanningContext';
 import { customers, projectManagers, programs, projects } from '@/data/projectsData';
 import { getWeek } from 'date-fns';
+import { ENGINEERS } from '@/data/engineersList';
 
 // Organizational structure and project mappings
 const organizacniVedouci = [
@@ -20,57 +21,14 @@ const organizacniVedouci = [
   'PeMa',
   'DaAm',
   'PeNe',
-  'Subdodavka'
+  'Dodavatel'
 ];
 
-// Mapping of engineers to organizational leaders
-const konstrukterVedouci: { [key: string]: string } = {
-  'Hlavan Martin': 'JoMa',
-  'Fica Ladislav': 'JoMa',
-  'Ambrož David': 'OnLi',
-  'Slavík Ondřej': 'KaSo',
-  'Chrenko Peter': 'Subdodavka',
-  'Jurčišin Peter': 'Subdodavka',
-  'Púpava Marián': 'Subdodavka',
-  'Bohušík Martin': 'Subdodavka',
-  'Uher Tomáš': 'KaSo',
-  'Weiss Ondřej': 'PaHo',
-  'Borský Jan': 'PaHo',
-  'Pytela Martin': 'PaHo',
-  'Litvinov Evgenii': 'PaHo',
-  'Jandečka Karel': 'KaSo',
-  'Heřman Daniel': 'JoMa',
-  'Karlesz Michal': 'PeMa',
-  'Matta Jozef': 'OnLi',
-  'Pecinovský Pavel': 'JoMa',
-  'Anovčín Branislav': 'DaAm',
-  'Bartovič Anton': 'DaAm',
-  'Břicháček Miloš': 'JoMa',
-  'Fenyk Pavel': 'PeMa',
-  'Kalafa Ján': 'JoMa',
-  'Lengyel Martin': 'JoMa',
-  'Šoupa Karel': 'OnLi',
-  'Večeř Jiří': 'JoMa',
-  'Bartovičová Agáta': 'KaSo',
-  'Hrachová Ivana': 'KaSo',
-  'Karlík Štěpán': 'JoMa',
-  'Friedlová Jiřina': 'OnLi',
-  'Fuchs Pavel': 'DaAm',
-  'Mohelník Martin': 'JoMa',
-  'Nedavaška Petr': 'OnLi',
-  'Šedovičová Darina': 'PeNe',
-  'Ješš Jozef': 'PeNe',
-  'Melichar Ondřej': 'PeNe',
-  'Klíma Milan': 'KaSo',
-  'Hibler František': 'KaSo',
-  'Brojír Jaroslav': 'JoMa',
-  'Madanský Peter': 'OnLi',
-  'Samko Mikuláš': 'JoMa',
-  'Chrenko Daniel': 'Subdodavka',
-  'Jiřička Aleš': 'JoMa',
-  'Stránský Martin': 'PeMa',
-  'Trač Vasyl': 'PeMa'
-};
+// Mapping of engineers to organizational leaders derived from shared list
+const konstrukterVedouci: { [key: string]: string } = Object.fromEntries(
+  ENGINEERS.map(e => [e.jmeno, e.orgVedouci])
+);
+
 
 
 // Funkce pro výpočet aktuálního kalendářního týdne
@@ -198,12 +156,15 @@ export const ProjectAssignmentMatrix = () => {
     return ['Všichni', ...programCodes];
   }, []);
 
-  // Create matrix data structure
+// Create matrix data structure
   const matrixData = useMemo(() => {
-    const engineers = [...new Set(planningData.map(entry => entry.konstrukter))];
+    const engineerNames = Array.from(new Set([
+      ...ENGINEERS.map(e => e.jmeno),
+      ...planningData.map(entry => entry.konstrukter)
+    ]));
     const matrix: { [engineer: string]: { [week: string]: string } } = {};
     
-    engineers.forEach(engineer => {
+    engineerNames.forEach(engineer => {
       matrix[engineer] = {};
       weeks.forEach(week => {
         const entry = planningData.find(e => e.konstrukter === engineer && e.cw === week);
@@ -215,12 +176,15 @@ export const ProjectAssignmentMatrix = () => {
     return matrix;
   }, [planningData]);
 
-  // Create monthly aggregated data
+// Create monthly aggregated data
   const monthlyData = useMemo(() => {
-    const engineers = [...new Set(planningData.map(entry => entry.konstrukter))];
+    const engineerNames = Array.from(new Set([
+      ...ENGINEERS.map(e => e.jmeno),
+      ...planningData.map(entry => entry.konstrukter)
+    ]));
     const monthlyMatrix: { [engineer: string]: { [month: string]: { projects: string[], totalHours: number, dominantProject: string } } } = {};
     
-    engineers.forEach(engineer => {
+    engineerNames.forEach(engineer => {
       monthlyMatrix[engineer] = {};
       months.forEach(month => {
         const monthProjects: { [project: string]: number } = {};
