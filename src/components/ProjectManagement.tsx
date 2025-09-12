@@ -319,24 +319,55 @@ export const ProjectManagement = () => {
     }
   };
 
-  // Helper functions to convert month format to date format (accepts "YYYY-MM" or "YYYY-MM-DD")
+  // Helper functions to convert month format to date format
   const normalizeYearMonth = (value: string): string => {
     if (!value) return '';
-    // Ensure format YYYY-MM
-    return value.slice(0, 7);
+    
+    // Handle different input formats
+    let normalizedValue = value.trim();
+    
+    // If it's already in YYYY-MM format
+    if (/^\d{4}-\d{2}/.test(normalizedValue)) {
+      return normalizedValue.slice(0, 7);
+    }
+    
+    // If it's in MM/YYYY format (like "12/2025" or "122/2025")
+    if (normalizedValue.includes('/')) {
+      const parts = normalizedValue.split('/');
+      if (parts.length === 2) {
+        let month = parts[0].trim();
+        const year = parts[1].trim();
+        
+        // Handle cases like "122" -> "12"
+        if (month.length > 2) {
+          month = month.slice(-2);
+        }
+        
+        // Pad month with zero if needed
+        month = month.padStart(2, '0');
+        
+        if (year.length === 4 && month.length === 2) {
+          return `${year}-${month}`;
+        }
+      }
+    }
+    
+    // Default: assume it's already in correct format or slice to YYYY-MM
+    return normalizedValue.slice(0, 7);
   };
 
   const monthToStartDate = (value: string): string => {
     const ym = normalizeYearMonth(value);
-    return ym ? `${ym}-01` : '';
+    if (!ym || !ym.match(/^\d{4}-\d{2}$/)) return '';
+    return `${ym}-01`;
   };
 
   const monthToEndDate = (value: string): string => {
     const ym = normalizeYearMonth(value);
-    if (!ym) return '';
+    if (!ym || !ym.match(/^\d{4}-\d{2}$/)) return '';
     const [year, month] = ym.split('-');
     const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
-    return `${ym}-${lastDay.toString().padStart(2, '0')}`; // Last day of the month
+    return `${ym}-${lastDay.toString().padStart(2, '0')}`;
   };
   const handleSubmit = async () => {
     if (!formData.name || !formData.code || !formData.customerId || !formData.projectManagerId || !formData.programId) {
@@ -375,7 +406,7 @@ export const ProjectManagement = () => {
           console.error('Error updating project:', error);
           toast({
             title: "Chyba",
-            description: "Nepodařilo se upravit projekt.",
+            description: `Nepodařilo se upravit projekt: ${error.message}`,
             variant: "destructive",
           });
           return;
