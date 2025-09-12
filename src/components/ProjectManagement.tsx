@@ -94,8 +94,20 @@ export const ProjectManagement = () => {
     averageHourlyRate: 0,
     assignedLicenses: [] as ProjectLicense[],
     projectStatus: 'Realizace' as 'Pre sales' | 'Realizace',
-    probability: 0
+    probability: 0,
+    presalesPhase: 'P0',
+    presalesStartDate: '',
+    presalesEndDate: ''
   });
+
+  const presalesPhases = [
+    { value: 'P0', label: 'P0 - Opportunity Identified' },
+    { value: 'P1', label: 'P1 - Opportunity Defined & Qualified' },
+    { value: 'P2', label: 'P2 - RFI/ RFP Responded, Proposal Submitted' },
+    { value: 'P3', label: 'P3 - Technically Shortlisted & Upside' },
+    { value: 'P3.1', label: 'P3.1 - Technically Shortlisted & Strong Upside' },
+    { value: 'P4', label: 'P4 - Commit/ Verbal Confirmation/ LoI' }
+  ];
   const { toast } = useToast();
   const { planningData } = usePlanning();
 
@@ -328,6 +340,9 @@ export const ProjectManagement = () => {
             average_hourly_rate: formData.averageHourlyRate || null,
             project_status: formData.projectStatus,
             probability: formData.projectStatus === 'Pre sales' ? formData.probability : null,
+            presales_phase: formData.projectStatus === 'Pre sales' ? formData.presalesPhase : null,
+            presales_start_date: formData.projectStatus === 'Pre sales' && formData.presalesStartDate ? formData.presalesStartDate : null,
+            presales_end_date: formData.projectStatus === 'Pre sales' && formData.presalesEndDate ? formData.presalesEndDate : null,
             updated_by: (await supabase.auth.getUser()).data.user?.id
           })
           .eq('id', editingProject.id);
@@ -364,6 +379,9 @@ export const ProjectManagement = () => {
             average_hourly_rate: formData.averageHourlyRate || null,
             project_status: formData.projectStatus,
             probability: formData.projectStatus === 'Pre sales' ? formData.probability : null,
+            presales_phase: formData.projectStatus === 'Pre sales' ? formData.presalesPhase : null,
+            presales_start_date: formData.projectStatus === 'Pre sales' && formData.presalesStartDate ? formData.presalesStartDate : null,
+            presales_end_date: formData.projectStatus === 'Pre sales' && formData.presalesEndDate ? formData.presalesEndDate : null,
             status: 'active',
             created_by: (await supabase.auth.getUser()).data.user?.id
           })
@@ -445,7 +463,10 @@ export const ProjectManagement = () => {
       averageHourlyRate: 0,
       assignedLicenses: [],
       projectStatus: 'Realizace',
-      probability: 0
+      probability: 0,
+      presalesPhase: 'P0',
+      presalesStartDate: '',
+      presalesEndDate: ''
     });
     setIsAddDialogOpen(false);
     setEditingProject(null);
@@ -499,7 +520,10 @@ export const ProjectManagement = () => {
           percentage: pl.percentage
         })) || [],
         projectStatus: (project.project_status as 'Pre sales' | 'Realizace') || 'Realizace',
-        probability: project.probability || 0
+        probability: project.probability || 0,
+        presalesPhase: (project as any).presales_phase || 'P0',
+        presalesStartDate: (project as any).presales_start_date || '',
+        presalesEndDate: (project as any).presales_end_date || ''
       });
       setIsAddDialogOpen(true);
     } catch (error) {
@@ -704,6 +728,53 @@ export const ProjectManagement = () => {
                       />
                     </div>
                   )}
+                </div>
+                
+                {/* Presales specific fields */}
+                {formData.projectStatus === 'Pre sales' && (
+                  <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+                    <h3 className="font-medium text-sm">Presales detaily</h3>
+                    <div className="grid grid-cols-1 gap-4">
+                      <div>
+                        <Label htmlFor="presalesPhase">Presales fáze</Label>
+                        <Select value={formData.presalesPhase} onValueChange={(value) => setFormData({ ...formData, presalesPhase: value })}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {presalesPhases.map((phase) => (
+                              <SelectItem key={phase.value} value={phase.value}>
+                                {phase.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="presalesStartDate">Předpokládané období od</Label>
+                          <Input
+                            id="presalesStartDate"
+                            type="date"
+                            value={formData.presalesStartDate}
+                            onChange={(e) => setFormData({ ...formData, presalesStartDate: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="presalesEndDate">Předpokládané období do</Label>
+                          <Input
+                            id="presalesEndDate"
+                            type="date"
+                            value={formData.presalesEndDate}
+                            onChange={(e) => setFormData({ ...formData, presalesEndDate: e.target.value })}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="grid grid-cols-1 gap-4">
                   <div>
                     <Label htmlFor="budget">
                       {formData.projectType === 'WP' ? 'Budget (hodiny)' : 'Hodinová cena (Kč)'}
@@ -832,10 +903,22 @@ export const ProjectManagement = () => {
                        <Badge variant={item.project.project_status === 'Pre sales' ? 'outline' : 'default'}>
                          {item.project.project_status}
                        </Badge>
-                       {item.project.project_status === 'Pre sales' && item.project.probability && (
-                         <span className="text-xs text-muted-foreground">
-                           {item.project.probability}%
-                         </span>
+                       {item.project.project_status === 'Pre sales' && (
+                         <div className="text-xs text-muted-foreground space-y-1">
+                           {(item.project as any).presales_phase && (
+                             <div>{(item.project as any).presales_phase}</div>
+                           )}
+                           {item.project.probability && (
+                             <div>Pravděp.: {item.project.probability}%</div>
+                           )}
+                           {((item.project as any).presales_start_date || (item.project as any).presales_end_date) && (
+                             <div>
+                               {(item.project as any).presales_start_date && new Date((item.project as any).presales_start_date).toLocaleDateString('cs-CZ', { month: 'numeric', year: 'numeric' })} 
+                               {(item.project as any).presales_start_date && (item.project as any).presales_end_date && ' - '}
+                               {(item.project as any).presales_end_date && new Date((item.project as any).presales_end_date).toLocaleDateString('cs-CZ', { month: 'numeric', year: 'numeric' })}
+                             </div>
+                           )}
+                         </div>
                        )}
                      </div>
                    )}

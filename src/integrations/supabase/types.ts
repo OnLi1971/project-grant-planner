@@ -398,6 +398,9 @@ export type Database = {
           hourly_rate: number | null
           id: string
           name: string
+          presales_end_date: string | null
+          presales_phase: string | null
+          presales_start_date: string | null
           probability: number | null
           program_id: string
           project_manager_id: string
@@ -419,6 +422,9 @@ export type Database = {
           hourly_rate?: number | null
           id?: string
           name: string
+          presales_end_date?: string | null
+          presales_phase?: string | null
+          presales_start_date?: string | null
           probability?: number | null
           program_id: string
           project_manager_id: string
@@ -440,6 +446,9 @@ export type Database = {
           hourly_rate?: number | null
           id?: string
           name?: string
+          presales_end_date?: string | null
+          presales_phase?: string | null
+          presales_start_date?: string | null
           probability?: number | null
           program_id?: string
           project_manager_id?: string

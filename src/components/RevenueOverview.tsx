@@ -19,6 +19,11 @@ interface DatabaseProject {
   project_type: string;
   budget?: number;
   average_hourly_rate?: number;
+  project_status?: string;
+  probability?: number;
+  presales_phase?: string;
+  presales_start_date?: string;
+  presales_end_date?: string;
 }
 
 interface DatabaseCustomer {
@@ -300,8 +305,14 @@ export const RevenueOverview = () => {
         const totalWorkingDays = baseWorkingDays[month] || 22;
         const holidayCoefficient = workingDaysWithoutHolidays / totalWorkingDays;
 
-        // Přičteme poměrnou část týdenního revenue k měsíčnímu součtu (snížené o státní svátky)
-        const monthlyRevenue = entry.mhTyden * hourlyRate * ratio * holidayCoefficient;
+        // Koeficient pravděpodobnosti pro presales projekty
+        let probabilityCoefficient = 1;
+        if (project.project_status === 'Pre sales' && project.probability) {
+          probabilityCoefficient = project.probability / 100;
+        }
+
+        // Přičteme poměrnou část týdenního revenue k měsíčnímu součtu (snížené o státní svátky a pravděpodobnost)
+        const monthlyRevenue = entry.mhTyden * hourlyRate * ratio * holidayCoefficient * probabilityCoefficient;
         monthlyData[month][entry.projekt] += monthlyRevenue;
       });
     });
