@@ -169,12 +169,21 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         
         const mesic = weekToMonthMap[cwNum] || 'srpen';
 
+        // Najdeme aktuální hodnoty z lokálního stavu (může být z defaultního plánu)
+        const currentEntry = planningData.find(entry => 
+          entry.konstrukter === konstrukter && entry.cw === cw
+        );
+
         const newEntry = {
           konstrukter,
           cw,
           mesic,
-          mh_tyden: field === 'mhTyden' ? (typeof value === 'number' ? value : parseInt(value.toString())) : 36,
-          projekt: field === 'projekt' ? value.toString() : 'FREE'
+          mh_tyden: field === 'mhTyden' ? 
+            (typeof value === 'number' ? value : parseInt(value.toString())) : 
+            (currentEntry?.mhTyden || 36),
+          projekt: field === 'projekt' ? 
+            value.toString() : 
+            (currentEntry?.projekt || 'FREE')
         };
 
         const { error } = await supabase
