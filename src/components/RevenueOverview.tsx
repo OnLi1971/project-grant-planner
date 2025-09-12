@@ -395,17 +395,12 @@ export const RevenueOverview = () => {
         // Koeficient pravděpodobnosti
         const probabilityCoefficient = project.probability ? project.probability / 100 : 0.5;
 
-        // Mapování měsíců
-        const monthToNumber: { [key: string]: number } = {
-          'srpen': 8, 'září': 9, 'říjen': 10, 'listopad': 11, 'prosinec': 12,
-          'leden': 1, 'únor': 2, 'březen': 3, 'duben': 4, 'květen': 5, 'červen': 6
+        // Mapování měsíců s rokem
+        const numberToMonth: { [key: string]: string } = {
+          '8_2025': 'srpen_2025', '9_2025': 'září_2025', '10_2025': 'říjen_2025', '11_2025': 'listopad_2025', '12_2025': 'prosinec_2025',
+          '1_2026': 'leden_2026', '2_2026': 'únor_2026', '3_2026': 'březen_2026', '4_2026': 'duben_2026', '5_2026': 'květen_2026', '6_2026': 'červen_2026',
+          '7_2026': 'červenec_2026', '8_2026': 'srpen_2026', '9_2026': 'září_2026', '10_2026': 'říjen_2026', '11_2026': 'listopad_2026', '12_2026': 'prosinec_2026'
         };
-        
-        const numberToMonth: { [key: number]: string } = {
-          1: 'leden', 2: 'únor', 3: 'březen', 4: 'duben', 5: 'květen', 6: 'červen',
-          8: 'srpen', 9: 'září', 10: 'říjen', 11: 'listopad', 12: 'prosinec'
-        };
-
         // Spočítáme celkový počet pracovních dnů v období
         let totalWorkingDays = 0;
         const monthsInPeriod: string[] = [];
@@ -414,7 +409,8 @@ export const RevenueOverview = () => {
         while (current <= endDate) {
           const monthNum = current.getMonth() + 1;
           const year = current.getFullYear();
-          const monthName = numberToMonth[monthNum];
+          const monthKey = `${monthNum}_${year}`;
+          const monthName = numberToMonth[monthKey];
           
           if (monthName && !monthsInPeriod.includes(monthName)) {
             monthsInPeriod.push(monthName);
@@ -446,8 +442,16 @@ export const RevenueOverview = () => {
 
   const monthlyRevenueByProject = calculateMonthlyRevenueByProject();
   const months = viewType === 'mesic' ? 
-    ['srpen', 'září', 'říjen', 'listopad', 'prosinec', 'leden', 'únor', 'březen', 'duben', 'květen', 'červen', 'červenec', 'srpen', 'září', 'říjen', 'listopad', 'prosinec'].filter(month => selectedMonths.includes(month))
-    : ['srpen', 'září', 'říjen', 'listopad', 'prosinec', 'leden', 'únor', 'březen', 'duben', 'květen', 'červen', 'červenec', 'srpen', 'září', 'říjen', 'listopad', 'prosinec'];
+    [
+      'srpen_2025', 'září_2025', 'říjen_2025', 'listopad_2025', 'prosinec_2025',
+      'leden_2026', 'únor_2026', 'březen_2026', 'duben_2026', 'květen_2026', 'červen_2026',
+      'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026'
+    ].filter(month => selectedMonths.includes(month))
+    : [
+      'srpen_2025', 'září_2025', 'říjen_2025', 'listopad_2025', 'prosinec_2025',
+      'leden_2026', 'únor_2026', 'březen_2026', 'duben_2026', 'květen_2026', 'červen_2026',
+      'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026'
+    ];
   
   // Získání všech unikátních projektů s revenue
   const allProjects = new Set<string>();
