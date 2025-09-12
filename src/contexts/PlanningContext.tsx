@@ -137,6 +137,15 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           });
           return;
         }
+
+        // Aktualizujeme lokální stav pro existující záznam
+        setPlanningData(prev => 
+          prev.map(entry => 
+            entry.konstrukter === konstrukter && entry.cw === cw
+              ? { ...entry, [field]: value }
+              : entry
+          )
+        );
       } else {
         // Záznam neexistuje, vytvoříme nový
         const cwNum = parseInt(cw.replace('CW', ''));
@@ -182,7 +191,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           return;
         }
 
-        // Přidáme záznam do lokálního stavu
+        // Přidáme nový záznam do lokálního stavu s aktualizovanou hodnotou
         const newLocalEntry: PlanningEntry = { 
           konstrukter: newEntry.konstrukter,
           cw: newEntry.cw,
@@ -192,15 +201,6 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         };
         setPlanningData(prev => [...prev, newLocalEntry]);
       }
-
-      // Aktualizujeme lokální stav
-      setPlanningData(prev => 
-        prev.map(entry => 
-          entry.konstrukter === konstrukter && entry.cw === cw
-            ? { ...entry, [field]: value }
-            : entry
-        )
-      );
 
       toast({
         title: "Změna uložena",
