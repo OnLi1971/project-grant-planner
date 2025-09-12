@@ -82,7 +82,12 @@ export const ProjectManagement = () => {
   const [programs, setPrograms] = useState<DatabaseProgram[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<DatabaseProject | null>(null);
+  const [isAddCustomerDialogOpen, setIsAddCustomerDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [customerFormData, setCustomerFormData] = useState({
+    name: '',
+    code: ''
+  });
   const [formData, setFormData] = useState({
     name: '',
     code: '',
@@ -472,6 +477,53 @@ export const ProjectManagement = () => {
     setEditingProject(null);
   };
 
+  const addCustomer = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('customers')
+        .insert([{
+          name: customerFormData.name,
+          code: customerFormData.code
+        }])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error adding customer:', error);
+        toast({
+          title: "Chyba",
+          description: "Nepodařilo se přidat zákazníka.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Zákazník přidán",
+        description: "Nový zákazník byl úspěšně přidán.",
+      });
+
+      // Reload customers and reset form
+      await loadCustomers();
+      resetCustomerForm();
+    } catch (error) {
+      console.error('Error adding customer:', error);
+      toast({
+        title: "Chyba",
+        description: "Nepodařilo se přidat zákazníka.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const resetCustomerForm = () => {
+    setCustomerFormData({
+      name: '',
+      code: ''
+    });
+    setIsAddCustomerDialogOpen(false);
+  };
+
   const addLicenseToProject = () => {
     setFormData({
       ...formData,
@@ -644,7 +696,17 @@ export const ProjectManagement = () => {
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <Label htmlFor="customer">Zákazník *</Label>
+                    <div className="flex items-center justify-between mb-2">
+                      <Label htmlFor="customer">Zákazník *</Label>
+                      <Dialog open={isAddCustomerDialogOpen} onOpenChange={setIsAddCustomerDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button type="button" variant="outline" size="sm" className="h-6 px-2">
+                            <Plus className="h-3 w-3 mr-1" />
+                            Nový
+                          </Button>
+                        </DialogTrigger>
+                      </Dialog>
+                    </div>
                     <Select value={formData.customerId} onValueChange={(value) => setFormData({ ...formData, customerId: value })}>
                       <SelectTrigger>
                         <SelectValue placeholder="Vyberte zákazníka" />
@@ -999,6 +1061,47 @@ export const ProjectManagement = () => {
           <OrganizationalStructure />
         </TabsContent>
       </Tabs>
+
+      {/* Dialog pro přidání zákazníka */}
+      <Dialog open={isAddCustomerDialogOpen} onOpenChange={setIsAddCustomerDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Přidat zákazníka</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="customerName">Název zákazníka *</Label>
+              <Input
+                id="customerName"
+                value={customerFormData.name}
+                onChange={(e) => setCustomerFormData({ ...customerFormData, name: e.target.value })}
+                placeholder="Název společnosti"
+              />
+            </div>
+            <div>
+              <Label htmlFor="customerCode">Kód zákazníka *</Label>
+              <Input
+                id="customerCode"
+                value={customerFormData.code}
+                onChange={(e) => setCustomerFormData({ ...customerFormData, code: e.target.value })}
+                placeholder="ACRONYM"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={resetCustomerForm}>
+                Zrušit
+              </Button>
+              <Button 
+                onClick={addCustomer}
+                disabled={!customerFormData.name || !customerFormData.code}
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Přidat zákazníka
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
