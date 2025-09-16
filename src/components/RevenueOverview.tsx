@@ -40,55 +40,16 @@ interface DatabaseProgram {
 
 export const RevenueOverview = () => {
   const { planningData } = usePlanning();
-  
-  // Load saved filters from localStorage or use defaults
-  const loadFiltersFromStorage = () => {
-    try {
-      const saved = localStorage.getItem('revenueFilters');
-      if (saved) {
-        return JSON.parse(saved);
-      }
-    } catch (error) {
-      console.error('Error loading saved filters:', error);
-    }
-    return {
-      filterType: 'all',
-      filterValue: 'all',
-      selectedPrograms: [],
-      viewType: 'mesic',
-      selectedQuarters: ['Q3-2025', 'Q4-2025', 'Q1-2026', 'Q2-2026', 'Q3-2026', 'Q4-2026'],
-      selectedMonths: ['srpen_2025', 'září_2025', 'říjen_2025', 'listopad_2025', 'prosinec_2025', 'leden_2026', 'únor_2026', 'březen_2026', 'duben_2026', 'květen_2026', 'červen_2026', 'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026'],
-      filtersExpanded: false
-    };
-  };
-
-  const savedFilters = loadFiltersFromStorage();
-  
-  const [filterType, setFilterType] = useState<'all' | 'customer' | 'program' | 'project'>(savedFilters.filterType);
-  const [filterValue, setFilterValue] = useState<string>(savedFilters.filterValue);
-  const [selectedPrograms, setSelectedPrograms] = useState<string[]>(savedFilters.selectedPrograms);
-  const [viewType, setViewType] = useState<'mesic' | 'kvartal'>(savedFilters.viewType);
-  const [selectedQuarters, setSelectedQuarters] = useState<string[]>(savedFilters.selectedQuarters);
-  const [selectedMonths, setSelectedMonths] = useState<string[]>(savedFilters.selectedMonths);
+  const [filterType, setFilterType] = useState<'all' | 'customer' | 'program' | 'project'>('all');
+  const [filterValue, setFilterValue] = useState<string>('all');
+  const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
+  const [viewType, setViewType] = useState<'mesic' | 'kvartal'>('mesic');
+  const [selectedQuarters, setSelectedQuarters] = useState<string[]>(['Q3-2025', 'Q4-2025', 'Q1-2026', 'Q2-2026', 'Q3-2026', 'Q4-2026']);
+  const [selectedMonths, setSelectedMonths] = useState<string[]>(['srpen', 'září', 'říjen', 'listopad', 'prosinec', 'leden', 'únor', 'březen', 'duben', 'květen', 'červen', 'červenec', 'srpen', 'září', 'říjen', 'listopad', 'prosinec']);
   const [projects, setProjects] = useState<DatabaseProject[]>([]);
   const [customers, setCustomers] = useState<DatabaseCustomer[]>([]);
   const [programs, setPrograms] = useState<DatabaseProgram[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filtersExpanded, setFiltersExpanded] = useState(savedFilters.filtersExpanded);
-
-  // Save filters to localStorage whenever they change
-  useEffect(() => {
-    const filtersToSave = {
-      filterType,
-      filterValue,
-      selectedPrograms,
-      viewType,
-      selectedQuarters,
-      selectedMonths,
-      filtersExpanded
-    };
-    localStorage.setItem('revenueFilters', JSON.stringify(filtersToSave));
-  }, [filterType, filterValue, selectedPrograms, viewType, selectedQuarters, selectedMonths, filtersExpanded]);
 
   // Načtení dat z databáze
   useEffect(() => {
@@ -694,154 +655,139 @@ export const RevenueOverview = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {/* Filtry - Kompaktní verze */}
-          <div className="mb-4 p-3 bg-muted rounded-lg">
-            <div 
-              className="flex items-center justify-between cursor-pointer"
-              onClick={() => setFiltersExpanded(!filtersExpanded)}
-            >
-              <div className="flex items-center gap-2">
-                <Filter className="h-4 w-4" />
-                <Label className="font-medium">Filtry</Label>
-                <span className="text-sm text-muted-foreground">
-                  ({viewType === 'mesic' ? 'Měsíční' : 'Kvartální'} pohled)
-                </span>
-              </div>
-              <div className="text-sm text-muted-foreground">
-                {filtersExpanded ? '▼' : '▶'}
-              </div>
+          {/* Filtry */}
+          <div className="grid grid-cols-1 gap-4 mb-6 p-4 bg-muted rounded-lg">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4" />
+              <Label className="font-medium">Filtrovat podle:</Label>
             </div>
             
-            {filtersExpanded && (
-              <div className="mt-3 space-y-3">
-                {/* Pohled a časové období - kompaktní */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <Label className="text-sm">Pohled</Label>
-                    <Select value={viewType} onValueChange={handleViewTypeChange}>
-                      <SelectTrigger className="h-8 text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-background border z-50">
-                        <SelectItem value="mesic">Měsíční</SelectItem>
-                        <SelectItem value="kvartal">Kvartální</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  {/* Kompaktní časové filtry */}
-                  {viewType === 'kvartal' && (
-                    <div>
-                      <Label className="text-sm">Kvartály</Label>
-                      <div className="grid grid-cols-3 gap-1 mt-1 p-2 border rounded-md bg-background max-h-24 overflow-y-auto">
-                        {quarterOptions.map((quarter) => (
-                          <div key={quarter.value} className="flex items-center space-x-1">
-                            <input
-                              type="checkbox"
-                              id={`quarter-${quarter.value}`}
-                              checked={selectedQuarters.includes(quarter.value)}
-                              onChange={(e) => handleQuarterChange(quarter.value, e.target.checked)}
-                              className="h-3 w-3 rounded border-gray-300 text-primary focus:ring-primary"
-                            />
-                            <Label 
-                              htmlFor={`quarter-${quarter.value}`} 
-                              className="text-xs font-normal cursor-pointer"
-                            >
-                              {quarter.label}
-                            </Label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {viewType === 'mesic' && (
-                    <div>
-                      <Label className="text-sm">Měsíce</Label>
-                      <div className="grid grid-cols-3 gap-1 mt-1 p-2 border rounded-md bg-background max-h-32 overflow-y-auto">
-                        {monthOptions.map((month) => (
-                          <div key={month.value} className="flex items-center space-x-1">
-                            <input
-                              type="checkbox"
-                              id={`month-${month.value}`}
-                              checked={selectedMonths.includes(month.value)}
-                              onChange={(e) => handleMonthChange(month.value, e.target.checked)}
-                              className="h-3 w-3 rounded border-gray-300 text-primary focus:ring-primary"
-                            />
-                            <Label 
-                              htmlFor={`month-${month.value}`} 
-                              className="text-xs font-normal cursor-pointer"
-                            >
-                              {month.label}
-                            </Label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Standardní filtry - kompaktní */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <Label className="text-sm">Typ filtru</Label>
-                    <Select value={filterType} onValueChange={handleFilterTypeChange}>
-                      <SelectTrigger className="h-8 text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-background border z-50">
-                        <SelectItem value="all">Vše</SelectItem>
-                        <SelectItem value="customer">Zákazník</SelectItem>
-                        <SelectItem value="program">Program</SelectItem>
-                        <SelectItem value="project">Projekt</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  {filterType === 'program' ? (
-                    <div>
-                      <Label className="text-sm">Programy</Label>
-                      <div className="grid grid-cols-2 gap-1 mt-1 p-2 border rounded-md bg-background max-h-24 overflow-y-auto">
-                        {programs.map((program) => (
-                          <div key={program.id} className="flex items-center space-x-1">
-                            <input
-                              type="checkbox"
-                              id={`program-${program.id}`}
-                              checked={selectedPrograms.includes(program.id)}
-                              onChange={(e) => handleProgramChange(program.id, e.target.checked)}
-                              className="h-3 w-3 rounded border-gray-300 text-primary focus:ring-primary"
-                            />
-                            <Label 
-                              htmlFor={`program-${program.id}`} 
-                              className="text-xs font-normal cursor-pointer"
-                            >
-                              {program.name}
-                            </Label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : filterType !== 'all' && (
-                    <div>
-                      <Label className="text-sm">Hodnota</Label>
-                      <Select value={filterValue} onValueChange={setFilterValue}>
-                        <SelectTrigger className="h-8 text-sm">
-                          <SelectValue placeholder="Vyberte..." />
-                        </SelectTrigger>
-                        <SelectContent className="bg-background border z-50">
-                          <SelectItem value="all">Vše</SelectItem>
-                          {filterOptions.map(option => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                </div>
+            {/* Pohled (Měsíc/Kvartal) */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="viewType">Pohled</Label>
+                <Select value={viewType} onValueChange={handleViewTypeChange}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border z-50">
+                    <SelectItem value="mesic">Měsíční</SelectItem>
+                    <SelectItem value="kvartal">Kvartální</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            )}
+              
+              {/* Kvartální filtr */}
+              {viewType === 'kvartal' && (
+                <div>
+                  <Label>Kvartály</Label>
+                  <div className="grid grid-cols-2 gap-2 mt-2 p-3 border rounded-md bg-background max-h-32 overflow-y-auto">
+                    {quarterOptions.map((quarter) => (
+                      <div key={quarter.value} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id={`quarter-${quarter.value}`}
+                          checked={selectedQuarters.includes(quarter.value)}
+                          onChange={(e) => handleQuarterChange(quarter.value, e.target.checked)}
+                          className="rounded border-gray-300 text-primary focus:ring-primary"
+                        />
+                        <Label 
+                          htmlFor={`quarter-${quarter.value}`} 
+                          className="text-sm font-normal cursor-pointer"
+                        >
+                          {quarter.label}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Měsíční filtr */}
+              {viewType === 'mesic' && (
+                <div>
+                  <Label>Měsíce</Label>
+                  <div className="grid grid-cols-2 gap-2 mt-2 p-3 border rounded-md bg-background max-h-40 overflow-y-auto">
+                    {monthOptions.map((month) => (
+                      <div key={month.value} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id={`month-${month.value}`}
+                          checked={selectedMonths.includes(month.value)}
+                          onChange={(e) => handleMonthChange(month.value, e.target.checked)}
+                          className="rounded border-gray-300 text-primary focus:ring-primary"
+                        />
+                        <Label 
+                          htmlFor={`month-${month.value}`} 
+                          className="text-sm font-normal cursor-pointer"
+                        >
+                          {month.label}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Standardní filtry */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="filterType">Typ filtru</Label>
+                <Select value={filterType} onValueChange={handleFilterTypeChange}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border z-50">
+                    <SelectItem value="all">Vše</SelectItem>
+                    <SelectItem value="customer">Zákazník</SelectItem>
+                    <SelectItem value="program">Program</SelectItem>
+                    <SelectItem value="project">Projekt</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {filterType === 'program' ? (
+                <div>
+                  <Label>Programy</Label>
+                  <div className="grid grid-cols-2 gap-2 mt-2 p-3 border rounded-md bg-background max-h-32 overflow-y-auto">
+                    {programs.map((program) => (
+                      <div key={program.id} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id={`program-${program.id}`}
+                          checked={selectedPrograms.includes(program.id)}
+                          onChange={(e) => handleProgramChange(program.id, e.target.checked)}
+                          className="rounded border-gray-300 text-primary focus:ring-primary"
+                        />
+                        <Label 
+                          htmlFor={`program-${program.id}`} 
+                          className="text-sm font-normal cursor-pointer"
+                        >
+                          {program.name}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : filterType !== 'all' && (
+                <div>
+                  <Label htmlFor="filterValue">Hodnota</Label>
+                  <Select value={filterValue} onValueChange={setFilterValue}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Vyberte..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background border z-50">
+                      <SelectItem value="all">Vše</SelectItem>
+                      {filterOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Celkový obrat */}
