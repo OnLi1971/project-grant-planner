@@ -48,7 +48,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           const to = from + pageSize - 1;
           const { data: batch, error: pageError } = await supabase
             .from('planning_matrix')
-            .select('konstrukter,cw_full,mesic,mh_tyden,projekt,updated_at,year,normalized_name', { count: 'exact', head: false })
+            .select('*')
             .order('konstrukter', { ascending: true })
             .order('year', { ascending: true })
             .order('cw_full', { ascending: true })
