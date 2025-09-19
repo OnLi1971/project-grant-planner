@@ -53,7 +53,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         // Mapování z view planning_matrix na PlanningEntry interface
         const mappedData = (data || []).map((entry: any) => ({
           konstrukter: entry.konstrukter,
-          cw: entry.cw_full.replace('-' + entry.year, ''), // Zachovat kompatibilitu s původním formátem
+          cw: entry.cw_full, // Používat plný formát CW s rokem
           mesic: entry.mesic,
           mhTyden: entry.mh_tyden,
           projekt: entry.projekt,
