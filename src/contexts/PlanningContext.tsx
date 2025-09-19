@@ -48,6 +48,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             .from('planning_entries')
             .select('*')
             .order('konstrukter')
+            .order('year')
             .order('cw')
             .range(offset, offset + pageSize - 1);
 
@@ -62,24 +63,23 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           offset += pageSize;
         }
 
-        // Mapujeme názvy sloupců z databáze na interface
-        // Pro data z databáze přidáme rok k CW a měsíci pokud tam není
+        // Mapování názvů sloupců z databáze na interface s využitím sloupce year
         const mappedData = allRows.map((entry: any) => {
-          let cwWithYear = entry.cw;
-          let mesicWithYear = entry.mesic;
-          
-          // Pokud CW neobsahuje rok, přidáme ho
-          if (!entry.cw.includes('-')) {
-            const cwNum = parseInt(entry.cw.replace('CW', ''));
-            const year = cwNum >= 32 ? '2025' : '2026';
-            cwWithYear = `${entry.cw}-${year}`;
-            
-            // Přidáme rok k měsíci pokud tam není
-            if (!entry.mesic.includes('2025') && !entry.mesic.includes('2026')) {
-              mesicWithYear = `${entry.mesic} ${year}`;
-            }
+          const year = entry.year ?? (() => {
+            const cwNum = parseInt(String(entry.cw).replace('CW', ''));
+            if (String(entry.mesic || '').includes('2026')) return 2026;
+            if (String(entry.mesic || '').includes('2025')) return 2025;
+            return cwNum >= 32 ? 2025 : 2026;
+          })();
+
+          const cwWithYear = `${entry.cw}-${year}`;
+
+          // Ujistíme se, že měsíc obsahuje rok
+          let mesicWithYear = entry.mesic || '';
+          if (!mesicWithYear.includes('2025') && !mesicWithYear.includes('2026')) {
+            mesicWithYear = `${entry.mesic} ${year}`;
           }
-          
+
           return {
             konstrukter: entry.konstrukter,
             cw: cwWithYear,
@@ -124,18 +124,21 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const updatePlanningEntry = useCallback(async (konstrukter: string, cw: string, field: 'projekt' | 'mhTyden', value: string | number) => {
     try {
-      // CW může být ve formátu "CW45" nebo "CW45-2025" - pro databázi potřebujeme jen "CW45"
-      const cwForDatabase = cw.includes('-') ? cw.split('-')[0] : cw;
-      
-      // Nejdříve zkusíme aktualizovat existující záznam
+      // Rozparsujeme CW a rok (očekává se formát "CW45-2025"), fallback pokud rok chybí
+      const [cwBase, yearPart] = cw.split('-');
+      const cwNum = parseInt(cwBase.replace('CW', ''));
+      const year = yearPart ? parseInt(yearPart) : (cwNum >= 32 ? 2025 : 2026);
+
+      // Zkontrolujeme existenci záznamu pro daného konstruktéra, CW a rok
       const { data: existingData, error: selectError } = await supabase
         .from('planning_entries')
         .select('*')
         .eq('konstrukter', konstrukter)
-        .eq('cw', cwForDatabase)
-        .single();
+        .eq('cw', cwBase)
+        .eq('year', year)
+        .maybeSingle();
 
-      if (selectError && selectError.code !== 'PGRST116') { // PGRST116 = no rows found
+      if (selectError) {
         console.error('Error checking existing entry:', selectError);
         toast({
           title: "Chyba při kontrole dat",
@@ -146,12 +149,13 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
 
       if (existingData) {
-        // Záznam existuje, aktualizujeme ho
+        // Update existujícího záznamu
         const { error } = await supabase
           .from('planning_entries')
           .update({ [field === 'mhTyden' ? 'mh_tyden' : field]: value })
           .eq('konstrukter', konstrukter)
-          .eq('cw', cwForDatabase);
+          .eq('cw', cwBase)
+          .eq('year', year);
 
         if (error) {
           console.error('Error updating planning entry:', error);
@@ -163,23 +167,18 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           return;
         }
 
-        // Aktualizujeme lokální stav
+        // Aktualizujeme lokální stav pro konkrétní CW s rokem
         setPlanningData(prev => 
           prev.map(entry => {
-            const entryMatches = (entry.konstrukter === konstrukter) && 
-              (entry.cw === cw || entry.cw.split('-')[0] === cwForDatabase);
-            return entryMatches ? { ...entry, [field]: value } : entry;
+            const sameRow = entry.konstrukter === konstrukter && entry.cw === `${cwBase}-${year}`;
+            return sameRow ? { ...entry, [field]: value } : entry;
           })
         );
       } else {
         // Záznam neexistuje, vytvoříme nový
-        const cwNum = parseInt(cwForDatabase.replace('CW', ''));
-        
         // Určíme měsíc na základě roku a týdne
         let mesic: string;
-        const year = cw.includes('-') ? cw.split('-')[1] : (cwNum >= 32 ? '2025' : '2026');
-        
-        if (year === '2025') {
+        if (year === 2025) {
           if (cwNum <= 35) mesic = 'srpen 2025';
           else if (cwNum <= 39) mesic = 'září 2025';
           else if (cwNum <= 43) mesic = 'říjen 2025';
@@ -200,12 +199,13 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           else mesic = 'prosinec 2026';
         }
 
-        const newEntry = {
+        const newEntry: any = {
           konstrukter,
-          cw: cwForDatabase, // Do databáze uložíme bez roku
+          cw: cwBase, // v DB stále bez roku
+          year,
           mesic,
           [field === 'mhTyden' ? 'mh_tyden' : field]: value,
-          [field === 'mhTyden' ? 'projekt' : 'mh_tyden']: field === 'mhTyden' ? 'FREE' : 36
+          [field === 'mhTyden' ? 'projekt' : 'mh_tyden']: field === 'mhTyden' ? 'FREE' : 36,
         };
 
         const { error: insertError } = await supabase
@@ -225,7 +225,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         // Přidáme do lokálního stavu s původním CW (s rokem)
         setPlanningData(prev => [...prev, {
           konstrukter: newEntry.konstrukter,
-          cw, // Používáme původní CW s rokem
+          cw: `${cwBase}-${year}`,
           mesic: newEntry.mesic,
           mhTyden: typeof newEntry.mh_tyden === 'number' ? newEntry.mh_tyden : 36,
           projekt: typeof newEntry.projekt === 'string' ? newEntry.projekt : 'FREE'
@@ -249,7 +249,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const addEngineer = useCallback(async (name: string) => {
     // Generování týdnů pro celý rozsah (CW32-52 pro 2025 + CW01-52 pro 2026)
-    const newEntries = [];
+    const newEntries: any[] = [];
     
     // CW32-52 pro 2025
     for (let cw = 32; cw <= 52; cw++) {
@@ -263,6 +263,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       newEntries.push({
         konstrukter: name,
         cw: `CW${cw.toString().padStart(2, '0')}`,
+        year: 2025,
         mesic,
         mh_tyden: 36,
         projekt: cw === 52 ? 'DOVOLENÁ' : 'FREE'
@@ -288,6 +289,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       newEntries.push({
         konstrukter: name,
         cw: `CW${cw.toString().padStart(2, '0')}`,
+        year: 2026,
         mesic,
         mh_tyden: 36,
         projekt: cw === 52 ? 'DOVOLENÁ' : 'FREE'
@@ -337,16 +339,22 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         return;
       }
 
-      // Připravíme nové záznamy pro cílového konstruktéra (bez roku v CW pro databázi)
-      const targetEntries = sourcePlan.map(entry => ({
-        konstrukter: toKonstrukter,
-        cw: entry.cw.includes('-') ? entry.cw.split('-')[0] : entry.cw,
-        mesic: entry.mesic,
-        mh_tyden: entry.mhTyden || 36,
-        projekt: entry.projekt || 'FREE'
-      }));
+      // Připravíme nové záznamy pro cílového konstruktéra včetně roku
+      const targetEntries = sourcePlan.map(entry => {
+        const [cwBase, yearPart] = String(entry.cw).split('-');
+        const cwNum = parseInt(cwBase.replace('CW', ''));
+        const year = yearPart ? parseInt(yearPart) : (cwNum >= 32 ? 2025 : 2026);
+        return {
+          konstrukter: toKonstrukter,
+          cw: cwBase,
+          year,
+          mesic: entry.mesic,
+          mh_tyden: entry.mhTyden || 36,
+          projekt: entry.projekt || 'FREE'
+        };
+      });
 
-      // Nejdříve smažeme existující záznamy pro cílového konstruktéra
+      // Nejdříve smažeme existující záznamy pro cílového konstruktéra (oba roky)
       const { error: deleteError } = await supabase
         .from('planning_entries')
         .delete()
