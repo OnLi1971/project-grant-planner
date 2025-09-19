@@ -253,9 +253,8 @@ export const PlanningEditor: React.FC = () => {
   };
 
   const updateCell = (konstrukter: string, cw: string, field: 'projekt' | 'mhTyden', value: string | number) => {
-    // Odstraníme rok z CW pro ukládání do databáze (kvůli kompatibilitě s existujícím schéma)
-    const cwWithoutYear = cw.includes('-') ? cw.split('-')[0] : cw;
-    updatePlanningEntry(konstrukter, cwWithoutYear, field, value);
+    // Předáme celé CW s rokem do updatePlanningEntry
+    updatePlanningEntry(konstrukter, cw, field, value);
   };
 
   const toggleWeekSelection = (cw: string) => {

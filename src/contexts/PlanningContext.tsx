@@ -124,10 +124,21 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const updatePlanningEntry = useCallback(async (konstrukter: string, cw: string, field: 'projekt' | 'mhTyden', value: string | number) => {
     try {
-      // Rozparsujeme CW a rok (očekává se formát "CW45-2025"), fallback pokud rok chybí
-      const [cwBase, yearPart] = cw.split('-');
-      const cwNum = parseInt(cwBase.replace('CW', ''));
-      const year = yearPart ? parseInt(yearPart) : (cwNum >= 32 ? 2025 : 2026);
+      // Rozparsujeme CW a rok (očekává se formát "CW45-2025")
+      let cwBase: string, year: number;
+      
+      if (cw.includes('-')) {
+        // CW obsahuje rok ve formátu "CW32-2026"
+        [cwBase, ] = cw.split('-');
+        const yearPart = cw.split('-')[1];
+        year = parseInt(yearPart);
+      } else {
+        // Starý formát bez roku - potřeba určit rok podle kontextu
+        cwBase = cw;
+        const cwNum = parseInt(cwBase.replace('CW', ''));
+        // Pro editaci se předpokládá nejbližší možný rok
+        year = cwNum >= 32 ? 2025 : 2026;
+      }
 
       // Zkontrolujeme existenci záznamu pro daného konstruktéra, CW a rok
       const { data: existingData, error: selectError } = await supabase
@@ -177,6 +188,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       } else {
         // Záznam neexistuje, vytvoříme nový
         // Určíme měsíc na základě roku a týdne
+        const cwNum = parseInt(cwBase.replace('CW', ''));
         let mesic: string;
         if (year === 2025) {
           if (cwNum <= 35) mesic = 'srpen 2025';
