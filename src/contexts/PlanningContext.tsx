@@ -127,11 +127,9 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         // Starý formát bez roku - potřeba určit rok podle kontextu
         cwBase = cw;
         const cwNum = parseInt(cwBase.replace('CW', ''));
-        // Nyní editujeme převážně 2026, takže defaultujeme na 2026
-        // Pouze CW32+ z roku 2025 zůstává v 2025
-        const currentDate = new Date();
-        const currentYear = currentDate.getFullYear();
-        year = currentYear >= 2025 && cwNum >= 32 && currentYear === 2025 ? 2025 : 2026;
+        // Nyní všechny týdny by měly používat přesné CW-rok formáty z DB
+        // Odstraněna heuristika roku - vždy preferujeme rok z CW formátu
+        year = 2026; // Default pro nové záznamy bez explicitního roku
       }
 
       // Zkontrolujeme existenci záznamu pro daného konstruktéra, CW a rok
@@ -349,7 +347,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const targetEntries = sourcePlan.map(entry => {
         const [cwBase, yearPart] = String(entry.cw).split('-');
         const cwNum = parseInt(cwBase.replace('CW', ''));
-        const year = yearPart ? parseInt(yearPart) : (cwNum >= 32 ? 2025 : 2026);
+        const year = yearPart ? parseInt(yearPart) : 2026; // Default pro data bez explicitního roku
         return {
           konstrukter: toKonstrukter,
           cw: cwBase,
