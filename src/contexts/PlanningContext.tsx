@@ -50,12 +50,13 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
       abortControllerRef.current = new AbortController();
       
-      const currentRequestId = requestId + 1;
-      setRequestId(currentRequestId);
+      const currentRequestId = Date.now(); // Use timestamp for unique ID
       
       const startAt = new Date().toISOString();
       const timelineEntry = { id: currentRequestId, startAt, applied: false, source };
       setFetchTimeline(prev => [...prev.slice(-5), timelineEntry]); // Keep last 6 entries
+      
+      console.log(`Starting fetch ${currentRequestId} from ${source}`);
       
       try {
         // Robust pagination to bypass 1000 row cap from PostgREST
@@ -87,9 +88,9 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
         const data = allRows;
         
-        // Check if this response is stale
-        if (currentRequestId !== requestId) {
-          console.log(`Ignoring stale response ${currentRequestId}, current is ${requestId}`);
+        // Check if this response is stale by comparing with current abortController
+        if (abortControllerRef.current.signal.aborted) {
+          console.log(`Ignoring aborted response ${currentRequestId}`);
           setFetchTimeline(prev => prev.map(entry => 
             entry.id === currentRequestId 
               ? { ...entry, endAt: new Date().toISOString(), applied: false }
@@ -152,6 +153,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         
         // Mark this fetch as applied
         const endAt = new Date().toISOString();
+        console.log(`Fetch ${currentRequestId} completed successfully`);
         setFetchTimeline(prev => prev.map(entry => 
           entry.id === currentRequestId 
             ? { ...entry, endAt, applied: true }
@@ -160,16 +162,16 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       } catch (error: any) {
         if (error.name === 'AbortError') {
           console.log(`Fetch ${currentRequestId} was aborted`);
-          setFetchTimeline(prev => prev.map(entry => 
-            entry.id === currentRequestId 
-              ? { ...entry, endAt: new Date().toISOString(), applied: false }
-              : entry
-          ));
         } else {
           console.error('Error loading planning data:', error);
         }
+        setFetchTimeline(prev => prev.map(entry => 
+          entry.id === currentRequestId 
+            ? { ...entry, endAt: new Date().toISOString(), applied: false }
+            : entry
+        ));
       }
-    }, [requestId, toast]);
+    }, [toast]);
 
     useEffect(() => {
       if (isRealtimeEnabled) {

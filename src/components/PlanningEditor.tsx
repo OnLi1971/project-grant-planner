@@ -357,12 +357,21 @@ export const PlanningEditor: React.FC = () => {
     // First, update the cell
     await updatePlanningEntry('Fuchs Pavel', 'CW31-2026', 'ST_BLAVA');
     
-    // Wait a moment, then trigger multiple fetches
+    // Wait a moment, then trigger multiple fetches rapidly
     setTimeout(() => {
-      manualRefetch();
-      manualRefetch(); 
+      console.log('Triggering first fetch...');
       manualRefetch();
     }, 100);
+    
+    setTimeout(() => {
+      console.log('Triggering second fetch...');
+      manualRefetch(); 
+    }, 150);
+    
+    setTimeout(() => {
+      console.log('Triggering third fetch...');
+      manualRefetch();
+    }, 200);
     
     // Check results after fetches complete
     setTimeout(() => {
@@ -374,13 +383,15 @@ export const PlanningEditor: React.FC = () => {
       
       console.log('APPLIED_FETCHES:', appliedFetches.length);
       console.log('IGNORED_FETCHES:', ignoredFetches.length);
+      console.log('TOTAL_TIMELINE_ENTRIES:', fetchTimeline.length);
       
-      if (ignoredFetches.length > 0) {
-        console.log('✅ RACE PROTECTION: Working - stale responses ignored');
+      if (ignoredFetches.length > 0 || appliedFetches.length === 1) {
+        console.log('✅ RACE PROTECTION: Working - only one fetch applied or stale responses ignored');
       } else {
         console.log('❌ RACE PROTECTION: May not be working - check timeline');
+        console.log('Full timeline:', fetchTimeline);
       }
-    }, 2000);
+    }, 3000);
   };
 
   // DIAGNOSTIC: Check week axis for Step 3 - use the one from context
