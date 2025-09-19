@@ -286,45 +286,21 @@ export const RevenueOverview = () => {
       
       const allSelectedMonths = selectedQuarters.flatMap(quarter => quarterMonths[quarter] || []);
       data = data.filter(entry => {
-        // Mapujeme mesic z planningData na mesic_rok format
-        const entryMonth = entry.mesic.toLowerCase();
-        const mappedMonth = entryMonth === 'srpen' ? 'srpen_2025' :
-                           entryMonth === 'září' ? 'září_2025' :
-                           entryMonth === 'říjen' ? 'říjen_2025' :
-                           entryMonth === 'listopad' ? 'listopad_2025' :
-                           entryMonth === 'prosinec' ? 'prosinec_2025' :
-                           entryMonth === 'leden' ? 'leden_2026' :
-                           entryMonth === 'únor' ? 'únor_2026' :
-                           entryMonth === 'březen' ? 'březen_2026' :
-                           entryMonth === 'duben' ? 'duben_2026' :
-                           entryMonth === 'květen' ? 'květen_2026' :
-                           entryMonth === 'červen' ? 'červen_2026' :
-                           entryMonth === 'červenec' ? 'červenec_2026' :
-                           entryMonth === 'srpen' ? 'srpen_2026' :
-                           entryMonth === 'září' ? 'září_2026' :
-                           entryMonth;
-        return allSelectedMonths.includes(mappedMonth);
+        // Použijeme CW mapping k určení, do kterých měsíců entry přispívá
+        const weekMapping = weekToMonthMapping[entry.cw];
+        if (!weekMapping) return false;
+        
+        // Zkontrolujeme, zda některý z měsíců je v selectedMonths
+        return Object.keys(weekMapping).some(monthYear => allSelectedMonths.includes(monthYear));
       });
     } else if (viewType === 'mesic' && selectedMonths.length > 0) {
       data = data.filter(entry => {
-        // Mapujeme mesic z planningData na mesic_rok format
-        const entryMonth = entry.mesic.toLowerCase();
-        const mappedMonth = entryMonth === 'srpen' ? 'srpen_2025' :
-                           entryMonth === 'září' ? 'září_2025' :
-                           entryMonth === 'říjen' ? 'říjen_2025' :
-                           entryMonth === 'listopad' ? 'listopad_2025' :
-                           entryMonth === 'prosinec' ? 'prosinec_2025' :
-                           entryMonth === 'leden' ? 'leden_2026' :
-                           entryMonth === 'únor' ? 'únor_2026' :
-                           entryMonth === 'březen' ? 'březen_2026' :
-                           entryMonth === 'duben' ? 'duben_2026' :
-                           entryMonth === 'květen' ? 'květen_2026' :
-                           entryMonth === 'červen' ? 'červen_2026' :
-                           entryMonth === 'červenec' ? 'červenec_2026' :
-                           entryMonth === 'srpen' ? 'srpen_2026' :
-                           entryMonth === 'září' ? 'září_2026' :
-                           entryMonth;
-        return selectedMonths.includes(mappedMonth);
+        // Použijeme CW mapping k určení, do kterých měsíců entry přispívá
+        const weekMapping = weekToMonthMapping[entry.cw];
+        if (!weekMapping) return false;
+        
+        // Zkontrolujeme, zda některý z měsíců je v selectedMonths
+        return Object.keys(weekMapping).some(monthYear => selectedMonths.includes(monthYear));
       });
     }
 
