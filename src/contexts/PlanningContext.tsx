@@ -30,8 +30,6 @@ export const usePlanning = () => {
   return context;
 };
 
-const STORAGE_KEY = 'planning-data';
-
 export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { toast } = useToast();
   const [planningData, setPlanningData] = useState<PlanningEntry[]>([]);
@@ -44,7 +42,6 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         const pageSize = 1000;
         let offset = 0;
         let allRows: any[] = [];
-        let page = 0;
 
         while (true) {
           const { data, error } = await supabase
@@ -60,23 +57,40 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
           const batch = data || [];
           allRows = allRows.concat(batch);
-          page++;
 
           if (batch.length < pageSize) break;
           offset += pageSize;
         }
 
         // Mapujeme názvy sloupců z databáze na interface
-        const mappedData = allRows.map((entry: any) => ({
-          konstrukter: entry.konstrukter,
-          cw: entry.cw,
-          mesic: entry.mesic,
-          mhTyden: entry.mh_tyden, // Mapování z mh_tyden na mhTyden
-          projekt: entry.projekt
-        }));
+        // Pro data z databáze přidáme rok k CW a měsíci pokud tam není
+        const mappedData = allRows.map((entry: any) => {
+          let cwWithYear = entry.cw;
+          let mesicWithYear = entry.mesic;
+          
+          // Pokud CW neobsahuje rok, přidáme ho
+          if (!entry.cw.includes('-')) {
+            const cwNum = parseInt(entry.cw.replace('CW', ''));
+            const year = cwNum >= 32 ? '2025' : '2026';
+            cwWithYear = `${entry.cw}-${year}`;
+            
+            // Přidáme rok k měsíci pokud tam není
+            if (!entry.mesic.includes('2025') && !entry.mesic.includes('2026')) {
+              mesicWithYear = `${entry.mesic} ${year}`;
+            }
+          }
+          
+          return {
+            konstrukter: entry.konstrukter,
+            cw: cwWithYear,
+            mesic: mesicWithYear,
+            mhTyden: entry.mh_tyden,
+            projekt: entry.projekt
+          };
+        });
         
         setPlanningData(mappedData);
-        console.log('Planning data loaded:', mappedData.length, 'entries (paginated)');
+        console.log('Planning data loaded:', mappedData.length, 'entries');
       } catch (error) {
         console.error('Error loading planning data:', error);
         toast({
@@ -96,9 +110,8 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       .channel('planning_entries_changes')
       .on('postgres_changes', 
         { event: '*', schema: 'public', table: 'planning_entries' },
-        (payload) => {
-          console.log('Realtime change detected:', payload.eventType);
-          // Reload data when any change occurs
+        () => {
+          console.log('Realtime change detected, reloading data...');
           loadPlanningData();
         }
       )
@@ -111,12 +124,15 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const updatePlanningEntry = useCallback(async (konstrukter: string, cw: string, field: 'projekt' | 'mhTyden', value: string | number) => {
     try {
+      // CW může být ve formátu "CW45" nebo "CW45-2025" - pro databázi potřebujeme jen "CW45"
+      const cwForDatabase = cw.includes('-') ? cw.split('-')[0] : cw;
+      
       // Nejdříve zkusíme aktualizovat existující záznam
       const { data: existingData, error: selectError } = await supabase
         .from('planning_entries')
         .select('*')
         .eq('konstrukter', konstrukter)
-        .eq('cw', cw)
+        .eq('cw', cwForDatabase)
         .single();
 
       if (selectError && selectError.code !== 'PGRST116') { // PGRST116 = no rows found
@@ -135,7 +151,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           .from('planning_entries')
           .update({ [field === 'mhTyden' ? 'mh_tyden' : field]: value })
           .eq('konstrukter', konstrukter)
-          .eq('cw', cw);
+          .eq('cw', cwForDatabase);
 
         if (error) {
           console.error('Error updating planning entry:', error);
@@ -147,129 +163,136 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           return;
         }
 
-        // Aktualizujeme lokální stav pro existující záznam
+        // Aktualizujeme lokální stav
         setPlanningData(prev => 
-          prev.map(entry => 
-            entry.konstrukter === konstrukter && entry.cw === cw
-              ? { ...entry, [field]: value }
-              : entry
-          )
+          prev.map(entry => {
+            const entryMatches = (entry.konstrukter === konstrukter) && 
+              (entry.cw === cw || entry.cw.split('-')[0] === cwForDatabase);
+            return entryMatches ? { ...entry, [field]: value } : entry;
+          })
         );
       } else {
         // Záznam neexistuje, vytvoříme nový
-        const cwNum = parseInt(cw.replace('CW', ''));
+        const cwNum = parseInt(cwForDatabase.replace('CW', ''));
         
-        // Funkce pro určení měsíce a roku na základě kalendářního týdne
-        const getMonthWithYear = (cwNum: number): string => {
-          // CW32-52 přiřadíme k roku 2025 pokud jsme v období 2025
-          // CW01-52 přiřadíme k roku 2026 pokud jsme v období 2026
-          if (cwNum >= 32) {
-            // CW32-52 - může být rok 2025 nebo 2026
-            const currentYear = new Date().getFullYear();
-            const currentMonth = new Date().getMonth() + 1;
-            
-            // Pokud jsme v prvním pololetí roku, CW32+ je z předchozího roku
-            const year = currentMonth <= 6 ? currentYear - 1 : currentYear;
-            
-            if (cwNum <= 35) return `srpen ${year}`;
-            else if (cwNum <= 39) return `září ${year}`;
-            else if (cwNum <= 43) return `říjen ${year}`;
-            else if (cwNum <= 47) return `listopad ${year}`;
-            else return `prosinec ${year}`;
-          } else {
-            // CW01-31 - přiřadíme k aktuálnímu nebo následujícímu roku
-            const currentYear = new Date().getFullYear();
-            const currentMonth = new Date().getMonth() + 1;
-            
-            // Pokud jsme ve druhém pololetí roku, CW01+ je z následujícího roku
-            const year = currentMonth >= 7 ? currentYear + 1 : currentYear;
-            
-            if (cwNum <= 5) return `leden ${year}`;
-            else if (cwNum <= 9) return `únor ${year}`;
-            else if (cwNum <= 13) return `březen ${year}`;
-            else if (cwNum <= 17) return `duben ${year}`;
-            else if (cwNum <= 22) return `květen ${year}`;
-            else if (cwNum <= 26) return `červen ${year}`;
-            else if (cwNum <= 30) return `červenec ${year}`;
-            else return `srpen ${year}`;
-          }
-        };
+        // Určíme měsíc na základě roku a týdne
+        let mesic: string;
+        const year = cw.includes('-') ? cw.split('-')[1] : (cwNum >= 32 ? '2025' : '2026');
         
-        const mesic = getMonthWithYear(cwNum);
-
-        // Najdeme aktuální hodnoty z lokálního stavu (může být z defaultního plánu)
-        const currentEntry = planningData.find(entry => 
-          entry.konstrukter === konstrukter && entry.cw === cw
-        );
+        if (year === '2025') {
+          if (cwNum <= 35) mesic = 'srpen 2025';
+          else if (cwNum <= 39) mesic = 'září 2025';
+          else if (cwNum <= 43) mesic = 'říjen 2025';
+          else if (cwNum <= 47) mesic = 'listopad 2025';
+          else mesic = 'prosinec 2025';
+        } else { // 2026
+          if (cwNum <= 5) mesic = 'leden 2026';
+          else if (cwNum <= 9) mesic = 'únor 2026';
+          else if (cwNum <= 13) mesic = 'březen 2026';
+          else if (cwNum <= 17) mesic = 'duben 2026';
+          else if (cwNum <= 22) mesic = 'květen 2026';
+          else if (cwNum <= 26) mesic = 'červen 2026';
+          else if (cwNum <= 30) mesic = 'červenec 2026';
+          else if (cwNum <= 35) mesic = 'srpen 2026';
+          else if (cwNum <= 39) mesic = 'září 2026';
+          else if (cwNum <= 43) mesic = 'říjen 2026';
+          else if (cwNum <= 47) mesic = 'listopad 2026';
+          else mesic = 'prosinec 2026';
+        }
 
         const newEntry = {
           konstrukter,
-          cw,
+          cw: cwForDatabase, // Do databáze uložíme bez roku
           mesic,
-          mh_tyden: field === 'mhTyden' ? 
-            (typeof value === 'number' ? value : parseInt(value.toString())) : 
-            (currentEntry?.mhTyden || 36),
-          projekt: field === 'projekt' ? 
-            value.toString() : 
-            (currentEntry?.projekt || 'FREE')
+          [field === 'mhTyden' ? 'mh_tyden' : field]: value,
+          [field === 'mhTyden' ? 'projekt' : 'mh_tyden']: field === 'mhTyden' ? 'FREE' : 36
         };
 
-        const { error } = await supabase
+        const { error: insertError } = await supabase
           .from('planning_entries')
-          .insert([newEntry]);
+          .insert(newEntry);
 
-        if (error) {
-          console.error('Error creating planning entry:', error);
+        if (insertError) {
+          console.error('Error inserting planning entry:', insertError);
           toast({
-            title: "Chyba při vytváření",
+            title: "Chyba při vytváření záznamu",
             description: "Nepodařilo se vytvořit nový záznam.",
             variant: "destructive",
           });
           return;
         }
 
-        // Přidáme nový záznam do lokálního stavu s aktualizovanou hodnotou
-        const newLocalEntry: PlanningEntry = { 
+        // Přidáme do lokálního stavu s původním CW (s rokem)
+        setPlanningData(prev => [...prev, {
           konstrukter: newEntry.konstrukter,
-          cw: newEntry.cw,
+          cw, // Používáme původní CW s rokem
           mesic: newEntry.mesic,
-          mhTyden: newEntry.mh_tyden,
-          projekt: newEntry.projekt
-        };
-        setPlanningData(prev => [...prev, newLocalEntry]);
+          mhTyden: typeof newEntry.mh_tyden === 'number' ? newEntry.mh_tyden : 36,
+          projekt: typeof newEntry.projekt === 'string' ? newEntry.projekt : 'FREE'
+        }]);
       }
 
       toast({
         title: "Změna uložena",
-        description: "Vaše změna byla úspěšně uložena.",
+        description: `Hodnota byla úspěšně aktualizována.`,
       });
+
     } catch (error) {
-      console.error('Error updating planning entry:', error);
+      console.error('Error in updatePlanningEntry:', error);
       toast({
-        title: "Chyba při ukládání",
-        description: "Nepodařilo se uložit změnu.",
+        title: "Neočekávaná chyba",
+        description: "Došlo k neočekávané chybě při ukládání.",
         variant: "destructive",
       });
     }
   }, [toast]);
 
   const addEngineer = useCallback(async (name: string) => {
-    // Týdny od CW32 do CW52 (2025) + CW01 do CW26 (2026)
-    const weeks2025 = ['CW32', 'CW33', 'CW34', 'CW35', 'CW36', 'CW37', 'CW38', 'CW39', 'CW40', 'CW41', 'CW42', 'CW43', 'CW44', 'CW45', 'CW46', 'CW47', 'CW48', 'CW49', 'CW50', 'CW51', 'CW52'];
-    const weeks2026 = ['CW01', 'CW02', 'CW03', 'CW04', 'CW05', 'CW06', 'CW07', 'CW08', 'CW09', 'CW10', 'CW11', 'CW12', 'CW13', 'CW14', 'CW15', 'CW16', 'CW17', 'CW18', 'CW19', 'CW20', 'CW21', 'CW22', 'CW23', 'CW24', 'CW25', 'CW26'];
-    const weeks = [...weeks2025, ...weeks2026];
+    // Generování týdnů pro celý rozsah (CW32-52 pro 2025 + CW01-52 pro 2026)
+    const newEntries = [];
     
-    const months2025 = ['srpen', 'srpen', 'srpen', 'srpen', 'září', 'září', 'září', 'září', 'říjen', 'říjen', 'říjen', 'říjen', 'říjen', 'listopad', 'listopad', 'listopad', 'listopad', 'prosinec', 'prosinec', 'prosinec', 'prosinec'];
-    const months2026 = ['leden', 'leden', 'leden', 'leden', 'leden', 'únor', 'únor', 'únor', 'únor', 'březen', 'březen', 'březen', 'březen', 'březen', 'duben', 'duben', 'duben', 'duben', 'květen', 'květen', 'květen', 'květen', 'květen', 'červen', 'červen', 'červen'];
-    const months = [...months2025, ...months2026];
+    // CW32-52 pro 2025
+    for (let cw = 32; cw <= 52; cw++) {
+      let mesic;
+      if (cw <= 35) mesic = 'srpen 2025';
+      else if (cw <= 39) mesic = 'září 2025';
+      else if (cw <= 43) mesic = 'říjen 2025';
+      else if (cw <= 47) mesic = 'listopad 2025';
+      else mesic = 'prosinec 2025';
+      
+      newEntries.push({
+        konstrukter: name,
+        cw: `CW${cw.toString().padStart(2, '0')}`,
+        mesic,
+        mh_tyden: 36,
+        projekt: cw === 52 ? 'DOVOLENÁ' : 'FREE'
+      });
+    }
     
-    const newEntries = weeks.map((week, index) => ({
-      konstrukter: name,
-      cw: week,
-      mesic: months[index],
-      mh_tyden: 36, // Defaultní hodnota 36 hodin
-      projekt: 'FREE'
-    }));
+    // CW01-52 pro 2026
+    for (let cw = 1; cw <= 52; cw++) {
+      let mesic;
+      if (cw <= 5) mesic = 'leden 2026';
+      else if (cw <= 9) mesic = 'únor 2026';
+      else if (cw <= 13) mesic = 'březen 2026';
+      else if (cw <= 17) mesic = 'duben 2026';
+      else if (cw <= 22) mesic = 'květen 2026';
+      else if (cw <= 26) mesic = 'červen 2026';
+      else if (cw <= 30) mesic = 'červenec 2026';
+      else if (cw <= 35) mesic = 'srpen 2026';
+      else if (cw <= 39) mesic = 'září 2026';
+      else if (cw <= 43) mesic = 'říjen 2026';
+      else if (cw <= 47) mesic = 'listopad 2026';
+      else mesic = 'prosinec 2026';
+      
+      newEntries.push({
+        konstrukter: name,
+        cw: `CW${cw.toString().padStart(2, '0')}`,
+        mesic,
+        mh_tyden: 36,
+        projekt: cw === 52 ? 'DOVOLENÁ' : 'FREE'
+      });
+    }
 
     try {
       const { error } = await supabase
@@ -285,12 +308,6 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         });
         return;
       }
-
-      // Update local state
-      setPlanningData(prev => [...prev, ...newEntries.map(entry => ({ 
-        ...entry, 
-        mhTyden: entry.mh_tyden 
-      }))]);
 
       toast({
         title: "Konstruktér přidán",
@@ -320,10 +337,10 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         return;
       }
 
-      // Připravíme nové záznamy pro cílového konstruktéra
+      // Připravíme nové záznamy pro cílového konstruktéra (bez roku v CW pro databázi)
       const targetEntries = sourcePlan.map(entry => ({
         konstrukter: toKonstrukter,
-        cw: entry.cw,
+        cw: entry.cw.includes('-') ? entry.cw.split('-')[0] : entry.cw,
         mesic: entry.mesic,
         mh_tyden: entry.mhTyden || 36,
         projekt: entry.projekt || 'FREE'
@@ -360,21 +377,6 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         return;
       }
 
-      // Aktualizujeme lokální stav
-      setPlanningData(prev => {
-        // Odstraníme staré záznamy pro cílového konstruktéra
-        const filtered = prev.filter(entry => entry.konstrukter !== toKonstrukter);
-        // Přidáme nové záznamy
-        const newEntries = targetEntries.map(entry => ({
-          konstrukter: entry.konstrukter,
-          cw: entry.cw,
-          mesic: entry.mesic,
-          mhTyden: entry.mh_tyden,
-          projekt: entry.projekt
-        }));
-        return [...filtered, ...newEntries];
-      });
-
       toast({
         title: "Plán zkopírován",
         description: `Plán konstruktéra ${fromKonstrukter} byl úspěšně zkopírován do ${toKonstrukter}.`,
@@ -396,33 +398,26 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     });
   }, [toast]);
 
-  const resetToOriginal = useCallback(async () => {
-    try {
-      // This would reset to original data if needed
-      toast({
-        title: "Reset není dostupný",
-        description: "Data jsou načítána z databáze a nelze je resetovat.",
-        variant: "destructive",
-      });
-    } catch (error) {
-      toast({
-        title: "Chyba při resetu",
-        description: "Nepodařilo se obnovit data.",
-        variant: "destructive",
-      });
-    }
+  const resetToOriginal = useCallback(() => {
+    toast({
+      title: "Reset není dostupný",
+      description: "Data jsou načítána z databáze a nelze je resetovat.",
+      variant: "destructive",
+    });
   }, [toast]);
 
   return (
-    <PlanningContext.Provider value={{
-      planningData,
-      loading,
-      updatePlanningEntry,
-      addEngineer,
-      copyPlan,
-      savePlan,
-      resetToOriginal
-    }}>
+    <PlanningContext.Provider
+      value={{
+        planningData,
+        loading,
+        updatePlanningEntry,
+        addEngineer,
+        copyPlan,
+        savePlan,
+        resetToOriginal,
+      }}
+    >
       {children}
     </PlanningContext.Provider>
   );
