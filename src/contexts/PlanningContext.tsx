@@ -51,14 +51,30 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           throw error;
         }
 
-        // Mapování z view planning_matrix na PlanningEntry interface
-        const mappedData = (data || []).map((entry: any) => ({
+        // Mapování a deduplikace z view planning_matrix na PlanningEntry interface
+        const dedupMap = new Map<string, any>();
+        (data || []).forEach((e: any) => {
+          const key = `${e.konstrukter}::${e.cw_full}`;
+          const existing = dedupMap.get(key);
+          if (!existing) {
+            dedupMap.set(key, e);
+          } else {
+            // Preferovat záznam s ne-FREE projektem, jinak novější updated_at
+            const choose = () => {
+              if (existing.projekt !== 'FREE' && e.projekt === 'FREE') return existing;
+              if (e.projekt !== 'FREE' && existing.projekt === 'FREE') return e;
+              return (new Date(e.updated_at) > new Date(existing.updated_at)) ? e : existing;
+            };
+            dedupMap.set(key, choose());
+          }
+        });
+
+        const mappedData = Array.from(dedupMap.values()).map((entry: any) => ({
           konstrukter: entry.konstrukter,
           cw: entry.cw_full, // Používat plný formát CW s rokem
           mesic: entry.mesic,
           mhTyden: entry.mh_tyden,
           projekt: entry.projekt,
-          year: entry.year
         }));
         
         setPlanningData(mappedData);
