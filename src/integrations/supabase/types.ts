@@ -242,6 +242,7 @@ export type Database = {
           projekt: string | null
           updated_at: string | null
           updated_by: string | null
+          year: number
         }
         Insert: {
           created_at?: string | null
@@ -254,6 +255,7 @@ export type Database = {
           projekt?: string | null
           updated_at?: string | null
           updated_by?: string | null
+          year: number
         }
         Update: {
           created_at?: string | null
@@ -266,6 +268,7 @@ export type Database = {
           projekt?: string | null
           updated_at?: string | null
           updated_by?: string | null
+          year?: number
         }
         Relationships: [
           {
