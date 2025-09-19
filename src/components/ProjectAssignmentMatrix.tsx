@@ -10,6 +10,7 @@ import { usePlanning } from '@/contexts/PlanningContext';
 import { customers, projectManagers, programs, projects } from '@/data/projectsData';
 import { getWeek } from 'date-fns';
 import { ENGINEERS } from '@/data/engineersList';
+import { normalizeName, createNameMapping } from '@/utils/nameNormalization';
 
 // Organizational structure and project mappings
 const organizacniVedouci = [
@@ -24,8 +25,7 @@ const organizacniVedouci = [
   'Dodavatel'
 ];
 
-// Mapping of engineers to organizational leaders derived from shared list
-const normalizeName = (s: string) => s.normalize('NFC').trim();
+// Mapping of engineers to organizational leaders derived from shared list  
 const konstrukterVedouci: { [key: string]: string } = Object.fromEntries(
   ENGINEERS.map(e => [normalizeName(e.jmeno), e.orgVedouci])
 );
@@ -45,11 +45,11 @@ const getAllWeeks = (): string[] => {
   const weeks = [];
   // CW32-52 pro rok 2025
   for (let cw = startWeek; cw <= 52; cw++) {
-    weeks.push(`CW${cw.toString().padStart(2, '0')}`);
+    weeks.push(`CW${cw.toString().padStart(2, '0')}-2025`);
   }
-  // CW01-26 pro rok 2026
-  for (let cw = 1; cw <= 26; cw++) {
-    weeks.push(`CW${cw.toString().padStart(2, '0')}`);
+  // CW01-52 pro rok 2026 - opraveno na celý rok
+  for (let cw = 1; cw <= 52; cw++) {
+    weeks.push(`CW${cw.toString().padStart(2, '0')}-2026`);
   }
   return weeks;
 };
@@ -57,17 +57,23 @@ const getAllWeeks = (): string[] => {
 const weeks = getAllWeeks();
 
 const months = [
-  { name: 'srpen', weeks: ['CW32', 'CW33', 'CW34', 'CW35'] },
-  { name: 'září', weeks: ['CW36', 'CW37', 'CW38', 'CW39'] },
-  { name: 'říjen', weeks: ['CW40', 'CW41', 'CW42', 'CW43', 'CW44'] },
-  { name: 'listopad', weeks: ['CW45', 'CW46', 'CW47', 'CW48'] },
-  { name: 'prosinec', weeks: ['CW49', 'CW50', 'CW51', 'CW52'] },
-  { name: 'leden', weeks: ['CW01', 'CW02', 'CW03', 'CW04', 'CW05'] },
-  { name: 'únor', weeks: ['CW06', 'CW07', 'CW08', 'CW09'] },
-  { name: 'březen', weeks: ['CW10', 'CW11', 'CW12', 'CW13', 'CW14'] },
-  { name: 'duben', weeks: ['CW15', 'CW16', 'CW17', 'CW18'] },
-  { name: 'květen', weeks: ['CW19', 'CW20', 'CW21', 'CW22', 'CW23'] },
-  { name: 'červen', weeks: ['CW24', 'CW25', 'CW26'] }
+  { name: 'srpen 2025', weeks: ['CW32-2025', 'CW33-2025', 'CW34-2025', 'CW35-2025'] },
+  { name: 'září 2025', weeks: ['CW36-2025', 'CW37-2025', 'CW38-2025', 'CW39-2025'] },
+  { name: 'říjen 2025', weeks: ['CW40-2025', 'CW41-2025', 'CW42-2025', 'CW43-2025', 'CW44-2025'] },
+  { name: 'listopad 2025', weeks: ['CW45-2025', 'CW46-2025', 'CW47-2025', 'CW48-2025'] },
+  { name: 'prosinec 2025', weeks: ['CW49-2025', 'CW50-2025', 'CW51-2025', 'CW52-2025'] },
+  { name: 'leden 2026', weeks: ['CW01-2026', 'CW02-2026', 'CW03-2026', 'CW04-2026', 'CW05-2026'] },
+  { name: 'únor 2026', weeks: ['CW06-2026', 'CW07-2026', 'CW08-2026', 'CW09-2026'] },
+  { name: 'březen 2026', weeks: ['CW10-2026', 'CW11-2026', 'CW12-2026', 'CW13-2026', 'CW14-2026'] },
+  { name: 'duben 2026', weeks: ['CW15-2026', 'CW16-2026', 'CW17-2026', 'CW18-2026'] },
+  { name: 'květen 2026', weeks: ['CW19-2026', 'CW20-2026', 'CW21-2026', 'CW22-2026', 'CW23-2026'] },
+  { name: 'červen 2026', weeks: ['CW24-2026', 'CW25-2026', 'CW26-2026'] },
+  { name: 'červenec 2026', weeks: ['CW27-2026', 'CW28-2026', 'CW29-2026', 'CW30-2026'] },
+  { name: 'srpen 2026', weeks: ['CW31-2026', 'CW32-2026', 'CW33-2026', 'CW34-2026', 'CW35-2026'] },
+  { name: 'září 2026', weeks: ['CW36-2026', 'CW37-2026', 'CW38-2026', 'CW39-2026'] },
+  { name: 'říjen 2026', weeks: ['CW40-2026', 'CW41-2026', 'CW42-2026', 'CW43-2026', 'CW44-2026'] },
+  { name: 'listopad 2026', weeks: ['CW45-2026', 'CW46-2026', 'CW47-2026', 'CW48-2026'] },
+  { name: 'prosinec 2026', weeks: ['CW49-2026', 'CW50-2026', 'CW51-2026', 'CW52-2026'] }
 ].map(month => ({
   ...month,
   weeks: month.weeks.filter(week => weeks.includes(week))
@@ -182,7 +188,7 @@ export const ProjectAssignmentMatrix = () => {
       weeks.forEach(week => {
         const entry = planningData.find(e => normalizeName(e.konstrukter) === engineerKey && e.cw === week);
         // Default to 'DOVOLENÁ' for CW52, otherwise 'FREE' if no entry exists
-        matrix[engineerKey][week] = entry?.projekt || (week === 'CW52' ? 'DOVOLENÁ' : 'FREE');
+        matrix[engineerKey][week] = entry?.projekt || (week.includes('CW52') ? 'DOVOLENÁ' : 'FREE');
       });
     });
     
@@ -213,7 +219,7 @@ export const ProjectAssignmentMatrix = () => {
             hours = typeof entry.mhTyden === 'number' ? entry.mhTyden : 0;
           } else {
             // Default values for weeks without entries
-            projekt = week === 'CW52' ? 'DOVOLENÁ' : 'FREE';
+            projekt = week.includes('CW52') ? 'DOVOLENÁ' : 'FREE';
             hours = 36; // Default hours
           }
           
