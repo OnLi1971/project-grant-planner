@@ -486,12 +486,23 @@ export const RevenueOverview = () => {
       'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026'
     ];
   
-  // Získání všech unikátních projektů s revenue
+  // Získání všech unikátních projektů s revenue - rozdělení podle statusu
   const allProjects = new Set<string>();
   Object.values(monthlyRevenueByProject).forEach(monthData => {
     Object.keys(monthData).forEach(projectCode => allProjects.add(projectCode));
   });
   const projectList = Array.from(allProjects);
+  
+  // Rozdělíme projekty podle statusu
+  const realizaceProjects = projectList.filter(projectCode => {
+    const project = projects.find(p => p.code === projectCode);
+    return project?.project_status !== 'Pre sales';
+  });
+  
+  const presalesProjects = projectList.filter(projectCode => {
+    const project = projects.find(p => p.code === projectCode);
+    return project?.project_status === 'Pre sales';
+  });
 
   // Výpočet celkového revenue pouze pro vybrané měsíce
   const totalRevenue = months.reduce((sum, month) => {
@@ -547,10 +558,16 @@ export const RevenueOverview = () => {
           const monthData = monthlyRevenueByProject[month] || {};
           data.total += Object.values(monthData).reduce((sum: number, value: number) => sum + value, 0);
           
-          // Přidáme data pro každý projekt
-          projectList.forEach(projectCode => {
+          // Přidáme data pro realizace projekty
+          realizaceProjects.forEach(projectCode => {
             if (!data[projectCode]) data[projectCode] = 0;
             data[projectCode] += monthData[projectCode] || 0;
+          });
+          
+          // Přidáme data pro presales projekty s prefixem
+          presalesProjects.forEach(projectCode => {
+            if (!data[`presales_${projectCode}`]) data[`presales_${projectCode}`] = 0;
+            data[`presales_${projectCode}`] += monthData[projectCode] || 0;
           });
         });
         
@@ -575,9 +592,14 @@ export const RevenueOverview = () => {
           total: Object.values(monthData).reduce((sum: number, value: number) => sum + value, 0)
         };
         
-        // Přidáme data pro každý projekt
-        projectList.forEach(projectCode => {
+        // Přidáme data pro realizace projekty
+        realizaceProjects.forEach(projectCode => {
           data[projectCode] = monthData[projectCode] || 0;
+        });
+        
+        // Přidáme data pro presales projekty s prefixem
+        presalesProjects.forEach(projectCode => {
+          data[`presales_${projectCode}`] = monthData[projectCode] || 0;
         });
         
         return data;
@@ -901,22 +923,57 @@ export const RevenueOverview = () => {
                     borderRadius: '6px'
                   }}
                 />
-                {projectList.map((projectCode, index) => (
-                  <Bar 
-                    key={projectCode}
-                    dataKey={projectCode} 
-                    stackId="revenue"
-                    fill={getProjectColorWithIndex(projectCode, index)}
-                    name={projectCode}
-                  >
-                    {index === projectList.length - 1 && (
-                      <LabelList 
-                        dataKey="total"
-                        content={(props: any) => renderTotalLabel(props)}
-                      />
-                    )}
-                  </Bar>
-                ))}
+                 {/* Realizace projekty - spodní stack */}
+                 {realizaceProjects.map((projectCode, index) => (
+                   <Bar 
+                     key={projectCode}
+                     dataKey={projectCode} 
+                     stackId="realizace"
+                     fill={getProjectColorWithIndex(projectCode, index)}
+                     name={projectCode}
+                   />
+                 ))}
+                 
+                 {/* Presales projekty - horní stack s průhledností */}
+                 {presalesProjects.map((projectCode, index) => {
+                   const color = getProjectColorWithIndex(projectCode, realizaceProjects.length + index);
+                   return (
+                     <Bar 
+                       key={`presales_${projectCode}`}
+                       dataKey={`presales_${projectCode}`} 
+                       stackId="presales"
+                       fill={color}
+                       fillOpacity={0.6}
+                       name={`${projectCode} (Presales)`}
+                       stroke={color}
+                       strokeWidth={1}
+                       strokeDasharray="3 3"
+                     >
+                       {index === presalesProjects.length - 1 && (
+                         <LabelList 
+                           dataKey="total"
+                           content={(props: any) => renderTotalLabel(props)}
+                         />
+                       )}
+                     </Bar>
+                   );
+                 })}
+                 
+                 {/* Fallback pro total label pokud nejsou presales projekty */}
+                 {presalesProjects.length === 0 && realizaceProjects.length > 0 && (
+                   <Bar 
+                     key="total-label"
+                     dataKey="total" 
+                     fill="transparent"
+                     name="Total"
+                     isAnimationActive={false}
+                   >
+                     <LabelList 
+                       dataKey="total"
+                       content={(props: any) => renderTotalLabel(props)}
+                     />
+                   </Bar>
+                 )}
               </BarChart>
             </ResponsiveContainer>
           </div>
