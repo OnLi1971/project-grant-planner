@@ -64,6 +64,32 @@ export const RevenueOverview = () => {
     return `${value.toLocaleString('cs-CZ')} Kč`;
   };
 
+  // Short currency formatter for bar labels
+  const formatShort = (value: number): string => {
+    if (currency === 'USD') {
+      const usdValue = value / exchangeRate;
+      if (usdValue >= 1_000_000) return `$${(usdValue / 1_000_000).toFixed(1)}M`;
+      if (usdValue >= 1_000) return `$${Math.round(usdValue / 1_000)}k`;
+      return `$${Math.round(usdValue)}`;
+    }
+    if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+    if (value >= 1_000) return `${Math.round(value / 1_000)}k`;
+    return `${Math.round(value)}`;
+  };
+
+  // Custom renderer to place total label centered just above the bar
+  const renderTotalLabel = (props: any) => {
+    const { x = 0, y = 0, width = 0, value } = props;
+    if (!value || value <= 0) return null;
+    const cx = x + width / 2;
+    const cy = y - 6;
+    return (
+      <text x={cx} y={cy} textAnchor="middle" fontSize={11} fontWeight="bold" fill="hsl(var(--foreground))">
+        {formatShort(value as number)}
+      </text>
+    );
+  };
+
   // Načtení dat z databáze
   useEffect(() => {
     loadData();
@@ -889,37 +915,11 @@ export const RevenueOverview = () => {
                    dataKey="total" 
                    fill="transparent"
                    name="Celkem"
-                   barSize={0}
                    isAnimationActive={false}
                  >
                    <LabelList 
                      dataKey="total"
-                     position="top"
-                     fontSize={11}
-                     fontWeight="bold"
-                     fill="hsl(var(--foreground))"
-                     offset={-4}
-                     formatter={(value: number) => {
-                       if (value === 0) return '';
-                       if (currency === 'USD') {
-                         const usdValue = value / exchangeRate;
-                         if (usdValue >= 1000000) {
-                           return `$${(usdValue / 1000000).toFixed(1)}M`;
-                         } else if (usdValue >= 1000) {
-                           return `$${Math.round(usdValue / 1000)}k`;
-                         } else {
-                           return `$${Math.round(usdValue)}`;
-                         }
-                       } else {
-                         if (value >= 1000000) {
-                           return `${(value / 1000000).toFixed(1)}M`;
-                         } else if (value >= 1000) {
-                           return `${Math.round(value / 1000)}k`;
-                         } else {
-                           return `${Math.round(value)}`;
-                         }
-                       }
-                     }}
+                     content={(props: any) => renderTotalLabel(props)}
                    />
                  </Bar>
               </BarChart>
