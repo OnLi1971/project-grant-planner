@@ -20,6 +20,7 @@ interface PlanningContextType {
   checkWeekAxis: () => any;
   performStep1Test: () => void;
   fetchTimeline: Array<{id: number, startAt: string, endAt?: string, applied: boolean, source: string}>;
+  getCurrentTimeline: () => Array<{id: number, startAt: string, endAt?: string, applied: boolean, source: string}>;
 }
 
 const PlanningContext = createContext<PlanningContextType | undefined>(undefined);
@@ -41,6 +42,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [requestId, setRequestId] = useState(0);
   const [fetchTimeline, setFetchTimeline] = useState<Array<{id: number, startAt: string, endAt?: string, applied: boolean, source: string}>>([]);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const fetchTimelineRef = useRef<Array<{id: number, startAt: string, endAt?: string, applied: boolean, source: string}>>([]);
 
   // Load data from Supabase using the new planning_matrix view
   const loadPlanningData = useCallback(async (source = 'manual') => {
@@ -54,7 +56,13 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       
       const startAt = new Date().toISOString();
       const timelineEntry = { id: currentRequestId, startAt, applied: false, source };
-      setFetchTimeline(prev => [...prev.slice(-5), timelineEntry]); // Keep last 6 entries
+      
+      // Update both state and ref
+      setFetchTimeline(prev => {
+        const newTimeline = [...prev.slice(-5), timelineEntry];
+        fetchTimelineRef.current = newTimeline;
+        return newTimeline;
+      });
       
       console.log(`Starting fetch ${currentRequestId} from ${source}`);
       
@@ -91,11 +99,15 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         // Check if this response is stale by comparing with current abortController
         if (abortControllerRef.current.signal.aborted) {
           console.log(`Ignoring aborted response ${currentRequestId}`);
-          setFetchTimeline(prev => prev.map(entry => 
-            entry.id === currentRequestId 
-              ? { ...entry, endAt: new Date().toISOString(), applied: false }
-              : entry
-          ));
+          setFetchTimeline(prev => {
+            const newTimeline = prev.map(entry => 
+              entry.id === currentRequestId 
+                ? { ...entry, endAt: new Date().toISOString(), applied: false }
+                : entry
+            );
+            fetchTimelineRef.current = newTimeline;
+            return newTimeline;
+          });
           return;
         }
 
@@ -154,22 +166,30 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         // Mark this fetch as applied
         const endAt = new Date().toISOString();
         console.log(`Fetch ${currentRequestId} completed successfully`);
-        setFetchTimeline(prev => prev.map(entry => 
-          entry.id === currentRequestId 
-            ? { ...entry, endAt, applied: true }
-            : entry
-        ));
+        setFetchTimeline(prev => {
+          const newTimeline = prev.map(entry => 
+            entry.id === currentRequestId 
+              ? { ...entry, endAt, applied: true }
+              : entry
+          );
+          fetchTimelineRef.current = newTimeline;
+          return newTimeline;
+        });
       } catch (error: any) {
         if (error.name === 'AbortError') {
           console.log(`Fetch ${currentRequestId} was aborted`);
         } else {
           console.error('Error loading planning data:', error);
         }
-        setFetchTimeline(prev => prev.map(entry => 
-          entry.id === currentRequestId 
-            ? { ...entry, endAt: new Date().toISOString(), applied: false }
-            : entry
-        ));
+        setFetchTimeline(prev => {
+          const newTimeline = prev.map(entry => 
+            entry.id === currentRequestId 
+              ? { ...entry, endAt: new Date().toISOString(), applied: false }
+              : entry
+          );
+          fetchTimelineRef.current = newTimeline;
+          return newTimeline;
+        });
       }
     }, [toast]);
 
@@ -394,7 +414,8 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         manualRefetch,
         checkWeekAxis,
         performStep1Test,
-        fetchTimeline
+        fetchTimeline,
+        getCurrentTimeline: () => fetchTimelineRef.current
       }}
     >
       {children}

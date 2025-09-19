@@ -179,7 +179,8 @@ export const PlanningEditor: React.FC = () => {
     manualRefetch,
     checkWeekAxis,
     performStep1Test,
-    fetchTimeline
+    fetchTimeline,
+    getCurrentTimeline
   } = usePlanning();
   
   const [projects, setProjects] = useState<DatabaseProject[]>([]);
@@ -376,20 +377,24 @@ export const PlanningEditor: React.FC = () => {
     // Check results after fetches complete
     setTimeout(() => {
       console.log('=== STEP 2 RESULTS ===');
-      console.log('FETCH_TIMELINE after test:', fetchTimeline);
+      const currentTimeline = getCurrentTimeline();
+      console.log('FETCH_TIMELINE after test:', currentTimeline);
       
-      const appliedFetches = fetchTimeline.filter(f => f.applied);
-      const ignoredFetches = fetchTimeline.filter(f => !f.applied);
+      const appliedFetches = currentTimeline.filter(f => f.applied);
+      const ignoredFetches = currentTimeline.filter(f => !f.applied);
       
       console.log('APPLIED_FETCHES:', appliedFetches.length);
       console.log('IGNORED_FETCHES:', ignoredFetches.length);
-      console.log('TOTAL_TIMELINE_ENTRIES:', fetchTimeline.length);
+      console.log('TOTAL_TIMELINE_ENTRIES:', currentTimeline.length);
       
       if (ignoredFetches.length > 0 || appliedFetches.length === 1) {
         console.log('✅ RACE PROTECTION: Working - only one fetch applied or stale responses ignored');
+      } else if (appliedFetches.length > 1) {
+        console.log('⚠️ RACE PROTECTION: Multiple fetches completed - this might indicate a problem');
+        console.log('Applied fetches details:', appliedFetches.map(f => ({ id: f.id, source: f.source })));
       } else {
         console.log('❌ RACE PROTECTION: May not be working - check timeline');
-        console.log('Full timeline:', fetchTimeline);
+        console.log('Full timeline:', currentTimeline);
       }
     }, 3000);
   };
