@@ -39,18 +39,44 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Load data from Supabase using the new planning_matrix view
   const loadPlanningData = useCallback(async () => {
       try {
-        const { data, error } = await supabase
-          .from('planning_matrix')
-          .select('*')
-          .order('konstrukter')
-          .order('year')
-          .order('cw_full')
-          .limit(5000); // Zvýšit limit pro všechny konstruktéry
+        // Robust pagination to bypass 1000 row cap from PostgREST
+        const pageSize = 1000;
+        let page = 0;
+        let allRows: any[] = [];
+        while (true) {
+          const from = page * pageSize;
+          const to = from + pageSize - 1;
+          const { data: batch, error: pageError } = await supabase
+            .from('planning_matrix')
+            .select('konstrukter,cw_full,mesic,mh_tyden,projekt,updated_at,year,normalized_name', { count: 'exact', head: false })
+            .order('konstrukter', { ascending: true })
+            .order('year', { ascending: true })
+            .order('cw_full', { ascending: true })
+            .range(from, to);
 
-        if (error) {
-          throw error;
+          if (pageError) {
+            throw pageError;
+          }
+
+          if (!batch || batch.length === 0) {
+            break; // No more rows
+          }
+
+          allRows = allRows.concat(batch);
+          page++;
         }
 
+        const data = allRows;
+
+        // Pagination diagnostics
+        const cwValues = data.map((r: any) => r.cw_full).filter(Boolean);
+        console.log('PAGINATION_DEBUG:', {
+          pages: page,
+          pageSize,
+          totalRows: data.length,
+          cw_head: cwValues[0],
+          cw_tail: cwValues[cwValues.length - 1],
+        });
         // Mapování a deduplikace z view planning_matrix na PlanningEntry interface
         const dedupMap = new Map<string, any>();
         (data || []).forEach((e: any) => {
