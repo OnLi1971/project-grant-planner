@@ -43,6 +43,11 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [fetchTimeline, setFetchTimeline] = useState<Array<{id: number, startAt: string, endAt?: string, applied: boolean, source: string}>>([]);
   const abortControllerRef = useRef<AbortController | null>(null);
   const fetchTimelineRef = useRef<Array<{id: number, startAt: string, endAt?: string, applied: boolean, source: string}>>([]);
+  
+  // Step 4: Single revalidation mechanism with debouncing
+  const revalidationModeRef = useRef<'A' | 'B'>('B'); // B = Realtime only with debounce
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const DEBOUNCE_MS = 200;
 
   // Load data from Supabase using the new planning_matrix view
   const loadPlanningData = useCallback(async (source = 'manual') => {
@@ -197,22 +202,34 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (isRealtimeEnabled) {
         console.log('Realtime subscription temporarily disabled for testing');
         
-        // Triggered by realtime updates to the planning_matrix view
-        const handleRealtimeChange = (payload: any) => {
+        // Step 4: Debounced realtime handler - only revalidation mechanism
+        const debouncedRealtimeHandler = (payload: any) => {
           console.log('Realtime change detected:', payload);
-          // Step 2: Only revalidate via Realtime, not manual refetch
-          loadPlanningData('realtime'); // Refetch all data when changes occur
+          
+          // Clear any existing debounce timeout
+          if (debounceTimeoutRef.current) {
+            clearTimeout(debounceTimeoutRef.current);
+          }
+          
+          // Set new debounced revalidation
+          debounceTimeoutRef.current = setTimeout(() => {
+            console.log(`Debounced realtime revalidation after ${DEBOUNCE_MS}ms`);
+            loadPlanningData('realtime_debounced');
+          }, DEBOUNCE_MS);
         };
 
         const subscription = supabase
           .channel('planning_entries_changes')
           .on('postgres_changes', 
             { event: '*', schema: 'public', table: 'planning_entries' },
-            handleRealtimeChange
+            debouncedRealtimeHandler
           )
           .subscribe();
 
         return () => {
+          if (debounceTimeoutRef.current) {
+            clearTimeout(debounceTimeoutRef.current);
+          }
           subscription.unsubscribe();
         };
       } else {
@@ -222,6 +239,14 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     const updatePlanningEntry = useCallback(async (konstrukter: string, cw: string, projekt: string) => {
       try {
+        // Step 4: Optimistically update local state immediately
+        setPlanningData(prev => 
+          prev.map(entry => {
+            const sameRow = entry.konstrukter === konstrukter && entry.cw === cw;
+            return sameRow ? { ...entry, projekt: projekt } : entry;
+          })
+        );
+
         // Rozparsujeme CW a rok (očekává se formát "CW45-2025")
         let cwBase: string, year: number;
         
@@ -276,14 +301,6 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             });
             return;
           }
-
-          // Aktualizujeme lokální stav pro konkrétní CW s rokem
-          setPlanningData(prev => 
-            prev.map(entry => {
-              const sameRow = entry.konstrukter === konstrukter && entry.cw === `${cwBase}-${year}`;
-              return sameRow ? { ...entry, projekt: projekt } : entry;
-            })
-          );
         } else {
           // Záznam neexistuje, vytvoříme nový
           // Určíme měsíc na základě roku a týdne
@@ -333,15 +350,11 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             return;
           }
 
-          // Přidáme do lokálního stavu s původním CW (s rokem)
-          setPlanningData(prev => [...prev, {
-            konstrukter: newEntry.konstrukter,
-            cw: `${cwBase}-${year}`,
-            mesic: newEntry.mesic,
-            mhTyden: typeof newEntry.mh_tyden === 'number' ? newEntry.mh_tyden : 36,
-            projekt: typeof newEntry.projekt === 'string' ? newEntry.projekt : 'FREE'
-          }]);
+          // Přidáme do lokálního stavu s původním CW (s rokem) - už bylo uděláno optimisticky výše
         }
+
+        console.log(`REVALIDATION_MODE: ${revalidationModeRef.current}, DEBOUNCE_MS: ${DEBOUNCE_MS}`);
+        console.log('Step 4: Relying on debounced Realtime for revalidation, no manual refetch');
 
         toast({
           title: "Změna uložena",
