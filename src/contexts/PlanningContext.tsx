@@ -100,7 +100,10 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         { event: '*', schema: 'public', table: 'planning_entries' },
         () => {
           console.log('Realtime change detected, reloading data...');
-          loadPlanningData();
+          // Přidáme krátké zpoždění aby se view planning_matrix stihlo aktualizovat
+          setTimeout(() => {
+            loadPlanningData();
+          }, 500);
         }
       )
       .subscribe();
