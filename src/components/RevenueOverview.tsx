@@ -656,18 +656,18 @@ export const RevenueOverview = () => {
         </CardHeader>
         <CardContent>
           {/* Filtry */}
-          <div className="grid grid-cols-1 gap-4 mb-6 p-4 bg-muted rounded-lg">
+          <div className="space-y-4 mb-6 p-4 bg-muted/50 rounded-lg border">
             <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4" />
-              <Label className="font-medium">Filtrovat podle:</Label>
+              <Filter className="h-4 w-4 text-primary" />
+              <Label className="font-medium text-sm">Filtrovat podle:</Label>
             </div>
             
-            {/* Pohled (Měsíc/Kvartal) */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="viewType">Pohled</Label>
+            {/* Kompaktní řádek s hlavními filtry */}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="min-w-[120px]">
+                <Label htmlFor="viewType" className="text-xs text-muted-foreground">Pohled</Label>
                 <Select value={viewType} onValueChange={handleViewTypeChange}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-8 text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-background border z-50">
@@ -676,24 +676,61 @@ export const RevenueOverview = () => {
                   </SelectContent>
                 </Select>
               </div>
-              
+
+              <div className="min-w-[130px]">
+                <Label htmlFor="filterType" className="text-xs text-muted-foreground">Typ filtru</Label>
+                <Select value={filterType} onValueChange={handleFilterTypeChange}>
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border z-50">
+                    <SelectItem value="all">Vše</SelectItem>
+                    <SelectItem value="customer">Zákazník</SelectItem>
+                    <SelectItem value="program">Program</SelectItem>
+                    <SelectItem value="project">Projekt</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {filterType !== 'all' && filterType !== 'program' && (
+                <div className="min-w-[150px]">
+                  <Label htmlFor="filterValue" className="text-xs text-muted-foreground">Hodnota</Label>
+                  <Select value={filterValue} onValueChange={setFilterValue}>
+                    <SelectTrigger className="h-8 text-sm">
+                      <SelectValue placeholder="Vyberte..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background border z-50">
+                      <SelectItem value="all">Vše</SelectItem>
+                      {filterOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+
+            {/* Rozšířené filtry v novém řádku */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Kvartální filtr */}
               {viewType === 'kvartal' && (
                 <div>
-                  <Label>Kvartály</Label>
-                  <div className="grid grid-cols-2 gap-2 mt-2 p-3 border rounded-md bg-background max-h-32 overflow-y-auto">
+                  <Label className="text-xs text-muted-foreground">Kvartály</Label>
+                  <div className="grid grid-cols-3 gap-1 mt-2 p-2 border rounded-md bg-background/50 max-h-24 overflow-y-auto">
                     {quarterOptions.map((quarter) => (
-                      <div key={quarter.value} className="flex items-center space-x-2">
+                      <div key={quarter.value} className="flex items-center space-x-1">
                         <input
                           type="checkbox"
                           id={`quarter-${quarter.value}`}
                           checked={selectedQuarters.includes(quarter.value)}
                           onChange={(e) => handleQuarterChange(quarter.value, e.target.checked)}
-                          className="rounded border-gray-300 text-primary focus:ring-primary"
+                          className="rounded border-gray-300 text-primary focus:ring-primary scale-75"
                         />
                         <Label 
                           htmlFor={`quarter-${quarter.value}`} 
-                          className="text-sm font-normal cursor-pointer"
+                          className="text-xs font-normal cursor-pointer"
                         >
                           {quarter.label}
                         </Label>
@@ -706,20 +743,20 @@ export const RevenueOverview = () => {
               {/* Měsíční filtr */}
               {viewType === 'mesic' && (
                 <div>
-                  <Label>Měsíce</Label>
-                  <div className="grid grid-cols-2 gap-2 mt-2 p-3 border rounded-md bg-background max-h-40 overflow-y-auto">
+                  <Label className="text-xs text-muted-foreground">Měsíce</Label>
+                  <div className="grid grid-cols-3 gap-1 mt-2 p-2 border rounded-md bg-background/50 max-h-32 overflow-y-auto">
                     {monthOptions.map((month) => (
-                      <div key={month.value} className="flex items-center space-x-2">
+                      <div key={month.value} className="flex items-center space-x-1">
                         <input
                           type="checkbox"
                           id={`month-${month.value}`}
                           checked={selectedMonths.includes(month.value)}
                           onChange={(e) => handleMonthChange(month.value, e.target.checked)}
-                          className="rounded border-gray-300 text-primary focus:ring-primary"
+                          className="rounded border-gray-300 text-primary focus:ring-primary scale-75"
                         />
                         <Label 
                           htmlFor={`month-${month.value}`} 
-                          className="text-sm font-normal cursor-pointer"
+                          className="text-xs font-normal cursor-pointer"
                         >
                           {month.label}
                         </Label>
@@ -728,63 +765,30 @@ export const RevenueOverview = () => {
                   </div>
                 </div>
               )}
-            </div>
 
-            {/* Standardní filtry */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="filterType">Typ filtru</Label>
-                <Select value={filterType} onValueChange={handleFilterTypeChange}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background border z-50">
-                    <SelectItem value="all">Vše</SelectItem>
-                    <SelectItem value="customer">Zákazník</SelectItem>
-                    <SelectItem value="program">Program</SelectItem>
-                    <SelectItem value="project">Projekt</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {filterType === 'program' ? (
+              {/* Program filtr */}
+              {filterType === 'program' && (
                 <div>
-                  <Label>Programy</Label>
-                  <div className="grid grid-cols-2 gap-2 mt-2 p-3 border rounded-md bg-background max-h-32 overflow-y-auto">
+                  <Label className="text-xs text-muted-foreground">Programy</Label>
+                  <div className="grid grid-cols-2 gap-1 mt-2 p-2 border rounded-md bg-background/50 max-h-32 overflow-y-auto">
                     {programs.map((program) => (
-                      <div key={program.id} className="flex items-center space-x-2">
+                      <div key={program.id} className="flex items-center space-x-1">
                         <input
                           type="checkbox"
                           id={`program-${program.id}`}
                           checked={selectedPrograms.includes(program.id)}
                           onChange={(e) => handleProgramChange(program.id, e.target.checked)}
-                          className="rounded border-gray-300 text-primary focus:ring-primary"
+                          className="rounded border-gray-300 text-primary focus:ring-primary scale-75"
                         />
                         <Label 
                           htmlFor={`program-${program.id}`} 
-                          className="text-sm font-normal cursor-pointer"
+                          className="text-xs font-normal cursor-pointer"
                         >
                           {program.name}
                         </Label>
                       </div>
                     ))}
                   </div>
-                </div>
-              ) : filterType !== 'all' && (
-                <div>
-                  <Label htmlFor="filterValue">Hodnota</Label>
-                  <Select value={filterValue} onValueChange={setFilterValue}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Vyberte..." />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background border z-50">
-                      <SelectItem value="all">Vše</SelectItem>
-                      {filterOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
                 </div>
               )}
             </div>
