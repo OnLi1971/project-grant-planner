@@ -43,6 +43,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [fetchTimeline, setFetchTimeline] = useState<Array<{id: number, startAt: string, endAt?: string, applied: boolean, source: string}>>([]);
   const abortControllerRef = useRef<AbortController | null>(null);
   const fetchTimelineRef = useRef<Array<{id: number, startAt: string, endAt?: string, applied: boolean, source: string}>>([]);
+  const currentFetchIdRef = useRef<number>(0);
   
   // Step 4: Single revalidation mechanism with debouncing
   const revalidationModeRef = useRef<'A' | 'B'>('B'); // B = Realtime only with debounce
@@ -61,6 +62,9 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       
       const startAt = new Date().toISOString();
       const timelineEntry = { id: currentRequestId, startAt, applied: false, source };
+      
+      // Set current fetch id to guard against stale applies
+      currentFetchIdRef.current = currentRequestId;
       
       // Update both state and ref
       setFetchTimeline(prev => {
@@ -151,6 +155,21 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           mhTyden: entry.mh_tyden,
           projekt: entry.projekt,
         }));
+
+        // Stale response check: only latest fetch may apply results
+        if (currentFetchIdRef.current !== currentRequestId) {
+          console.log(`Ignoring stale response ${currentRequestId}, latest is ${currentFetchIdRef.current}`);
+          setFetchTimeline(prev => {
+            const newTimeline = prev.map(entry => 
+              entry.id === currentRequestId 
+                ? { ...entry, endAt: new Date().toISOString(), applied: false }
+                : entry
+            );
+            fetchTimelineRef.current = newTimeline;
+            return newTimeline;
+          });
+          return;
+        }
 
         setPlanningData(mappedData);
         console.log(`Planning data loaded: ${mappedData.length} entries`);
@@ -376,6 +395,15 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const manualRefetch = useCallback(() => {
     console.log('=== MANUAL REFETCH TRIGGERED ===');
+    if (revalidationModeRef.current === 'B') {
+      // Coalesce manual refetch via same debounce as realtime
+      if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current);
+      debounceTimeoutRef.current = setTimeout(() => {
+        console.log(`Manual refetch coalesced via debounce (${DEBOUNCE_MS}ms)`);
+        loadPlanningData('manual_refetch_debounced');
+      }, DEBOUNCE_MS);
+      return;
+    }
     loadPlanningData('manual_refetch');
   }, [loadPlanningData]);
 
