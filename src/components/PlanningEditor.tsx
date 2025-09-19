@@ -53,7 +53,7 @@ const getCurrentWeek = (): number => {
   return getWeek(new Date(), { weekStartsOn: 1 });
 };
 
-// Funkce pro generování týdnů od aktuálního týdne do půlky příštího roku
+// Funkce pro generování týdnů od aktuálního týdne do celého roku 2026
 const generateAllWeeks = (): WeekPlan[] => {
   const weeks: WeekPlan[] = [];
   const months = [
@@ -76,8 +76,8 @@ const generateAllWeeks = (): WeekPlan[] => {
     const mesic = months[monthIndex];
     
     weeks.push({
-      cw: `CW${cw.toString().padStart(2, '0')}`,
-      mesic,
+      cw: `CW${cw.toString().padStart(2, '0')}-2025`,
+      mesic: `${mesic} 2025`,
       mhTyden: 36, // Defaultní hodnota 36 hodin
       projekt: cw === 52 ? 'DOVOLENÁ' : 'FREE'  // CW52 defaultně "DOVOLENÁ"
     });
@@ -102,8 +102,8 @@ const generateAllWeeks = (): WeekPlan[] => {
     const mesic = months[monthIndex];
     
     weeks.push({
-      cw: `CW${cw.toString().padStart(2, '0')}`,
-      mesic,
+      cw: `CW${cw.toString().padStart(2, '0')}-2026`,
+      mesic: `${mesic} 2026`,
       mhTyden: 36, // Defaultní hodnota 36 hodin
       projekt: cw === 52 ? 'DOVOLENÁ' : 'FREE'  // CW52 defaultně "DOVOLENÁ"
     });
@@ -116,15 +116,30 @@ const generateAllWeeks = (): WeekPlan[] => {
 const generatePlanningDataForEditor = (data: any[]): { [key: string]: WeekPlan[] } => {
   const result: { [key: string]: WeekPlan[] } = {};
   
-  // Vytvoříme mapu existujících dat
+  // Vytvoříme mapu existujících dat (bez přidání roku do CW pro kompatibilitu s existujícími daty)
   const existingDataMap: { [key: string]: { [key: string]: WeekPlan } } = {};
   data.forEach(entry => {
     if (!existingDataMap[entry.konstrukter]) {
       existingDataMap[entry.konstrukter] = {};
     }
-    existingDataMap[entry.konstrukter][entry.cw] = {
-      cw: entry.cw,
-      mesic: entry.mesic,
+    // Pro existující data bez roku přidáme logiku určení roku
+    let cwWithYear = entry.cw;
+    let mesicWithYear = entry.mesic;
+    
+    if (!entry.cw.includes('-')) {
+      const cwNum = parseInt(entry.cw.replace('CW', ''));
+      // CW32-52 přiřadíme k roku 2025, CW01-31 k roku 2026
+      cwWithYear = cwNum >= 32 ? `${entry.cw}-2025` : `${entry.cw}-2026`;
+      
+      // Přidáme rok k měsíci pokud ho tam ještě není
+      if (!mesicWithYear.includes('2025') && !mesicWithYear.includes('2026')) {
+        mesicWithYear = cwNum >= 32 ? `${entry.mesic} 2025` : `${entry.mesic} 2026`;
+      }
+    }
+    
+    existingDataMap[entry.konstrukter][cwWithYear] = {
+      cw: cwWithYear,
+      mesic: mesicWithYear,
       mhTyden: entry.mhTyden,
       projekt: entry.projekt
     };
@@ -141,9 +156,8 @@ const generatePlanningDataForEditor = (data: any[]): { [key: string]: WeekPlan[]
     // Filtrujeme pouze relevantní týdny (CW32-52 pro 2025 + CW01-52 pro 2026)
     const relevantExistingData = Object.keys(existingDataMap[konstrukter] || {})
       .filter(cw => {
-        const cwNum = parseInt(cw.replace('CW', ''));
-        // Zahrnujeme CW32-52 (konec 2025) a CW01-52 (celý rok 2026)
-        return (cwNum >= 32 && cwNum <= 52) || (cwNum >= 1 && cwNum <= 52);
+        // Nový formát obsahuje rok, takže můžeme filtrovat přímo
+        return cw.includes('-2025') || cw.includes('-2026');
       })
       .reduce((acc, cw) => {
         acc[cw] = existingDataMap[konstrukter][cw];
@@ -239,7 +253,9 @@ export const PlanningEditor: React.FC = () => {
   };
 
   const updateCell = (konstrukter: string, cw: string, field: 'projekt' | 'mhTyden', value: string | number) => {
-    updatePlanningEntry(konstrukter, cw, field, value);
+    // Odstraníme rok z CW pro ukládání do databáze (kvůli kompatibilitě s existujícím schéma)
+    const cwWithoutYear = cw.includes('-') ? cw.split('-')[0] : cw;
+    updatePlanningEntry(konstrukter, cwWithoutYear, field, value);
   };
 
   const toggleWeekSelection = (cw: string) => {
