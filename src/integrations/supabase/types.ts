@@ -503,7 +503,20 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      planning_matrix: {
+        Row: {
+          cw_full: string | null
+          konstrukter: string | null
+          mesic: string | null
+          mh_tyden: number | null
+          normalized_name: string | null
+          planning_entry_id: string | null
+          projekt: string | null
+          updated_at: string | null
+          year: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       cleanup_expired_idempotency_keys: {
@@ -513,6 +526,10 @@ export type Database = {
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      normalize_name: {
+        Args: { name: string }
+        Returns: string
       }
     }
     Enums: {
