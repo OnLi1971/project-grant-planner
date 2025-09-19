@@ -18,6 +18,7 @@ interface PlanningContextType {
   copyPlan: (fromKonstrukter: string, toKonstrukter: string) => Promise<void>;
   savePlan: () => void;
   resetToOriginal: () => void;
+  manualRefetch: () => Promise<void>; // DIAGNOSTIC: Manual refetch for testing
 }
 
 const PlanningContext = createContext<PlanningContextType | undefined>(undefined);
@@ -36,8 +37,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [loading, setLoading] = useState(true);
 
   // Load data from Supabase using the new planning_matrix view
-  useEffect(() => {
-    const loadPlanningData = async () => {
+  const loadPlanningData = useCallback(async () => {
       try {
         const { data, error } = await supabase
           .from('planning_matrix')
@@ -79,6 +79,19 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         
         setPlanningData(mappedData);
         console.log('Planning data loaded:', mappedData.length, 'entries');
+        
+        // DIAGNOSTIC: Log specific Fuchs Pavel CW31-2026 data
+        const fuchsCW31 = mappedData.find(entry => 
+          entry.konstrukter === 'Fuchs Pavel' && entry.cw === 'CW31-2026'
+        );
+        console.log('DB_ROW_AFTER_UPDATE - Fuchs Pavel CW31-2026:', fuchsCW31);
+        
+        // DIAGNOSTIC: Network response summary
+        console.log('NETWORK_RESPONSE_ROWS:', {
+          totalRows: mappedData.length,
+          fuchsEntries: mappedData.filter(e => e.konstrukter === 'Fuchs Pavel').length,
+          fuchsCW31Data: fuchsCW31
+        });
       } catch (error) {
         console.error('Error loading planning data:', error);
         toast({
@@ -89,11 +102,22 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       } finally {
         setLoading(false);
       }
-    };
+    }, [toast]);
 
+  // DIAGNOSTIC: Manual refetch function for testing
+  const manualRefetch = useCallback(async () => {
+    console.log('=== MANUAL REFETCH TRIGGERED ===');
+    await loadPlanningData();
+  }, [loadPlanningData]);
+
+  useEffect(() => {
     loadPlanningData();
 
+    // TEMPORARILY DISABLED - Testing without Realtime
+    console.log('Realtime subscription temporarily disabled for testing');
+    
     // Setup realtime subscription for planning_entries table
+    /*
     const subscription = supabase
       .channel('planning_entries_changes')
       .on('postgres_changes', 
@@ -111,6 +135,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return () => {
       subscription.unsubscribe();
     };
+    */
   }, [toast]);
 
   const updatePlanningEntry = useCallback(async (konstrukter: string, cw: string, field: 'projekt' | 'mhTyden', value: string | number) => {
@@ -428,6 +453,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         copyPlan,
         savePlan,
         resetToOriginal,
+        manualRefetch, // DIAGNOSTIC: Expose manual refetch
       }}
     >
       {children}

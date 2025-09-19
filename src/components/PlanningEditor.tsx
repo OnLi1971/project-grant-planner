@@ -170,7 +170,7 @@ const allKonstrukteri = ENGINEERS;
 
 
 export const PlanningEditor: React.FC = () => {
-  const { planningData, updatePlanningEntry, addEngineer, copyPlan, savePlan, resetToOriginal } = usePlanning();
+  const { planningData, updatePlanningEntry, addEngineer, copyPlan, savePlan, resetToOriginal, manualRefetch } = usePlanning();
   
   const [projects, setProjects] = useState<DatabaseProject[]>([]);
   const [loading, setLoading] = useState(true);
@@ -299,6 +299,17 @@ export const PlanningEditor: React.FC = () => {
   };
 
   const currentPlan = planData[selectedKonstrukter] || [];
+  
+  // DIAGNOSTIC: Log UI cell value for Fuchs Pavel CW31-2026  
+  const fuchsCW31UIValue = useMemo(() => {
+    if (selectedKonstrukter === 'Fuchs Pavel') {
+      const plan = planData['Fuchs Pavel'] || [];
+      const cw31Entry = plan.find(entry => entry.cw === 'CW31-2026');
+      console.log('UI_CELL_VALUE - Fuchs Pavel CW31-2026:', cw31Entry?.projekt || 'NOT_FOUND');
+      return cw31Entry?.projekt;
+    }
+    return null;
+  }, [planData, selectedKonstrukter]);
 
   const addNewEngineer = () => {
     const newName = prompt('Zadejte jméno nového konstruktéra:');
@@ -306,6 +317,55 @@ export const PlanningEditor: React.FC = () => {
       addEngineer(newName);
       setSelectedKonstrukter(newName);
     }
+  };
+
+  // DIAGNOSTIC: Test function for Step 1
+  const performStep1Test = async () => {
+    console.log('=== STEP 1 TEST: ISOLATION WITHOUT REALTIME ===');
+    console.log('Current Realtime status: DISABLED');
+    
+    // Update Fuchs Pavel CW31-2026 to ST_BLAVA
+    await updatePlanningEntry('Fuchs Pavel', 'CW31-2026', 'projekt', 'ST_BLAVA');
+    
+    // Wait a moment, then manual refetch
+    setTimeout(async () => {
+      await manualRefetch();
+      
+      // Check final UI state
+      const plan = planData['Fuchs Pavel'] || [];
+      const cw31Entry = plan.find(entry => entry.cw === 'CW31-2026');
+      console.log('=== STEP 1 RESULTS ===');
+      console.log('FINAL UI_CELL_VALUE:', cw31Entry?.projekt || 'NOT_FOUND');
+      
+      const result = cw31Entry?.projekt === 'ST_BLAVA' ? 'Realtime/race condition issue' : 'Mapping/filter issue';
+      console.log('EVALUATION:', result);
+    }, 1000);
+  };
+
+  // DIAGNOSTIC: Check week axis for Step 3
+  const checkWeekAxis = () => {
+    console.log('=== STEP 3: WEEK AXIS DIAGNOSTIC ===');
+    const allWeeks = generateAllWeeks();
+    
+    const weekAxisHead = allWeeks[0]?.cw;
+    const weekAxisTail = allWeeks[allWeeks.length - 1]?.cw;
+    const weekAxisCount = allWeeks.length;
+    const weekAxisHasCW31_2026 = allWeeks.some(w => w.cw === 'CW31-2026');
+    
+    console.log('WEEK_AXIS_HEAD =', weekAxisHead);
+    console.log('WEEK_AXIS_TAIL =', weekAxisTail);
+    console.log('WEEK_AXIS_COUNT =', weekAxisCount);
+    console.log('WEEK_AXIS_HAS_CW31_2026 =', weekAxisHasCW31_2026);
+    
+    // Check mapping key for Fuchs + CW31-2026
+    const planForFuchs = planData['Fuchs Pavel'];
+    if (planForFuchs) {
+      const cw31Entry = planForFuchs.find(entry => entry.cw === 'CW31-2026');
+      console.log('MAPPING_KEY_SAMPLE = konstrukter: "Fuchs Pavel", cw: "CW31-2026"');
+      console.log('Entry found:', !!cw31Entry, 'Project:', cw31Entry?.projekt);
+    }
+    
+    return { weekAxisHead, weekAxisTail, weekAxisCount, weekAxisHasCW31_2026 };
   };
 
   const handleCopyPlan = () => {
@@ -359,6 +419,18 @@ export const PlanningEditor: React.FC = () => {
             <Button variant="outline" onClick={resetToOriginal} className="bg-white/10 hover:bg-white/20 text-white border-white/30 hover:border-white/50">
               <X className="h-4 w-4 mr-2" />
               Obnovit původní
+            </Button>
+            <Button variant="outline" onClick={manualRefetch} className="bg-white/10 hover:bg-white/20 text-white border-white/30 hover:border-white/50">
+              <Calendar className="h-4 w-4 mr-2" />
+              Manual Refetch (Test)
+            </Button>
+            <Button variant="outline" onClick={performStep1Test} className="bg-yellow-600 hover:bg-yellow-700 text-white border-yellow-500 hover:border-yellow-600">
+              <Edit className="h-4 w-4 mr-2" />
+              STEP 1 TEST
+            </Button>
+            <Button variant="outline" onClick={checkWeekAxis} className="bg-blue-600 hover:bg-blue-700 text-white border-blue-500 hover:border-blue-600">
+              <Calendar className="h-4 w-4 mr-2" />
+              STEP 3 CHECK
             </Button>
           </div>
         </div>
