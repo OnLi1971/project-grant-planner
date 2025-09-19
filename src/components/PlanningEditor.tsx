@@ -10,6 +10,7 @@ import { getProjectColor, getCustomerByProjectCode } from '@/utils/colorSystem';
 import { getWeek } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { ENGINEERS } from '@/data/engineersList';
+import { normalizeName, findEngineerByName } from '@/utils/nameNormalization';
 
 interface WeekPlan {
   cw: string;

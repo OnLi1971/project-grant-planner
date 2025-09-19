@@ -35,59 +35,30 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [planningData, setPlanningData] = useState<PlanningEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Load data from Supabase with realtime updates
+  // Load data from Supabase using the new planning_matrix view
   useEffect(() => {
     const loadPlanningData = async () => {
       try {
-        const pageSize = 5000;
-        let offset = 0;
-        let allRows: any[] = [];
+        const { data, error } = await supabase
+          .from('planning_matrix')
+          .select('*')
+          .order('konstrukter')
+          .order('year')
+          .order('cw_full');
 
-        while (true) {
-          const { data, error } = await supabase
-            .from('planning_entries')
-            .select('*')
-            .order('konstrukter')
-            .order('year')
-            .order('cw')
-            .range(offset, offset + pageSize - 1);
-
-          if (error) {
-            throw error;
-          }
-
-          const batch = data || [];
-          allRows = allRows.concat(batch);
-
-          if (batch.length < pageSize) break;
-          offset += pageSize;
+        if (error) {
+          throw error;
         }
 
-        // Mapování názvů sloupců z databáze na interface s využitím sloupce year
-        const mappedData = allRows.map((entry: any) => {
-          const year = entry.year ?? (() => {
-            const cwNum = parseInt(String(entry.cw).replace('CW', ''));
-            if (String(entry.mesic || '').includes('2026')) return 2026;
-            if (String(entry.mesic || '').includes('2025')) return 2025;
-            return cwNum >= 32 ? 2025 : 2026;
-          })();
-
-          const cwWithYear = `${entry.cw}-${year}`;
-
-          // Ujistíme se, že měsíc obsahuje rok
-          let mesicWithYear = entry.mesic || '';
-          if (!mesicWithYear.includes('2025') && !mesicWithYear.includes('2026')) {
-            mesicWithYear = `${entry.mesic} ${year}`;
-          }
-
-          return {
-            konstrukter: entry.konstrukter,
-            cw: cwWithYear,
-            mesic: mesicWithYear,
-            mhTyden: entry.mh_tyden,
-            projekt: entry.projekt
-          };
-        });
+        // Mapování z view planning_matrix na PlanningEntry interface
+        const mappedData = (data || []).map((entry: any) => ({
+          konstrukter: entry.konstrukter,
+          cw: entry.cw_full.replace('-' + entry.year, ''), // Zachovat kompatibilitu s původním formátem
+          mesic: entry.mesic,
+          mhTyden: entry.mh_tyden,
+          projekt: entry.projekt,
+          year: entry.year
+        }));
         
         setPlanningData(mappedData);
         console.log('Planning data loaded:', mappedData.length, 'entries');

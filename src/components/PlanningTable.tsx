@@ -7,6 +7,7 @@ import { Calendar, Filter, Users } from 'lucide-react';
 import { usePlanning } from '@/contexts/PlanningContext';
 import { getWeek } from 'date-fns';
 import { ENGINEERS } from '@/data/engineersList';
+import { normalizeName } from '@/utils/nameNormalization';
 
 interface EngineerOverview {
   konstrukter: string;
@@ -52,12 +53,13 @@ export const PlanningTable: React.FC = () => {
       .sort((a, b) => a.jmeno.localeCompare(b.jmeno)) // Seřadit podle abecedy
       .map(konstrukter => {
         const planDoKonceRoku = allWeeksToEndOfYear.map(cw => {
-          // Pro vyhledávání v existujících datech převedeme CW s rokem na bez roku
-          const cwWithoutYear = cw.includes('-') ? cw.split('-')[0] : cw;
+          // Pro vyhledávání v existujících datech použijeme normalizované jméno
+          const normalizedKonstrukter = normalizeName(konstrukter.jmeno);
           
-          // Najdeme záznam v planningData podle konstruktéra a CW
+          // Najdeme záznam v planningData podle normalizovaného jména a CW
           const entry = planningData.find(p => 
-            p.konstrukter === konstrukter.jmeno && p.cw === cwWithoutYear
+            normalizeName(p.konstrukter) === normalizedKonstrukter && 
+            p.cw === (cw.includes('-') ? cw.split('-')[0] : cw)
           );
           
           return {

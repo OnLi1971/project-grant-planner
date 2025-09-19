@@ -10,6 +10,7 @@ import { usePlanning } from '@/contexts/PlanningContext';
 import { customers, projectManagers, programs, projects } from '@/data/projectsData';
 import { getWeek } from 'date-fns';
 import { ENGINEERS } from '@/data/engineersList';
+import { normalizeName, createNameMapping } from '@/utils/nameNormalization';
 
 // Organizational structure and project mappings
 const organizacniVedouci = [
@@ -24,8 +25,7 @@ const organizacniVedouci = [
   'Dodavatel'
 ];
 
-// Mapping of engineers to organizational leaders derived from shared list
-const normalizeName = (s: string) => s.normalize('NFC').trim();
+// Mapping of engineers to organizational leaders derived from shared list  
 const konstrukterVedouci: { [key: string]: string } = Object.fromEntries(
   ENGINEERS.map(e => [normalizeName(e.jmeno), e.orgVedouci])
 );
