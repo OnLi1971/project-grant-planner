@@ -431,7 +431,7 @@ export const PlanningEditor: React.FC = () => {
             <SelectTrigger className="w-64">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="max-h-[300px] overflow-y-auto">
               {konstrukteri.map(konstrukter => (
                 <SelectItem key={konstrukter} value={konstrukter}>{konstrukter}</SelectItem>
               ))}
@@ -459,7 +459,7 @@ export const PlanningEditor: React.FC = () => {
             <SelectTrigger className="w-64">
               <SelectValue placeholder="Vyberte konstruktéra" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="max-h-[300px] overflow-y-auto">
               {konstrukteri
                 .filter(k => k !== selectedKonstrukter)
                 .map(konstrukter => (
