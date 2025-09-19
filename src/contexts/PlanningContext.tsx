@@ -228,26 +228,32 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           // Clear any existing debounce timeout
           if (debounceTimeoutRef.current) {
             clearTimeout(debounceTimeoutRef.current);
+            console.log('Cleared existing debounce timeout');
           }
           
           // Set new debounced revalidation
           debounceTimeoutRef.current = setTimeout(() => {
             console.log(`Debounced realtime revalidation after ${DEBOUNCE_MS}ms`);
             loadPlanningData('realtime_debounced');
+            debounceTimeoutRef.current = null; // Clear ref after execution
           }, DEBOUNCE_MS);
         };
 
         const subscription = supabase
-          .channel('planning_entries_changes')
+          .channel('planning_entries_changes_unique') // Unique channel name
           .on('postgres_changes', 
             { event: '*', schema: 'public', table: 'planning_entries' },
             debouncedRealtimeHandler
           )
           .subscribe();
 
+        console.log('Realtime subscription created with debouncing');
+
         return () => {
+          console.log('Cleaning up realtime subscription');
           if (debounceTimeoutRef.current) {
             clearTimeout(debounceTimeoutRef.current);
+            debounceTimeoutRef.current = null;
           }
           subscription.unsubscribe();
         };
