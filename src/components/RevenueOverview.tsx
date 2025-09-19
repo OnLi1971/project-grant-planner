@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList } from 'recharts';
 import { TrendingUp, Filter } from 'lucide-react';
 import { getProjectColorWithIndex } from '@/utils/colorSystem';
 
@@ -875,15 +875,38 @@ export const RevenueOverview = () => {
                     borderRadius: '6px'
                   }}
                 />
-                {projectList.map((projectCode, index) => (
-                  <Bar 
-                    key={projectCode}
-                    dataKey={projectCode} 
-                    stackId="revenue"
-                    fill={getProjectColorWithIndex(projectCode, index)}
-                    name={projectCode}
-                  />
-                ))}
+                 {projectList.map((projectCode, index) => (
+                   <Bar 
+                     key={projectCode}
+                     dataKey={projectCode} 
+                     stackId="revenue"
+                     fill={getProjectColorWithIndex(projectCode, index)}
+                     name={projectCode}
+                   />
+                 ))}
+                 {/* Přidáme neviditelný bar pro zobrazení celkových hodnot */}
+                 <Bar 
+                   dataKey="total" 
+                   stackId="revenue"
+                   fill="transparent"
+                   name="Celkem"
+                 >
+                   <LabelList 
+                     dataKey="total"
+                     position="top"
+                     fontSize={11}
+                     fontWeight="bold"
+                     fill="hsl(var(--foreground))"
+                     formatter={(value: number) => {
+                       if (value === 0) return '';
+                       if (currency === 'USD') {
+                         const usdValue = value / exchangeRate;
+                         return `$${usdValue.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+                       }
+                       return `${(value / 1000000).toFixed(1)}M Kč`;
+                     }}
+                   />
+                 </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
