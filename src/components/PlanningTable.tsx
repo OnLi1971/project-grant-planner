@@ -21,7 +21,7 @@ const getCurrentWeek = (): number => {
   return getWeek(new Date(), { weekStartsOn: 1 });
 };
 
-// Funkce pro generování týdnů od aktuálního týdne do konce roku
+// Funkce pro generování týdnů od aktuálního týdne do celého roku 2026
 const getAllWeeksToEndOfYear = (): string[] => {
   const currentWeek = getCurrentWeek();
   const startWeek = Math.max(32, currentWeek); // Začneme od aktuálního týdne, ale minimálně od CW32
@@ -29,11 +29,11 @@ const getAllWeeksToEndOfYear = (): string[] => {
   const weeks = [];
   // CW32-52 pro rok 2025
   for (let cw = startWeek; cw <= 52; cw++) {
-    weeks.push(`CW${cw.toString().padStart(2, '0')}`);
+    weeks.push(`CW${cw.toString().padStart(2, '0')}-2025`);
   }
-  // CW01-26 pro rok 2026
-  for (let cw = 1; cw <= 26; cw++) {
-    weeks.push(`CW${cw.toString().padStart(2, '0')}`);
+  // CW01-52 pro rok 2026 (celý rok)
+  for (let cw = 1; cw <= 52; cw++) {
+    weeks.push(`CW${cw.toString().padStart(2, '0')}-2026`);
   }
   return weeks;
 };
@@ -52,9 +52,25 @@ export const PlanningTable: React.FC = () => {
       .sort((a, b) => a.jmeno.localeCompare(b.jmeno)) // Seřadit podle abecedy
       .map(konstrukter => {
         const planDoKonceRoku = allWeeksToEndOfYear.map(cw => {
-          const entry = planningData.find(p => 
-            p.konstrukter === konstrukter.jmeno && p.cw === cw
-          );
+          // Pro vyhledávání v existujících datech musíme převést CW s rokem na bez roku
+          const cwWithoutYear = cw.includes('-') ? cw.split('-')[0] : cw;
+          const yearFromCw = cw.includes('-') ? cw.split('-')[1] : null;
+          
+          // Najdeme záznam v planningData
+          const entry = planningData.find(p => {
+            if (p.cw === cwWithoutYear) {
+              // Pro existující data bez roku použijeme logiku určení roku
+              if (!p.cw.includes('-')) {
+                const cwNum = parseInt(p.cw.replace('CW', ''));
+                const expectedYear = cwNum >= 32 ? '2025' : '2026';
+                return yearFromCw === expectedYear;
+              }
+              return true;
+            }
+            // Pokud data již obsahují rok, porovnáváme přímo
+            return p.cw === cw;
+          });
+          
           return {
             cw,
             projekt: entry?.projekt || 'FREE'
