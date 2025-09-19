@@ -159,24 +159,43 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         // Záznam neexistuje, vytvoříme nový
         const cwNum = parseInt(cw.replace('CW', ''));
         
-        // Používáme rozšířené mapování týdnů na měsíce (2025-2026)
-        const weekToMonthMap: { [key: number]: string } = {
-          // Rok 2025 (CW32-52)
-          32: 'srpen', 33: 'srpen', 34: 'srpen', 35: 'srpen',
-          36: 'září', 37: 'září', 38: 'září', 39: 'září',
-          40: 'říjen', 41: 'říjen', 42: 'říjen', 43: 'říjen', 44: 'říjen',
-          45: 'listopad', 46: 'listopad', 47: 'listopad', 48: 'listopad',
-          49: 'prosinec', 50: 'prosinec', 51: 'prosinec', 52: 'prosinec',
-          // Rok 2026 (CW01-26)
-          1: 'leden', 2: 'leden', 3: 'leden', 4: 'leden', 5: 'leden',
-          6: 'únor', 7: 'únor', 8: 'únor', 9: 'únor',
-          10: 'březen', 11: 'březen', 12: 'březen', 13: 'březen', 14: 'březen',
-          15: 'duben', 16: 'duben', 17: 'duben', 18: 'duben',
-          19: 'květen', 20: 'květen', 21: 'květen', 22: 'květen', 23: 'květen',
-          24: 'červen', 25: 'červen', 26: 'červen'
+        // Funkce pro určení měsíce a roku na základě kalendářního týdne
+        const getMonthWithYear = (cwNum: number): string => {
+          // CW32-52 přiřadíme k roku 2025 pokud jsme v období 2025
+          // CW01-52 přiřadíme k roku 2026 pokud jsme v období 2026
+          if (cwNum >= 32) {
+            // CW32-52 - může být rok 2025 nebo 2026
+            const currentYear = new Date().getFullYear();
+            const currentMonth = new Date().getMonth() + 1;
+            
+            // Pokud jsme v prvním pololetí roku, CW32+ je z předchozího roku
+            const year = currentMonth <= 6 ? currentYear - 1 : currentYear;
+            
+            if (cwNum <= 35) return `srpen ${year}`;
+            else if (cwNum <= 39) return `září ${year}`;
+            else if (cwNum <= 43) return `říjen ${year}`;
+            else if (cwNum <= 47) return `listopad ${year}`;
+            else return `prosinec ${year}`;
+          } else {
+            // CW01-31 - přiřadíme k aktuálnímu nebo následujícímu roku
+            const currentYear = new Date().getFullYear();
+            const currentMonth = new Date().getMonth() + 1;
+            
+            // Pokud jsme ve druhém pololetí roku, CW01+ je z následujícího roku
+            const year = currentMonth >= 7 ? currentYear + 1 : currentYear;
+            
+            if (cwNum <= 5) return `leden ${year}`;
+            else if (cwNum <= 9) return `únor ${year}`;
+            else if (cwNum <= 13) return `březen ${year}`;
+            else if (cwNum <= 17) return `duben ${year}`;
+            else if (cwNum <= 22) return `květen ${year}`;
+            else if (cwNum <= 26) return `červen ${year}`;
+            else if (cwNum <= 30) return `červenec ${year}`;
+            else return `srpen ${year}`;
+          }
         };
         
-        const mesic = weekToMonthMap[cwNum] || 'srpen';
+        const mesic = getMonthWithYear(cwNum);
 
         // Najdeme aktuální hodnoty z lokálního stavu (může být z defaultního plánu)
         const currentEntry = planningData.find(entry => 

@@ -52,24 +52,13 @@ export const PlanningTable: React.FC = () => {
       .sort((a, b) => a.jmeno.localeCompare(b.jmeno)) // Seřadit podle abecedy
       .map(konstrukter => {
         const planDoKonceRoku = allWeeksToEndOfYear.map(cw => {
-          // Pro vyhledávání v existujících datech musíme převést CW s rokem na bez roku
+          // Pro vyhledávání v existujících datech převedeme CW s rokem na bez roku
           const cwWithoutYear = cw.includes('-') ? cw.split('-')[0] : cw;
-          const yearFromCw = cw.includes('-') ? cw.split('-')[1] : null;
           
-          // Najdeme záznam v planningData
-          const entry = planningData.find(p => {
-            if (p.cw === cwWithoutYear) {
-              // Pro existující data bez roku použijeme logiku určení roku
-              if (!p.cw.includes('-')) {
-                const cwNum = parseInt(p.cw.replace('CW', ''));
-                const expectedYear = cwNum >= 32 ? '2025' : '2026';
-                return yearFromCw === expectedYear;
-              }
-              return true;
-            }
-            // Pokud data již obsahují rok, porovnáváme přímo
-            return p.cw === cw;
-          });
+          // Najdeme záznam v planningData podle konstruktéra a CW
+          const entry = planningData.find(p => 
+            p.konstrukter === konstrukter.jmeno && p.cw === cwWithoutYear
+          );
           
           return {
             cw,
@@ -267,7 +256,9 @@ export const PlanningTable: React.FC = () => {
                 <th className="p-3 text-left font-medium sticky top-0 bg-planning-header">Společnost</th>
                 <th className="p-3 text-left font-medium sticky top-0 bg-planning-header">Organizační vedoucí</th>
                 {getAllWeeksToEndOfYear().map(cw => (
-                  <th key={cw} className="p-3 text-center font-medium min-w-[100px] sticky top-0 bg-planning-header">{cw}</th>
+                <th key={cw} className="p-3 text-center font-medium min-w-[100px] sticky top-0 bg-planning-header">
+                  {cw.includes('-') ? cw.replace('-', ' ') : cw}
+                </th>
                 ))}
                 <th className="p-3 text-left font-medium sticky top-0 bg-planning-header">Status</th>
               </tr>

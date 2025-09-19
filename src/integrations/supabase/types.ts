@@ -44,42 +44,57 @@ export type Database = {
       articles: {
         Row: {
           ai_summary_generated: boolean
+          auto_tag_version: number | null
+          auto_tags: string[] | null
           canonical_url: string | null
           created_at: string
           id: string
           is_selected: boolean
           keywords: string[]
+          manual_tags: string[] | null
           original_url: string
+          published_at: string | null
           published_date: string | null
           summary: string
+          tags: string[] | null
           title: string
           updated_at: string
           url_hash: string | null
         }
         Insert: {
           ai_summary_generated?: boolean
+          auto_tag_version?: number | null
+          auto_tags?: string[] | null
           canonical_url?: string | null
           created_at?: string
           id?: string
           is_selected?: boolean
           keywords?: string[]
+          manual_tags?: string[] | null
           original_url: string
+          published_at?: string | null
           published_date?: string | null
           summary: string
+          tags?: string[] | null
           title: string
           updated_at?: string
           url_hash?: string | null
         }
         Update: {
           ai_summary_generated?: boolean
+          auto_tag_version?: number | null
+          auto_tags?: string[] | null
           canonical_url?: string | null
           created_at?: string
           id?: string
           is_selected?: boolean
           keywords?: string[]
+          manual_tags?: string[] | null
           original_url?: string
+          published_at?: string | null
           published_date?: string | null
           summary?: string
+          tags?: string[] | null
           title?: string
           updated_at?: string
           url_hash?: string | null
