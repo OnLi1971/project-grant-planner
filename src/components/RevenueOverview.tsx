@@ -901,27 +901,22 @@ export const RevenueOverview = () => {
                     borderRadius: '6px'
                   }}
                 />
-                 {projectList.map((projectCode, index) => (
-                   <Bar 
-                     key={projectCode}
-                     dataKey={projectCode} 
-                     stackId="revenue"
-                     fill={getProjectColorWithIndex(projectCode, index)}
-                     name={projectCode}
-                   />
-                 ))}
-                 {/* Přidáme neviditelný bar pro zobrazení celkových hodnot */}
-                 <Bar 
-                   dataKey="total" 
-                   fill="transparent"
-                   name="Celkem"
-                   isAnimationActive={false}
-                 >
-                   <LabelList 
-                     dataKey="total"
-                     content={(props: any) => renderTotalLabel(props)}
-                   />
-                 </Bar>
+                {projectList.map((projectCode, index) => (
+                  <Bar 
+                    key={projectCode}
+                    dataKey={projectCode} 
+                    stackId="revenue"
+                    fill={getProjectColorWithIndex(projectCode, index)}
+                    name={projectCode}
+                  >
+                    {index === projectList.length - 1 && (
+                      <LabelList 
+                        dataKey="total"
+                        content={(props: any) => renderTotalLabel(props)}
+                      />
+                    )}
+                  </Bar>
+                ))}
               </BarChart>
             </ResponsiveContainer>
           </div>
