@@ -59,7 +59,7 @@ export const PlanningTable: React.FC = () => {
           // Najdeme záznam v planningData podle normalizovaného jména a CW
           const entry = planningData.find(p => 
             normalizeName(p.konstrukter) === normalizedKonstrukter && 
-            p.cw === (cw.includes('-') ? cw.split('-')[0] : cw)
+            p.cw === cw  // Přímé porovnání - data už přicházejí s plným CW formátem
           );
           
           return {

@@ -117,30 +117,17 @@ const generateAllWeeks = (): WeekPlan[] => {
 const generatePlanningDataForEditor = (data: any[]): { [key: string]: WeekPlan[] } => {
   const result: { [key: string]: WeekPlan[] } = {};
   
-  // Vytvoříme mapu existujících dat (bez přidání roku do CW pro kompatibilitu s existujícími daty)
+  // Vytvoříme mapu existujících dat - data už přicházejí z planning_matrix s plným CW formátem
   const existingDataMap: { [key: string]: { [key: string]: WeekPlan } } = {};
   data.forEach(entry => {
     if (!existingDataMap[entry.konstrukter]) {
       existingDataMap[entry.konstrukter] = {};
     }
-    // Pro existující data bez roku přidáme logiku určení roku
-    let cwWithYear = entry.cw;
-    let mesicWithYear = entry.mesic;
     
-    if (!entry.cw.includes('-')) {
-      const cwNum = parseInt(entry.cw.replace('CW', ''));
-      // CW32-52 přiřadíme k roku 2025, CW01-31 k roku 2026
-      cwWithYear = cwNum >= 32 ? `${entry.cw}-2025` : `${entry.cw}-2026`;
-      
-      // Přidáme rok k měsíci pokud ho tam ještě není
-      if (!mesicWithYear.includes('2025') && !mesicWithYear.includes('2026')) {
-        mesicWithYear = cwNum >= 32 ? `${entry.mesic} 2025` : `${entry.mesic} 2026`;
-      }
-    }
-    
-    existingDataMap[entry.konstrukter][cwWithYear] = {
-      cw: cwWithYear,
-      mesic: mesicWithYear,
+    // Data už přicházejí s plným CW formátem z planning_matrix view
+    existingDataMap[entry.konstrukter][entry.cw] = {
+      cw: entry.cw,
+      mesic: entry.mesic,
       mhTyden: entry.mhTyden,
       projekt: entry.projekt
     };
