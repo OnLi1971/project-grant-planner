@@ -893,10 +893,11 @@ export const RevenueOverview = () => {
                  >
                    <LabelList 
                      dataKey="total"
-                     position="top"
+                     position="insideTop"
                      fontSize={11}
                      fontWeight="bold"
                      fill="hsl(var(--foreground))"
+                     offset={-10}
                      formatter={(value: number) => {
                        if (value === 0) return '';
                        if (currency === 'USD') {
