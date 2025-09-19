@@ -44,57 +44,42 @@ export type Database = {
       articles: {
         Row: {
           ai_summary_generated: boolean
-          auto_tag_version: number | null
-          auto_tags: string[] | null
           canonical_url: string | null
           created_at: string
           id: string
           is_selected: boolean
           keywords: string[]
-          manual_tags: string[] | null
           original_url: string
-          published_at: string | null
           published_date: string | null
           summary: string
-          tags: string[] | null
           title: string
           updated_at: string
           url_hash: string | null
         }
         Insert: {
           ai_summary_generated?: boolean
-          auto_tag_version?: number | null
-          auto_tags?: string[] | null
           canonical_url?: string | null
           created_at?: string
           id?: string
           is_selected?: boolean
           keywords?: string[]
-          manual_tags?: string[] | null
           original_url: string
-          published_at?: string | null
           published_date?: string | null
           summary: string
-          tags?: string[] | null
           title: string
           updated_at?: string
           url_hash?: string | null
         }
         Update: {
           ai_summary_generated?: boolean
-          auto_tag_version?: number | null
-          auto_tags?: string[] | null
           canonical_url?: string | null
           created_at?: string
           id?: string
           is_selected?: boolean
           keywords?: string[]
-          manual_tags?: string[] | null
           original_url?: string
-          published_at?: string | null
           published_date?: string | null
           summary?: string
-          tags?: string[] | null
           title?: string
           updated_at?: string
           url_hash?: string | null
@@ -242,7 +227,6 @@ export type Database = {
           projekt: string | null
           updated_at: string | null
           updated_by: string | null
-          year: number
         }
         Insert: {
           created_at?: string | null
@@ -255,7 +239,6 @@ export type Database = {
           projekt?: string | null
           updated_at?: string | null
           updated_by?: string | null
-          year: number
         }
         Update: {
           created_at?: string | null
@@ -268,7 +251,6 @@ export type Database = {
           projekt?: string | null
           updated_at?: string | null
           updated_by?: string | null
-          year?: number
         }
         Relationships: [
           {
@@ -503,20 +485,7 @@ export type Database = {
       }
     }
     Views: {
-      planning_matrix: {
-        Row: {
-          cw_full: string | null
-          konstrukter: string | null
-          mesic: string | null
-          mh_tyden: number | null
-          normalized_name: string | null
-          planning_entry_id: string | null
-          projekt: string | null
-          updated_at: string | null
-          year: number | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       cleanup_expired_idempotency_keys: {
@@ -526,10 +495,6 @@ export type Database = {
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
-      }
-      normalize_name: {
-        Args: { name: string }
-        Returns: string
       }
     }
     Enums: {
