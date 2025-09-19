@@ -887,17 +887,18 @@ export const RevenueOverview = () => {
                  {/* Přidáme neviditelný bar pro zobrazení celkových hodnot */}
                  <Bar 
                    dataKey="total" 
-                   stackId="revenue"
                    fill="transparent"
                    name="Celkem"
+                   barSize={0}
+                   isAnimationActive={false}
                  >
                    <LabelList 
                      dataKey="total"
-                     position="insideTop"
+                     position="top"
                      fontSize={11}
                      fontWeight="bold"
                      fill="hsl(var(--foreground))"
-                     offset={-10}
+                     offset={-4}
                      formatter={(value: number) => {
                        if (value === 0) return '';
                        if (currency === 'USD') {
