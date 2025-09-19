@@ -44,7 +44,8 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           .select('*')
           .order('konstrukter')
           .order('year')
-          .order('cw_full');
+          .order('cw_full')
+          .limit(5000); // Zvýšit limit pro všechny konstruktéry
 
         if (error) {
           throw error;
