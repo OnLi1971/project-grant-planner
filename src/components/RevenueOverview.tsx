@@ -838,11 +838,11 @@ export const RevenueOverview = () => {
             </div>
           </div>
 
-          {/* Celkový obrat */}
-          <div className="mb-6">
-            <div className="text-2xl font-bold text-primary">
-              Celkový obrat: {totalRevenue.toLocaleString('cs-CZ')} Kč
-            </div>
+           {/* Celkový obrat */}
+           <div className="mb-6">
+             <div className="text-2xl font-bold text-primary">
+               Celkový obrat: {formatCurrency(totalRevenue)}
+             </div>
              <p className="text-sm text-muted-foreground mt-1">
                {filterType === 'program' && selectedPrograms.length > 0
                  ? `Filtrováno podle programů: ${selectedPrograms.map(id => programs.find(p => p.id === id)?.name).join(', ')}`
@@ -869,13 +869,18 @@ export const RevenueOverview = () => {
                   tick={{ fontSize: 12 }}
                 />
                 <YAxis 
-                  tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
+                  tickFormatter={(value) => {
+                    if (currency === 'USD') {
+                      return `$${(value / exchangeRate / 1000).toFixed(0)}k`;
+                    }
+                    return `${(value / 1000).toFixed(0)}k`;
+                  }}
                   tick={{ fontSize: 12 }}
                 />
                 <Tooltip 
                   cursor={false}
                   formatter={(value: number, name: string) => [
-                    `${value.toLocaleString('cs-CZ')} Kč`, 
+                    formatCurrency(value), 
                     name === 'total' ? 'Celkem' : name
                   ]}
                   labelFormatter={(label) => `${viewType === 'kvartal' ? 'Kvartal' : 'Měsíc'}: ${label}`}
