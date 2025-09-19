@@ -897,7 +897,6 @@ export const RevenueOverview = () => {
                      fontSize={11}
                      fontWeight="bold"
                      fill="hsl(var(--foreground))"
-                     offset={5}
                      formatter={(value: number) => {
                        if (value === 0) return '';
                        if (currency === 'USD') {
