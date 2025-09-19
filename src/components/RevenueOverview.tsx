@@ -275,11 +275,11 @@ export const RevenueOverview = () => {
       data = data.filter(entry => {
         // Mapujeme mesic z planningData na mesic_rok format
         const entryMonth = entry.mesic.toLowerCase();
-        const mappedMonth = entryMonth === 'august' ? 'srpen_2025' :
-                           entryMonth === 'september' ? 'září_2025' :
+        const mappedMonth = entryMonth === 'srpen' ? 'srpen_2025' :
+                           entryMonth === 'září' ? 'září_2025' :
                            entryMonth === 'říjen' ? 'říjen_2025' :
-                           entryMonth === 'november' ? 'listopad_2025' :
-                           entryMonth === 'december' ? 'prosinec_2025' :
+                           entryMonth === 'listopad' ? 'listopad_2025' :
+                           entryMonth === 'prosinec' ? 'prosinec_2025' :
                            entryMonth === 'leden' ? 'leden_2026' :
                            entryMonth === 'únor' ? 'únor_2026' :
                            entryMonth === 'březen' ? 'březen_2026' :
@@ -288,6 +288,7 @@ export const RevenueOverview = () => {
                            entryMonth === 'červen' ? 'červen_2026' :
                            entryMonth === 'červenec' ? 'červenec_2026' :
                            entryMonth === 'srpen' ? 'srpen_2026' :
+                           entryMonth === 'září' ? 'září_2026' :
                            entryMonth;
         return allSelectedMonths.includes(mappedMonth);
       });
@@ -295,11 +296,11 @@ export const RevenueOverview = () => {
       data = data.filter(entry => {
         // Mapujeme mesic z planningData na mesic_rok format
         const entryMonth = entry.mesic.toLowerCase();
-        const mappedMonth = entryMonth === 'august' ? 'srpen_2025' :
-                           entryMonth === 'september' ? 'září_2025' :
+        const mappedMonth = entryMonth === 'srpen' ? 'srpen_2025' :
+                           entryMonth === 'září' ? 'září_2025' :
                            entryMonth === 'říjen' ? 'říjen_2025' :
-                           entryMonth === 'november' ? 'listopad_2025' :
-                           entryMonth === 'december' ? 'prosinec_2025' :
+                           entryMonth === 'listopad' ? 'listopad_2025' :
+                           entryMonth === 'prosinec' ? 'prosinec_2025' :
                            entryMonth === 'leden' ? 'leden_2026' :
                            entryMonth === 'únor' ? 'únor_2026' :
                            entryMonth === 'březen' ? 'březen_2026' :
@@ -308,6 +309,7 @@ export const RevenueOverview = () => {
                            entryMonth === 'červen' ? 'červen_2026' :
                            entryMonth === 'červenec' ? 'červenec_2026' :
                            entryMonth === 'srpen' ? 'srpen_2026' :
+                           entryMonth === 'září' ? 'září_2026' :
                            entryMonth;
         return selectedMonths.includes(mappedMonth);
       });
