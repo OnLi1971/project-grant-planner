@@ -46,10 +46,23 @@ export const RevenueOverview = () => {
   const [viewType, setViewType] = useState<'mesic' | 'kvartal'>('mesic');
   const [selectedQuarters, setSelectedQuarters] = useState<string[]>(['Q3-2025', 'Q4-2025', 'Q1-2026', 'Q2-2026', 'Q3-2026', 'Q4-2026']);
   const [selectedMonths, setSelectedMonths] = useState<string[]>(['srpen', 'září', 'říjen', 'listopad', 'prosinec', 'leden', 'únor', 'březen', 'duben', 'květen', 'červen', 'červenec', 'srpen', 'září', 'říjen', 'listopad', 'prosinec']);
+  const [currency, setCurrency] = useState<'CZK' | 'USD'>('CZK');
   const [projects, setProjects] = useState<DatabaseProject[]>([]);
   const [customers, setCustomers] = useState<DatabaseCustomer[]>([]);
   const [programs, setPrograms] = useState<DatabaseProgram[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Exchange rate CZK to USD (approximately 23 CZK = 1 USD)
+  const exchangeRate = 23;
+
+  // Function to format currency values
+  const formatCurrency = (value: number): string => {
+    if (currency === 'USD') {
+      const usdValue = value / exchangeRate;
+      return `$${usdValue.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+    }
+    return `${value.toLocaleString('cs-CZ')} Kč`;
+  };
 
   // Načtení dat z databáze
   useEffect(() => {
@@ -728,6 +741,19 @@ export const RevenueOverview = () => {
                   </Select>
                 </div>
               )}
+
+              <div className="min-w-[100px]">
+                <Label htmlFor="currency" className="text-xs text-muted-foreground">Měna</Label>
+                <Select value={currency} onValueChange={(value: 'CZK' | 'USD') => setCurrency(value)}>
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border z-50">
+                    <SelectItem value="CZK">CZK</SelectItem>
+                    <SelectItem value="USD">USD</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             {/* Rozšířené filtry v novém řádku */}
@@ -954,17 +980,17 @@ export const RevenueOverview = () => {
                             </div>
                           </div>
                         </TableCell>
-                        {months.map(month => {
-                          const revenue = monthlyRevenueByProject[month]?.[projectCode] || 0;
-                          return (
-                            <TableCell key={month} className={`text-right font-mono ${isPresales ? 'text-muted-foreground' : ''}`}>
-                              {revenue > 0 ? `${revenue.toLocaleString('cs-CZ')} Kč` : '-'}
-                            </TableCell>
-                          );
-                        })}
-                        <TableCell className={`text-right font-mono font-bold ${isPresales ? 'text-muted-foreground' : ''}`}>
-                          {projectTotal.toLocaleString('cs-CZ')} Kč
-                        </TableCell>
+                         {months.map(month => {
+                           const revenue = monthlyRevenueByProject[month]?.[projectCode] || 0;
+                           return (
+                             <TableCell key={month} className={`text-right font-mono ${isPresales ? 'text-muted-foreground' : ''}`}>
+                               {revenue > 0 ? formatCurrency(revenue) : '-'}
+                             </TableCell>
+                           );
+                         })}
+                         <TableCell className={`text-right font-mono font-bold ${isPresales ? 'text-muted-foreground' : ''}`}>
+                           {formatCurrency(projectTotal)}
+                         </TableCell>
                       </TableRow>
                     );
                   })
@@ -973,18 +999,18 @@ export const RevenueOverview = () => {
                 {/* Celkový řádek */}
                 <TableRow className="font-bold border-t-2">
                   <TableCell className="font-bold">CELKEM</TableCell>
-                  {months.map(month => {
-                    const monthData = monthlyRevenueByProject[month] || {};
-                    const monthTotal = Object.values(monthData).reduce((sum: number, value: number) => sum + value, 0);
-                    return (
-                      <TableCell key={month} className="text-right font-mono font-bold">
-                        {monthTotal.toLocaleString('cs-CZ')} Kč
-                      </TableCell>
-                    );
-                  })}
-                  <TableCell className="text-right font-mono font-bold text-primary">
-                    {totalRevenue.toLocaleString('cs-CZ')} Kč
-                  </TableCell>
+                   {months.map(month => {
+                     const monthData = monthlyRevenueByProject[month] || {};
+                     const monthTotal = Object.values(monthData).reduce((sum: number, value: number) => sum + value, 0);
+                     return (
+                       <TableCell key={month} className="text-right font-mono font-bold">
+                         {formatCurrency(monthTotal)}
+                       </TableCell>
+                     );
+                   })}
+                   <TableCell className="text-right font-mono font-bold text-primary">
+                     {formatCurrency(totalRevenue)}
+                   </TableCell>
                 </TableRow>
               </TableBody>
             </Table>
