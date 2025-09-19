@@ -39,7 +39,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   useEffect(() => {
     const loadPlanningData = async () => {
       try {
-        const pageSize = 1000;
+        const pageSize = 5000;
         let offset = 0;
         let allRows: any[] = [];
 
