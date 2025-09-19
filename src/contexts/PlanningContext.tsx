@@ -124,8 +124,11 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         // Starý formát bez roku - potřeba určit rok podle kontextu
         cwBase = cw;
         const cwNum = parseInt(cwBase.replace('CW', ''));
-        // Pro editaci se předpokládá nejbližší možný rok
-        year = cwNum >= 32 ? 2025 : 2026;
+        // Nyní editujeme převážně 2026, takže defaultujeme na 2026
+        // Pouze CW32+ z roku 2025 zůstává v 2025
+        const currentDate = new Date();
+        const currentYear = currentDate.getFullYear();
+        year = currentYear >= 2025 && cwNum >= 32 && currentYear === 2025 ? 2025 : 2026;
       }
 
       // Zkontrolujeme existenci záznamu pro daného konstruktéra, CW a rok
