@@ -897,13 +897,27 @@ export const RevenueOverview = () => {
                      fontSize={11}
                      fontWeight="bold"
                      fill="hsl(var(--foreground))"
+                     offset={5}
                      formatter={(value: number) => {
                        if (value === 0) return '';
                        if (currency === 'USD') {
                          const usdValue = value / exchangeRate;
-                         return `$${usdValue.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+                         if (usdValue >= 1000000) {
+                           return `$${(usdValue / 1000000).toFixed(1)}M`;
+                         } else if (usdValue >= 1000) {
+                           return `$${Math.round(usdValue / 1000)}k`;
+                         } else {
+                           return `$${Math.round(usdValue)}`;
+                         }
+                       } else {
+                         if (value >= 1000000) {
+                           return `${(value / 1000000).toFixed(1)}M`;
+                         } else if (value >= 1000) {
+                           return `${Math.round(value / 1000)}k`;
+                         } else {
+                           return `${Math.round(value)}`;
+                         }
                        }
-                       return `${(value / 1000000).toFixed(1)}M Kč`;
                      }}
                    />
                  </Bar>
