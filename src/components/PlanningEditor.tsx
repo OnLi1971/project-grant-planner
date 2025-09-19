@@ -83,15 +83,21 @@ const generateAllWeeks = (): WeekPlan[] => {
     });
   }
   
-  // Pak generujeme týdny pro první půlku roku 2026 (CW01-26)
-  for (let cw = 1; cw <= 26; cw++) {
+  // Pak generujeme týdny pro celý rok 2026 (CW01-52)
+  for (let cw = 1; cw <= 52; cw++) {
     let monthIndex;
     if (cw <= 5) monthIndex = 0; // leden
     else if (cw <= 9) monthIndex = 1; // únor
     else if (cw <= 13) monthIndex = 2; // březen
     else if (cw <= 17) monthIndex = 3; // duben
     else if (cw <= 22) monthIndex = 4; // květen
-    else monthIndex = 5; // červen
+    else if (cw <= 26) monthIndex = 5; // červen
+    else if (cw <= 30) monthIndex = 6; // červenec
+    else if (cw <= 35) monthIndex = 7; // srpen
+    else if (cw <= 39) monthIndex = 8; // září
+    else if (cw <= 43) monthIndex = 9; // říjen
+    else if (cw <= 47) monthIndex = 10; // listopad
+    else monthIndex = 11; // prosinec
     
     const mesic = months[monthIndex];
     
@@ -99,7 +105,7 @@ const generateAllWeeks = (): WeekPlan[] => {
       cw: `CW${cw.toString().padStart(2, '0')}`,
       mesic,
       mhTyden: 36, // Defaultní hodnota 36 hodin
-      projekt: 'FREE'
+      projekt: cw === 52 ? 'DOVOLENÁ' : 'FREE'  // CW52 defaultně "DOVOLENÁ"
     });
   }
   
@@ -132,12 +138,12 @@ const generatePlanningDataForEditor = (data: any[]): { [key: string]: WeekPlan[]
     const allWeeks = generateAllWeeks();
     const currentWeek = getCurrentWeek();
     
-    // Filtrujeme pouze relevantní týdny (CW32-52 + CW01-26)
+    // Filtrujeme pouze relevantní týdny (CW32-52 pro 2025 + CW01-52 pro 2026)
     const relevantExistingData = Object.keys(existingDataMap[konstrukter] || {})
       .filter(cw => {
         const cwNum = parseInt(cw.replace('CW', ''));
-        // Zahrnujeme CW32-52 (konec 2025) a CW01-26 (začátek 2026)
-        return (cwNum >= 32 && cwNum <= 52) || (cwNum >= 1 && cwNum <= 26);
+        // Zahrnujeme CW32-52 (konec 2025) a CW01-52 (celý rok 2026)
+        return (cwNum >= 32 && cwNum <= 52) || (cwNum >= 1 && cwNum <= 52);
       })
       .reduce((acc, cw) => {
         acc[cw] = existingDataMap[konstrukter][cw];
