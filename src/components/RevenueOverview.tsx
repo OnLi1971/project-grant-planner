@@ -558,7 +558,16 @@ export const RevenueOverview = () => {
       // Měsíční data
       return months.map(month => {
         const monthData = monthlyRevenueByProject[month] || {};
-        const monthNameForDisplay = month.replace('_2025', ' 25').replace('_2026', ' 26');
+        // Lepší zkracování názvu měsíce pro graf
+        const monthLabels: { [key: string]: string } = {
+          'srpen_2025': 'srp 25', 'září_2025': 'zář 25', 'říjen_2025': 'říj 25', 
+          'listopad_2025': 'lis 25', 'prosinec_2025': 'pro 25',
+          'leden_2026': 'led 26', 'únor_2026': 'úno 26', 'březen_2026': 'bře 26', 
+          'duben_2026': 'dub 26', 'květen_2026': 'kvě 26', 'červen_2026': 'čer 26',
+          'červenec_2026': 'čec 26', 'srpen_2026': 'srp 26', 'září_2026': 'zář 26',
+          'říjen_2026': 'říj 26', 'listopad_2026': 'lis 26', 'prosinec_2026': 'pro 26'
+        };
+        const monthNameForDisplay = monthLabels[month] || month;
         const data: any = {
           month: monthNameForDisplay,
           total: Object.values(monthData).reduce((sum: number, value: number) => sum + value, 0)
