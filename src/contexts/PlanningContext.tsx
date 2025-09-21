@@ -217,6 +217,12 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
     }, [toast]);
 
+    // Initial data load - always load data on mount
+    useEffect(() => {
+      loadPlanningData('initial');
+    }, [loadPlanningData]);
+
+    // Realtime subscription setup
     useEffect(() => {
       if (isRealtimeEnabled) {
         console.log('Realtime subscription temporarily disabled for testing');
@@ -257,8 +263,6 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           }
           subscription.unsubscribe();
         };
-      } else {
-        loadPlanningData('initial'); // Initial load
       }
     }, [loadPlanningData, isRealtimeEnabled]);
 
