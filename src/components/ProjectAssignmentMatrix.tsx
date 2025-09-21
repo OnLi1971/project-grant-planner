@@ -490,19 +490,19 @@ export const ProjectAssignmentMatrix = () => {
           </div>
 
           {/* Matrix Table */}
-          <div className="overflow-x-auto overflow-y-auto max-h-[70vh]">
+          <div className="overflow-x-auto overflow-y-auto max-h-[85vh]">
             <table className="w-full border-collapse">
               <thead className="sticky top-0 z-20">
                 {viewMode === 'weeks' ? (
                   <>
                     <tr>
-                      <th className="border-2 border-border p-3 bg-background text-left sticky left-0 sticky top-0 z-30 min-w-[200px] font-semibold">
+                      <th className="border-2 border-border p-2 bg-background text-left sticky left-0 sticky top-0 z-30 min-w-[200px] font-semibold text-sm">
                         Konstruktér
                       </th>
                       {months.map((month, monthIndex) => (
                         <th 
                           key={month.name} 
-                          className={`border-2 border-border p-3 bg-background text-center font-bold text-lg sticky top-0 z-20 ${
+                          className={`border-2 border-border p-2 bg-background text-center font-bold text-base sticky top-0 z-20 ${
                             monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                           }`} 
                           colSpan={month.weeks.length}
@@ -514,12 +514,12 @@ export const ProjectAssignmentMatrix = () => {
                       ))}
                     </tr>
                     <tr>
-                      <th className="border border-border p-2 bg-background sticky left-0 sticky top-[52px] z-30 font-medium"></th>
+                      <th className="border border-border p-1.5 bg-background sticky left-0 sticky top-[48px] z-30 font-medium text-sm"></th>
                       {months.map((month, monthIndex) => 
                         month.weeks.map((week, weekIndex) => (
                           <th 
                             key={week} 
-                            className={`border border-border p-2 bg-background text-xs min-w-[90px] font-medium sticky top-[52px] z-20 ${
+                            className={`border border-border p-1.5 bg-background text-xs min-w-[90px] font-medium sticky top-[48px] z-20 ${
                               monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
                             }`}
                           >
@@ -531,13 +531,13 @@ export const ProjectAssignmentMatrix = () => {
                   </>
                 ) : (
                   <tr>
-                    <th className="border-2 border-border p-3 bg-background text-left sticky left-0 sticky top-0 z-30 min-w-[200px] font-semibold">
+                    <th className="border-2 border-border p-2 bg-background text-left sticky left-0 sticky top-0 z-30 min-w-[200px] font-semibold text-sm">
                       Konstruktér
                     </th>
                     {months.map((month, monthIndex) => (
                       <th 
                         key={month.name} 
-                        className={`border-2 border-border p-3 bg-background text-center font-bold text-lg min-w-[150px] sticky top-0 z-20 ${
+                        className={`border-2 border-border p-2 bg-background text-center font-bold text-base min-w-[150px] sticky top-0 z-20 ${
                           monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                         }`}
                       >
@@ -552,7 +552,7 @@ export const ProjectAssignmentMatrix = () => {
               <tbody>
                 {filteredEngineers.map((engineer, index) => (
                   <tr key={engineer} className={`transition-colors hover:bg-muted/20 ${index % 2 === 1 ? 'bg-muted/30' : 'bg-background'}`}>
-                    <td className="border border-border p-3 font-semibold sticky left-0 bg-inherit z-10 text-foreground">
+                    <td className="border border-border p-2 font-semibold sticky left-0 bg-inherit z-10 text-foreground text-sm">
                       {displayNameMap[engineer] || engineer}
                     </td>
                     {viewMode === 'weeks' ? (
@@ -562,15 +562,15 @@ export const ProjectAssignmentMatrix = () => {
                           return (
                             <td 
                               key={week} 
-                              className={`border border-border p-1.5 text-center ${
+                              className={`border border-border p-1 text-center ${
                                 monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
                               }`}
                             >
                               {project && (
                                 <div 
-                                  className={`text-xs px-2 py-1 w-full justify-center font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-md inline-flex items-center ${getProjectBadgeStyle(project)}`}
+                                  className={`text-xs px-1.5 py-0.5 w-full justify-center font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-md inline-flex items-center ${getProjectBadgeStyle(project)}`}
                                 >
-                                  <span className="truncate max-w-[70px]" title={project}>
+                                  <span className="truncate max-w-[65px]" title={project}>
                                     {project}
                                   </span>
                                 </div>
@@ -600,7 +600,7 @@ export const ProjectAssignmentMatrix = () => {
                         return (
                            <td 
                              key={month.name} 
-                             className={`border border-border p-2 text-center align-top ${
+                             className={`border border-border p-1.5 text-center align-top ${
                                monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                              }`}
                            >
@@ -608,9 +608,9 @@ export const ProjectAssignmentMatrix = () => {
                                 <div className="flex flex-col gap-1">
                                   {/* Main project */}
                                   <div 
-                                    className={`text-xs px-2 py-1 w-full justify-center font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-md inline-flex items-center ${getProjectBadgeStyle(sortedProjects[0])}`}
+                                    className={`text-xs px-1.5 py-0.5 w-full justify-center font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-md inline-flex items-center ${getProjectBadgeStyle(sortedProjects[0])}`}
                                   >
-                                    <span className="truncate max-w-[100px]" title={sortedProjects[0]}>
+                                    <span className="truncate max-w-[95px]" title={sortedProjects[0]}>
                                       {sortedProjects[0]}
                                     </span>
                                   </div>
@@ -619,9 +619,9 @@ export const ProjectAssignmentMatrix = () => {
                                   {sortedProjects.slice(1).map((project, index) => (
                                     <div 
                                       key={index}
-                                      className={`text-xs px-1.5 py-0.5 w-full justify-center font-normal opacity-75 rounded-sm inline-flex items-center ${getProjectBadgeStyle(project)}`}
+                                      className={`text-xs px-1 py-0.5 w-full justify-center font-normal opacity-75 rounded-sm inline-flex items-center ${getProjectBadgeStyle(project)}`}
                                     >
-                                      <span className="truncate max-w-[90px] text-xs" title={project}>
+                                      <span className="truncate max-w-[85px] text-xs" title={project}>
                                         {project}
                                       </span>
                                     </div>
