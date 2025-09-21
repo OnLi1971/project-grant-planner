@@ -79,6 +79,9 @@ const months = [
   weeks: month.weeks.filter(week => weeks.includes(week))
 })).filter(month => month.weeks.length > 0);
 
+// Normalize CW to include year when missing
+const getCWFull = (e: { cw: string; year?: number }) => (e.cw.includes('-') ? e.cw : `${e.cw}-${e.year ?? ''}`);
+
 const getProjectBadgeStyle = (projekt: string) => {
   // Free, vacation, sick leave and overtime
   if (projekt === 'FREE') return 'bg-muted text-muted-foreground border-muted';
@@ -186,7 +189,7 @@ export const ProjectAssignmentMatrix = () => {
     engineerKeys.forEach(engineerKey => {
       matrix[engineerKey] = {};
       weeks.forEach(week => {
-        const entry = planningData.find(e => normalizeName(e.konstrukter) === engineerKey && e.cw === week);
+        const entry = planningData.find(e => normalizeName(e.konstrukter) === engineerKey && getCWFull(e) === week);
         // Default to 'DOVOLENÁ' for CW52, otherwise 'FREE' if no entry exists
         matrix[engineerKey][week] = entry?.projekt || (week.includes('CW52') ? 'DOVOLENÁ' : 'FREE');
       });
@@ -210,7 +213,7 @@ export const ProjectAssignmentMatrix = () => {
         let totalHours = 0;
         
         month.weeks.forEach(week => {
-          const entry = planningData.find(e => normalizeName(e.konstrukter) === engineerKey && e.cw === week);
+          const entry = planningData.find(e => normalizeName(e.konstrukter) === engineerKey && getCWFull(e) === week);
           let projekt: string;
           let hours: number;
           
@@ -587,11 +590,11 @@ export const ProjectAssignmentMatrix = () => {
                         // Sort projects by hours descending
                         const sortedProjects = monthData.projects.sort((a, b) => {
                           const aHours = month.weeks.reduce((sum, week) => {
-                            const entry = planningData.find(e => normalizeName(e.konstrukter) === engineer && e.cw === week && e.projekt === a);
+                            const entry = planningData.find(e => normalizeName(e.konstrukter) === engineer && getCWFull(e) === week && e.projekt === a);
                             return sum + (typeof entry?.mhTyden === 'number' ? entry.mhTyden : 0);
                           }, 0);
                           const bHours = month.weeks.reduce((sum, week) => {
-                            const entry = planningData.find(e => normalizeName(e.konstrukter) === engineer && e.cw === week && e.projekt === b);
+                            const entry = planningData.find(e => normalizeName(e.konstrukter) === engineer && getCWFull(e) === week && e.projekt === b);
                             return sum + (typeof entry?.mhTyden === 'number' ? entry.mhTyden : 0);
                           }, 0);
                           return bHours - aHours;
