@@ -13,6 +13,7 @@ export interface PlanningEntry {
 interface PlanningContextType {
   planningData: PlanningEntry[];
   updatePlanningEntry: (konstrukter: string, cw: string, projekt: string) => Promise<void>;
+  updatePlanningHours: (konstrukter: string, cw: string, hours: number) => Promise<void>;
   realtimeStatus: string;
   disableRealtime: () => void;
   enableRealtime: () => void;
@@ -400,6 +401,133 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
     }, [toast]);
 
+  const updatePlanningHours = useCallback(async (konstrukter: string, cw: string, hours: number) => {
+      try {
+        // Step 4: Optimistically update local state immediately
+        setPlanningData(prev => 
+          prev.map(entry => {
+            const sameRow = entry.konstrukter === konstrukter && entry.cw === cw;
+            return sameRow ? { ...entry, mhTyden: hours } : entry;
+          })
+        );
+
+        // Rozparsujeme CW a rok (očekává se formát "CW45-2025")
+        let cwBase: string, year: number;
+        
+        if (cw.includes('-')) {
+          // CW obsahuje rok ve formátu "CW32-2026"
+          [cwBase, ] = cw.split('-');
+          const yearPart = cw.split('-')[1];
+          year = parseInt(yearPart);
+        } else {
+          // Starý formát bez roku - potřeba určit rok podle kontextu
+          cwBase = cw;
+          const cwNum = parseInt(cwBase.replace('CW', ''));
+          year = 2026; // Default pro nové záznamy bez explicitního roku
+        }
+
+        // Zkontrolujeme existenci záznamu pro daného konstruktéra, CW a rok
+        const { data: existingData, error: selectError } = await supabase
+          .from('planning_entries')
+          .select('*')
+          .eq('konstrukter', konstrukter)
+          .eq('cw', cwBase)
+          .eq('year', year)
+          .maybeSingle();
+
+        if (selectError) {
+          console.error('Error checking existing entry:', selectError);
+          toast({
+            title: "Chyba při kontrole dat",
+            description: "Nepodařilo se zkontrolovat existující záznam.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        if (existingData) {
+          // Update existujícího záznamu
+          const { error } = await supabase
+            .from('planning_entries')
+            .update({ mh_tyden: hours })
+            .eq('konstrukter', konstrukter)
+            .eq('cw', cwBase)
+            .eq('year', year);
+
+          if (error) {
+            console.error('Error updating planning hours:', error);
+            toast({
+              title: "Chyba při ukládání hodin",
+              description: "Nepodařilo se uložit změnu hodin.",
+              variant: "destructive",
+            });
+            return;
+          }
+        } else {
+          // Záznam neexistuje, vytvoříme nový
+          // Určíme měsíc na základě roku a týdne
+          const cwNum = parseInt(cwBase.replace('CW', ''));
+          let mesic: string;
+          if (year === 2025) {
+            if (cwNum <= 35) mesic = 'srpen 2025';
+            else if (cwNum <= 39) mesic = 'září 2025';
+            else if (cwNum <= 43) mesic = 'říjen 2025';
+            else if (cwNum <= 47) mesic = 'listopad 2025';
+            else mesic = 'prosinec 2025';
+          } else { // 2026
+            if (cwNum <= 5) mesic = 'leden 2026';
+            else if (cwNum <= 9) mesic = 'únor 2026';  
+            else if (cwNum <= 13) mesic = 'březen 2026';
+            else if (cwNum <= 17) mesic = 'duben 2026';
+            else if (cwNum <= 22) mesic = 'květen 2026';
+            else if (cwNum <= 26) mesic = 'červen 2026';
+            else if (cwNum <= 30) mesic = 'červenec 2026';
+            else if (cwNum <= 35) mesic = 'srpen 2026';
+            else if (cwNum <= 39) mesic = 'září 2026';
+            else if (cwNum <= 43) mesic = 'říjen 2026';
+            else if (cwNum <= 47) mesic = 'listopad 2026';
+            else mesic = 'prosinec 2026';
+          }
+
+          const newEntry: any = {
+            konstrukter,
+            cw: cwBase, // v DB stále bez roku
+            year,
+            mesic,
+            projekt: 'FREE', // Default projekt pro nový záznam
+            mh_tyden: hours,
+          };
+
+          const { error: insertError } = await supabase
+            .from('planning_entries')
+            .insert(newEntry);
+
+          if (insertError) {
+            console.error('Error inserting planning entry with hours:', insertError);
+            toast({
+              title: "Chyba při vytváření záznamu",
+              description: "Nepodařilo se vytvořit nový záznam s hodinami.",
+              variant: "destructive",
+            });
+            return;
+          }
+        }
+
+        toast({
+          title: "Hodiny uloženy",
+          description: `Hodiny byly úspěšně aktualizovány na ${hours}h.`,
+        });
+
+      } catch (error) {
+        console.error('Error in updatePlanningHours:', error);
+        toast({
+          title: "Neočekávaná chyba",
+          description: "Došlo k neočekávané chybě při ukládání hodin.",
+          variant: "destructive",
+        });
+      }
+    }, [toast]);
+
   const disableRealtime = () => setIsRealtimeEnabled(false);
   const enableRealtime = () => setIsRealtimeEnabled(true);
 
@@ -459,6 +587,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       value={{
         planningData,
         updatePlanningEntry,
+        updatePlanningHours,
         realtimeStatus: isRealtimeEnabled ? 'ENABLED' : 'DISABLED',
         disableRealtime,
         enableRealtime,

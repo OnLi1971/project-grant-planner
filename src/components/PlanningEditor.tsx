@@ -173,6 +173,7 @@ export const PlanningEditor: React.FC = () => {
   const { 
     planningData, 
     updatePlanningEntry, 
+    updatePlanningHours,
     realtimeStatus, 
     disableRealtime, 
     enableRealtime,
@@ -253,9 +254,10 @@ export const PlanningEditor: React.FC = () => {
   };
 
   const updateCell = (konstrukter: string, cw: string, field: 'projekt' | 'mhTyden', value: string | number) => {
-    // Only handle projekt updates for now
     if (field === 'projekt') {
       updatePlanningEntry(konstrukter, cw, value as string);
+    } else if (field === 'mhTyden') {
+      updatePlanningHours(konstrukter, cw, value as number);
     }
   };
 
