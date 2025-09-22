@@ -211,7 +211,8 @@ export const PlanningEditor: React.FC = () => {
   const [selectedWeeks, setSelectedWeeks] = useState<Set<string>>(new Set());
   const [availableProjectsLocal, setAvailableProjectsLocal] = useState<string[]>(availableProjects);
   const [copyFromKonstrukter, setCopyFromKonstrukter] = useState<string>('');
-  const [bulkHoursValue, setBulkHoursValue] = useState<string>('');
+  const [bulkProject, setBulkProject] = useState<string>('');  // vybraný projekt (čeká na potvrzení)
+  const [bulkHours, setBulkHours] = useState<string>('');      // hodiny v textu (kvůli prázdné hodnotě)
 
   // Načteme projekty z databáze
   useEffect(() => {
@@ -290,6 +291,33 @@ export const PlanningEditor: React.FC = () => {
     selectedWeeks.forEach(cw => {
       updateCell(selectedKonstrukter, cw, 'mhTyden', hours);
     });
+    clearSelection();
+  };
+
+  const applyBulkChanges = async () => {
+    if (selectedWeeks.size === 0) {
+      alert('Nejsou vybrané žádné týdny.');
+      return;
+    }
+    if (!bulkProject) {
+      alert('Vyber projekt.');
+      return;
+    }
+    const hoursNum = parseInt(bulkHours, 10);
+    if (Number.isNaN(hoursNum)) {
+      alert('Zadej počet hodin na týden (číslo).');
+      return;
+    }
+
+    // Zapisuj pro každý vybraný týden – nejdřív projekt, pak hodiny
+    for (const cw of selectedWeeks) {
+      await updateCell(selectedKonstrukter, cw, 'projekt', bulkProject);
+      await updateCell(selectedKonstrukter, cw, 'mhTyden', hoursNum);
+    }
+
+    // úklid
+    setBulkProject('');
+    setBulkHours('');
     clearSelection();
   };
 
@@ -480,39 +508,58 @@ export const PlanningEditor: React.FC = () => {
       {/* Bulk Edit Panel */}
       {isMultiSelectMode && selectedWeeks.size > 0 && (
         <Card className="p-4 shadow-card-custom border-primary">
-          <div className="flex items-center gap-4">
-            <div className="text-sm font-medium">
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="text-sm font-medium whitespace-nowrap">
               Vybráno {selectedWeeks.size} týdnů pro {selectedKonstrukter}
             </div>
-            <div className="flex gap-2">
-              <Select onValueChange={bulkUpdateProject}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Nastavit projekt pro všechny" />
+
+            <div className="flex gap-2 items-center flex-wrap">
+              {/* 1) Projekt – jen uložit do stavu, nic neaplikovat */}
+              <Select value={bulkProject} onValueChange={setBulkProject}>
+                <SelectTrigger className="w-52">
+                  <SelectValue placeholder="Vyber projekt" />
                 </SelectTrigger>
                 <SelectContent>
-                  {allProjectCodes.map(projekt => (
-                    <SelectItem key={projekt} value={projekt}>{projekt}</SelectItem>
+                  {allProjectCodes.map((projekt) => (
+                    <SelectItem key={projekt} value={projekt}>
+                      {projekt}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+
+              {/* 2) Hodiny – jen uložit do stavu */}
               <Input
                 type="number"
-                placeholder="Hodiny"
-                className="w-24"
-                value={bulkHoursValue}
-                onChange={(e) => setBulkHoursValue(e.target.value)}
+                inputMode="numeric"
+                placeholder="Hodiny / týden"
+                className="w-32"
+                value={bulkHours}
+                onChange={(e) => setBulkHours(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
-                    if (bulkHoursValue !== '') {
-                      const val = parseInt(bulkHoursValue) || 0;
-                      bulkUpdateHours(val);
-                      setBulkHoursValue('');
-                    }
+                    e.preventDefault(); // zabraň „implicitnímu submitu"
+                    applyBulkChanges();
                   }
                 }}
               />
-              <Button variant="outline" onClick={clearSelection}>
-                <X className="h-4 w-4 mr-2" />
+
+              {/* 3) Tlačítka – POTVRDIT / ZRUŠIT */}
+              <Button
+                onClick={applyBulkChanges}
+                disabled={!bulkProject || bulkHours.trim() === '' || selectedWeeks.size === 0}
+              >
+                Použít
+              </Button>
+
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setBulkProject('');
+                  setBulkHours('');
+                  clearSelection();
+                }}
+              >
                 Zrušit výběr
               </Button>
             </div>
