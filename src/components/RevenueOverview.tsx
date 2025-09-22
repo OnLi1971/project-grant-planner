@@ -335,6 +335,10 @@ export const RevenueOverview = () => {
 
   // Výpočet revenue po měsících s rozložením podle projektů a poměrným rozdělením týdnů
   const calculateMonthlyRevenueByProject = (data = filteredData) => {
+    console.log('=== REVENUE CALCULATION DEBUG ===');
+    console.log('Total planning entries:', data.length);
+    console.log('Projects in database:', projects.length);
+    
     const monthlyData: { [month: string]: { [projectCode: string]: number } } = {};
 
     // Inicializace struktur pro všechny měsíce s rokem
