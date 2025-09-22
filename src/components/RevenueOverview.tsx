@@ -354,7 +354,10 @@ export const RevenueOverview = () => {
 
       // Najdeme projekt podle kódu
       const project = projects.find(p => p.code === entry.projekt);
-      if (!project) return;
+      if (!project) {
+        console.log(`Project not found in database: ${entry.projekt}`);
+        return;
+      }
 
       let hourlyRate = 0;
       
@@ -368,8 +371,18 @@ export const RevenueOverview = () => {
         hourlyRate = project.average_hourly_rate || project.budget || 1000;
       }
 
+      // Debug výpis pro realizace projekty
+      if (project.project_status === 'Realizace' && entry.cw.includes('CW45')) {
+        console.log(`Realizace project ${entry.projekt}: type=${project.project_type}, hourlyRate=${hourlyRate}, avg_rate=${project.average_hourly_rate}, budget=${project.budget}, hours=${entry.mhTyden}`);
+      }
+
       // Pokud nemáme sazbu, přeskočíme
-      if (hourlyRate === 0) return;
+      if (hourlyRate === 0) {
+        if (project.project_status === 'Realizace') {
+          console.log(`Skipping Realizace project ${entry.projekt} - no hourly rate found`);
+        }
+        return;
+      }
 
       // Rozdělíme týdenní výkon podle poměru dnů v měsících
       Object.entries(weekMapping).forEach(([month, ratio]) => {
