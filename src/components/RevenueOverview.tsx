@@ -931,15 +931,56 @@ export const RevenueOverview = () => {
                 />
                 <Tooltip 
                   cursor={false}
-                  formatter={(value: number, name: string) => [
-                    formatCurrency(value), 
-                    name === 'total' ? 'Celkem' : name
-                  ]}
-                  labelFormatter={(label) => `${viewType === 'kvartal' ? 'Kvartal' : 'Měsíc'}: ${label}`}
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '6px'
+                  content={(props) => {
+                    if (!props.active || !props.payload || !props.label) return null;
+                    
+                    const data = props.payload[0]?.payload;
+                    if (!data) return null;
+                    
+                    // Spočítáme součty pro Realizace a Presales
+                    let realizaceSum = 0;
+                    let presalesSum = 0;
+                    
+                    projectList.forEach(projectCode => {
+                      const project = projects.find(p => p.code === projectCode);
+                      const value = data[projectCode] || 0;
+                      
+                      if (project?.project_status === 'Pre sales') {
+                        presalesSum += value;
+                      } else {
+                        realizaceSum += value;
+                      }
+                    });
+                    
+                    const total = realizaceSum + presalesSum;
+                    
+                    return (
+                      <div className="bg-card border border-border rounded-md p-3 shadow-md">
+                        <p className="font-medium mb-2">
+                          {viewType === 'kvartal' ? 'Kvartal' : 'Měsíc'}: {props.label}
+                        </p>
+                        <div className="space-y-1">
+                          {realizaceSum > 0 && (
+                            <div className="flex justify-between items-center gap-4">
+                              <span className="text-sm">Realizace:</span>
+                              <span className="font-medium">{formatCurrency(realizaceSum)}</span>
+                            </div>
+                          )}
+                          {presalesSum > 0 && (
+                            <div className="flex justify-between items-center gap-4">
+                              <span className="text-sm">Presales:</span>
+                              <span className="font-medium">{formatCurrency(presalesSum)}</span>
+                            </div>
+                          )}
+                          <div className="border-t pt-1 mt-2">
+                            <div className="flex justify-between items-center gap-4 font-semibold">
+                              <span>Celkem:</span>
+                              <span>{formatCurrency(total)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
                   }}
                 />
                  {/* Všechny projekty v jednom stacku - realizace + presales */}
