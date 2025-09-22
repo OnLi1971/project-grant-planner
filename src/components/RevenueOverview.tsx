@@ -360,11 +360,12 @@ export const RevenueOverview = () => {
       
       // Určíme hodinovou sazbu podle typu projektu z databáze
       // Pro WP projekty používáme average_hourly_rate
-      // Pro Hodinovka projekty používáme budget jako hodinovou sazbu
+      // Pro Hodinovka projekty používáme primárně average_hourly_rate, jinak budget, jinak default
       if (project.project_type === 'WP' && project.average_hourly_rate) {
         hourlyRate = project.average_hourly_rate;
-      } else if (project.project_type === 'Hodinovka' && project.budget) {
-        hourlyRate = project.budget;
+      } else if (project.project_type === 'Hodinovka') {
+        // Pro Hodinovka projekty: priorita average_hourly_rate > budget > default 1000
+        hourlyRate = project.average_hourly_rate || project.budget || 1000;
       }
 
       // Pokud nemáme sazbu, přeskočíme
