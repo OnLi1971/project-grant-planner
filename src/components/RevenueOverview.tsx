@@ -45,7 +45,11 @@ export const RevenueOverview = () => {
   const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
   const [viewType, setViewType] = useState<'mesic' | 'kvartal'>('mesic');
   const [selectedQuarters, setSelectedQuarters] = useState<string[]>(['Q3-2025', 'Q4-2025', 'Q1-2026', 'Q2-2026', 'Q3-2026', 'Q4-2026']);
-  const [selectedMonths, setSelectedMonths] = useState<string[]>(['srpen', 'září', 'říjen', 'listopad', 'prosinec', 'leden', 'únor', 'březen', 'duben', 'květen', 'červen', 'červenec', 'srpen', 'září', 'říjen', 'listopad', 'prosinec']);
+  const [selectedMonths, setSelectedMonths] = useState<string[]>([
+    'srpen_2025', 'září_2025', 'říjen_2025', 'listopad_2025', 'prosinec_2025',
+    'leden_2026', 'únor_2026', 'březen_2026', 'duben_2026', 'květen_2026', 'červen_2026',
+    'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026'
+  ]);
   const [currency, setCurrency] = useState<'CZK' | 'USD'>('CZK');
   const [projects, setProjects] = useState<DatabaseProject[]>([]);
   const [customers, setCustomers] = useState<DatabaseCustomer[]>([]);
@@ -313,7 +317,10 @@ export const RevenueOverview = () => {
       const allSelectedMonths = selectedQuarters.flatMap(quarter => quarterMonths[quarter] || []);
       data = data.filter(entry => {
         // Použijeme CW mapping k určení, do kterých měsíců entry přispívá
-        const weekMapping = weekToMonthMapping[entry.cw];
+        const cwKey = entry.cw.includes('-2026')
+          ? entry.cw.replace('-', '_')
+          : entry.cw.split('-')[0]; // pro rok 2025 použij bez roku
+        const weekMapping = weekToMonthMapping[cwKey];
         if (!weekMapping) return false;
         
         // Zkontrolujeme, zda některý z měsíců je v selectedMonths
@@ -322,7 +329,10 @@ export const RevenueOverview = () => {
     } else if (viewType === 'mesic' && selectedMonths.length > 0) {
       data = data.filter(entry => {
         // Použijeme CW mapping k určení, do kterých měsíců entry přispívá
-        const weekMapping = weekToMonthMapping[entry.cw];
+        const cwKey = entry.cw.includes('-2026')
+          ? entry.cw.replace('-', '_')
+          : entry.cw.split('-')[0]; // pro rok 2025 použij bez roku
+        const weekMapping = weekToMonthMapping[cwKey];
         if (!weekMapping) return false;
         
         // Zkontrolujeme, zda některý z měsíců je v selectedMonths
@@ -353,7 +363,10 @@ export const RevenueOverview = () => {
 
     // Projdeme všechny záznamy v plánovacích datech
     data.forEach(entry => {
-      const weekMapping = weekToMonthMapping[entry.cw];
+      const cwKey = entry.cw.includes('-2026')
+        ? entry.cw.replace('-', '_')
+        : entry.cw.split('-')[0];
+      const weekMapping = weekToMonthMapping[cwKey];
       if (!weekMapping || entry.mhTyden === 0) return;
 
       // Najdeme projekt podle kódu
