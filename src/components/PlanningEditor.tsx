@@ -205,6 +205,7 @@ export const PlanningEditor: React.FC = () => {
   const konstrukteri = useMemo(() => allKonstrukteri.map(k => k.jmeno).sort(), []);
   
   const [editingCell, setEditingCell] = useState<EditableCell | null>(null);
+  const [editingValue, setEditingValue] = useState<string>('');
   const [selectedKonstrukter, setSelectedKonstrukter] = useState<string>(konstrukteri[0] || '');
   const [isMultiSelectMode, setIsMultiSelectMode] = useState<boolean>(false);
   const [selectedWeeks, setSelectedWeeks] = useState<Set<string>>(new Set());
@@ -626,31 +627,44 @@ export const PlanningEditor: React.FC = () => {
                       <div className="absolute inset-0 bg-primary/20 rounded" />
                     )}
                     <div className="relative z-10">
-                    {editingCell?.konstrukter === selectedKonstrukter && 
-                     editingCell?.cw === week.cw && 
-                     editingCell?.field === 'mhTyden' && !isMultiSelectMode ? (
-                      <Input
-                        type="number"
-                        value={week.mhTyden}
-                        onChange={(e) => updateCell(selectedKonstrukter, week.cw, 'mhTyden', parseInt(e.target.value) || 0)}
-                        onBlur={() => setEditingCell(null)}
-                        onKeyDown={(e) => e.key === 'Enter' && setEditingCell(null)}
-                        className="w-20 h-8"
-                        autoFocus
-                      />
-                      ) : (
-                        <div 
-                          className={`cursor-pointer hover:bg-muted p-1 rounded flex items-center gap-2 ${
-                            isMultiSelectMode ? 'pointer-events-none' : ''
-                          }`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (!isMultiSelectMode) {
-                              setEditingCell({ konstrukter: selectedKonstrukter, cw: week.cw, field: 'mhTyden' });
-                            }
-                          }}
-                        >
-                          <span className={`font-medium ${
+                     {editingCell?.konstrukter === selectedKonstrukter && 
+                      editingCell?.cw === week.cw && 
+                      editingCell?.field === 'mhTyden' && !isMultiSelectMode ? (
+                       <Input
+                         type="number"
+                         value={editingValue}
+                         onChange={(e) => setEditingValue(e.target.value)}
+                         onBlur={() => {
+                           const numValue = parseInt(editingValue) || 0;
+                           updateCell(selectedKonstrukter, week.cw, 'mhTyden', numValue);
+                           setEditingCell(null);
+                           setEditingValue('');
+                         }}
+                         onKeyDown={(e) => {
+                           if (e.key === 'Enter') {
+                             const numValue = parseInt(editingValue) || 0;
+                             updateCell(selectedKonstrukter, week.cw, 'mhTyden', numValue);
+                             setEditingCell(null);
+                             setEditingValue('');
+                           }
+                         }}
+                         className="w-20 h-8"
+                         autoFocus
+                       />
+                       ) : (
+                         <div 
+                           className={`cursor-pointer hover:bg-muted p-1 rounded flex items-center gap-2 ${
+                             isMultiSelectMode ? 'pointer-events-none' : ''
+                           }`}
+                           onClick={(e) => {
+                             e.stopPropagation();
+                             if (!isMultiSelectMode) {
+                               setEditingCell({ konstrukter: selectedKonstrukter, cw: week.cw, field: 'mhTyden' });
+                               setEditingValue(week.mhTyden?.toString() || '0');
+                             }
+                           }}
+                          >
+                           <span className={`font-medium ${
                             week.mhTyden >= 40 ? 'text-success' :
                             week.mhTyden >= 20 ? 'text-warning' :
                             week.mhTyden >= 0 ? 'text-foreground' : 'text-muted-foreground'
