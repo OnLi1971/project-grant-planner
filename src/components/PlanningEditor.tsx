@@ -636,20 +636,22 @@ export const PlanningEditor: React.FC = () => {
                          type="number"
                          value={editingValue}
                          onChange={(e) => setEditingValue(e.target.value)}
-                         onBlur={() => {
-                           const numValue = parseInt(editingValue) || 0;
-                           updateCell(selectedKonstrukter, week.cw, 'mhTyden', numValue);
-                           setEditingCell(null);
-                           setEditingValue('');
-                         }}
-                         onKeyDown={(e) => {
-                           if (e.key === 'Enter') {
-                             const numValue = parseInt(editingValue) || 0;
-                             updateCell(selectedKonstrukter, week.cw, 'mhTyden', numValue);
-                             setEditingCell(null);
-                             setEditingValue('');
-                           }
-                         }}
+                          onBlur={() => {
+                            const numValue = parseInt(editingValue) || 0;
+                            console.log('HOURS_EDIT_DEBUG:', { editingValue, numValue, konstrukter: selectedKonstrukter, cw: week.cw });
+                            setEditingCell(null);
+                            setEditingValue('');
+                            updateCell(selectedKonstrukter, week.cw, 'mhTyden', numValue);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              const numValue = parseInt(editingValue) || 0;
+                              console.log('HOURS_EDIT_DEBUG:', { editingValue, numValue, konstrukter: selectedKonstrukter, cw: week.cw });
+                              setEditingCell(null);
+                              setEditingValue('');
+                              updateCell(selectedKonstrukter, week.cw, 'mhTyden', numValue);
+                            }
+                          }}
                          className="w-20 h-8"
                          autoFocus
                        />
