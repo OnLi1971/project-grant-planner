@@ -217,7 +217,8 @@ export const PlanningEditor: React.FC = () => {
         const { data, error } = await supabase
           .from('projects')
           .select('*')
-          .eq('status', 'active');
+          .eq('status', 'active')
+          .eq('project_status', 'Realizace');
         
         if (error) {
           console.error('Error fetching projects:', error);
