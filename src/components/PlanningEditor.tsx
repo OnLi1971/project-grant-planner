@@ -374,8 +374,31 @@ export const PlanningEditor: React.FC = () => {
     console.log('Reset to original - placeholder');
   };
 
-  const copyPlan = (from: string, to: string) => {
-    console.log('Copy plan - placeholder', from, to);
+  const copyPlan = async (from: string, to: string) => {
+    console.log('Copying plan from:', from, 'to:', to);
+    
+    // Find all weeks for the source constructor
+    const sourceWeeks = planningData.filter(entry => 
+      normalizeName(entry.konstrukter) === normalizeName(from)
+    );
+    
+    if (sourceWeeks.length === 0) {
+      alert(`Žádný plán nebyl nalezen pro konstruktéra ${from}`);
+      return;
+    }
+    
+    // Copy each week's data to the target constructor
+    for (const sourceWeek of sourceWeeks) {
+      try {
+        await updatePlanningEntry(to, sourceWeek.cw, sourceWeek.projekt || 'FREE');
+        await updatePlanningHours(to, sourceWeek.cw, sourceWeek.mhTyden || 0);
+      } catch (error) {
+        console.error('Error copying week:', sourceWeek.cw, error);
+      }
+    }
+    
+    console.log('Plan copy completed');
+    alert(`Plán byl úspěšně zkopírován z ${from} do ${to}`);
   };
 
   const performStep2Test = async () => {
