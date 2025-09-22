@@ -211,6 +211,7 @@ export const PlanningEditor: React.FC = () => {
   const [selectedWeeks, setSelectedWeeks] = useState<Set<string>>(new Set());
   const [availableProjectsLocal, setAvailableProjectsLocal] = useState<string[]>(availableProjects);
   const [copyFromKonstrukter, setCopyFromKonstrukter] = useState<string>('');
+  const [bulkHoursValue, setBulkHoursValue] = useState<string>('');
 
   // Načteme projekty z databáze
   useEffect(() => {
@@ -498,13 +499,14 @@ export const PlanningEditor: React.FC = () => {
                 type="number"
                 placeholder="Hodiny"
                 className="w-24"
-                onChange={(e) => e.target.value && bulkUpdateHours(parseInt(e.target.value) || 0)}
+                value={bulkHoursValue}
+                onChange={(e) => setBulkHoursValue(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
-                    const target = e.target as HTMLInputElement;
-                    if (target.value) {
-                      bulkUpdateHours(parseInt(target.value) || 0);
-                      target.value = '';
+                    if (bulkHoursValue !== '') {
+                      const val = parseInt(bulkHoursValue) || 0;
+                      bulkUpdateHours(val);
+                      setBulkHoursValue('');
                     }
                   }
                 }}
