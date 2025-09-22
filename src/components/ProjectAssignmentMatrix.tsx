@@ -82,10 +82,9 @@ const months = [
 const getProjectBadgeStyle = (projekt: string) => {
   // Free, vacation, sick leave and overtime
   if (projekt === 'FREE') return 'bg-muted text-muted-foreground border-muted';
-  if (projekt === 'DOVOLENÁ') return 'bg-accent/20 text-accent border-accent/30';
-  if (projekt === 'NEMOC') return 'bg-destructive/20 text-destructive border-destructive/30';  
-  if (projekt === 'OVER') return 'bg-warning/20 text-warning border-warning/30';
-  if (projekt === 'DOVOLENÁ') return 'bg-destructive text-destructive-foreground border-destructive';
+  if (projekt === 'DOVOLENÁ') return 'bg-success/30 text-success-foreground border-success dark:bg-success/40 dark:text-success-foreground';
+  if (projekt === 'NEMOC') return 'bg-destructive/30 text-destructive-foreground border-destructive dark:bg-destructive/40 dark:text-destructive-foreground';  
+  if (projekt === 'OVER') return 'bg-warning/30 text-warning-foreground border-warning dark:bg-warning/40 dark:text-warning-foreground';
   
   // ST projects - different shades of blue/primary
   if (projekt === 'ST_EMU_INT') return 'bg-blue-500 text-white border-blue-600';
