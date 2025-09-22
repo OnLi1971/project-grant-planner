@@ -218,39 +218,38 @@ export const RevenueOverview = () => {
     'CW50': { 'prosinec_2025': 1.0 },         // 8-14 prosince 2025 (celý týden)
     'CW51': { 'prosinec_2025': 1.0 },         // 15-21 prosince 2025 (celý týden)
     'CW52': { 'prosinec_2025': 1.0 },         // 22-28 prosince 2025 (celý týden)
-    // Rok 2026 (CW01-52)
-    'CW01': { 'leden_2026': 1.0 },            // 29 prosince 2025 - 4 ledna 2026 (celý týden)
-    'CW02': { 'leden_2026': 1.0 },            // 5-11 ledna 2026 (celý týden)
-    'CW03': { 'leden_2026': 1.0 },            // 12-18 ledna 2026 (celý týden)
-    'CW04': { 'leden_2026': 1.0 },            // 19-25 ledna 2026 (celý týden)
-    'CW05': { 'leden_2026': 0.8, 'únor_2026': 0.2 },   // 26 ledna - 1 února 2026 (4:1 dny)
-    'CW06': { 'únor_2026': 1.0 },             // 2-8 února 2026 (celý týden)
-    'CW07': { 'únor_2026': 1.0 },             // 9-15 února 2026 (celý týden)
-    'CW08': { 'únor_2026': 1.0 },             // 16-22 února 2026 (celý týden)
-    'CW09': { 'únor_2026': 0.6, 'březen_2026': 0.4 },  // 23 února - 1 března 2026 (3:2 dny)
-    'CW10': { 'březen_2026': 1.0 },           // 2-8 března 2026 (celý týden)
-    'CW11': { 'březen_2026': 1.0 },           // 9-15 března 2026 (celý týden)
-    'CW12': { 'březen_2026': 1.0 },           // 16-22 března 2026 (celý týden)
-    'CW13': { 'březen_2026': 1.0 },           // 23-29 března 2026 (celý týden)
-    'CW14': { 'březen_2026': 0.4, 'duben_2026': 0.6 },     // 30 března - 5 dubna 2026 (2:3 dny)
-    'CW15': { 'duben_2026': 1.0 },            // 6-12 dubna 2026 (celý týden)
-    'CW16': { 'duben_2026': 1.0 },            // 13-19 dubna 2026 (celý týden)
-    'CW17': { 'duben_2026': 1.0 },            // 20-26 dubna 2026 (celý týden)
-    'CW18': { 'duben_2026': 0.6, 'květen_2026': 0.4 },     // 27 dubna - 3 května 2026 (3:2 dny)
-    'CW19': { 'květen_2026': 1.0 },           // 4-10 května 2026 (celý týden)
-    'CW20': { 'květen_2026': 1.0 },           // 11-17 května 2026 (celý týden)
-    'CW21': { 'květen_2026': 1.0 },           // 18-24 května 2026 (celý týden)
-    'CW22': { 'květen_2026': 1.0 },           // 25-31 května 2026 (celý týden)
-    'CW23': { 'květen_2026': 0.2, 'červen_2026': 0.8 },    // 1-7 června 2026 (1:4 dny)
-    'CW24': { 'červen_2026': 1.0 },           // 8-14 června 2026 (celý týden)
-    'CW25': { 'červen_2026': 1.0 },           // 15-21 června 2026 (celý týden)
-    'CW26': { 'červen_2026': 1.0 },            // 22-28 června 2026 (celý týden)
-    // Druhá polovina roku 2026
-    'CW27': { 'červenec_2026': 1.0 },
-    'CW28': { 'červenec_2026': 1.0 },
-    'CW29': { 'červenec_2026': 1.0 },
-    'CW30': { 'červenec_2026': 1.0 },
-    'CW31': { 'červenec_2026': 0.6, 'srpen_2026': 0.4 },
+    // Rok 2026 (CW01-52) - všechny s příponou _2026
+    'CW01_2026': { 'leden_2026': 1.0 },            // 29 prosince 2025 - 4 ledna 2026 (celý týden)
+    'CW02_2026': { 'leden_2026': 1.0 },            // 5-11 ledna 2026 (celý týden)
+    'CW03_2026': { 'leden_2026': 1.0 },            // 12-18 ledna 2026 (celý týden)
+    'CW04_2026': { 'leden_2026': 1.0 },            // 19-25 ledna 2026 (celý týden)
+    'CW05_2026': { 'leden_2026': 0.8, 'únor_2026': 0.2 },   // 26 ledna - 1 února 2026 (4:1 dny)
+    'CW06_2026': { 'únor_2026': 1.0 },             // 2-8 února 2026 (celý týden)
+    'CW07_2026': { 'únor_2026': 1.0 },             // 9-15 února 2026 (celý týden)
+    'CW08_2026': { 'únor_2026': 1.0 },             // 16-22 února 2026 (celý týden)
+    'CW09_2026': { 'únor_2026': 0.6, 'březen_2026': 0.4 },  // 23 února - 1 března 2026 (3:2 dny)
+    'CW10_2026': { 'březen_2026': 1.0 },           // 2-8 března 2026 (celý týden)
+    'CW11_2026': { 'březen_2026': 1.0 },           // 9-15 března 2026 (celý týden)
+    'CW12_2026': { 'březen_2026': 1.0 },           // 16-22 března 2026 (celý týden)
+    'CW13_2026': { 'březen_2026': 1.0 },           // 23-29 března 2026 (celý týden)
+    'CW14_2026': { 'březen_2026': 0.4, 'duben_2026': 0.6 },     // 30 března - 5 dubna 2026 (2:3 dny)
+    'CW15_2026': { 'duben_2026': 1.0 },            // 6-12 dubna 2026 (celý týden)
+    'CW16_2026': { 'duben_2026': 1.0 },            // 13-19 dubna 2026 (celý týden)
+    'CW17_2026': { 'duben_2026': 1.0 },            // 20-26 dubna 2026 (celý týden)
+    'CW18_2026': { 'duben_2026': 0.6, 'květen_2026': 0.4 },     // 27 dubna - 3 května 2026 (3:2 dny)
+    'CW19_2026': { 'květen_2026': 1.0 },           // 4-10 května 2026 (celý týden)
+    'CW20_2026': { 'květen_2026': 1.0 },           // 11-17 května 2026 (celý týden)
+    'CW21_2026': { 'květen_2026': 1.0 },           // 18-24 května 2026 (celý týden)
+    'CW22_2026': { 'květen_2026': 1.0 },           // 25-31 května 2026 (celý týden)
+    'CW23_2026': { 'květen_2026': 0.2, 'červen_2026': 0.8 },    // 1-7 června 2026 (1:4 dny)
+    'CW24_2026': { 'červen_2026': 1.0 },           // 8-14 června 2026 (celý týden)
+    'CW25_2026': { 'červen_2026': 1.0 },           // 15-21 června 2026 (celý týden)
+    'CW26_2026': { 'červen_2026': 1.0 },            // 22-28 června 2026 (celý týden)
+    'CW27_2026': { 'červenec_2026': 1.0 },
+    'CW28_2026': { 'červenec_2026': 1.0 },
+    'CW29_2026': { 'červenec_2026': 1.0 },
+    'CW30_2026': { 'červenec_2026': 1.0 },
+    'CW31_2026': { 'červenec_2026': 0.6, 'srpen_2026': 0.4 },
     'CW32_2026': { 'srpen_2026': 1.0 },
     'CW33_2026': { 'srpen_2026': 1.0 },
     'CW34_2026': { 'srpen_2026': 1.0 },
@@ -319,7 +318,7 @@ export const RevenueOverview = () => {
         // Použijeme CW mapping k určení, do kterých měsíců entry přispívá
         const cwKey = entry.cw.includes('-2026')
           ? entry.cw.replace('-', '_')
-          : entry.cw.split('-')[0]; // pro rok 2025 použij bez roku
+          : entry.cw.split('-')[0];
         const weekMapping = weekToMonthMapping[cwKey];
         if (!weekMapping) return false;
         
@@ -331,7 +330,7 @@ export const RevenueOverview = () => {
         // Použijeme CW mapping k určení, do kterých měsíců entry přispívá
         const cwKey = entry.cw.includes('-2026')
           ? entry.cw.replace('-', '_')
-          : entry.cw.split('-')[0]; // pro rok 2025 použij bez roku
+          : entry.cw.split('-')[0];
         const weekMapping = weekToMonthMapping[cwKey];
         if (!weekMapping) return false;
         
