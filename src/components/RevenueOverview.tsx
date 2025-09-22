@@ -558,16 +558,10 @@ export const RevenueOverview = () => {
           const monthData = monthlyRevenueByProject[month] || {};
           data.total += Object.values(monthData).reduce((sum: number, value: number) => sum + value, 0);
           
-          // Přidáme data pro realizace projekty
-          realizaceProjects.forEach(projectCode => {
+          // Přidáme data pro všechny projekty (realizace + presales)
+          projectList.forEach(projectCode => {
             if (!data[projectCode]) data[projectCode] = 0;
             data[projectCode] += monthData[projectCode] || 0;
-          });
-          
-          // Přidáme data pro presales projekty s prefixem
-          presalesProjects.forEach(projectCode => {
-            if (!data[`presales_${projectCode}`]) data[`presales_${projectCode}`] = 0;
-            data[`presales_${projectCode}`] += monthData[projectCode] || 0;
           });
         });
         
@@ -592,14 +586,9 @@ export const RevenueOverview = () => {
           total: Object.values(monthData).reduce((sum: number, value: number) => sum + value, 0)
         };
         
-        // Přidáme data pro realizace projekty
-        realizaceProjects.forEach(projectCode => {
+        // Přidáme data pro všechny projekty (realizace + presales)
+        projectList.forEach(projectCode => {
           data[projectCode] = monthData[projectCode] || 0;
-        });
-        
-        // Přidáme data pro presales projekty s prefixem
-        presalesProjects.forEach(projectCode => {
-          data[`presales_${projectCode}`] = monthData[projectCode] || 0;
         });
         
         return data;
@@ -923,33 +912,25 @@ export const RevenueOverview = () => {
                     borderRadius: '6px'
                   }}
                 />
-                 {/* Realizace projekty - spodní stack */}
-                 {realizaceProjects.map((projectCode, index) => (
-                   <Bar 
-                     key={projectCode}
-                     dataKey={projectCode} 
-                     stackId="realizace"
-                     fill={getProjectColorWithIndex(projectCode, index)}
-                     name={projectCode}
-                   />
-                 ))}
-                 
-                 {/* Presales projekty - horní stack s průhledností */}
-                 {presalesProjects.map((projectCode, index) => {
-                   const color = getProjectColorWithIndex(projectCode, realizaceProjects.length + index);
+                 {/* Všechny projekty v jednom stacku - realizace + presales */}
+                 {projectList.map((projectCode, index) => {
+                   const project = projects.find(p => p.code === projectCode);
+                   const isPresales = project?.project_status === 'Pre sales';
+                   const color = getProjectColorWithIndex(projectCode, index);
+                   
                    return (
                      <Bar 
-                       key={`presales_${projectCode}`}
-                       dataKey={`presales_${projectCode}`} 
-                       stackId="presales"
+                       key={projectCode}
+                       dataKey={projectCode} 
+                       stackId="combined"
                        fill={color}
-                       fillOpacity={0.6}
-                       name={`${projectCode} (Presales)`}
-                       stroke={color}
-                       strokeWidth={1}
-                       strokeDasharray="3 3"
+                       fillOpacity={isPresales ? 0.7 : 1}
+                       name={isPresales ? `${projectCode} (Presales)` : projectCode}
+                       stroke={isPresales ? color : undefined}
+                       strokeWidth={isPresales ? 1 : 0}
+                       strokeDasharray={isPresales ? "3 3" : undefined}
                      >
-                       {index === presalesProjects.length - 1 && (
+                       {index === projectList.length - 1 && (
                          <LabelList 
                            dataKey="total"
                            content={(props: any) => renderTotalLabel(props)}
@@ -958,22 +939,6 @@ export const RevenueOverview = () => {
                      </Bar>
                    );
                  })}
-                 
-                 {/* Fallback pro total label pokud nejsou presales projekty */}
-                 {presalesProjects.length === 0 && realizaceProjects.length > 0 && (
-                   <Bar 
-                     key="total-label"
-                     dataKey="total" 
-                     fill="transparent"
-                     name="Total"
-                     isAnimationActive={false}
-                   >
-                     <LabelList 
-                       dataKey="total"
-                       content={(props: any) => renderTotalLabel(props)}
-                     />
-                   </Bar>
-                 )}
               </BarChart>
             </ResponsiveContainer>
           </div>
