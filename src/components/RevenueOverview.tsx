@@ -360,6 +360,9 @@ export const RevenueOverview = () => {
       monthlyData[month] = {};
     });
 
+    // Seznam neproduktivních aktivit, které negenerují zisk
+    const nonRevenueActivities = ['FREE', 'Dovolena', 'Nemoc', 'Školení', 'Interní'];
+
     // Projdeme všechny záznamy v plánovacích datech
     data.forEach(entry => {
       const cwKey = entry.cw.includes('-2026')
@@ -367,6 +370,9 @@ export const RevenueOverview = () => {
         : entry.cw.split('-')[0];
       const weekMapping = weekToMonthMapping[cwKey];
       if (!weekMapping || entry.mhTyden === 0) return;
+
+      // Přeskočit neproduktivní aktivity
+      if (nonRevenueActivities.includes(entry.projekt?.trim())) return;
 
       // Najdeme projekt podle kódu
       const project = projects.find(p => p.code === entry.projekt);
