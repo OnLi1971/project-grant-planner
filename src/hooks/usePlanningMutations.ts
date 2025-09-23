@@ -67,76 +67,82 @@ export function usePlanningMutations({ setPlanningData }: UsePlanningMutationsPr
         }
       }
 
-      // Check for existing entry
-      const { data: existingData, error: selectError } = await supabase
+      // Try by engineer_id first
+      const { data: existingByEng, error: selectByEngErr } = await supabase
         .from('planning_entries')
-        .select('*')
+        .select('id')
         .eq('engineer_id', finalEngineerId)
         .eq('cw', cwBase)
         .eq('year', year)
         .maybeSingle();
 
-      if (selectError) {
-        console.error('Error checking existing entry:', selectError);
-        throw new Error('Failed to check existing entry');
+      if (selectByEngErr) {
+        console.warn('Select by engineer_id failed, will try by konstrukter:', selectByEngErr.message);
       }
 
-      if (existingData) {
-        // Update existing entry
+      if (existingByEng) {
         const { error } = await supabase
           .from('planning_entries')
           .update({ projekt: projekt })
-          .eq('engineer_id', finalEngineerId)
-          .eq('cw', cwBase)
-          .eq('year', year);
-
-        if (error) {
-          console.error('Error updating planning entry:', error);
-          throw new Error('Failed to update planning entry');
-        }
+          .eq('id', existingByEng.id);
+        if (error) throw new Error('Failed to update planning entry');
       } else {
-        // Create new entry
-        const cwNum = parseInt(cwBase.replace('CW', ''));
-        let mesic: string;
-        
-        if (year === 2025) {
-          if (cwNum <= 35) mesic = 'srpen 2025';
-          else if (cwNum <= 39) mesic = 'září 2025';
-          else if (cwNum <= 43) mesic = 'říjen 2025';
-          else if (cwNum <= 47) mesic = 'listopad 2025';
-          else mesic = 'prosinec 2025';
-        } else { // 2026
-          if (cwNum <= 5) mesic = 'leden 2026';
-          else if (cwNum <= 9) mesic = 'únor 2026';  
-          else if (cwNum <= 13) mesic = 'březen 2026';
-          else if (cwNum <= 17) mesic = 'duben 2026';
-          else if (cwNum <= 22) mesic = 'květen 2026';
-          else if (cwNum <= 26) mesic = 'červen 2026';
-          else if (cwNum <= 30) mesic = 'červenec 2026';
-          else if (cwNum <= 35) mesic = 'srpen 2026';
-          else if (cwNum <= 39) mesic = 'září 2026';
-          else if (cwNum <= 43) mesic = 'říjen 2026';
-          else if (cwNum <= 47) mesic = 'listopad 2026';
-          else mesic = 'prosinec 2026';
-        }
-
-        const newEntry: any = {
-          engineer_id: finalEngineerId,
-          konstrukter,
-          cw: cwBase,
-          year,
-          mesic,
-          projekt: projekt,
-          mh_tyden: 36,
-        };
-
-        const { error: insertError } = await supabase
+        // Fallback: find by konstrukter (legacy rows)
+        const { data: existingByName } = await supabase
           .from('planning_entries')
-          .insert(newEntry);
+          .select('id')
+          .eq('konstrukter', konstrukter)
+          .eq('cw', cwBase)
+          .eq('year', year)
+          .maybeSingle();
 
-        if (insertError) {
-          console.error('Error inserting planning entry:', insertError);
-          throw new Error('Failed to create new planning entry');
+        if (existingByName) {
+          const { error } = await supabase
+            .from('planning_entries')
+            .update({ projekt: projekt, engineer_id: finalEngineerId })
+            .eq('id', existingByName.id);
+          if (error) throw new Error('Failed to update legacy planning entry');
+        } else {
+          // Create new entry
+          const cwNum = parseInt(cwBase.replace('CW', ''));
+          let mesic: string;
+          
+          if (year === 2025) {
+            if (cwNum <= 35) mesic = 'srpen 2025';
+            else if (cwNum <= 39) mesic = 'září 2025';
+            else if (cwNum <= 43) mesic = 'říjen 2025';
+            else if (cwNum <= 47) mesic = 'listopad 2025';
+            else mesic = 'prosinec 2025';
+          } else { // 2026
+            if (cwNum <= 5) mesic = 'leden 2026';
+            else if (cwNum <= 9) mesic = 'únor 2026';  
+            else if (cwNum <= 13) mesic = 'březen 2026';
+            else if (cwNum <= 17) mesic = 'duben 2026';
+            else if (cwNum <= 22) mesic = 'květen 2026';
+            else if (cwNum <= 26) mesic = 'červen 2026';
+            else if (cwNum <= 30) mesic = 'červenec 2026';
+            else if (cwNum <= 35) mesic = 'srpen 2026';
+            else if (cwNum <= 39) mesic = 'září 2026';
+            else if (cwNum <= 43) mesic = 'říjen 2026';
+            else if (cwNum <= 47) mesic = 'listopad 2026';
+            else mesic = 'prosinec 2026';
+          }
+
+          const newEntry: any = {
+            engineer_id: finalEngineerId,
+            konstrukter,
+            cw: cwBase,
+            year,
+            mesic,
+            projekt: projekt,
+            mh_tyden: 36,
+          };
+
+          const { error: insertError } = await supabase
+            .from('planning_entries')
+            .insert(newEntry);
+
+          if (insertError) throw new Error('Failed to create new planning entry');
         }
       }
 
@@ -153,15 +159,7 @@ export function usePlanningMutations({ setPlanningData }: UsePlanningMutationsPr
         variant: "destructive",
       });
       
-      // Revert optimistic update on error
-      setPlanningData(prev => 
-        prev.map(entry => {
-          const sameRow = (entry.engineer_id === engineerId || entry.konstrukter === konstrukter) && entry.cw === cw;
-          // Note: We can't easily revert to the exact previous value here
-          // The realtime system will correct it on the next update
-          return entry;
-        })
-      );
+      // Revert optimistic update on error (no-op; realtime will resync)
     }
   }, [toast, setPlanningData, findEngineerIdByName]);
 
