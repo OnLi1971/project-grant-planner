@@ -183,6 +183,13 @@ export const PlanningEditor: React.FC = () => {
     getCurrentTimeline
   } = usePlanning();
   
+  // Convert engineers to the format expected by existing code - MOVED TO TOP
+  const allKonstrukteri = engineers.map(eng => ({
+    jmeno: eng.display_name,
+    slug: eng.slug,
+    id: eng.id
+  }));
+  
   const [projects, setProjects] = useState<DatabaseProject[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -211,13 +218,6 @@ export const PlanningEditor: React.FC = () => {
   const [availableProjectsLocal, setAvailableProjectsLocal] = useState<string[]>(availableProjects);
   const [copyFromKonstrukter, setCopyFromKonstrukter] = useState<string>('');
   const [bulkProject, setBulkProject] = useState<string>('');  // vybraný projekt (čeká na potvrzení)
-
-  // Convert engineers to the format expected by existing code
-  const allKonstrukteri = engineers.map(eng => ({
-    jmeno: eng.display_name,
-    slug: eng.slug,
-    id: eng.id
-  }));
   const [bulkHours, setBulkHours] = useState<string>('');      // hodiny v textu (kvůli prázdné hodnotě)
 
   // Načteme projekty z databáze
