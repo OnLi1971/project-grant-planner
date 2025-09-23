@@ -91,12 +91,12 @@ export function useEngineers() {
     }
   };
 
-  const createEngineer = async (displayName: string, email?: string, company?: string, hourlyRate?: number, currency?: 'EUR' | 'CZK') => {
+  const createEngineer = async (displayName: string, email?: string, status?: DatabaseEngineer['status'], company?: string, hourlyRate?: number, currency?: 'EUR' | 'CZK') => {
     try {
       const { data, error } = await supabase.rpc('engineers_create', {
         p_display_name: displayName,
         p_email: email,
-        p_status: 'active',
+        p_status: status ?? 'active',
         p_fte: 100,
         p_company: company || 'TM CZ',
         p_hourly_rate: hourlyRate,

@@ -44,7 +44,8 @@ export function usePlanningMutations({ setPlanningData }: UsePlanningMutationsPr
       const year = parseInt(yearStr);
 
       // Update existing entry - with trigger, entries should always exist
-      const { data: updateData, error: updateError } = await supabase
+      // Primary update by engineer_id
+      let { data: updateData, error: updateError } = await supabase
         .from('planning_entries')
         .update({ 
           projekt,
@@ -65,7 +66,29 @@ export function usePlanningMutations({ setPlanningData }: UsePlanningMutationsPr
         return;
       }
 
-      console.log('UPDATE successful:', updateData);
+      // Fallback: legacy rows may have NULL engineer_id but matching konstrukter
+      if (!updateData || updateData.length === 0) {
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('planning_entries')
+          .update({
+            projekt,
+            updated_at: new Date().toISOString(),
+            engineer_id: engineerId
+          })
+          .is('engineer_id', null)
+          .eq('konstrukter', konstrukter)
+          .eq('cw', cwBase)
+          .eq('year', year)
+          .select('*');
+
+        if (fallbackError) {
+          console.error('Fallback update error:', fallbackError);
+        } else {
+          updateData = fallbackData;
+        }
+      }
+
+      console.log('UPDATE successful (with possible fallback):', updateData);
 
       // FIX 1: Po UPDATE vždy potvrď pravdu cíleným dotazem
       const { data: verifyRow, error: verifyError } = await supabase
@@ -107,11 +130,13 @@ export function usePlanningMutations({ setPlanningData }: UsePlanningMutationsPr
       } else {
         console.warn('Single-row verify failed:', verifyError);
         // Fallback to optimistic update
-        setPlanningData(prev => prev.map(entry =>
-          entry.engineer_id === engineerId && entry.cw === `${cwBase}-${year}`
+        setPlanningData(prev => prev.map(entry => {
+          const matchById = entry.engineer_id === engineerId && entry.cw === `${cwBase}-${year}`;
+          const matchByNameLegacy = entry.engineer_id === null && entry.konstrukter === konstrukter && entry.cw === `${cwBase}-${year}`;
+          return (matchById || matchByNameLegacy)
             ? { ...entry, projekt }
-            : entry
-        ));
+            : entry;
+        }));
       }
 
       toast({
@@ -140,7 +165,8 @@ export function usePlanningMutations({ setPlanningData }: UsePlanningMutationsPr
       const year = parseInt(yearStr);
 
       // Update existing entry - with trigger, entries should always exist  
-      const { data: updateData, error: updateError } = await supabase
+      // Primary update by engineer_id
+      let { data: updateData, error: updateError } = await supabase
         .from('planning_entries')
         .update({ 
           mh_tyden: hours,
@@ -161,7 +187,29 @@ export function usePlanningMutations({ setPlanningData }: UsePlanningMutationsPr
         return;
       }
 
-      console.log('UPDATE hours successful:', updateData);
+      // Fallback: legacy rows may have NULL engineer_id but matching konstrukter
+      if (!updateData || updateData.length === 0) {
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('planning_entries')
+          .update({
+            mh_tyden: hours,
+            updated_at: new Date().toISOString(),
+            engineer_id: engineerId
+          })
+          .is('engineer_id', null)
+          .eq('konstrukter', konstrukter)
+          .eq('cw', cwBase)
+          .eq('year', year)
+          .select('*');
+
+        if (fallbackError) {
+          console.error('Fallback update hours error:', fallbackError);
+        } else {
+          updateData = fallbackData;
+        }
+      }
+
+      console.log('UPDATE hours successful (with possible fallback):', updateData);
 
       // FIX 1: Po UPDATE/INSERT vždy potvrď pravdu cíleným dotazem pro hodiny
       const { data: verifyRow, error: verifyError } = await supabase
