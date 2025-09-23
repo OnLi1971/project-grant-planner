@@ -161,6 +161,54 @@ export type Database = {
         }
         Relationships: []
       }
+      engineers: {
+        Row: {
+          created_at: string
+          department_id: string | null
+          display_name: string
+          email: string | null
+          end_date: string | null
+          fte_percent: number
+          handle: string | null
+          id: string
+          manager_id: string | null
+          slug: string
+          start_date: string | null
+          status: Database["public"]["Enums"]["engineer_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          department_id?: string | null
+          display_name: string
+          email?: string | null
+          end_date?: string | null
+          fte_percent?: number
+          handle?: string | null
+          id?: string
+          manager_id?: string | null
+          slug: string
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["engineer_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          department_id?: string | null
+          display_name?: string
+          email?: string | null
+          end_date?: string | null
+          fte_percent?: number
+          handle?: string | null
+          id?: string
+          manager_id?: string | null
+          slug?: string
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["engineer_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       idempotency_keys: {
         Row: {
           created_at: string
@@ -235,6 +283,7 @@ export type Database = {
           created_at: string | null
           created_by: string | null
           cw: string
+          engineer_id: string | null
           id: string
           konstrukter: string
           mesic: string
@@ -248,6 +297,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           cw: string
+          engineer_id?: string | null
           id?: string
           konstrukter: string
           mesic: string
@@ -261,6 +311,7 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           cw?: string
+          engineer_id?: string | null
           id?: string
           konstrukter?: string
           mesic?: string
@@ -523,6 +574,57 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      engineers_create: {
+        Args: {
+          p_department?: string
+          p_display_name: string
+          p_email?: string
+          p_fte?: number
+          p_manager?: string
+          p_status?: Database["public"]["Enums"]["engineer_status"]
+        }
+        Returns: {
+          created_at: string
+          department_id: string | null
+          display_name: string
+          email: string | null
+          end_date: string | null
+          fte_percent: number
+          handle: string | null
+          id: string
+          manager_id: string | null
+          slug: string
+          start_date: string | null
+          status: Database["public"]["Enums"]["engineer_status"]
+          updated_at: string
+        }
+      }
+      engineers_update: {
+        Args: {
+          p_department?: string
+          p_display_name?: string
+          p_email?: string
+          p_fte?: number
+          p_id: string
+          p_manager?: string
+          p_status?: Database["public"]["Enums"]["engineer_status"]
+        }
+        Returns: {
+          created_at: string
+          department_id: string | null
+          display_name: string
+          email: string | null
+          end_date: string | null
+          fte_percent: number
+          handle: string | null
+          id: string
+          manager_id: string | null
+          slug: string
+          start_date: string | null
+          status: Database["public"]["Enums"]["engineer_status"]
+          updated_at: string
+        }
+      }
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -531,8 +633,13 @@ export type Database = {
         Args: { name: string }
         Returns: string
       }
+      normalize_slug: {
+        Args: { p_name: string }
+        Returns: string
+      }
     }
     Enums: {
+      engineer_status: "active" | "inactive" | "contractor" | "on_leave"
       user_role: "admin" | "editor" | "viewer"
     }
     CompositeTypes: {
@@ -661,6 +768,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      engineer_status: ["active", "inactive", "contractor", "on_leave"],
       user_role: ["admin", "editor", "viewer"],
     },
   },
