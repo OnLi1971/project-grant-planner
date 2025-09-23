@@ -6,8 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, Filter, Users } from 'lucide-react';
 import { usePlanning } from '@/contexts/PlanningContext';
 import { getWeek } from 'date-fns';
-import { ENGINEERS } from '@/data/engineersList';
 import { normalizeName } from '@/utils/nameNormalization';
+import { useEngineers } from '@/hooks/useEngineers';
 
 interface EngineerOverview {
   konstrukter: string;
@@ -39,14 +39,13 @@ const getAllWeeksToEndOfYear = (): string[] => {
   return weeks;
 };
 
-// Seznam konstruktérů - sdílený seznam všech 45 jmen
-const konstrukteri = ENGINEERS;
-
-
 export const PlanningTable: React.FC = () => {
   const { planningData } = usePlanning();
+  const { engineers: konstrukteri, loading: engineersLoading } = useEngineers();
   
   const overviewData = useMemo(() => {
+    if (engineersLoading || konstrukteri.length === 0) return [];
+    
     const allWeeksToEndOfYear = getAllWeeksToEndOfYear();
     
     return konstrukteri
