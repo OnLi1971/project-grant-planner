@@ -215,13 +215,18 @@ export const PlanningEditor: React.FC = () => {
     });
     
     return generatedData;
-  }, [planningData]);
+  }, [planningData, allKonstrukteri]);
   
-  const konstrukteri = useMemo(() => allKonstrukteri.map(k => k.jmeno).sort(), []);
+  const konstrukteri = useMemo(() => allKonstrukteri.map(k => k.jmeno).sort(), [allKonstrukteri]);
   
   const [editingCell, setEditingCell] = useState<EditableCell | null>(null);
   const [editingValue, setEditingValue] = useState<string>('');
   const [selectedKonstrukter, setSelectedKonstrukter] = useState<string>(konstrukteri[0] || '');
+  useEffect(() => {
+    if ((!selectedKonstrukter || !konstrukteri.includes(selectedKonstrukter)) && konstrukteri.length > 0) {
+      setSelectedKonstrukter(konstrukteri[0]);
+    }
+  }, [konstrukteri, selectedKonstrukter]);
   const [isMultiSelectMode, setIsMultiSelectMode] = useState<boolean>(false);
   const [selectedWeeks, setSelectedWeeks] = useState<Set<string>>(new Set());
   const [availableProjectsLocal, setAvailableProjectsLocal] = useState<string[]>(availableProjects);
