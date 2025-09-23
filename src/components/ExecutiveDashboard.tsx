@@ -170,9 +170,15 @@ export const ExecutiveDashboard = () => {
       monthlyData[month] = {};
     });
 
+    // Seznam neproduktivních aktivit, které negenerují zisk
+    const nonRevenueActivities = ['FREE', 'Dovolena', 'Nemoc', 'Školení', 'Interní'];
+
     planningData.forEach(entry => {
       const projekt = entry.projekt?.trim();
       if (!projekt || projekt === '') return;
+      
+      // Přeskočit neproduktivní aktivity
+      if (nonRevenueActivities.includes(projekt)) return;
 
       const project = projects.find(p => p.code?.trim() === projekt);
       if (!project) return;
