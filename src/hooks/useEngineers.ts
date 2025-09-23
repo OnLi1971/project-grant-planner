@@ -53,7 +53,7 @@ export function useEngineers() {
       const { data, error: fetchError } = await supabase
         .from('engineers')
         .select('*')
-        .eq('status', 'active')
+        .neq('status', 'inactive')
         .order('display_name');
 
       if (fetchError) {
