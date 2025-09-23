@@ -35,7 +35,7 @@ export const OrganizationalStructure = () => {
   });
 
   // Available options for dropdowns
-  const availableCompanies = ['TM CZ a.s.', 'MB idea SK, s.r.o.', 'Subdodavka'];
+  const availableCompanies = ['TM CZ a.s.', 'MB idea SK, s.r.o.', 'AERTEC'];
   const availableLeaders = ['JoMa', 'OnLi', 'KaSo', 'PaHo', 'PeMa', 'DaAm', 'PeNe', 'Dodavatel'];
   const availablePrograms = [
     'Steam Turbines',
@@ -140,8 +140,8 @@ export const OrganizationalStructure = () => {
     if (company === 'TM CZ a.s.') {
       return <Badge variant="default" className="bg-primary text-primary-foreground">TM CZ</Badge>;
     }
-    if (company === 'Subdodavka') {
-      return <Badge variant="secondary" className="bg-orange-500 text-white">Subdodavka</Badge>;
+    if (company === 'AERTEC') {
+      return <Badge variant="secondary" className="bg-orange-500 text-white">AERTEC</Badge>;
     }
     return <Badge variant="outline" className="border-accent text-accent-foreground">MB idea SK</Badge>;
   };
@@ -378,9 +378,9 @@ export const OrganizationalStructure = () => {
             <div className="flex items-center gap-2">
               <Building className="h-4 w-4 text-muted-foreground" />
               <div>
-                <p className="text-sm font-medium">Subdodavka</p>
+                <p className="text-sm font-medium">AERTEC</p>
                 <p className="text-xl font-bold text-orange-500">
-                  {employees.filter(e => e.company === 'Subdodavka').length}
+                  {employees.filter(e => e.company === 'AERTEC').length}
                 </p>
               </div>
             </div>
