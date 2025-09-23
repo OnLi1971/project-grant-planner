@@ -48,8 +48,7 @@ export function usePlanningMutations({ setPlanningData }: UsePlanningMutationsPr
         .from('planning_entries')
         .update({ 
           projekt,
-          updated_at: new Date().toISOString(),
-          updated_by: supabase.auth.getUser().then(u => u.data.user?.id)
+          updated_at: new Date().toISOString()
         })
         .eq('engineer_id', engineerId)
         .eq('cw', cwBase)
@@ -69,9 +68,7 @@ export function usePlanningMutations({ setPlanningData }: UsePlanningMutationsPr
             year,
             mesic: new Date().toLocaleDateString('cs-CZ', { month: 'long' }),
             projekt,
-            mh_tyden: 0,
-            created_by: supabase.auth.getUser().then(u => u.data.user?.id),
-            updated_by: supabase.auth.getUser().then(u => u.data.user?.id)
+            mh_tyden: 0
           })
           .select('*');
 
@@ -168,8 +165,7 @@ export function usePlanningMutations({ setPlanningData }: UsePlanningMutationsPr
         .from('planning_entries')
         .update({ 
           mh_tyden: hours,
-          updated_at: new Date().toISOString(),
-          updated_by: supabase.auth.getUser().then(u => u.data.user?.id)
+          updated_at: new Date().toISOString()
         })
         .eq('engineer_id', engineerId)
         .eq('cw', cwBase)
@@ -189,9 +185,7 @@ export function usePlanningMutations({ setPlanningData }: UsePlanningMutationsPr
             year,
             mesic: new Date().toLocaleDateString('cs-CZ', { month: 'long' }),
             projekt: 'FREE',
-            mh_tyden: hours,
-            created_by: supabase.auth.getUser().then(u => u.data.user?.id),
-            updated_by: supabase.auth.getUser().then(u => u.data.user?.id)
+            mh_tyden: hours
           })
           .select('*');
 
