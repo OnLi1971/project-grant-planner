@@ -57,8 +57,10 @@ export function usePlanningMutations({ setPlanningData }: UsePlanningMutationsPr
 
       if (updateError) {
         console.error('Update error:', updateError);
-        
-        // If update failed, try insert
+      }
+
+      // If no rows were updated (no matching entry), insert a new one
+      if (updateError || !updateData || updateData.length === 0) {
         const { data: insertData, error: insertError } = await supabase
           .from('planning_entries')
           .insert({
@@ -76,7 +78,7 @@ export function usePlanningMutations({ setPlanningData }: UsePlanningMutationsPr
           console.error('Insert error:', insertError);
           toast({
             title: "Chyba při ukládání",
-            description: `${updateError.message} | ${insertError.message}`,
+            description: `${updateError?.message ?? '0 rows updated'} | ${insertError.message}`,
             variant: "destructive",
           });
           return;
@@ -174,8 +176,10 @@ export function usePlanningMutations({ setPlanningData }: UsePlanningMutationsPr
 
       if (updateError) {
         console.error('Update hours error:', updateError);
-        
-        // If update failed, try insert
+      }
+      
+      // If no rows were updated, insert a new one
+      if (updateError || !updateData || updateData.length === 0) {
         const { data: insertData, error: insertError } = await supabase
           .from('planning_entries')
           .insert({
@@ -193,7 +197,7 @@ export function usePlanningMutations({ setPlanningData }: UsePlanningMutationsPr
           console.error('Insert hours error:', insertError);
           toast({
             title: "Chyba při ukládání hodin",
-            description: `${updateError.message} | ${insertError.message}`,
+            description: `${updateError?.message ?? '0 rows updated'} | ${insertError.message}`,
             variant: "destructive",
           });
           return;
