@@ -9,8 +9,8 @@ import { ChevronDown } from 'lucide-react';
 import { usePlanning } from '@/contexts/PlanningContext';
 import { customers, projectManagers, programs, projects } from '@/data/projectsData';
 import { getWeek } from 'date-fns';
+import { ENGINEERS } from '@/data/engineersList';
 import { normalizeName, createNameMapping } from '@/utils/nameNormalization';
-import { useEngineers } from '@/hooks/useEngineers';
 
 // Organizational structure and project mappings
 const organizacniVedouci = [
@@ -25,6 +25,13 @@ const organizacniVedouci = [
   'Dodavatel'
 ];
 
+// Mapping of engineers to organizational leaders derived from shared list  
+const konstrukterVedouci: { [key: string]: string } = Object.fromEntries(
+  ENGINEERS.map(e => [normalizeName(e.jmeno), e.orgVedouci])
+);
+
+
+
 // Funkce pro výpočet aktuálního kalendářního týdne
 const getCurrentWeek = (): number => {
   return getWeek(new Date(), { weekStartsOn: 1 });
@@ -33,60 +40,96 @@ const getCurrentWeek = (): number => {
 // Funkce pro generování týdnů od aktuálního týdne do konce roku
 const getAllWeeks = (): string[] => {
   const currentWeek = getCurrentWeek();
-  const startWeek = Math.max(32, currentWeek);
+  const startWeek = Math.max(32, currentWeek); // Začneme od aktuálního týdne, ale minimálně od CW32
   
   const weeks = [];
   // CW32-52 pro rok 2025
   for (let cw = startWeek; cw <= 52; cw++) {
     weeks.push(`CW${cw.toString().padStart(2, '0')}-2025`);
   }
-  // CW01-52 pro rok 2026
+  // CW01-52 pro rok 2026 - opraveno na celý rok
   for (let cw = 1; cw <= 52; cw++) {
     weeks.push(`CW${cw.toString().padStart(2, '0')}-2026`);
   }
-  
   return weeks;
 };
 
 const weeks = getAllWeeks();
 
-// Měsíce pro agregaci
 const months = [
-  { name: 'Srp 2025', weeks: ['CW32-2025', 'CW33-2025', 'CW34-2025', 'CW35-2025'] },
-  { name: 'Zář 2025', weeks: ['CW36-2025', 'CW37-2025', 'CW38-2025', 'CW39-2025'] },
-  { name: 'Říj 2025', weeks: ['CW40-2025', 'CW41-2025', 'CW42-2025', 'CW43-2025'] },
-  { name: 'Lis 2025', weeks: ['CW44-2025', 'CW45-2025', 'CW46-2025', 'CW47-2025'] },
-  { name: 'Pro 2025', weeks: ['CW48-2025', 'CW49-2025', 'CW50-2025', 'CW51-2025', 'CW52-2025'] },
-  { name: 'Led 2026', weeks: ['CW01-2026', 'CW02-2026', 'CW03-2026', 'CW04-2026'] },
-  { name: 'Úno 2026', weeks: ['CW05-2026', 'CW06-2026', 'CW07-2026', 'CW08-2026'] },
-  { name: 'Bře 2026', weeks: ['CW09-2026', 'CW10-2026', 'CW11-2026', 'CW12-2026'] },
-  { name: 'Dub 2026', weeks: ['CW13-2026', 'CW14-2026', 'CW15-2026', 'CW16-2026'] },
-  { name: 'Kvě 2026', weeks: ['CW17-2026', 'CW18-2026', 'CW19-2026', 'CW20-2026'] },
-  { name: 'Čvn 2026', weeks: ['CW21-2026', 'CW22-2026', 'CW23-2026', 'CW24-2026'] },
-  { name: 'Čvc 2026', weeks: ['CW25-2026', 'CW26-2026', 'CW27-2026', 'CW28-2026'] },
-  { name: 'Srp 2026', weeks: ['CW29-2026', 'CW30-2026', 'CW31-2026', 'CW32-2026'] },
-];
+  { name: 'srpen 2025', weeks: ['CW32-2025', 'CW33-2025', 'CW34-2025', 'CW35-2025'] },
+  { name: 'září 2025', weeks: ['CW36-2025', 'CW37-2025', 'CW38-2025', 'CW39-2025'] },
+  { name: 'říjen 2025', weeks: ['CW40-2025', 'CW41-2025', 'CW42-2025', 'CW43-2025', 'CW44-2025'] },
+  { name: 'listopad 2025', weeks: ['CW45-2025', 'CW46-2025', 'CW47-2025', 'CW48-2025'] },
+  { name: 'prosinec 2025', weeks: ['CW49-2025', 'CW50-2025', 'CW51-2025', 'CW52-2025'] },
+  { name: 'leden 2026', weeks: ['CW01-2026', 'CW02-2026', 'CW03-2026', 'CW04-2026', 'CW05-2026'] },
+  { name: 'únor 2026', weeks: ['CW06-2026', 'CW07-2026', 'CW08-2026', 'CW09-2026'] },
+  { name: 'březen 2026', weeks: ['CW10-2026', 'CW11-2026', 'CW12-2026', 'CW13-2026', 'CW14-2026'] },
+  { name: 'duben 2026', weeks: ['CW15-2026', 'CW16-2026', 'CW17-2026', 'CW18-2026'] },
+  { name: 'květen 2026', weeks: ['CW19-2026', 'CW20-2026', 'CW21-2026', 'CW22-2026', 'CW23-2026'] },
+  { name: 'červen 2026', weeks: ['CW24-2026', 'CW25-2026', 'CW26-2026'] },
+  { name: 'červenec 2026', weeks: ['CW27-2026', 'CW28-2026', 'CW29-2026', 'CW30-2026'] },
+  { name: 'srpen 2026', weeks: ['CW31-2026', 'CW32-2026', 'CW33-2026', 'CW34-2026', 'CW35-2026'] },
+  { name: 'září 2026', weeks: ['CW36-2026', 'CW37-2026', 'CW38-2026', 'CW39-2026'] },
+  { name: 'říjen 2026', weeks: ['CW40-2026', 'CW41-2026', 'CW42-2026', 'CW43-2026', 'CW44-2026'] },
+  { name: 'listopad 2026', weeks: ['CW45-2026', 'CW46-2026', 'CW47-2026', 'CW48-2026'] },
+  { name: 'prosinec 2026', weeks: ['CW49-2026', 'CW50-2026', 'CW51-2026', 'CW52-2026'] }
+].map(month => ({
+  ...month,
+  weeks: month.weeks.filter(week => weeks.includes(week))
+})).filter(month => month.weeks.length > 0);
 
-export const ProjectAssignmentMatrix: React.FC = () => {
+const getProjectBadgeStyle = (projekt: string) => {
+  // Free, vacation, sick leave and overtime
+  if (projekt === 'FREE') return 'bg-muted text-muted-foreground border-muted';
+  if (projekt === 'DOVOLENÁ') return 'bg-success/30 text-success-foreground border-success dark:bg-success/40 dark:text-success-foreground';
+  if (projekt === 'NEMOC') return 'bg-destructive/30 text-destructive-foreground border-destructive dark:bg-destructive/40 dark:text-destructive-foreground';  
+  if (projekt === 'OVER') return 'bg-warning/30 text-warning-foreground border-warning dark:bg-warning/40 dark:text-warning-foreground';
+  
+  // ST projects - different shades of blue/primary
+  if (projekt === 'ST_EMU_INT') return 'bg-blue-500 text-white border-blue-600';
+  if (projekt === 'ST_TRAM_INT') return 'bg-blue-600 text-white border-blue-700';
+  if (projekt === 'ST_MAINZ') return 'bg-blue-400 text-white border-blue-500';
+  if (projekt === 'ST_KASSEL') return 'bg-blue-700 text-white border-blue-800';
+  if (projekt === 'ST_BLAVA') return 'bg-cyan-500 text-white border-cyan-600';
+  if (projekt === 'ST_FEM') return 'bg-blue-300 text-blue-900 border-blue-400';
+  if (projekt === 'ST_POZAR') return 'bg-indigo-500 text-white border-indigo-600';
+  if (projekt === 'ST_JIGS') return 'bg-sky-500 text-white border-sky-600';
+  if (projekt === 'ST_TRAM_HS') return 'bg-blue-800 text-white border-blue-900';
+  
+  // NUVIA - green family
+  if (projekt.startsWith('NU_')) return 'bg-green-600 text-white border-green-700';
+  
+  // WABTEC - orange family
+  if (projekt.startsWith('WA_')) return 'bg-orange-500 text-white border-orange-600';
+  
+  // SAFRAN - purple family
+  if (projekt.startsWith('SAF_')) return 'bg-purple-500 text-white border-purple-600';
+  
+  // BUCHER - brown family
+  if (projekt.startsWith('BUCH_')) return 'bg-amber-700 text-white border-amber-800';
+  
+  // AIRBUS - teal family
+  if (projekt.startsWith('AIRB_')) return 'bg-teal-600 text-white border-teal-700';
+  
+  // OVER (overtime) - yellow family
+  if (projekt === 'OVER') return 'bg-yellow-500 text-yellow-900 border-yellow-600';
+  
+  // Default
+  return 'bg-gray-500 text-white border-gray-600';
+};
+
+export const ProjectAssignmentMatrix = () => {
   const { planningData } = usePlanning();
-  const { engineers, loading: engineersLoading } = useEngineers();
-
-  const [viewMode, setViewMode] = useState<'weekly' | 'monthly'>('monthly');
+  const [viewMode, setViewMode] = useState<'weeks' | 'months'>('weeks');
   const [filterOrgVedouci, setFilterOrgVedouci] = useState<string[]>(['Všichni']);
-  const [filterCustomer, setFilterCustomer] = useState<string[]>(['Všichni']);
+  const [filterPM, setFilterPM] = useState<string[]>(['Všichni']);
+  const [filterZakaznik, setFilterZakaznik] = useState<string[]>(['Všichni']);
   const [filterProgram, setFilterProgram] = useState<string[]>(['Všichni']);
 
-  // Create engineer to organizational leader mapping
-  const konstrukterVedouci = useMemo(() => {
-    if (engineersLoading || engineers.length === 0) return {};
-    return Object.fromEntries(engineers.map(e => [normalizeName(e.jmeno), e.orgVedouci]));
-  }, [engineers, engineersLoading]);
-
   const displayNameMap = useMemo(() => {
-    if (engineersLoading || engineers.length === 0) return {};
-    
     const map: Record<string, string> = {};
-    engineers.forEach(e => {
+    ENGINEERS.forEach(e => {
       map[normalizeName(e.jmeno)] = e.jmeno;
     });
     planningData.forEach(e => {
@@ -94,38 +137,47 @@ export const ProjectAssignmentMatrix: React.FC = () => {
       if (!map[key]) map[key] = e.konstrukter;
     });
     return map;
-  }, [planningData, engineers, engineersLoading]);
+  }, [planningData]);
 
   // Dynamic project mappings based on projectsData
   const projektInfo = useMemo(() => {
-    const info: Record<string, { customer: string; program: string }> = {};
+    const info: { [key: string]: { zakaznik: string, pm: string, program: string } } = {};
+    
     projects.forEach(project => {
       const customer = customers.find(c => c.id === project.customerId);
-      const program = programs.find(p => p.id === project.programId);
+      const pm = projectManagers.find(p => p.id === project.projectManagerId);
+      const program = programs.find(pr => pr.id === project.programId);
+      
       info[project.code] = {
-        customer: customer ? customer.name : 'Unknown',
-        program: program ? program.name : 'Unknown'
+        zakaznik: customer?.name || 'N/A',
+        pm: pm?.name || 'N/A',
+        program: program?.code || 'N/A'
       };
     });
+    
     return info;
   }, []);
 
-  const customeryList = useMemo(() => {
-    const customerNames = Array.from(new Set(Object.values(projektInfo).map(p => p.customer)));
+  // Dynamic filter arrays based on projectsData
+  const projektManagersList = useMemo(() => {
+    const pmNames = projectManagers.map(pm => pm.name);
+    return ['Všichni', ...pmNames];
+  }, []);
+
+  const zakazniciList = useMemo(() => {
+    const customerNames = customers.map(c => c.name);
     return ['Všichni', ...customerNames];
-  }, [projektInfo]);
+  }, []);
 
   const programyList = useMemo(() => {
     const programCodes = programs.map(p => p.code);
     return ['Všichni', ...programCodes];
   }, []);
 
-  // Create matrix data structure
+// Create matrix data structure
   const matrixData = useMemo(() => {
-    if (engineersLoading || engineers.length === 0) return {};
-    
     const engineerKeys = Array.from(new Set([
-      ...engineers.map(e => normalizeName(e.jmeno)),
+      ...ENGINEERS.map(e => normalizeName(e.jmeno)),
       ...planningData.map(entry => normalizeName(entry.konstrukter))
     ]));
     const matrix: { [engineer: string]: { [week: string]: string } } = {};
@@ -134,19 +186,18 @@ export const ProjectAssignmentMatrix: React.FC = () => {
       matrix[engineerKey] = {};
       weeks.forEach(week => {
         const entry = planningData.find(e => normalizeName(e.konstrukter) === engineerKey && e.cw === week);
+        // Default to 'DOVOLENÁ' for CW52, otherwise 'FREE' if no entry exists
         matrix[engineerKey][week] = entry?.projekt || (week.includes('CW52') ? 'DOVOLENÁ' : 'FREE');
       });
     });
     
     return matrix;
-  }, [planningData, engineers, engineersLoading]);
+  }, [planningData]);
 
-  // Create monthly aggregated data
+// Create monthly aggregated data
   const monthlyData = useMemo(() => {
-    if (engineersLoading || engineers.length === 0) return {};
-    
     const engineerKeys = Array.from(new Set([
-      ...engineers.map(e => normalizeName(e.jmeno)),
+      ...ENGINEERS.map(e => normalizeName(e.jmeno)),
       ...planningData.map(entry => normalizeName(entry.konstrukter))
     ]));
     const monthlyMatrix: { [engineer: string]: { [month: string]: { projects: string[], totalHours: number, dominantProject: string } } } = {};
@@ -158,25 +209,30 @@ export const ProjectAssignmentMatrix: React.FC = () => {
         let totalHours = 0;
         
         month.weeks.forEach(week => {
-          const weekData = matrixData[engineerKey]?.[week];
-          if (weekData && weekData !== 'FREE') {
-            monthProjects[weekData] = (monthProjects[weekData] || 0) + 1;
-            totalHours += 40; // Předpokládáme 40h týdně pro jednoduchost
+          const entry = planningData.find(e => normalizeName(e.konstrukter) === engineerKey && e.cw === week);
+          let projekt: string;
+          let hours: number;
+          
+          if (entry && entry.projekt) {
+            projekt = entry.projekt;
+            hours = typeof entry.mhTyden === 'number' ? entry.mhTyden : 0;
+          } else {
+            // Default values for weeks without entries
+            projekt = week.includes('CW52') ? 'DOVOLENÁ' : 'FREE';
+            hours = 36; // Default hours
           }
+          
+          monthProjects[projekt] = (monthProjects[projekt] || 0) + hours;
+          totalHours += hours;
         });
         
-        // Najdi dominantní projekt
-        let dominantProject = 'FREE';
-        let maxWeeks = 0;
-        Object.entries(monthProjects).forEach(([project, weekCount]) => {
-          if (weekCount > maxWeeks) {
-            maxWeeks = weekCount;
-            dominantProject = project;
-          }
-        });
+        const projects = Object.keys(monthProjects);
+        const dominantProject = projects.reduce((a, b) => 
+          monthProjects[a] > monthProjects[b] ? a : b, projects[0] || ''
+        );
         
         monthlyMatrix[engineerKey][month.name] = {
-          projects: Object.keys(monthProjects),
+          projects,
           totalHours,
           dominantProject
         };
@@ -184,35 +240,31 @@ export const ProjectAssignmentMatrix: React.FC = () => {
     });
     
     return monthlyMatrix;
-  }, [matrixData, engineers, engineersLoading]);
+  }, [planningData]);
 
-  // Get unique engineers from planning data
-  const allEngineersInData = useMemo(() => {
-    if (engineersLoading || engineers.length === 0) return [];
-    
-    const engineersSet = new Set([
-      ...planningData.map(entry => normalizeName(entry.konstrukter)),
-      ...engineers.map(e => normalizeName(e.jmeno)),
-    ]);
-    return Array.from(engineersSet).sort();
-  }, [planningData, engineers, engineersLoading]);
+  // Get display data based on view mode
+  const displayData = viewMode === 'weeks' ? matrixData : monthlyData;
 
-  // Get unique engineers from planning data and database
-  const uniqueEngineersInData = useMemo(() => {
-    if (engineersLoading || engineers.length === 0) return [];
-    
-    const engineersSet = new Set([
-      ...planningData.map(entry => normalizeName(entry.konstrukter)),
-      ...engineers.map(e => normalizeName(e.jmeno)),
-    ]);
-    return Array.from(engineersSet).sort();
-  }, [planningData, engineers, engineersLoading]);
+  // Helper functions for multi-select
+  const toggleFilterValue = (currentFilter: string[], value: string, setter: (value: string[]) => void) => {
+    if (value === 'Všichni') {
+      setter(['Všichni']);
+    } else {
+      const filteredArray = currentFilter.filter(item => item !== 'Všichni');
+      if (filteredArray.includes(value)) {
+        const newArray = filteredArray.filter(item => item !== value);
+        setter(newArray.length === 0 ? ['Všichni'] : newArray);
+      } else {
+        setter([...filteredArray, value]);
+      }
+    }
+  };
 
-  const displayData = viewMode === 'weekly' ? matrixData : monthlyData;
-  const displayHeaders = viewMode === 'weekly' ? weeks : months.map(m => m.name);
+  const isFilterActive = (filter: string[], value: string) => {
+    return filter.includes(value) || (filter.includes('Všichni') && value === 'Všichni');
+  };
 
-  // Multi-select helper function for displaying selected items
-  const getDisplayText = (filter: string[]) => {
+  const getFilterDisplayText = (filter: string[]) => {
     if (filter.includes('Všichni') || filter.length === 0) {
       return 'Všichni';
     }
@@ -224,235 +276,372 @@ export const ProjectAssignmentMatrix: React.FC = () => {
 
   // Filter engineers based on selected filters
   const filteredEngineers = useMemo(() => {
-    if (engineersLoading || engineers.length === 0) return [];
-    
-    let engineerList = Object.keys(displayData);
+    let engineers = Object.keys(displayData);
     
     // Filter by organizational leader
     if (!filterOrgVedouci.includes('Všichni')) {
-      engineerList = engineerList.filter(engineer => 
+      engineers = engineers.filter(engineer => 
         filterOrgVedouci.includes(konstrukterVedouci[engineer])
       );
     }
-
-    // Filter by customer
-    if (!filterCustomer.includes('Všichni')) {
-      engineerList = engineerList.filter(engineer => {
-        if (engineersLoading || engineers.length === 0) return false;
-        
-        // Check if engineer has any project assigned from selected customers
-        const engineerData = displayData[engineer];
-        if (!engineerData) return false;
-        
-        const hasCustomerProject = Object.values(engineerData).some((cellData: any) => {
-          if (viewMode === 'weekly') {
-            const project = cellData as string;
-            const projectInfo = projektInfo[project];
-            return projectInfo && filterCustomer.includes(projectInfo.customer);
-          } else {
-            const monthData = cellData as { projects: string[], dominantProject: string };
-            return monthData.projects.some(project => {
-              const projectInfo = projektInfo[project];
-              return projectInfo && filterCustomer.includes(projectInfo.customer);
-            });
-          }
+    
+    if (viewMode === 'weeks') {
+      // Filter by PM
+      if (!filterPM.includes('Všichni')) {
+        engineers = engineers.filter(engineer => {
+          return weeks.some(week => {
+            const project = matrixData[engineer][week];
+            return projektInfo[project]?.pm && filterPM.includes(projektInfo[project].pm);
+          });
         });
-        
-        return hasCustomerProject;
-      });
-    }
-
-    // Filter by program
-    if (!filterProgram.includes('Všichni')) {
-      engineerList = engineerList.filter(engineer => {
-        if (engineersLoading || engineers.length === 0) return false;
-        
-        // Check if engineer has any project assigned from selected programs
-        const engineerData = displayData[engineer];
-        if (!engineerData) return false;
-        
-        const hasProgramProject = Object.values(engineerData).some((cellData: any) => {
-          if (viewMode === 'weekly') {
-            const project = cellData as string;
-            const projectInfo = projektInfo[project];
-            return projectInfo && filterProgram.includes(projectInfo.program);
-          } else {
-            const monthData = cellData as { projects: string[], dominantProject: string };
-            return monthData.projects.some(project => {
-              const projectInfo = projektInfo[project];
-              return projectInfo && filterProgram.includes(projectInfo.program);
-            });
-          }
+      }
+      
+      // Filter by customer
+      if (!filterZakaznik.includes('Všichni')) {
+        engineers = engineers.filter(engineer => {
+          return weeks.some(week => {
+            const project = matrixData[engineer][week];
+            return projektInfo[project]?.zakaznik && filterZakaznik.includes(projektInfo[project].zakaznik);
+          });
         });
-        
-        return hasProgramProject;
-      });
+      }
+      
+      // Filter by program
+      if (!filterProgram.includes('Všichni')) {
+        engineers = engineers.filter(engineer => {
+          return weeks.some(week => {
+            const project = matrixData[engineer][week];
+            return projektInfo[project]?.program && filterProgram.includes(projektInfo[project].program);
+          });
+        });
+      }
+    } else {
+      // Monthly view filters
+      if (!filterPM.includes('Všichni')) {
+        engineers = engineers.filter(engineer => {
+          return months.some(month => {
+            const monthData = monthlyData[engineer][month.name];
+            return monthData.projects.some(project => 
+              projektInfo[project]?.pm && filterPM.includes(projektInfo[project].pm)
+            );
+          });
+        });
+      }
+      
+      if (!filterZakaznik.includes('Všichni')) {
+        engineers = engineers.filter(engineer => {
+          return months.some(month => {
+            const monthData = monthlyData[engineer][month.name];
+            return monthData.projects.some(project => 
+              projektInfo[project]?.zakaznik && filterZakaznik.includes(projektInfo[project].zakaznik)
+            );
+          });
+        });
+      }
+      
+      if (!filterProgram.includes('Všichni')) {
+        engineers = engineers.filter(engineer => {
+          return months.some(month => {
+            const monthData = monthlyData[engineer][month.name];
+            return monthData.projects.some(project => 
+              projektInfo[project]?.program && filterProgram.includes(projektInfo[project].program)
+            );
+          });
+        });
+      }
     }
-
-    return engineerList.sort((a, b) => {
-      const displayNameA = displayNameMap[a] || a;
-      const displayNameB = displayNameMap[b] || b;
-      return displayNameA.localeCompare(displayNameB);
-    });
-  }, [displayData, filterOrgVedouci, filterCustomer, filterProgram, konstrukterVedouci, displayNameMap, projektInfo, viewMode, engineers, engineersLoading]);
-
-  const getBadgeForProject = (project: string) => {
-    if (project === 'FREE') return <Badge variant="secondary" className="bg-green-100 text-green-800">FREE</Badge>;
-    if (project === 'DOVOLENÁ') return <Badge variant="outline" className="bg-blue-100 text-blue-800">Dovolená</Badge>;
-    if (project === 'NEMOC') return <Badge variant="destructive">Nemoc</Badge>;
-    if (project === 'OVER') return <Badge variant="outline" className="bg-orange-100 text-orange-800">Over</Badge>;
     
-    const info = projektInfo[project];
-    const customer = info?.customer || 'Unknown';
-    
-    // Color coding based on customer
-    let badgeClass = "bg-gray-100 text-gray-800";
-    if (customer.includes('Siemens')) badgeClass = "bg-blue-100 text-blue-800";
-    if (customer.includes('NUVIA')) badgeClass = "bg-green-100 text-green-800";
-    if (customer.includes('Wabtec')) badgeClass = "bg-purple-100 text-purple-800";
-    if (customer.includes('Safran')) badgeClass = "bg-red-100 text-red-800";
-    
-    return <Badge className={badgeClass}>{project}</Badge>;
-  };
-
-  if (engineersLoading) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="text-center">Načítání konstruktérů...</div>
-        </CardContent>
-      </Card>
-    );
-  }
+    return engineers.sort();
+  }, [displayData, matrixData, monthlyData, viewMode, filterOrgVedouci, filterPM, filterZakaznik, filterProgram]);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Matice přiřazení projektů</CardTitle>
-        <div className="flex flex-wrap gap-4 items-center">
-          <Select value={viewMode} onValueChange={(value: 'weekly' | 'monthly') => setViewMode(value)}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="weekly">Týdně</SelectItem>
-              <SelectItem value="monthly">Měsíčně</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="justify-between">
-                {getDisplayText(filterOrgVedouci)}
-                <ChevronDown className="ml-2 h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-56">
-              <div className="space-y-2">
-                <h4 className="font-medium">Organizační vedoucí</h4>
-                {organizacniVedouci.map((vedouci) => (
-                  <div key={vedouci} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={vedouci}
-                      checked={filterOrgVedouci.includes(vedouci)}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          if (vedouci === 'Všichni') {
-                            setFilterOrgVedouci(['Všichni']);
-                          } else {
-                            setFilterOrgVedouci(prev => 
-                              prev.filter(v => v !== 'Všichni').concat(vedouci)
-                            );
-                          }
-                        } else {
-                          setFilterOrgVedouci(prev => prev.filter(v => v !== vedouci));
-                        }
-                      }}
-                    />
-                    <label htmlFor={vedouci} className="text-sm">{vedouci}</label>
+    <div className="p-6 space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold">Matice plánování projektů</CardTitle>
+          <div className="flex items-center gap-4 mt-4">
+            <label className="text-sm font-medium">Zobrazení:</label>
+            <Select value={viewMode} onValueChange={(value: 'weeks' | 'months') => setViewMode(value)}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="weeks">Týdny</SelectItem>
+                <SelectItem value="months">Měsíce</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {/* Filters */}
+          <div className="grid grid-cols-4 gap-4 mb-6">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Organizační vedoucí</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-between">
+                    {getFilterDisplayText(filterOrgVedouci)}
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-60 p-0" align="start">
+                  <div className="p-2 max-h-64 overflow-y-auto">
+                    {organizacniVedouci.map(vedouci => (
+                      <div key={vedouci} className="flex items-center space-x-2 py-2 px-2 rounded hover:bg-muted/50">
+                        <Checkbox
+                          id={`org-${vedouci}`}
+                          checked={isFilterActive(filterOrgVedouci, vedouci)}
+                          onCheckedChange={() => toggleFilterValue(filterOrgVedouci, vedouci, setFilterOrgVedouci)}
+                        />
+                        <label htmlFor={`org-${vedouci}`} className="text-sm cursor-pointer flex-1">
+                          {vedouci}
+                        </label>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
-
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="justify-between">
-                {getDisplayText(filterCustomer)}
-                <ChevronDown className="ml-2 h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-56">
-              <div className="space-y-2">
-                <h4 className="font-medium">Zákazník</h4>
-                {customeryList.map((customer) => (
-                  <div key={customer} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={customer}
-                      checked={filterCustomer.includes(customer)}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          if (customer === 'Všichni') {
-                            setFilterCustomer(['Všichni']);
-                          } else {
-                            setFilterCustomer(prev => 
-                              prev.filter(v => v !== 'Všichni').concat(customer)
-                            );
-                          }
-                        } else {
-                          setFilterCustomer(prev => prev.filter(v => v !== customer));
-                        }
-                      }}
-                    />
-                    <label htmlFor={customer} className="text-sm">{customer}</label>
+                </PopoverContent>
+              </Popover>
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium mb-2 block">Project Manager</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-between">
+                    {getFilterDisplayText(filterPM)}
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-60 p-0" align="start">
+                  <div className="p-2 max-h-64 overflow-y-auto">
+                    {projektManagersList.map(pm => (
+                      <div key={pm} className="flex items-center space-x-2 py-2 px-2 rounded hover:bg-muted/50">
+                        <Checkbox
+                          id={`pm-${pm}`}
+                          checked={isFilterActive(filterPM, pm)}
+                          onCheckedChange={() => toggleFilterValue(filterPM, pm, setFilterPM)}
+                        />
+                        <label htmlFor={`pm-${pm}`} className="text-sm cursor-pointer flex-1">
+                          {pm}
+                        </label>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr>
-                <th className="border p-2 text-left bg-muted sticky left-0">Konstruktér</th>
-                {displayHeaders.map(header => (
-                  <th key={header} className="border p-2 text-center min-w-[100px]">{header}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filteredEngineers.map(engineer => (
-                <tr key={engineer}>
-                  <td className="border p-2 font-medium bg-muted sticky left-0">
-                    {displayNameMap[engineer] || engineer}
-                  </td>
-                  {displayHeaders.map(header => {
-                    const cellData = displayData[engineer]?.[header];
-                    return (
-                      <td key={header} className="border p-1 text-center">
-                        {viewMode === 'weekly' ? (
-                          getBadgeForProject(cellData as string || 'FREE')
-                        ) : (
-                          <div className="space-y-1">
-                            {cellData && (cellData as any).dominantProject ? 
-                              getBadgeForProject((cellData as any).dominantProject) : 
-                              getBadgeForProject('FREE')
-                            }
+                </PopoverContent>
+              </Popover>
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium mb-2 block">Zákazník</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-between">
+                    {getFilterDisplayText(filterZakaznik)}
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-60 p-0" align="start">
+                  <div className="p-2 max-h-64 overflow-y-auto">
+                    {zakazniciList.map(zakaznik => (
+                      <div key={zakaznik} className="flex items-center space-x-2 py-2 px-2 rounded hover:bg-muted/50">
+                        <Checkbox
+                          id={`customer-${zakaznik}`}
+                          checked={isFilterActive(filterZakaznik, zakaznik)}
+                          onCheckedChange={() => toggleFilterValue(filterZakaznik, zakaznik, setFilterZakaznik)}
+                        />
+                        <label htmlFor={`customer-${zakaznik}`} className="text-sm cursor-pointer flex-1">
+                          {zakaznik}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium mb-2 block">Program</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-between">
+                    {getFilterDisplayText(filterProgram)}
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-60 p-0" align="start">
+                  <div className="p-2 max-h-64 overflow-y-auto">
+                    {programyList.map(program => (
+                      <div key={program} className="flex items-center space-x-2 py-2 px-2 rounded hover:bg-muted/50">
+                        <Checkbox
+                          id={`program-${program}`}
+                          checked={isFilterActive(filterProgram, program)}
+                          onCheckedChange={() => toggleFilterValue(filterProgram, program, setFilterProgram)}
+                        />
+                        <label htmlFor={`program-${program}`} className="text-sm cursor-pointer flex-1">
+                          {program}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+
+          {/* Matrix Table */}
+          <div className="overflow-x-auto overflow-y-auto max-h-[85vh]">
+            <table className="w-full border-collapse">
+              <thead className="sticky top-0 z-20">
+                {viewMode === 'weeks' ? (
+                  <>
+                    <tr>
+                      <th className="border-2 border-border p-2 bg-background text-left sticky left-0 sticky top-0 z-30 min-w-[200px] font-semibold text-sm">
+                        Konstruktér
+                      </th>
+                      {months.map((month, monthIndex) => (
+                        <th 
+                          key={month.name} 
+                          className={`border-2 border-border p-2 bg-background text-center font-bold text-base sticky top-0 z-20 ${
+                            monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
+                          }`} 
+                          colSpan={month.weeks.length}
+                        >
+                          <div className="flex items-center justify-center gap-2">
+                            <span className="text-primary">{month.name}</span>
                           </div>
-                        )}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </CardContent>
-    </Card>
+                        </th>
+                      ))}
+                    </tr>
+                    <tr>
+                      <th className="border border-border p-1.5 bg-background sticky left-0 sticky top-[48px] z-30 font-medium text-sm"></th>
+                      {months.map((month, monthIndex) => 
+                        month.weeks.map((week, weekIndex) => (
+                          <th 
+                            key={week} 
+                            className={`border border-border p-1.5 bg-background text-xs min-w-[90px] font-medium sticky top-[48px] z-20 ${
+                              monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
+                            }`}
+                          >
+                            <span className="text-muted-foreground">{week}</span>
+                          </th>
+                        ))
+                      )}
+                    </tr>
+                  </>
+                ) : (
+                  <tr>
+                    <th className="border-2 border-border p-2 bg-background text-left sticky left-0 sticky top-0 z-30 min-w-[200px] font-semibold text-sm">
+                      Konstruktér
+                    </th>
+                    {months.map((month, monthIndex) => (
+                      <th 
+                        key={month.name} 
+                        className={`border-2 border-border p-2 bg-background text-center font-bold text-base min-w-[150px] sticky top-0 z-20 ${
+                          monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
+                        }`}
+                      >
+                        <div className="flex items-center justify-center gap-2">
+                          <span className="text-primary">{month.name}</span>
+                        </div>
+                      </th>
+                    ))}
+                  </tr>
+                )}
+              </thead>
+              <tbody>
+                {filteredEngineers.map((engineer, index) => (
+                  <tr key={engineer} className={`transition-colors hover:bg-muted/20 ${index % 2 === 1 ? 'bg-muted/30' : 'bg-background'}`}>
+                    <td className="border border-border p-2 font-semibold sticky left-0 bg-inherit z-10 text-foreground text-sm">
+                      {displayNameMap[engineer] || engineer}
+                    </td>
+                    {viewMode === 'weeks' ? (
+                      months.map((month, monthIndex) => 
+                        month.weeks.map((week, weekIndex) => {
+                          const project = matrixData[engineer][week];
+                          return (
+                            <td 
+                              key={week} 
+                              className={`border border-border p-1 text-center ${
+                                monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
+                              }`}
+                            >
+                              {project && (
+                                <div 
+                                  className={`text-xs px-1.5 py-0.5 w-full justify-center font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-md inline-flex items-center ${getProjectBadgeStyle(project)}`}
+                                >
+                                  <span className="truncate max-w-[65px]" title={project}>
+                                    {project}
+                                  </span>
+                                </div>
+                              )}
+                            </td>
+                          );
+                        })
+                      )
+                    ) : (
+                      months.map((month, monthIndex) => {
+                        const monthData = monthlyData[engineer][month.name];
+                        const hasProjects = monthData.projects.length > 0;
+                        
+                        // Sort projects by hours descending
+                        const sortedProjects = monthData.projects.sort((a, b) => {
+                          const aHours = month.weeks.reduce((sum, week) => {
+                            const entry = planningData.find(e => normalizeName(e.konstrukter) === engineer && e.cw === week && e.projekt === a);
+                            return sum + (typeof entry?.mhTyden === 'number' ? entry.mhTyden : 0);
+                          }, 0);
+                          const bHours = month.weeks.reduce((sum, week) => {
+                            const entry = planningData.find(e => normalizeName(e.konstrukter) === engineer && e.cw === week && e.projekt === b);
+                            return sum + (typeof entry?.mhTyden === 'number' ? entry.mhTyden : 0);
+                          }, 0);
+                          return bHours - aHours;
+                        });
+                        
+                        return (
+                           <td 
+                             key={month.name} 
+                             className={`border border-border p-1.5 text-center align-top ${
+                               monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
+                             }`}
+                           >
+                              {hasProjects && (
+                                <div className="flex flex-col gap-1">
+                                  {/* Main project */}
+                                  <div 
+                                    className={`text-xs px-1.5 py-0.5 w-full justify-center font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-md inline-flex items-center ${getProjectBadgeStyle(sortedProjects[0])}`}
+                                  >
+                                    <span className="truncate max-w-[95px]" title={sortedProjects[0]}>
+                                      {sortedProjects[0]}
+                                    </span>
+                                  </div>
+                                  
+                                  {/* Additional projects */}
+                                  {sortedProjects.slice(1).map((project, index) => (
+                                    <div 
+                                      key={index}
+                                      className={`text-xs px-1 py-0.5 w-full justify-center font-normal opacity-75 rounded-sm inline-flex items-center ${getProjectBadgeStyle(project)}`}
+                                    >
+                                      <span className="truncate max-w-[85px] text-xs" title={project}>
+                                        {project}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                           </td>
+                        );
+                      })
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          
+          <div className="mt-4 text-sm text-muted-foreground">
+            Zobrazeno {filteredEngineers.length} konstruktérů
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
