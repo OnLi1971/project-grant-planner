@@ -42,30 +42,33 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     loadPlanningData('initial');
   }, [loadPlanningData]);
 
+  // FIX 4: Realtime jen "nakopává" – žádné paralelní refetch
+  const debouncedRealtimeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  
+  const debouncedRealtime = useCallback(() => {
+    if (debouncedRealtimeRef.current) {
+      clearTimeout(debouncedRealtimeRef.current);
+    }
+    debouncedRealtimeRef.current = setTimeout(() => {
+      console.log('Debounced realtime trigger - calling loadPlanningData');
+      loadPlanningData('realtime');
+    }, 250); // 250ms debounce
+  }, [loadPlanningData]);
+
   // Realtime subscription setup
   useEffect(() => {
     if (isRealtimeEnabled) {
       console.log('Setting up realtime subscription for planning_entries');
       
-      const debouncedRealtimeHandler = (payload: any) => {
-        console.log('Realtime change detected:', payload);
-        
-        if (debounceTimeoutRef.current) {
-          clearTimeout(debounceTimeoutRef.current);
-        }
-        
-        debounceTimeoutRef.current = setTimeout(() => {
-          console.log(`Debounced realtime revalidation after ${DEBOUNCE_MS}ms`);
-          loadPlanningData('realtime_debounced');
-          debounceTimeoutRef.current = null;
-        }, DEBOUNCE_MS);
-      };
-
       const subscription = supabase
         .channel('planning_entries_changes_unique')
         .on('postgres_changes', 
           { event: '*', schema: 'public', table: 'planning_entries' },
-          debouncedRealtimeHandler
+          (payload) => {
+            console.log('Realtime change detected:', payload);
+            // FIX 4: Use debounced handler instead of manual timeout
+            debouncedRealtime();
+          }
         )
         .subscribe();
 
@@ -73,14 +76,13 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
       return () => {
         console.log('Cleaning up realtime subscription');
-        if (debounceTimeoutRef.current) {
-          clearTimeout(debounceTimeoutRef.current);
-          debounceTimeoutRef.current = null;
+        if (debouncedRealtimeRef.current) {
+          clearTimeout(debouncedRealtimeRef.current);
         }
         subscription.unsubscribe();
       };
     }
-  }, [loadPlanningData, isRealtimeEnabled]);
+  }, [isRealtimeEnabled, debouncedRealtime]);
 
   // Wrapper functions to maintain backwards compatibility
   const updatePlanningEntry = useCallback(async (konstrukter: string, cw: string, projekt: string) => {

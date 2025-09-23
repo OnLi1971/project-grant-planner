@@ -32,273 +32,245 @@ export function usePlanningMutations({ setPlanningData }: UsePlanningMutationsPr
   }, []);
 
   const updatePlanningEntry = useCallback(async (
-    engineerId: string, 
+    engineerId: string,
     konstrukter: string, 
     cw: string, 
     projekt: string
   ) => {
     try {
-      // Optimistically update local state - FIX F2 podle návodu (použít engineer_id místo konstrukter)
-      setPlanningData(prev => 
-        prev.map(entry => {
-          const sameRow = entry.engineer_id === engineerId && entry.cw === cw;
-          return sameRow ? { ...entry, projekt: projekt } : entry;
-        })
-      );
-
-      // Parse CW and year
-      let cwBase: string, year: number;
+      console.log('UPDATE_INTENT:', { engineerId, konstrukter, cw, projekt });
       
-      if (cw.includes('-')) {
-        [cwBase,] = cw.split('-');
-        const yearPart = cw.split('-')[1];
-        year = parseInt(yearPart);
-      } else {
-        cwBase = cw;
-        year = 2026; // Default for entries without explicit year
-      }
+      const [cwBase, yearStr] = cw.includes('-') ? cw.split('-') : [cw, new Date().getFullYear().toString()];
+      const year = parseInt(yearStr);
 
-      // Ensure we have engineer_id
-      let finalEngineerId = engineerId;
-      if (!finalEngineerId) {
-        finalEngineerId = await findEngineerIdByName(konstrukter);
-        if (!finalEngineerId) {
-          throw new Error(`Engineer not found: ${konstrukter}`);
-        }
-      }
-
-      // Check for existing entry (all entries now have engineer_id)
-      const { data: existingData, error: selectError } = await supabase
+      // First attempt: update existing entry
+      const { data: updateData, error: updateError } = await supabase
         .from('planning_entries')
-        .select('id')
-        .eq('engineer_id', finalEngineerId)
+        .update({ 
+          projekt,
+          updated_at: new Date().toISOString(),
+          updated_by: supabase.auth.getUser().then(u => u.data.user?.id)
+        })
+        .eq('engineer_id', engineerId)
         .eq('cw', cwBase)
         .eq('year', year)
-        .maybeSingle();
+        .select('*');
 
-      if (selectError) {
-        console.error('Error checking existing entry:', selectError);
-        throw new Error('Failed to check existing entry');
-      }
-
-      // A. PŘED UPDATE - debugging podle návodu
-      console.log('UPDATE_INTENT', { engineerId: finalEngineerId, konstrukter, cw: cwBase, year, newProjekt: projekt });
-
-      if (existingData) {
-        // Update existing entry
-        const { error } = await supabase
-          .from('planning_entries')
-          .update({ projekt: projekt })
-          .eq('id', existingData.id);
-
-        if (error) {
-          console.error('Error updating planning entry:', error);
-          throw new Error('Failed to update planning entry');
-        }
-
-        // B. HNED PO UPDATE - jednořádkový refetch podle návodu
-        const { data: row } = await supabase
-          .from('planning_entries')
-          .select('engineer_id,cw,year,projekt,updated_at')
-          .eq('engineer_id', finalEngineerId)
-          .eq('cw', cwBase)
-          .eq('year', year)
-          .single();
-
-        console.log('ROW_AFTER_UPDATE', row);
-      } else {
-        // Create new entry
-        const cwNum = parseInt(cwBase.replace('CW', ''));
-        let mesic: string;
+      if (updateError) {
+        console.error('Update error:', updateError);
         
-        if (year === 2025) {
-          if (cwNum <= 35) mesic = 'srpen 2025';
-          else if (cwNum <= 39) mesic = 'září 2025';
-          else if (cwNum <= 43) mesic = 'říjen 2025';
-          else if (cwNum <= 47) mesic = 'listopad 2025';
-          else mesic = 'prosinec 2025';
-        } else { // 2026
-          if (cwNum <= 5) mesic = 'leden 2026';
-          else if (cwNum <= 9) mesic = 'únor 2026';  
-          else if (cwNum <= 13) mesic = 'březen 2026';
-          else if (cwNum <= 17) mesic = 'duben 2026';
-          else if (cwNum <= 22) mesic = 'květen 2026';
-          else if (cwNum <= 26) mesic = 'červen 2026';
-          else if (cwNum <= 30) mesic = 'červenec 2026';
-          else if (cwNum <= 35) mesic = 'srpen 2026';
-          else if (cwNum <= 39) mesic = 'září 2026';
-          else if (cwNum <= 43) mesic = 'říjen 2026';
-          else if (cwNum <= 47) mesic = 'listopad 2026';
-          else mesic = 'prosinec 2026';
-        }
-
-        const newEntry: any = {
-          engineer_id: finalEngineerId,
-          konstrukter,
-          cw: cwBase,
-          year,
-          mesic,
-          projekt: projekt,
-          mh_tyden: 36,
-        };
-
-        const { error: insertError } = await supabase
+        // If update failed, try insert
+        const { data: insertData, error: insertError } = await supabase
           .from('planning_entries')
-          .insert(newEntry);
+          .insert({
+            engineer_id: engineerId,
+            konstrukter,
+            cw: cwBase,
+            year,
+            mesic: new Date().toLocaleDateString('cs-CZ', { month: 'long' }),
+            projekt,
+            mh_tyden: 0,
+            created_by: supabase.auth.getUser().then(u => u.data.user?.id),
+            updated_by: supabase.auth.getUser().then(u => u.data.user?.id)
+          })
+          .select('*');
 
         if (insertError) {
-          console.error('Error inserting planning entry:', insertError);
-          throw new Error('Failed to create new planning entry');
+          console.error('Insert error:', insertError);
+          toast({
+            title: "Chyba při ukládání",
+            description: `${updateError.message} | ${insertError.message}`,
+            variant: "destructive",
+          });
+          return;
         }
+
+        console.log('INSERT successful:', insertData);
+      } else {
+        console.log('UPDATE successful:', updateData);
+        console.log('ROW_AFTER_UPDATE:', updateData?.[0]);
+      }
+
+      // FIX 1: Po UPDATE vždy potvrď pravdu cíleným dotazem
+      const { data: verifyRow, error: verifyError } = await supabase
+        .from('planning_entries')
+        .select('engineer_id,cw,year,projekt,mh_tyden,updated_at')
+        .eq('engineer_id', engineerId)
+        .eq('cw', cwBase)          // POZOR: cw bez roku (např. 'CW31')
+        .eq('year', year)          // rok zvlášť
+        .single();
+
+      if (!verifyError && verifyRow) {
+        console.log('SINGLE_ROW_VERIFY:', verifyRow);
+        // FIX 2: Patchni přes primární klíč (engineer_id, cw, year), ne přes jméno/cw_full
+        setPlanningData(prev => {
+          const sameRow = (e: any) => e.engineer_id === verifyRow.engineer_id && 
+                                      e.cw === `${verifyRow.cw}-${verifyRow.year}`;
+          
+          const exists = prev.some(sameRow);
+          
+          if (exists) {
+            return prev.map(entry =>
+              sameRow(entry)
+                ? { ...entry, projekt: verifyRow.projekt, mhTyden: verifyRow.mh_tyden }
+                : entry
+            );
+          } else {
+            // Add new entry if not exists
+            const newEntry: PlanningEntry = {
+              engineer_id: verifyRow.engineer_id,
+              konstrukter,
+              cw: `${verifyRow.cw}-${verifyRow.year}`,
+              mesic: new Date().toLocaleDateString('cs-CZ', { month: 'long' }),
+              projekt: verifyRow.projekt,
+              mhTyden: verifyRow.mh_tyden
+            };
+            return [...prev, newEntry];
+          }
+        });
+      } else {
+        console.warn('Single-row verify failed:', verifyError);
+        // Fallback to optimistic update
+        setPlanningData(prev => prev.map(entry =>
+          entry.engineer_id === engineerId && entry.cw === `${cwBase}-${year}`
+            ? { ...entry, projekt }
+            : entry
+        ));
       }
 
       toast({
-        title: "Změna uložena",
-        description: `Hodnota byla úspěšně aktualizována.`,
+        title: "Projekt aktualizován",
+        description: `${konstrukter}: ${cw} → ${projekt}`,
       });
 
-    } catch (error: any) {
-      console.error('Error in updatePlanningEntry:', error);
+    } catch (error) {
+      console.error('Unexpected error in updatePlanningEntry:', error);
       toast({
-        title: "Chyba při ukládání",
-        description: error.message || "Nepodařilo se uložit změnu.",
+        title: "Neočekávaná chyba",
+        description: "Kontaktujte podporu",
         variant: "destructive",
       });
     }
-  }, [toast, setPlanningData, findEngineerIdByName]);
+  }, [setPlanningData]);
 
   const updatePlanningHours = useCallback(async (
     engineerId: string,
-    konstrukter: string, 
-    cw: string, 
+    konstrukter: string,
+    cw: string,
     hours: number
   ) => {
     try {
-      // Optimistically update local state - FIX F2 podle návodu (použít engineer_id místo konstrukter)
-      setPlanningData(prev => 
-        prev.map(entry => {
-          const sameRow = entry.engineer_id === engineerId && entry.cw === cw;
-          return sameRow ? { ...entry, mhTyden: hours } : entry;
-        })
-      );
+      const [cwBase, yearStr] = cw.includes('-') ? cw.split('-') : [cw, new Date().getFullYear().toString()];
+      const year = parseInt(yearStr);
 
-      // Parse CW and year
-      let cwBase: string, year: number;
-      
-      if (cw.includes('-')) {
-        [cwBase,] = cw.split('-');
-        const yearPart = cw.split('-')[1];
-        year = parseInt(yearPart);
-      } else {
-        cwBase = cw;
-        year = 2026;
-      }
-
-      // Ensure we have engineer_id
-      let finalEngineerId = engineerId;
-      if (!finalEngineerId) {
-        finalEngineerId = await findEngineerIdByName(konstrukter);
-        if (!finalEngineerId) {
-          throw new Error(`Engineer not found: ${konstrukter}`);
-        }
-      }
-
-      // Check for existing entry (all entries now have engineer_id)
-      const { data: existingData, error: selectError } = await supabase
+      // First attempt: update existing entry
+      const { data: updateData, error: updateError } = await supabase
         .from('planning_entries')
-        .select('id')
-        .eq('engineer_id', finalEngineerId)
+        .update({ 
+          mh_tyden: hours,
+          updated_at: new Date().toISOString(),
+          updated_by: supabase.auth.getUser().then(u => u.data.user?.id)
+        })
+        .eq('engineer_id', engineerId)
         .eq('cw', cwBase)
         .eq('year', year)
-        .maybeSingle();
+        .select('*');
 
-      if (selectError) {
-        throw new Error('Failed to check existing entry');
-      }
-
-      // A. PŘED UPDATE HOURS - debugging podle návodu
-      console.log('UPDATE_HOURS_INTENT', { engineerId: finalEngineerId, konstrukter, cw: cwBase, year, newHours: hours });
-
-      if (existingData) {
-        // Update existing entry
-        const { error } = await supabase
-          .from('planning_entries')
-          .update({ mh_tyden: hours })
-          .eq('id', existingData.id);
-
-        if (error) {
-          throw new Error('Failed to update planning hours');
-        }
-
-        // B. HNED PO UPDATE - jednořádkový refetch podle návodu
-        const { data: row } = await supabase
-          .from('planning_entries')
-          .select('engineer_id,cw,year,mh_tyden,updated_at')
-          .eq('engineer_id', finalEngineerId)
-          .eq('cw', cwBase)
-          .eq('year', year)
-          .single();
-
-        console.log('ROW_AFTER_HOURS_UPDATE', row);
-      } else {
-        // Create new entry with hours
-        const cwNum = parseInt(cwBase.replace('CW', ''));
-        let mesic: string;
+      if (updateError) {
+        console.error('Update hours error:', updateError);
         
-        if (year === 2025) {
-          if (cwNum <= 35) mesic = 'srpen 2025';
-          else if (cwNum <= 39) mesic = 'září 2025';
-          else if (cwNum <= 43) mesic = 'říjen 2025';
-          else if (cwNum <= 47) mesic = 'listopad 2025';
-          else mesic = 'prosinec 2025';
-        } else { // 2026
-          if (cwNum <= 5) mesic = 'leden 2026';
-          else if (cwNum <= 9) mesic = 'únor 2026';  
-          else if (cwNum <= 13) mesic = 'březen 2026';
-          else if (cwNum <= 17) mesic = 'duben 2026';
-          else if (cwNum <= 22) mesic = 'květen 2026';
-          else if (cwNum <= 26) mesic = 'červen 2026';
-          else if (cwNum <= 30) mesic = 'červenec 2026';
-          else if (cwNum <= 35) mesic = 'srpen 2026';
-          else if (cwNum <= 39) mesic = 'září 2026';
-          else if (cwNum <= 43) mesic = 'říjen 2026';
-          else if (cwNum <= 47) mesic = 'listopad 2026';
-          else mesic = 'prosinec 2026';
-        }
-
-        const newEntry: any = {
-          engineer_id: finalEngineerId,
-          konstrukter,
-          cw: cwBase,
-          year,
-          mesic,
-          projekt: 'FREE',
-          mh_tyden: hours,
-        };
-
-        const { error: insertError } = await supabase
+        // If update failed, try insert
+        const { data: insertData, error: insertError } = await supabase
           .from('planning_entries')
-          .insert(newEntry);
+          .insert({
+            engineer_id: engineerId,
+            konstrukter,
+            cw: cwBase,
+            year,
+            mesic: new Date().toLocaleDateString('cs-CZ', { month: 'long' }),
+            projekt: 'FREE',
+            mh_tyden: hours,
+            created_by: supabase.auth.getUser().then(u => u.data.user?.id),
+            updated_by: supabase.auth.getUser().then(u => u.data.user?.id)
+          })
+          .select('*');
 
         if (insertError) {
-          throw new Error('Failed to create new planning entry with hours');
+          console.error('Insert hours error:', insertError);
+          toast({
+            title: "Chyba při ukládání hodin",
+            description: `${updateError.message} | ${insertError.message}`,
+            variant: "destructive",
+          });
+          return;
         }
+
+        console.log('INSERT hours successful:', insertData);
+      } else {
+        console.log('UPDATE hours successful:', updateData);
+      }
+
+      // FIX 1: Po UPDATE/INSERT vždy potvrď pravdu cíleným dotazem pro hodiny
+      const { data: verifyRow, error: verifyError } = await supabase
+        .from('planning_entries')
+        .select('engineer_id,cw,year,projekt,mh_tyden,updated_at')
+        .eq('engineer_id', engineerId)
+        .eq('cw', cwBase)          // POZOR: cw bez roku (např. 'CW31')
+        .eq('year', year)          // rok zvlášť
+        .single();
+
+      if (!verifyError && verifyRow) {
+        console.log('SINGLE_ROW_VERIFY_HOURS:', verifyRow);
+        // FIX 2: Patchni přes primární klíč (engineer_id, cw, year), ne přes jméno/cw_full
+        setPlanningData(prev => {
+          const sameRow = (e: any) => e.engineer_id === verifyRow.engineer_id && 
+                                      e.cw === `${verifyRow.cw}-${verifyRow.year}`;
+          
+          const exists = prev.some(sameRow);
+          
+          if (exists) {
+            return prev.map(entry =>
+              sameRow(entry)
+                ? { ...entry, projekt: verifyRow.projekt, mhTyden: verifyRow.mh_tyden }
+                : entry
+            );
+          } else {
+            // Add new entry if not exists
+            const newEntry: PlanningEntry = {
+              engineer_id: verifyRow.engineer_id,
+              konstrukter,
+              cw: `${verifyRow.cw}-${verifyRow.year}`,
+              mesic: new Date().toLocaleDateString('cs-CZ', { month: 'long' }),
+              projekt: verifyRow.projekt,
+              mhTyden: verifyRow.mh_tyden
+            };
+            return [...prev, newEntry];
+          }
+        });
+      } else {
+        console.warn('Single-row verify hours failed:', verifyError);
+        // Fallback to optimistic update
+        setPlanningData(prev => prev.map(entry =>
+          entry.engineer_id === engineerId && entry.cw === `${cwBase}-${year}`
+            ? { ...entry, mhTyden: hours }
+            : entry
+        ));
       }
 
       toast({
-        title: "Hodiny uloženy",
-        description: `Hodiny byly úspěšně aktualizovány na ${hours}h.`,
+        title: "Hodiny aktualizovány",
+        description: `${konstrukter}: ${cw} → ${hours}h`,
       });
 
-    } catch (error: any) {
-      console.error('Error in updatePlanningHours:', error);
+    } catch (error) {
+      console.error('Unexpected error in updatePlanningHours:', error);
       toast({
-        title: "Chyba při ukládání hodin",
-        description: error.message || "Nepodařilo se uložit změnu hodin.",
+        title: "Neočekávaná chyba",
+        description: "Kontaktujte podporu",
         variant: "destructive",
       });
     }
-  }, [toast, setPlanningData, findEngineerIdByName]);
+  }, [setPlanningData]);
 
   return {
     updatePlanningEntry,

@@ -7,11 +7,10 @@ export function usePlanningData() {
   const { toast } = useToast();
   const [planningData, setPlanningData] = useState<PlanningEntry[]>([]);
   const [engineers, setEngineers] = useState<EngineerInfo[]>([]);
-  const [fetchTimeline, setFetchTimeline] = useState<Array<{id: number, startAt: string, endAt?: string, applied: boolean, source: string}>>([]);
-  
   const abortControllerRef = useRef<AbortController | null>(null);
-  const fetchTimelineRef = useRef<Array<{id: number, startAt: string, endAt?: string, applied: boolean, source: string}>>([]);
-  const currentFetchIdRef = useRef<number>(0);
+  const latestFetchIdRef = useRef(0); // FIX 3: Rename for clarity
+  const [fetchTimeline, setFetchTimeline] = useState<Array<{id: number, startAt: string, endAt?: string, applied: boolean, source: string}>>([]);
+  const fetchTimelineRef = useRef(fetchTimeline);
 
   const loadEngineers = useCallback(async () => {
     try {
@@ -38,18 +37,18 @@ export function usePlanningData() {
   }, []);
 
   const loadPlanningData = useCallback(async (source = 'manual') => {
-    // FIX F3 - AbortController a requestId guard podle návodu
+    // FIX 3: Zastav předešlé fetch(e) a aplikuj jen poslední
     if (abortControllerRef.current) {
       console.log('Aborting previous fetch request');
       abortControllerRef.current.abort();
     }
     abortControllerRef.current = new AbortController();
     
-    const currentRequestId = ++currentFetchIdRef.current; // Increment místo Date.now()
+    const myFetchId = ++latestFetchIdRef.current; // Increment for unique ID
     const startAt = new Date().toISOString();
-    const timelineEntry = { id: currentRequestId, startAt, applied: false, source };
+    const timelineEntry = { id: myFetchId, startAt, applied: false, source };
     
-    console.log(`Starting fetch ${currentRequestId} from ${source}, aborting any previous`);
+    console.log(`Starting fetch ${myFetchId} from ${source}, aborting any previous`);
     
     setFetchTimeline(prev => {
       const newTimeline = [...prev.slice(-5), timelineEntry];
@@ -61,9 +60,9 @@ export function usePlanningData() {
       // Load engineers first to create mapping
       const engineersData = await loadEngineers();
       
-      // Check if this request was aborted
-      if (abortControllerRef.current?.signal.aborted || currentFetchIdRef.current !== currentRequestId) {
-        console.log(`Fetch ${currentRequestId} aborted during engineers load`);
+      // Check if this request was aborted or superseded
+      if (abortControllerRef.current?.signal.aborted || latestFetchIdRef.current !== myFetchId) {
+        console.log(`Fetch ${myFetchId} aborted during engineers load, latest is ${latestFetchIdRef.current}`);
         return;
       }
       
@@ -73,52 +72,54 @@ export function usePlanningData() {
         engineerMap.set(eng.slug, eng);
       });
 
-      // Load planning data with pagination
-      const pageSize = 1000;
+      // FIX 5: Load data from planning_matrix view (already implemented) 
       let page = 0;
+      const pageSize = 1000;
       let allRows: any[] = [];
       
       while (true) {
         // Check abort before each page
-        if (abortControllerRef.current?.signal.aborted || currentFetchIdRef.current !== currentRequestId) {
-          console.log(`Fetch ${currentRequestId} aborted during page ${page}`);
+        if (abortControllerRef.current?.signal.aborted || latestFetchIdRef.current !== myFetchId) {
+          console.log(`Fetch ${myFetchId} aborted during page ${page}, latest is ${latestFetchIdRef.current}`);
           return;
         }
         
         const from = page * pageSize;
         const to = from + pageSize - 1;
         const { data: batch, error: pageError } = await supabase
-          .from('planning_entries')
-          .select(`
-            id,
-            engineer_id,
-            konstrukter,
-            cw,
-            year,
-            mesic,
-            mh_tyden,
-            projekt,
-            created_at,
-            updated_at
-          `)
-          .order('konstrukter', { ascending: true })
-          .order('year', { ascending: true })
-          .order('cw', { ascending: true })
-          .range(from, to);
+          .from('planning_matrix')  // FIX 5: Use view as recommended
+          .select('*')
+          .range(from, to)
+          .abortSignal(abortControllerRef.current.signal);
 
-        if (pageError) throw pageError;
-        if (!batch || batch.length === 0) break;
+        if (pageError) {
+          if (pageError.message?.includes('AbortError') || pageError.message?.includes('aborted')) {
+            console.log(`Fetch ${myFetchId} aborted via signal`);
+            return;
+          }
+          console.error(`Page ${page} error:`, pageError);
+          throw pageError;
+        }
 
-        allRows = allRows.concat(batch);
+        if (!batch || batch.length === 0) {
+          break;
+        }
+
+        allRows.push(...batch);
+        
+        if (batch.length < pageSize) {
+          break;
+        }
+        
         page++;
       }
 
-      // Final abort check before processing
-      if (abortControllerRef.current?.signal.aborted || currentFetchIdRef.current !== currentRequestId) {
-        console.log(`Fetch ${currentRequestId} aborted after loading, latest is ${currentFetchIdRef.current}`);
+      // Final abort check before processing - aplikuj jen pokud je to stále nejnovější fetch
+      if (myFetchId !== latestFetchIdRef.current) {
+        console.log(`Stale fetch ignored ${myFetchId}, latest is ${latestFetchIdRef.current}`);
         setFetchTimeline(prev => {
           const newTimeline = prev.map(entry => 
-            entry.id === currentRequestId 
+            entry.id === myFetchId 
               ? { ...entry, endAt: new Date().toISOString(), applied: false }
               : entry
           );
@@ -128,104 +129,105 @@ export function usePlanningData() {
         return;
       }
 
-      console.log('PAGINATION_DEBUG:', {
-        pages: page,
-        pageSize,
-        totalRows: allRows.length,
-      });
-      
       // Process and deduplicate data
-      const dedupMap = new Map<string, any>();
-      allRows.forEach((e: any) => {
-        const cwFull = `CW${e.cw}-${e.year}`;
-        const key = `${e.konstrukter}::${cwFull}`;
-        const existing = dedupMap.get(key);
+      const seenEntries = new Map<string, any>();
+      const deduplicatedRows: any[] = [];
+
+      allRows.forEach(row => {
+        if (!row.konstrukter || !row.cw_full) return;
+        
+        // FIX 2: Striktní klíčování záznamů v UI - use engineer_id + cw + year for deduplication
+        const engineer = engineerMap.get(row.konstrukter);
+        const key = engineer?.id && row.cw && row.year 
+          ? `${engineer.id}-${row.cw}-${row.year}` 
+          : `${row.konstrukter}-${row.cw_full}`; // fallback
+        
+        const existing = seenEntries.get(key);
         
         if (!existing) {
-          dedupMap.set(key, { ...e, cw_full: cwFull });
+          seenEntries.set(key, row);
+          deduplicatedRows.push(row);
         } else {
-          const choose = () => {
-            if (existing.projekt !== 'FREE' && e.projekt === 'FREE') return existing;
-            if (e.projekt !== 'FREE' && existing.projekt === 'FREE') return e;
-            return (new Date(e.updated_at) > new Date(existing.updated_at)) ? e : existing;
-          };
-          dedupMap.set(key, { ...choose(), cw_full: cwFull });
+          // Keep non-FREE projects over FREE, or more recent updates
+          const shouldReplace = 
+            (existing.projekt === 'FREE' && row.projekt !== 'FREE') ||
+            (existing.projekt === row.projekt && new Date(row.updated_at || 0) > new Date(existing.updated_at || 0));
+          
+          if (shouldReplace) {
+            seenEntries.set(key, row);
+            const existingIndex = deduplicatedRows.findIndex(r => {
+              const existingEng = engineerMap.get(r.konstrukter);
+              return existingEng?.id === engineer?.id && r.cw === existing.cw && r.year === existing.year;
+            });
+            if (existingIndex >= 0) {
+              deduplicatedRows[existingIndex] = row;
+            }
+          }
         }
       });
 
-      // Map to PlanningEntry format with engineer resolution
-      const mappedData: PlanningEntry[] = Array.from(dedupMap.values()).map((entry: any) => {
-        let engineerId = entry.engineer_id;
-        
-        // If no engineer_id, try to resolve from konstrukter name
-        if (!engineerId && entry.konstrukter) {
-          const engineer = engineerMap.get(entry.konstrukter);
-          engineerId = engineer?.id || null;
-        }
-
+      // Convert to PlanningEntry format
+      const planningEntries: PlanningEntry[] = deduplicatedRows.map(row => {
+        const engineer = engineerMap.get(row.konstrukter);
         return {
-          engineer_id: engineerId,
-          konstrukter: entry.konstrukter,
-          cw: entry.cw_full, // Full format with year
-          mesic: entry.mesic,
-          mhTyden: entry.mh_tyden,
-          projekt: entry.projekt,
+          engineer_id: engineer?.id || null,
+          konstrukter: row.konstrukter,
+          cw: row.cw_full,
+          mesic: row.mesic || '',
+          mhTyden: row.mh_tyden || 0,
+          projekt: row.projekt || 'FREE'
         };
       });
 
-      // Stale response check
-      if (currentFetchIdRef.current !== currentRequestId) {
-        console.log(`Ignoring stale response ${currentRequestId}, latest is ${currentFetchIdRef.current}`);
-        setFetchTimeline(prev => {
-          const newTimeline = prev.map(entry => 
-            entry.id === currentRequestId 
-              ? { ...entry, endAt: new Date().toISOString(), applied: false }
-              : entry
-          );
-          fetchTimelineRef.current = newTimeline;
-          return newTimeline;
-        });
-        return;
-      }
-
-      setPlanningData(mappedData);
-      console.log(`Planning data loaded: ${mappedData.length} entries`);
+      console.log(`Fetch ${myFetchId} processed ${allRows.length} rows → ${planningEntries.length} entries`);
       
-      // Mark fetch as completed
-      const endAt = new Date().toISOString();
-      console.log(`Fetch ${currentRequestId} completed successfully`);
+      setPlanningData(planningEntries);
+      
+      // Mark as applied
       setFetchTimeline(prev => {
         const newTimeline = prev.map(entry => 
-          entry.id === currentRequestId 
-            ? { ...entry, endAt, applied: true }
+          entry.id === myFetchId 
+            ? { ...entry, endAt: new Date().toISOString(), applied: true }
             : entry
         );
         fetchTimelineRef.current = newTimeline;
         return newTimeline;
       });
-      
     } catch (error: any) {
-      if (error.name === 'AbortError') {
-        console.log(`Fetch ${currentRequestId} was aborted`);
-      } else {
-        console.error('Error loading planning data:', error);
-        toast({
-          title: "Error loading data",
-          description: error.message || "Failed to load planning data",
-          variant: "destructive",
+      console.error('loadPlanningData error:', error);
+      
+      if (error.name === 'AbortError' || error.message?.includes('aborted')) {
+        console.log(`Fetch ${myFetchId} was aborted`);
+        setFetchTimeline(prev => {
+          const newTimeline = prev.map(entry => 
+            entry.id === myFetchId 
+              ? { ...entry, endAt: new Date().toISOString(), applied: false }
+              : entry
+          );
+          fetchTimelineRef.current = newTimeline;
+          return newTimeline;
         });
+        return;
       }
+      
+      // Mark as failed
       setFetchTimeline(prev => {
         const newTimeline = prev.map(entry => 
-          entry.id === currentRequestId 
+          entry.id === myFetchId 
             ? { ...entry, endAt: new Date().toISOString(), applied: false }
             : entry
         );
         fetchTimelineRef.current = newTimeline;
         return newTimeline;
       });
+      
+      toast({
+        title: "Chyba při načítání dat",
+        description: error.message || "Neznámá chyba",
+        variant: "destructive",
+      });
     }
-  }, [toast, loadEngineers]);
+  }, [loadEngineers, setPlanningData]);
 
   return {
     planningData,
