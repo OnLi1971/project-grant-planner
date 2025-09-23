@@ -43,7 +43,7 @@ export function usePlanningMutations({ setPlanningData }: UsePlanningMutationsPr
       const [cwBase, yearStr] = cw.includes('-') ? cw.split('-') : [cw, new Date().getFullYear().toString()];
       const year = parseInt(yearStr);
 
-      // First attempt: update existing entry
+      // Update existing entry - with trigger, entries should always exist
       const { data: updateData, error: updateError } = await supabase
         .from('planning_entries')
         .update({ 
@@ -57,38 +57,15 @@ export function usePlanningMutations({ setPlanningData }: UsePlanningMutationsPr
 
       if (updateError) {
         console.error('Update error:', updateError);
+        toast({
+          title: "Chyba při ukládání",
+          description: updateError.message,
+          variant: "destructive",
+        });
+        return;
       }
 
-      // If no rows were updated (no matching entry), insert a new one
-      if (updateError || !updateData || updateData.length === 0) {
-        const { data: insertData, error: insertError } = await supabase
-          .from('planning_entries')
-          .insert({
-            engineer_id: engineerId,
-            konstrukter,
-            cw: cwBase,
-            year,
-            mesic: new Date().toLocaleDateString('cs-CZ', { month: 'long' }),
-            projekt,
-            mh_tyden: 0
-          })
-          .select('*');
-
-        if (insertError) {
-          console.error('Insert error:', insertError);
-          toast({
-            title: "Chyba při ukládání",
-            description: `${updateError?.message ?? '0 rows updated'} | ${insertError.message}`,
-            variant: "destructive",
-          });
-          return;
-        }
-
-        console.log('INSERT successful:', insertData);
-      } else {
-        console.log('UPDATE successful:', updateData);
-        console.log('ROW_AFTER_UPDATE:', updateData?.[0]);
-      }
+      console.log('UPDATE successful:', updateData);
 
       // FIX 1: Po UPDATE vždy potvrď pravdu cíleným dotazem
       const { data: verifyRow, error: verifyError } = await supabase
@@ -162,7 +139,7 @@ export function usePlanningMutations({ setPlanningData }: UsePlanningMutationsPr
       const [cwBase, yearStr] = cw.includes('-') ? cw.split('-') : [cw, new Date().getFullYear().toString()];
       const year = parseInt(yearStr);
 
-      // First attempt: update existing entry
+      // Update existing entry - with trigger, entries should always exist  
       const { data: updateData, error: updateError } = await supabase
         .from('planning_entries')
         .update({ 
@@ -176,37 +153,15 @@ export function usePlanningMutations({ setPlanningData }: UsePlanningMutationsPr
 
       if (updateError) {
         console.error('Update hours error:', updateError);
+        toast({
+          title: "Chyba při ukládání hodin",
+          description: updateError.message,
+          variant: "destructive",
+        });
+        return;
       }
-      
-      // If no rows were updated, insert a new one
-      if (updateError || !updateData || updateData.length === 0) {
-        const { data: insertData, error: insertError } = await supabase
-          .from('planning_entries')
-          .insert({
-            engineer_id: engineerId,
-            konstrukter,
-            cw: cwBase,
-            year,
-            mesic: new Date().toLocaleDateString('cs-CZ', { month: 'long' }),
-            projekt: 'FREE',
-            mh_tyden: hours
-          })
-          .select('*');
 
-        if (insertError) {
-          console.error('Insert hours error:', insertError);
-          toast({
-            title: "Chyba při ukládání hodin",
-            description: `${updateError?.message ?? '0 rows updated'} | ${insertError.message}`,
-            variant: "destructive",
-          });
-          return;
-        }
-
-        console.log('INSERT hours successful:', insertData);
-      } else {
-        console.log('UPDATE hours successful:', updateData);
-      }
+      console.log('UPDATE hours successful:', updateData);
 
       // FIX 1: Po UPDATE/INSERT vždy potvrď pravdu cíleným dotazem pro hodiny
       const { data: verifyRow, error: verifyError } = await supabase
