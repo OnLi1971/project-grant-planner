@@ -11,6 +11,8 @@ import { ResourceManagement } from '@/components/ResourceManagement';
 import { LicenseManagement } from '@/components/LicenseManagement';
 import { ProjectManagement } from '@/components/ProjectManagement';
 import UserManagement from '@/components/UserManagement';
+import { EngineerManagement } from '@/components/EngineerManagement';
+import { EngineerMigration } from '@/components/EngineerMigration';
 import { PlanningProvider } from '@/contexts/PlanningContext';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
@@ -21,7 +23,7 @@ import { Calendar, Edit, Users, Grid3x3, Database, TrendingUp, Settings, Shield,
 const Index = () => {
   const { user, loading, signOut } = useAuth();
   const [outputView, setOutputView] = useState<'overview' | 'free-capacity' | 'matrix' | 'revenue' | 'executive'>('overview');
-  const [managementView, setManagementView] = useState<'projects' | 'resources' | 'licenses' | 'users'>('projects');
+  const [managementView, setManagementView] = useState<'projects' | 'resources' | 'licenses' | 'users' | 'engineers' | 'migration'>('projects');
 
   // Show loading while checking auth
   if (loading) {
@@ -179,6 +181,22 @@ const Index = () => {
                     <Users className="h-4 w-4" />
                     Správa uživatelů
                   </Button>
+                  <Button
+                    variant={managementView === 'engineers' ? 'default' : 'outline'}
+                    onClick={() => setManagementView('engineers')}
+                    className="flex items-center gap-2"
+                  >
+                    <UserPlus className="h-4 w-4" />
+                    Správa konstruktérů
+                  </Button>
+                  <Button
+                    variant={managementView === 'migration' ? 'default' : 'outline'}
+                    onClick={() => setManagementView('migration')}
+                    className="flex items-center gap-2"
+                  >
+                    <Database className="h-4 w-4" />
+                    Migrace dat
+                  </Button>
                 </div>
               </Card>
               
@@ -188,8 +206,12 @@ const Index = () => {
                 <ResourceManagement />
               ) : managementView === 'licenses' ? (
                 <LicenseManagement />
-              ) : (
+              ) : managementView === 'users' ? (
                 <UserManagement />
+              ) : managementView === 'engineers' ? (
+                <EngineerManagement />
+              ) : (
+                <EngineerMigration />
               )}
             </TabsContent>
           </Tabs>
