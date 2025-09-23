@@ -16,7 +16,7 @@ export function usePlanningMutations({ setPlanningData }: UsePlanningMutationsPr
         .from('engineers')
         .select('id')
         .eq('display_name', konstrukter)
-        .eq('status', 'active')
+        .neq('status', 'inactive')
         .maybeSingle();
 
       if (error || !data) {
