@@ -6,6 +6,7 @@ import { PlanningEditor } from '@/components/PlanningEditor';
 import { FreeCapacityOverview } from '@/components/FreeCapacityOverview';
 import { ProjectAssignmentMatrix } from '@/components/ProjectAssignmentMatrix';
 import { RevenueOverview } from '@/components/RevenueOverview';
+import { ExecutiveDashboard } from '@/components/ExecutiveDashboard';
 import { ResourceManagement } from '@/components/ResourceManagement';
 import { LicenseManagement } from '@/components/LicenseManagement';
 import { ProjectManagement } from '@/components/ProjectManagement';
@@ -19,7 +20,7 @@ import { Calendar, Edit, Users, Grid3x3, Database, TrendingUp, Settings, Shield,
 
 const Index = () => {
   const { user, loading, signOut } = useAuth();
-  const [outputView, setOutputView] = useState<'overview' | 'free-capacity' | 'matrix' | 'revenue'>('overview');
+  const [outputView, setOutputView] = useState<'overview' | 'free-capacity' | 'matrix' | 'revenue' | 'executive'>('overview');
   const [managementView, setManagementView] = useState<'projects' | 'resources' | 'licenses' | 'users'>('projects');
 
   // Show loading while checking auth
@@ -119,6 +120,14 @@ const Index = () => {
                     <DollarSign className="h-4 w-4" />
                     Revenue
                   </Button>
+                  <Button
+                    variant={outputView === 'executive' ? 'default' : 'outline'}
+                    onClick={() => setOutputView('executive')}
+                    className="flex items-center gap-2"
+                  >
+                    <TrendingUp className="h-4 w-4" />
+                    Executive Dashboard
+                  </Button>
                 </div>
               </Card>
               
@@ -128,8 +137,10 @@ const Index = () => {
                 <FreeCapacityOverview />
               ) : outputView === 'matrix' ? (
                 <ProjectAssignmentMatrix />
-              ) : (
+              ) : outputView === 'revenue' ? (
                 <RevenueOverview />
+              ) : (
+                <ExecutiveDashboard />
               )}
             </TabsContent>
 
