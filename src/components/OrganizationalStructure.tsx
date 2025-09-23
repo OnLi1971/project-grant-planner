@@ -35,7 +35,7 @@ export const OrganizationalStructure = () => {
   });
 
   // Available options for dropdowns
-  const availableCompanies = ['TM CZ a.s.', 'MB idea SK, s.r.o.'];
+  const availableCompanies = ['TM CZ a.s.', 'MB idea SK, s.r.o.', 'Subdodavka'];
   const availableLeaders = ['JoMa', 'OnLi', 'KaSo', 'PaHo', 'PeMa', 'DaAm', 'PeNe', 'Dodavatel'];
   const availablePrograms = [
     'Steam Turbines',
@@ -139,6 +139,9 @@ export const OrganizationalStructure = () => {
   const getCompanyBadge = (company: string) => {
     if (company === 'TM CZ a.s.') {
       return <Badge variant="default" className="bg-primary text-primary-foreground">TM CZ</Badge>;
+    }
+    if (company === 'Subdodavka') {
+      return <Badge variant="secondary" className="bg-orange-500 text-white">Subdodavka</Badge>;
     }
     return <Badge variant="outline" className="border-accent text-accent-foreground">MB idea SK</Badge>;
   };
@@ -346,7 +349,7 @@ export const OrganizationalStructure = () => {
         </div>
 
         {/* Statistics */}
-        <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="mt-6 grid grid-cols-2 md:grid-cols-5 gap-4">
           <Card className="p-4">
             <div className="flex items-center gap-2">
               <Building className="h-4 w-4 text-muted-foreground" />
@@ -366,6 +369,18 @@ export const OrganizationalStructure = () => {
                 <p className="text-sm font-medium">MB idea SK</p>
                 <p className="text-xl font-bold text-accent">
                   {employees.filter(e => e.company === 'MB idea SK, s.r.o.').length}
+                </p>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-4">
+            <div className="flex items-center gap-2">
+              <Building className="h-4 w-4 text-muted-foreground" />
+              <div>
+                <p className="text-sm font-medium">Subdodavka</p>
+                <p className="text-xl font-bold text-orange-500">
+                  {employees.filter(e => e.company === 'Subdodavka').length}
                 </p>
               </div>
             </div>
