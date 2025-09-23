@@ -189,6 +189,15 @@ export const PlanningEditor: React.FC = () => {
     slug: eng.slug,
     id: eng.id
   }));
+
+  // Debug log for allKonstrukteri
+  React.useEffect(() => {
+    console.log('PlanningEditor - allKonstrukteri updated:', allKonstrukteri.length, 'items');
+    console.log('PlanningEditor - engineers from context:', engineers.length, 'items');
+    if (allKonstrukteri.length > 0) {
+      console.log('First konstrukter:', allKonstrukteri[0]);
+    }
+  }, [engineers, allKonstrukteri]);
   
   const [projects, setProjects] = useState<DatabaseProject[]>([]);
   const [loading, setLoading] = useState(true);

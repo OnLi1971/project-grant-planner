@@ -15,14 +15,20 @@ export function usePlanningData() {
 
   const loadEngineers = useCallback(async () => {
     try {
+      console.log('Loading engineers from database...');
       const { data, error } = await supabase
         .from('engineers')
         .select('id, display_name, slug, status')
         .eq('status', 'active')
         .order('display_name');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error loading engineers:', error);
+        throw error;
+      }
 
+      console.log('Engineers loaded successfully:', data?.length, 'engineers');
+      console.log('Sample engineer data:', data?.[0]);
       setEngineers(data || []);
       return data || [];
     } catch (error) {

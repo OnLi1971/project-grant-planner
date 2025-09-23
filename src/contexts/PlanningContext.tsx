@@ -22,6 +22,14 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const DEBOUNCE_MS = 200;
 
+  // Debug log engineers state
+  React.useEffect(() => {
+    console.log('Engineers state updated in PlanningProvider:', engineers?.length, 'engineers');
+    if (engineers?.length > 0) {
+      console.log('First engineer:', engineers[0]);
+    }
+  }, [engineers]);
+
   // Initial data load
   useEffect(() => {
     loadPlanningData('initial');
