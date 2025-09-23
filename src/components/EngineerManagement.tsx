@@ -56,6 +56,7 @@ export function EngineerManagement() {
       await createEngineer(
         formData.displayName, 
         undefined, // no email 
+        formData.status, // status
         formData.company,
         hourlyRate,
         currency
