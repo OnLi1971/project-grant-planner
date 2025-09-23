@@ -38,17 +38,18 @@ export function usePlanningData() {
   }, []);
 
   const loadPlanningData = useCallback(async (source = 'manual') => {
-    // Abort previous request and increment requestId
+    // FIX F3 - AbortController a requestId guard podle návodu
     if (abortControllerRef.current) {
+      console.log('Aborting previous fetch request');
       abortControllerRef.current.abort();
     }
     abortControllerRef.current = new AbortController();
     
-    const currentRequestId = Date.now();
+    const currentRequestId = ++currentFetchIdRef.current; // Increment místo Date.now()
     const startAt = new Date().toISOString();
     const timelineEntry = { id: currentRequestId, startAt, applied: false, source };
     
-    currentFetchIdRef.current = currentRequestId;
+    console.log(`Starting fetch ${currentRequestId} from ${source}, aborting any previous`);
     
     setFetchTimeline(prev => {
       const newTimeline = [...prev.slice(-5), timelineEntry];
@@ -56,11 +57,16 @@ export function usePlanningData() {
       return newTimeline;
     });
     
-    console.log(`Starting fetch ${currentRequestId} from ${source}`);
-    
     try {
       // Load engineers first to create mapping
       const engineersData = await loadEngineers();
+      
+      // Check if this request was aborted
+      if (abortControllerRef.current?.signal.aborted || currentFetchIdRef.current !== currentRequestId) {
+        console.log(`Fetch ${currentRequestId} aborted during engineers load`);
+        return;
+      }
+      
       const engineerMap = new Map<string, EngineerInfo>();
       engineersData.forEach(eng => {
         engineerMap.set(eng.display_name, eng);
@@ -73,6 +79,12 @@ export function usePlanningData() {
       let allRows: any[] = [];
       
       while (true) {
+        // Check abort before each page
+        if (abortControllerRef.current?.signal.aborted || currentFetchIdRef.current !== currentRequestId) {
+          console.log(`Fetch ${currentRequestId} aborted during page ${page}`);
+          return;
+        }
+        
         const from = page * pageSize;
         const to = from + pageSize - 1;
         const { data: batch, error: pageError } = await supabase
@@ -101,9 +113,9 @@ export function usePlanningData() {
         page++;
       }
 
-      // Check if response is stale
-      if (abortControllerRef.current.signal.aborted) {
-        console.log(`Ignoring aborted response ${currentRequestId}`);
+      // Final abort check before processing
+      if (abortControllerRef.current?.signal.aborted || currentFetchIdRef.current !== currentRequestId) {
+        console.log(`Fetch ${currentRequestId} aborted after loading, latest is ${currentFetchIdRef.current}`);
         setFetchTimeline(prev => {
           const newTimeline = prev.map(entry => 
             entry.id === currentRequestId 
