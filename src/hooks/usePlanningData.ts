@@ -18,7 +18,7 @@ export function usePlanningData() {
       const { data, error } = await supabase
         .from('engineers')
         .select('id, display_name, slug, status')
-        .eq('status', 'active')
+        .neq('status', 'inactive')
         .order('display_name');
 
       if (error) {
