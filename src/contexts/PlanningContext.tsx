@@ -15,7 +15,7 @@ export const usePlanning = () => {
 };
 
 export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { planningData, engineers, setPlanningData, loadPlanningData, fetchTimeline, fetchTimelineRef } = usePlanningData();
+  const { planningData, engineers, setPlanningData, loadPlanningData, loadEngineers, fetchTimeline, fetchTimelineRef } = usePlanningData();
   const { updatePlanningEntry: updateEntry, updatePlanningHours: updateHours } = usePlanningMutations({ setPlanningData });
   
   const [isRealtimeEnabled, setIsRealtimeEnabled] = React.useState(true);
@@ -30,8 +30,15 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, [engineers]);
 
+  // Load engineers independently on mount
+  useEffect(() => {
+    console.log('PlanningProvider: Loading engineers independently...');
+    loadEngineers();
+  }, [loadEngineers]);
+
   // Initial data load
   useEffect(() => {
+    console.log('PlanningProvider: Loading planning data...');
     loadPlanningData('initial');
   }, [loadPlanningData]);
 

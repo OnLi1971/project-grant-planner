@@ -220,6 +220,7 @@ export function usePlanningData() {
     engineers,
     setPlanningData,
     loadPlanningData,
+    loadEngineers, // Export loadEngineers separately
     fetchTimeline,
     fetchTimelineRef,
   };
