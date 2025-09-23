@@ -10,7 +10,6 @@ import { usePlanning } from '@/contexts/PlanningContext';
 import { getProjectColor, getCustomerByProjectCode } from '@/utils/colorSystem';
 import { getWeek } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
-import { ENGINEERS } from '@/data/engineersList';
 import { normalizeName, findEngineerByName } from '@/utils/nameNormalization';
 
 interface WeekPlan {
@@ -166,17 +165,16 @@ const generatePlanningDataForEditor = (data: any[]): { [key: string]: WeekPlan[]
   return result;
 };
 
-// Kompletní seznam konstruktérů - import sdíleného seznamu
-const allKonstrukteri = ENGINEERS;
 
 
 export const PlanningEditor: React.FC = () => {
   const { 
-    planningData, 
+    planningData,
+    engineers, // Use engineers from database
     updatePlanningEntry, 
     updatePlanningHours,
     realtimeStatus, 
-    disableRealtime, 
+    disableRealtime,
     enableRealtime,
     manualRefetch,
     checkWeekAxis,
@@ -213,6 +211,13 @@ export const PlanningEditor: React.FC = () => {
   const [availableProjectsLocal, setAvailableProjectsLocal] = useState<string[]>(availableProjects);
   const [copyFromKonstrukter, setCopyFromKonstrukter] = useState<string>('');
   const [bulkProject, setBulkProject] = useState<string>('');  // vybraný projekt (čeká na potvrzení)
+
+  // Convert engineers to the format expected by existing code
+  const allKonstrukteri = engineers.map(eng => ({
+    jmeno: eng.display_name,
+    slug: eng.slug,
+    id: eng.id
+  }));
   const [bulkHours, setBulkHours] = useState<string>('');      // hodiny v textu (kvůli prázdné hodnotě)
 
   // Načteme projekty z databáze
