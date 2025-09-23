@@ -361,7 +361,7 @@ export const RevenueOverview = () => {
     });
 
     // Seznam neproduktivních aktivit, které negenerují zisk
-    const nonRevenueActivities = ['FREE', 'Dovolena', 'Nemoc', 'Školení', 'Interní'];
+    const nonRevenueActivities = ['FREE', 'Dovolena', 'DOVOLENÁ', 'Nemoc', 'NEMOC', 'Školení', 'ŠKOLENÍ', 'Interní', 'INTERNÍ'];
 
     // Projdeme všechny záznamy v plánovacích datech
     data.forEach(entry => {
@@ -371,8 +371,11 @@ export const RevenueOverview = () => {
       const weekMapping = weekToMonthMapping[cwKey];
       if (!weekMapping || entry.mhTyden === 0) return;
 
-      // Přeskočit neproduktivní aktivity
-      if (nonRevenueActivities.includes(entry.projekt?.trim())) return;
+      // Přeskočit neproduktivní aktivity (case-insensitive porovnání)
+      const projektTrimmed = entry.projekt?.trim();
+      if (nonRevenueActivities.some(activity => 
+        activity.toLowerCase() === projektTrimmed?.toLowerCase()
+      )) return;
 
       // Najdeme projekt podle kódu
       const project = projects.find(p => p.code === entry.projekt);

@@ -171,14 +171,16 @@ export const ExecutiveDashboard = () => {
     });
 
     // Seznam neproduktivních aktivit, které negenerují zisk
-    const nonRevenueActivities = ['FREE', 'Dovolena', 'Nemoc', 'Školení', 'Interní'];
+    const nonRevenueActivities = ['FREE', 'Dovolena', 'DOVOLENÁ', 'Nemoc', 'NEMOC', 'Školení', 'ŠKOLENÍ', 'Interní', 'INTERNÍ'];
 
     planningData.forEach(entry => {
       const projekt = entry.projekt?.trim();
       if (!projekt || projekt === '') return;
       
-      // Přeskočit neproduktivní aktivity
-      if (nonRevenueActivities.includes(projekt)) return;
+      // Přeskočit neproduktivní aktivity (case-insensitive porovnání)
+      if (nonRevenueActivities.some(activity => 
+        activity.toLowerCase() === projekt.toLowerCase()
+      )) return;
 
       const project = projects.find(p => p.code?.trim() === projekt);
       if (!project) return;
