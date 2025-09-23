@@ -1,3 +1,4 @@
+// Updated planning editor with engineer_id support
 import React, { useState, useMemo, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
