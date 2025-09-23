@@ -38,10 +38,10 @@ export function usePlanningMutations({ setPlanningData }: UsePlanningMutationsPr
     projekt: string
   ) => {
     try {
-      // Optimistically update local state
+      // Optimistically update local state - FIX F2 podle návodu (použít engineer_id místo konstrukter)
       setPlanningData(prev => 
         prev.map(entry => {
-          const sameRow = (entry.engineer_id === engineerId || entry.konstrukter === konstrukter) && entry.cw === cw;
+          const sameRow = entry.engineer_id === engineerId && entry.cw === cw;
           return sameRow ? { ...entry, projekt: projekt } : entry;
         })
       );
@@ -81,6 +81,9 @@ export function usePlanningMutations({ setPlanningData }: UsePlanningMutationsPr
         throw new Error('Failed to check existing entry');
       }
 
+      // A. PŘED UPDATE - debugging podle návodu
+      console.log('UPDATE_INTENT', { engineerId: finalEngineerId, konstrukter, cw: cwBase, year, newProjekt: projekt });
+
       if (existingData) {
         // Update existing entry
         const { error } = await supabase
@@ -92,6 +95,17 @@ export function usePlanningMutations({ setPlanningData }: UsePlanningMutationsPr
           console.error('Error updating planning entry:', error);
           throw new Error('Failed to update planning entry');
         }
+
+        // B. HNED PO UPDATE - jednořádkový refetch podle návodu
+        const { data: row } = await supabase
+          .from('planning_entries')
+          .select('engineer_id,cw,year,projekt,updated_at')
+          .eq('engineer_id', finalEngineerId)
+          .eq('cw', cwBase)
+          .eq('year', year)
+          .single();
+
+        console.log('ROW_AFTER_UPDATE', row);
       } else {
         // Create new entry
         const cwNum = parseInt(cwBase.replace('CW', ''));
@@ -160,10 +174,10 @@ export function usePlanningMutations({ setPlanningData }: UsePlanningMutationsPr
     hours: number
   ) => {
     try {
-      // Optimistically update local state
+      // Optimistically update local state - FIX F2 podle návodu (použít engineer_id místo konstrukter)
       setPlanningData(prev => 
         prev.map(entry => {
-          const sameRow = (entry.engineer_id === engineerId || entry.konstrukter === konstrukter) && entry.cw === cw;
+          const sameRow = entry.engineer_id === engineerId && entry.cw === cw;
           return sameRow ? { ...entry, mhTyden: hours } : entry;
         })
       );
@@ -202,6 +216,9 @@ export function usePlanningMutations({ setPlanningData }: UsePlanningMutationsPr
         throw new Error('Failed to check existing entry');
       }
 
+      // A. PŘED UPDATE HOURS - debugging podle návodu
+      console.log('UPDATE_HOURS_INTENT', { engineerId: finalEngineerId, konstrukter, cw: cwBase, year, newHours: hours });
+
       if (existingData) {
         // Update existing entry
         const { error } = await supabase
@@ -212,6 +229,17 @@ export function usePlanningMutations({ setPlanningData }: UsePlanningMutationsPr
         if (error) {
           throw new Error('Failed to update planning hours');
         }
+
+        // B. HNED PO UPDATE - jednořádkový refetch podle návodu
+        const { data: row } = await supabase
+          .from('planning_entries')
+          .select('engineer_id,cw,year,mh_tyden,updated_at')
+          .eq('engineer_id', finalEngineerId)
+          .eq('cw', cwBase)
+          .eq('year', year)
+          .single();
+
+        console.log('ROW_AFTER_HOURS_UPDATE', row);
       } else {
         // Create new entry with hours
         const cwNum = parseInt(cwBase.replace('CW', ''));

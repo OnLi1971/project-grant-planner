@@ -557,6 +557,7 @@ export type Database = {
       planning_matrix: {
         Row: {
           cw_full: string | null
+          engineer_id: string | null
           konstrukter: string | null
           mesic: string | null
           mh_tyden: number | null
