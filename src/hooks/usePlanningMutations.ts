@@ -74,7 +74,7 @@ export function usePlanningMutations({ setPlanningData }: UsePlanningMutationsPr
         .eq('engineer_id', engineerId)
         .eq('cw', cwBase)          // POZOR: cw bez roku (např. 'CW31')
         .eq('year', year)          // rok zvlášť
-        .single();
+        .maybeSingle();
 
       if (!verifyError && verifyRow) {
         console.log('SINGLE_ROW_VERIFY:', verifyRow);
@@ -170,7 +170,7 @@ export function usePlanningMutations({ setPlanningData }: UsePlanningMutationsPr
         .eq('engineer_id', engineerId)
         .eq('cw', cwBase)          // POZOR: cw bez roku (např. 'CW31')
         .eq('year', year)          // rok zvlášť
-        .single();
+        .maybeSingle();
 
       if (!verifyError && verifyRow) {
         console.log('SINGLE_ROW_VERIFY_HOURS:', verifyRow);
