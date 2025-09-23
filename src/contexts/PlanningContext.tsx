@@ -16,7 +16,7 @@ export const usePlanning = () => {
 
 export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { planningData, engineers, setPlanningData, loadPlanningData, loadEngineers, fetchTimeline, fetchTimelineRef } = usePlanningData();
-  const { updatePlanningEntry: updateEntry, updatePlanningHours: updateHours } = usePlanningMutations({ setPlanningData });
+  const { updatePlanningEntry: updateEntry, updatePlanningHours: updateHours } = usePlanningMutations({ setPlanningData, engineers });
   
   const [isRealtimeEnabled, setIsRealtimeEnabled] = React.useState(true);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);

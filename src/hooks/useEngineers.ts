@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { ACTIVE_ENGINEER_STATUSES } from '@/hooks/usePlanningData';
 
 export type UIEngineer = {
   id: string;
@@ -53,7 +54,7 @@ export function useEngineers() {
       const { data, error: fetchError } = await supabase
         .from('engineers')
         .select('*')
-        .neq('status', 'inactive')
+        .in('status', ACTIVE_ENGINEER_STATUSES)
         .order('display_name');
 
       if (fetchError) {

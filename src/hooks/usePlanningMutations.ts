@@ -1,51 +1,66 @@
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { PlanningEntry } from '@/types/planning';
+import { PlanningEntry, EngineerInfo } from '@/types/planning';
 import { useToast } from '@/hooks/use-toast';
 
 interface UsePlanningMutationsProps {
   setPlanningData: React.Dispatch<React.SetStateAction<PlanningEntry[]>>;
+  engineers: EngineerInfo[];
 }
 
-export function usePlanningMutations({ setPlanningData }: UsePlanningMutationsProps) {
+export function usePlanningMutations({ setPlanningData, engineers }: UsePlanningMutationsProps) {
   const { toast } = useToast();
 
-  const findEngineerIdByName = useCallback(async (konstrukter: string): Promise<string | null> => {
-    try {
-      const { data, error } = await supabase
-        .from('engineers')
-        .select('id')
-        .eq('display_name', konstrukter)
-        .neq('status', 'inactive')
-        .maybeSingle();
+  // Helper to find engineer by name from local data (no DB lookup needed)
+  const findEngineerByName = useCallback((displayName: string): EngineerInfo | null => {
+    return engineers.find(e => e.display_name === displayName) || null;
+  }, [engineers]);
 
-      if (error || !data) {
-        console.warn(`Engineer not found for name: ${konstrukter}`);
-        return null;
-      }
+  // Single-row verification after update
+  const verifyUpdate = useCallback(async (
+    engineerId: string, 
+    cw: string, 
+    year: number, 
+    expectedProject?: string, 
+    expectedHours?: number
+  ) => {
+    const { data, error } = await supabase
+      .from('planning_entries')
+      .select('engineer_id, cw, year, projekt, mh_tyden, updated_at')
+      .eq('engineer_id', engineerId)
+      .eq('cw', cw)
+      .eq('year', year)
+      .single();
 
-      return data.id;
-    } catch (error) {
-      console.error('Error finding engineer:', error);
-      return null;
+    if (error) throw new Error(`Failed to verify update: ${error.message}`);
+    
+    if (expectedProject && data.projekt !== expectedProject) {
+      throw new Error('Update verification failed - project mismatch');
     }
+    
+    if (expectedHours !== undefined && data.mh_tyden !== expectedHours) {
+      throw new Error('Update verification failed - hours mismatch');  
+    }
+
+    return data;
   }, []);
 
+  // Update planning entry (project assignment) - CLEAN: only engineer_id
   const updatePlanningEntry = useCallback(async (
     engineerId: string,
-    konstrukter: string, 
+    konstrukter: string,
     cw: string, 
     projekt: string
-  ) => {
+  ): Promise<void> => {
     try {
-      console.log('UPDATE_INTENT:', { engineerId, konstrukter, cw, projekt });
-      
+      console.log('CLEAN_UPDATE_PROJECT:', { engineerId, konstrukter, cw, projekt });
+
+      // Extract year from CW (e.g., "CW31-2025" → "CW31", 2025)
       const [cwBase, yearStr] = cw.includes('-') ? cw.split('-') : [cw, new Date().getFullYear().toString()];
       const year = parseInt(yearStr);
 
-      // Update existing entry - with trigger, entries should always exist
-      // Primary update by engineer_id
-      let { data: updateData, error: updateError } = await supabase
+      // Single update using engineer_id only (no fallbacks)
+      const { data, error } = await supabase
         .from('planning_entries')
         .update({ 
           projekt,
@@ -54,90 +69,25 @@ export function usePlanningMutations({ setPlanningData }: UsePlanningMutationsPr
         .eq('engineer_id', engineerId)
         .eq('cw', cwBase)
         .eq('year', year)
-        .select('*');
+        .select();
 
-      if (updateError) {
-        console.error('Update error:', updateError);
-        toast({
-          title: "Chyba při ukládání",
-          description: updateError.message,
-          variant: "destructive",
-        });
-        return;
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        throw new Error(`No planning entry found for engineer ${konstrukter}, ${cw}, year ${year}`);
       }
 
-      // Fallback: legacy rows may have NULL engineer_id but matching konstrukter
-      if (!updateData || updateData.length === 0) {
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('planning_entries')
-          .update({
-            projekt,
-            updated_at: new Date().toISOString(),
-            engineer_id: engineerId
-          })
-          .is('engineer_id', null)
-          .eq('konstrukter', konstrukter)
-          .eq('cw', cwBase)
-          .eq('year', year)
-          .select('*');
+      // Single-row verification (source of truth)
+      const verifiedData = await verifyUpdate(engineerId, cwBase, year, projekt);
+      console.log('VERIFIED_PROJECT_UPDATE:', verifiedData);
 
-        if (fallbackError) {
-          console.error('Fallback update error:', fallbackError);
-        } else {
-          updateData = fallbackData;
+      // Targeted UI patch using primary key (engineer_id, cw, year)
+      setPlanningData(prev => prev.map(entry => {
+        if (entry.engineer_id === engineerId && entry.cw === cw) {
+          return { ...entry, projekt: verifiedData.projekt };
         }
-      }
-
-      console.log('UPDATE successful (with possible fallback):', updateData);
-
-      // FIX 1: Po UPDATE vždy potvrď pravdu cíleným dotazem
-      const { data: verifyRow, error: verifyError } = await supabase
-        .from('planning_entries')
-        .select('engineer_id,cw,year,projekt,mh_tyden,updated_at')
-        .eq('engineer_id', engineerId)
-        .eq('cw', cwBase)          // POZOR: cw bez roku (např. 'CW31')
-        .eq('year', year)          // rok zvlášť
-        .maybeSingle();
-
-      if (!verifyError && verifyRow) {
-        console.log('SINGLE_ROW_VERIFY:', verifyRow);
-        // FIX 2: Patchni přes primární klíč (engineer_id, cw, year), ne přes jméno/cw_full
-        setPlanningData(prev => {
-          const sameRow = (e: any) => e.engineer_id === verifyRow.engineer_id && 
-                                      e.cw === `${verifyRow.cw}-${verifyRow.year}`;
-          
-          const exists = prev.some(sameRow);
-          
-          if (exists) {
-            return prev.map(entry =>
-              sameRow(entry)
-                ? { ...entry, projekt: verifyRow.projekt, mhTyden: verifyRow.mh_tyden }
-                : entry
-            );
-          } else {
-            // Add new entry if not exists
-            const newEntry: PlanningEntry = {
-              engineer_id: verifyRow.engineer_id,
-              konstrukter,
-              cw: `${verifyRow.cw}-${verifyRow.year}`,
-              mesic: new Date().toLocaleDateString('cs-CZ', { month: 'long' }),
-              projekt: verifyRow.projekt,
-              mhTyden: verifyRow.mh_tyden
-            };
-            return [...prev, newEntry];
-          }
-        });
-      } else {
-        console.warn('Single-row verify failed:', verifyError);
-        // Fallback to optimistic update
-        setPlanningData(prev => prev.map(entry => {
-          const matchById = entry.engineer_id === engineerId && entry.cw === `${cwBase}-${year}`;
-          const matchByNameLegacy = entry.engineer_id === null && entry.konstrukter === konstrukter && entry.cw === `${cwBase}-${year}`;
-          return (matchById || matchByNameLegacy)
-            ? { ...entry, projekt }
-            : entry;
-        }));
-      }
+        return entry;
+      }));
 
       toast({
         title: "Projekt aktualizován",
@@ -145,28 +95,31 @@ export function usePlanningMutations({ setPlanningData }: UsePlanningMutationsPr
       });
 
     } catch (error) {
-      console.error('Unexpected error in updatePlanningEntry:', error);
+      console.error('Error updating planning project:', error);
       toast({
-        title: "Neočekávaná chyba",
-        description: "Kontaktujte podporu",
+        title: "Chyba při ukládání",
+        description: error instanceof Error ? error.message : "Neočekávaná chyba",
         variant: "destructive",
       });
     }
-  }, [setPlanningData]);
+  }, [setPlanningData, toast, verifyUpdate]);
 
+  // Update planning hours - CLEAN: only engineer_id
   const updatePlanningHours = useCallback(async (
     engineerId: string,
     konstrukter: string,
     cw: string,
     hours: number
-  ) => {
+  ): Promise<void> => {
     try {
+      console.log('CLEAN_UPDATE_HOURS:', { engineerId, konstrukter, cw, hours });
+
+      // Extract year from CW
       const [cwBase, yearStr] = cw.includes('-') ? cw.split('-') : [cw, new Date().getFullYear().toString()];
       const year = parseInt(yearStr);
 
-      // Update existing entry - with trigger, entries should always exist  
-      // Primary update by engineer_id
-      let { data: updateData, error: updateError } = await supabase
+      // Single update using engineer_id only (no fallbacks)
+      const { data, error } = await supabase
         .from('planning_entries')
         .update({ 
           mh_tyden: hours,
@@ -175,88 +128,25 @@ export function usePlanningMutations({ setPlanningData }: UsePlanningMutationsPr
         .eq('engineer_id', engineerId)
         .eq('cw', cwBase)
         .eq('year', year)
-        .select('*');
+        .select();
 
-      if (updateError) {
-        console.error('Update hours error:', updateError);
-        toast({
-          title: "Chyba při ukládání hodin",
-          description: updateError.message,
-          variant: "destructive",
-        });
-        return;
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        throw new Error(`No planning entry found for engineer ${konstrukter}, ${cw}, year ${year}`);
       }
 
-      // Fallback: legacy rows may have NULL engineer_id but matching konstrukter
-      if (!updateData || updateData.length === 0) {
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('planning_entries')
-          .update({
-            mh_tyden: hours,
-            updated_at: new Date().toISOString(),
-            engineer_id: engineerId
-          })
-          .is('engineer_id', null)
-          .eq('konstrukter', konstrukter)
-          .eq('cw', cwBase)
-          .eq('year', year)
-          .select('*');
+      // Single-row verification (source of truth)
+      const verifiedData = await verifyUpdate(engineerId, cwBase, year, undefined, hours);
+      console.log('VERIFIED_HOURS_UPDATE:', verifiedData);
 
-        if (fallbackError) {
-          console.error('Fallback update hours error:', fallbackError);
-        } else {
-          updateData = fallbackData;
+      // Targeted UI patch using primary key (engineer_id, cw, year)
+      setPlanningData(prev => prev.map(entry => {
+        if (entry.engineer_id === engineerId && entry.cw === cw) {
+          return { ...entry, mhTyden: verifiedData.mh_tyden };
         }
-      }
-
-      console.log('UPDATE hours successful (with possible fallback):', updateData);
-
-      // FIX 1: Po UPDATE/INSERT vždy potvrď pravdu cíleným dotazem pro hodiny
-      const { data: verifyRow, error: verifyError } = await supabase
-        .from('planning_entries')
-        .select('engineer_id,cw,year,projekt,mh_tyden,updated_at')
-        .eq('engineer_id', engineerId)
-        .eq('cw', cwBase)          // POZOR: cw bez roku (např. 'CW31')
-        .eq('year', year)          // rok zvlášť
-        .maybeSingle();
-
-      if (!verifyError && verifyRow) {
-        console.log('SINGLE_ROW_VERIFY_HOURS:', verifyRow);
-        // FIX 2: Patchni přes primární klíč (engineer_id, cw, year), ne přes jméno/cw_full
-        setPlanningData(prev => {
-          const sameRow = (e: any) => e.engineer_id === verifyRow.engineer_id && 
-                                      e.cw === `${verifyRow.cw}-${verifyRow.year}`;
-          
-          const exists = prev.some(sameRow);
-          
-          if (exists) {
-            return prev.map(entry =>
-              sameRow(entry)
-                ? { ...entry, projekt: verifyRow.projekt, mhTyden: verifyRow.mh_tyden }
-                : entry
-            );
-          } else {
-            // Add new entry if not exists
-            const newEntry: PlanningEntry = {
-              engineer_id: verifyRow.engineer_id,
-              konstrukter,
-              cw: `${verifyRow.cw}-${verifyRow.year}`,
-              mesic: new Date().toLocaleDateString('cs-CZ', { month: 'long' }),
-              projekt: verifyRow.projekt,
-              mhTyden: verifyRow.mh_tyden
-            };
-            return [...prev, newEntry];
-          }
-        });
-      } else {
-        console.warn('Single-row verify hours failed:', verifyError);
-        // Fallback to optimistic update
-        setPlanningData(prev => prev.map(entry =>
-          entry.engineer_id === engineerId && entry.cw === `${cwBase}-${year}`
-            ? { ...entry, mhTyden: hours }
-            : entry
-        ));
-      }
+        return entry;
+      }));
 
       toast({
         title: "Hodiny aktualizovány",
@@ -264,17 +154,18 @@ export function usePlanningMutations({ setPlanningData }: UsePlanningMutationsPr
       });
 
     } catch (error) {
-      console.error('Unexpected error in updatePlanningHours:', error);
+      console.error('Error updating planning hours:', error);
       toast({
-        title: "Neočekávaná chyba",
-        description: "Kontaktujte podporu",
+        title: "Chyba při ukládání hodin",
+        description: error instanceof Error ? error.message : "Neočekávaná chyba",
         variant: "destructive",
       });
     }
-  }, [setPlanningData]);
+  }, [setPlanningData, toast, verifyUpdate]);
 
   return {
     updatePlanningEntry,
     updatePlanningHours,
+    findEngineerByName,
   };
 }

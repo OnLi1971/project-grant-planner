@@ -3,48 +3,61 @@ import { supabase } from '@/integrations/supabase/client';
 import { PlanningEntry, EngineerInfo } from '@/types/planning';
 import { useToast } from '@/hooks/use-toast';
 
+// Centralized engineer status filter - single source of truth
+export const ACTIVE_ENGINEER_STATUSES = ['active', 'contractor'] as const;
+
 export function usePlanningData() {
   const { toast } = useToast();
   const [planningData, setPlanningData] = useState<PlanningEntry[]>([]);
   const [engineers, setEngineers] = useState<EngineerInfo[]>([]);
+  
+  // Refs to prevent race conditions
   const abortControllerRef = useRef<AbortController | null>(null);
-  const latestFetchIdRef = useRef(0); // FIX 3: Rename for clarity
+  const latestFetchIdRef = useRef(0);
   const [fetchTimeline, setFetchTimeline] = useState<Array<{id: number, startAt: string, endAt?: string, applied: boolean, source: string}>>([]);
   const fetchTimelineRef = useRef(fetchTimeline);
 
-  const loadEngineers = useCallback(async () => {
+  // Load engineers with centralized status filter
+  const loadEngineers = useCallback(async (): Promise<EngineerInfo[]> => {
     try {
       console.log('Loading engineers from database...');
       const { data, error } = await supabase
         .from('engineers')
         .select('id, display_name, slug, status')
-        .neq('status', 'inactive')
-        .order('display_name');
+        .in('status', ACTIVE_ENGINEER_STATUSES)
+        .order('display_name', { ascending: true });
 
       if (error) {
         console.error('Error loading engineers:', error);
         throw error;
       }
 
-      console.log('Engineers loaded successfully:', data?.length, 'engineers');
-      console.log('Sample engineer data:', data?.[0]);
-      setEngineers(data || []);
-      return data || [];
+      const engineerList = data.map(engineer => ({
+        id: engineer.id,
+        display_name: engineer.display_name,
+        slug: engineer.slug,
+        status: engineer.status
+      }));
+
+      console.log('Engineers loaded successfully:', engineerList?.length, 'engineers');
+      setEngineers(engineerList || []);
+      return engineerList || [];
     } catch (error) {
       console.error('Error loading engineers:', error);
       return [];
     }
   }, []);
 
+  // Load planning data with race condition protection
   const loadPlanningData = useCallback(async (source = 'manual') => {
-    // FIX 3: Zastav předešlé fetch(e) a aplikuj jen poslední
+    // Abort previous fetch and apply only the latest
     if (abortControllerRef.current) {
       console.log('Aborting previous fetch request');
       abortControllerRef.current.abort();
     }
     abortControllerRef.current = new AbortController();
     
-    const myFetchId = ++latestFetchIdRef.current; // Increment for unique ID
+    const myFetchId = ++latestFetchIdRef.current;
     const startAt = new Date().toISOString();
     const timelineEntry = { id: myFetchId, startAt, applied: false, source };
     
@@ -72,7 +85,7 @@ export function usePlanningData() {
         engineerMap.set(eng.slug, eng);
       });
 
-      // FIX 5: Load data from planning_matrix view (already implemented) 
+      // Load data from planning_matrix view with pagination
       let page = 0;
       const pageSize = 1000;
       let allRows: any[] = [];
@@ -87,7 +100,7 @@ export function usePlanningData() {
         const from = page * pageSize;
         const to = from + pageSize - 1;
         const { data: batch, error: pageError } = await supabase
-          .from('planning_matrix')  // FIX 5: Use view as recommended
+          .from('planning_matrix')
           .select('*')
           .range(from, to)
           .abortSignal(abortControllerRef.current.signal);
@@ -114,7 +127,7 @@ export function usePlanningData() {
         page++;
       }
 
-      // Final abort check before processing - aplikuj jen pokud je to stále nejnovější fetch
+      // Final abort check before processing - apply only if this is still the latest fetch
       if (myFetchId !== latestFetchIdRef.current) {
         console.log(`Stale fetch ignored ${myFetchId}, latest is ${latestFetchIdRef.current}`);
         setFetchTimeline(prev => {
@@ -129,18 +142,18 @@ export function usePlanningData() {
         return;
       }
 
-      // Process and deduplicate data
+      // Process and deduplicate data using engineer_id + cw + year as primary key
       const seenEntries = new Map<string, any>();
       const deduplicatedRows: any[] = [];
 
       allRows.forEach(row => {
         if (!row.konstrukter || !row.cw_full) return;
         
-        // FIX 2: Striktní klíčování záznamů v UI - use engineer_id + cw + year for deduplication
         const engineer = engineerMap.get(row.konstrukter);
+        // Primary key: engineer_id + cw + year (clean approach)
         const key = engineer?.id && row.cw && row.year 
           ? `${engineer.id}-${row.cw}-${row.year}` 
-          : `${row.konstrukter}-${row.cw_full}`; // fallback
+          : `${row.konstrukter}-${row.cw_full}`; // fallback for unmapped data
         
         const existing = seenEntries.get(key);
         
@@ -227,14 +240,14 @@ export function usePlanningData() {
         variant: "destructive",
       });
     }
-  }, [loadEngineers, setPlanningData]);
+  }, [loadEngineers, setPlanningData, toast]);
 
   return {
     planningData,
     engineers,
     setPlanningData,
     loadPlanningData,
-    loadEngineers, // Export loadEngineers separately
+    loadEngineers,
     fetchTimeline,
     fetchTimelineRef,
   };
