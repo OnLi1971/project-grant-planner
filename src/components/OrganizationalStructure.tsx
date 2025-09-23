@@ -4,7 +4,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Users, Building, Search } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Users, Building, Search, Plus } from 'lucide-react';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Employee {
@@ -22,6 +26,27 @@ export const OrganizationalStructure = () => {
   const [filterLeader, setFilterLeader] = useState('all');
   const [filterCompany, setFilterCompany] = useState('all');
   const [filterProgram, setFilterProgram] = useState('all');
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [newEmployee, setNewEmployee] = useState({
+    name: '',
+    company: '',
+    program: '',
+    organizational_leader: ''
+  });
+
+  // Available options for dropdowns
+  const availableCompanies = ['TM CZ a.s.', 'MB idea SK, s.r.o.'];
+  const availableLeaders = ['JoMa', 'OnLi', 'KaSo', 'PaHo', 'PeMa', 'DaAm', 'PeNe', 'Dodavatel'];
+  const availablePrograms = [
+    'Steam Turbines',
+    'Car Body & Bogies', 
+    'Electro Design',
+    'Interiors & Non-metallic Design',
+    'General Machinery',
+    'Stress Analysis',
+    'IWE',
+    'N/A'
+  ];
 
   // Load employees from database
   useEffect(() => {
@@ -45,6 +70,41 @@ export const OrganizationalStructure = () => {
       console.error('Error loading employees:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const addEmployee = async () => {
+    if (!newEmployee.name || !newEmployee.company || !newEmployee.organizational_leader) {
+      toast.error('Vyplňte prosím povinná pole: Jméno, Společnost a Organizační vedoucí');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('employees')
+        .insert([{
+          name: newEmployee.name.trim(),
+          company: newEmployee.company,
+          program: newEmployee.program || null,
+          organizational_leader: newEmployee.organizational_leader
+        }])
+        .select();
+
+      if (error) {
+        console.error('Error adding employee:', error);
+        toast.error('Chyba při přidávání zaměstnance');
+        return;
+      }
+
+      if (data && data.length > 0) {
+        setEmployees(prev => [...prev, data[0]]);
+        setNewEmployee({ name: '', company: '', program: '', organizational_leader: '' });
+        setIsAddDialogOpen(false);
+        toast.success('Zaměstnanec byl úspěšně přidán');
+      }
+    } catch (error) {
+      console.error('Error adding employee:', error);
+      toast.error('Chyba při přidávání zaměstnance');
     }
   };
 
@@ -122,6 +182,82 @@ export const OrganizationalStructure = () => {
             <h2 className="text-xl font-semibold">Organizační struktura</h2>
             <Badge variant="outline">{filteredEmployees.length} z {employees.length} zaměstnanců</Badge>
           </div>
+          
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Přidat zaměstnance
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Přidat nového zaměstnance</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Jméno *</Label>
+                  <Input
+                    id="name"
+                    placeholder="Jméno zaměstnance"
+                    value={newEmployee.name}
+                    onChange={(e) => setNewEmployee(prev => ({ ...prev, name: e.target.value }))}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="company">Společnost *</Label>
+                  <Select value={newEmployee.company} onValueChange={(value) => setNewEmployee(prev => ({ ...prev, company: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Vyberte společnost" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableCompanies.map(company => (
+                        <SelectItem key={company} value={company}>{company}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="program">Program</Label>
+                  <Select value={newEmployee.program} onValueChange={(value) => setNewEmployee(prev => ({ ...prev, program: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Vyberte program" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availablePrograms.map(program => (
+                        <SelectItem key={program} value={program}>{program}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="leader">Organizační vedoucí *</Label>
+                  <Select value={newEmployee.organizational_leader} onValueChange={(value) => setNewEmployee(prev => ({ ...prev, organizational_leader: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Vyberte organizačního vedoucího" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableLeaders.map(leader => (
+                        <SelectItem key={leader} value={leader}>{leader}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="flex justify-end gap-2 pt-4">
+                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                    Zrušit
+                  </Button>
+                  <Button onClick={addEmployee}>
+                    Přidat zaměstnance
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
         {/* Filters */}
