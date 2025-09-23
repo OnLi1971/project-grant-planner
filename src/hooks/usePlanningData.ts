@@ -194,6 +194,12 @@ export function usePlanningData() {
 
       console.log(`Fetch ${myFetchId} processed ${allRows.length} rows → ${planningEntries.length} entries`);
       
+      // Final race condition check before applying data
+      if (latestFetchIdRef.current !== myFetchId) {
+        console.log(`Fetch ${myFetchId} superseded before applying data, latest is ${latestFetchIdRef.current}`);
+        return;
+      }
+      
       setPlanningData(planningEntries);
       
       // Mark as applied
