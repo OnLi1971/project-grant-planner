@@ -163,13 +163,16 @@ export type Database = {
       }
       engineers: {
         Row: {
+          company: string
           created_at: string
+          currency: string | null
           department_id: string | null
           display_name: string
           email: string | null
           end_date: string | null
           fte_percent: number
           handle: string | null
+          hourly_rate: number | null
           id: string
           manager_id: string | null
           slug: string
@@ -178,13 +181,16 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          company?: string
           created_at?: string
+          currency?: string | null
           department_id?: string | null
           display_name: string
           email?: string | null
           end_date?: string | null
           fte_percent?: number
           handle?: string | null
+          hourly_rate?: number | null
           id?: string
           manager_id?: string | null
           slug: string
@@ -193,13 +199,16 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          company?: string
           created_at?: string
+          currency?: string | null
           department_id?: string | null
           display_name?: string
           email?: string | null
           end_date?: string | null
           fte_percent?: number
           handle?: string | null
+          hourly_rate?: number | null
           id?: string
           manager_id?: string | null
           slug?: string
@@ -576,22 +585,37 @@ export type Database = {
         Returns: undefined
       }
       engineers_create: {
-        Args: {
-          p_department?: string
-          p_display_name: string
-          p_email?: string
-          p_fte?: number
-          p_manager?: string
-          p_status?: Database["public"]["Enums"]["engineer_status"]
-        }
+        Args:
+          | {
+              p_company?: string
+              p_currency?: string
+              p_department?: string
+              p_display_name: string
+              p_email?: string
+              p_fte?: number
+              p_hourly_rate?: number
+              p_manager?: string
+              p_status?: Database["public"]["Enums"]["engineer_status"]
+            }
+          | {
+              p_department?: string
+              p_display_name: string
+              p_email?: string
+              p_fte?: number
+              p_manager?: string
+              p_status?: Database["public"]["Enums"]["engineer_status"]
+            }
         Returns: {
+          company: string
           created_at: string
+          currency: string | null
           department_id: string | null
           display_name: string
           email: string | null
           end_date: string | null
           fte_percent: number
           handle: string | null
+          hourly_rate: number | null
           id: string
           manager_id: string | null
           slug: string
@@ -601,23 +625,39 @@ export type Database = {
         }
       }
       engineers_update: {
-        Args: {
-          p_department?: string
-          p_display_name?: string
-          p_email?: string
-          p_fte?: number
-          p_id: string
-          p_manager?: string
-          p_status?: Database["public"]["Enums"]["engineer_status"]
-        }
+        Args:
+          | {
+              p_company?: string
+              p_currency?: string
+              p_department?: string
+              p_display_name?: string
+              p_email?: string
+              p_fte?: number
+              p_hourly_rate?: number
+              p_id: string
+              p_manager?: string
+              p_status?: Database["public"]["Enums"]["engineer_status"]
+            }
+          | {
+              p_department?: string
+              p_display_name?: string
+              p_email?: string
+              p_fte?: number
+              p_id: string
+              p_manager?: string
+              p_status?: Database["public"]["Enums"]["engineer_status"]
+            }
         Returns: {
+          company: string
           created_at: string
+          currency: string | null
           department_id: string | null
           display_name: string
           email: string | null
           end_date: string | null
           fte_percent: number
           handle: string | null
+          hourly_rate: number | null
           id: string
           manager_id: string | null
           slug: string

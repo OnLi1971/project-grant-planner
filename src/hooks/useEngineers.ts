@@ -7,8 +7,10 @@ export type UIEngineer = {
   jmeno: string;       // display_name for compatibility
   slug: string;
   status: string;
-  spolecnost?: string; // will be derived from org structure
+  spolecnost?: string; // company field
   orgVedouci?: string; // will be derived from org structure
+  hourlyRate?: number;
+  currency?: 'EUR' | 'CZK';
 };
 
 export type DatabaseEngineer = {
@@ -20,6 +22,9 @@ export type DatabaseEngineer = {
   fte_percent: number;
   department_id?: string;
   manager_id?: string;
+  company: string;
+  hourly_rate?: number;
+  currency?: 'EUR' | 'CZK';
   created_at: string;
   updated_at: string;
 };
@@ -64,8 +69,10 @@ export function useEngineers() {
           jmeno: engineer.display_name,
           slug: engineer.slug,
           status: engineer.status,
-          spolecnost: orgInfo.company,
+          spolecnost: engineer.company, // Use actual company from DB
           orgVedouci: orgInfo.leader,
+          hourlyRate: engineer.hourly_rate,
+          currency: engineer.currency,
         };
       });
 
@@ -84,13 +91,16 @@ export function useEngineers() {
     }
   };
 
-  const createEngineer = async (displayName: string, email?: string) => {
+  const createEngineer = async (displayName: string, email?: string, company?: string, hourlyRate?: number, currency?: 'EUR' | 'CZK') => {
     try {
       const { data, error } = await supabase.rpc('engineers_create', {
         p_display_name: displayName,
         p_email: email,
         p_status: 'active',
-        p_fte: 100
+        p_fte: 100,
+        p_company: company || 'TM CZ',
+        p_hourly_rate: hourlyRate,
+        p_currency: currency
       });
 
       if (error) {
@@ -123,7 +133,10 @@ export function useEngineers() {
         p_display_name: updates.display_name,
         p_email: updates.email,
         p_status: updates.status,
-        p_fte: updates.fte_percent
+        p_fte: updates.fte_percent,
+        p_company: updates.company,
+        p_hourly_rate: updates.hourly_rate,
+        p_currency: updates.currency
       });
 
       if (error) {

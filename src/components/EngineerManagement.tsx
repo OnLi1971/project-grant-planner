@@ -18,8 +18,10 @@ export function EngineerManagement() {
   const [editingEngineer, setEditingEngineer] = useState<any>(null);
   const [formData, setFormData] = useState({
     displayName: '',
-    email: '',
-    status: 'active' as const
+    status: 'active' as 'active' | 'inactive' | 'contractor' | 'on_leave',
+    company: 'TM CZ' as string,
+    hourlyRate: '' as string,
+    currency: 'CZK' as 'EUR' | 'CZK'
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -34,11 +36,38 @@ export function EngineerManagement() {
       return;
     }
 
+    // Validate contractor fields
+    if (formData.status === 'contractor') {
+      if (!formData.hourlyRate || parseFloat(formData.hourlyRate) <= 0) {
+        toast({
+          title: "Validation error",
+          description: "Hourly rate is required for contractors",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     try {
-      await createEngineer(formData.displayName, formData.email || undefined);
+      const hourlyRate = formData.status === 'contractor' ? parseFloat(formData.hourlyRate) : undefined;
+      const currency = formData.status === 'contractor' ? formData.currency : undefined;
+      
+      await createEngineer(
+        formData.displayName, 
+        undefined, // no email 
+        formData.company,
+        hourlyRate,
+        currency
+      );
       setIsCreateDialogOpen(false);
-      setFormData({ displayName: '', email: '', status: 'active' });
+      setFormData({ 
+        displayName: '', 
+        status: 'active', 
+        company: 'TM CZ', 
+        hourlyRate: '', 
+        currency: 'CZK' 
+      });
     } catch (error) {
       // Error already handled by the hook
     } finally {
@@ -49,17 +78,40 @@ export function EngineerManagement() {
   const handleEdit = async () => {
     if (!editingEngineer) return;
 
+    // Validate contractor fields
+    if (formData.status === 'contractor') {
+      if (!formData.hourlyRate || parseFloat(formData.hourlyRate) <= 0) {
+        toast({
+          title: "Validation error",
+          description: "Hourly rate is required for contractors",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     try {
+      const hourlyRate = formData.status === 'contractor' ? parseFloat(formData.hourlyRate) : undefined;
+      const currency = formData.status === 'contractor' ? formData.currency : undefined;
+      
       await updateEngineer(editingEngineer.id, {
         display_name: formData.displayName,
-        email: formData.email || undefined,
         status: formData.status,
-        fte_percent: 100
+        fte_percent: 100,
+        company: formData.company,
+        hourly_rate: hourlyRate,
+        currency: currency
       });
       setIsEditDialogOpen(false);
       setEditingEngineer(null);
-      setFormData({ displayName: '', email: '', status: 'active' });
+      setFormData({ 
+        displayName: '', 
+        status: 'active', 
+        company: 'TM CZ', 
+        hourlyRate: '', 
+        currency: 'CZK' 
+      });
     } catch (error) {
       // Error already handled by the hook
     } finally {
@@ -71,8 +123,10 @@ export function EngineerManagement() {
     setEditingEngineer(engineer);
     setFormData({
       displayName: engineer.jmeno,
-      email: '', // We don't store email in the UI format yet
-      status: engineer.status
+      status: engineer.status,
+      company: engineer.spolecnost || 'TM CZ',
+      hourlyRate: engineer.hourlyRate ? engineer.hourlyRate.toString() : '',
+      currency: engineer.currency || 'CZK'
     });
     setIsEditDialogOpen(true);
   };
@@ -140,15 +194,64 @@ export function EngineerManagement() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="email">Email (optional)</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                      placeholder="jan.novak@company.com"
-                    />
+                    <Label htmlFor="status">Status</Label>
+                    <Select value={formData.status} onValueChange={(value: any) => setFormData(prev => ({ 
+                      ...prev, 
+                      status: value,
+                      company: value === 'contractor' ? prev.company : 'TM CZ'
+                    }))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                        <SelectItem value="contractor">Contractor</SelectItem>
+                        <SelectItem value="on_leave">On Leave</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
+                  {formData.status === 'contractor' && (
+                    <>
+                      <div>
+                        <Label htmlFor="company">Company</Label>
+                        <Select value={formData.company} onValueChange={(value) => setFormData(prev => ({ ...prev, company: value }))}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="MB Idea">MB Idea</SelectItem>
+                            <SelectItem value="AERTEC">AERTEC</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="hourlyRate">Hourly Rate *</Label>
+                          <Input
+                            id="hourlyRate"
+                            type="number"
+                            step="0.01"
+                            value={formData.hourlyRate}
+                            onChange={(e) => setFormData(prev => ({ ...prev, hourlyRate: e.target.value }))}
+                            placeholder="0.00"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="currency">Currency</Label>
+                          <Select value={formData.currency} onValueChange={(value: 'EUR' | 'CZK') => setFormData(prev => ({ ...prev, currency: value }))}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="CZK">CZK</SelectItem>
+                              <SelectItem value="EUR">EUR</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </>
+                  )}
                   <div className="flex justify-end space-x-2">
                     <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                       Cancel
@@ -177,6 +280,7 @@ export function EngineerManagement() {
                   <TableHead>Slug</TableHead>
                   <TableHead>Company</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Rate</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -187,6 +291,12 @@ export function EngineerManagement() {
                     <TableCell className="font-mono text-sm">{engineer.slug}</TableCell>
                     <TableCell>{engineer.spolecnost}</TableCell>
                     <TableCell>{getStatusBadge(engineer.status)}</TableCell>
+                    <TableCell>
+                      {engineer.status === 'contractor' && engineer.hourlyRate 
+                        ? `${engineer.hourlyRate} ${engineer.currency}` 
+                        : '-'
+                      }
+                    </TableCell>
                     <TableCell>
                       <Button
                         variant="ghost"
@@ -223,17 +333,12 @@ export function EngineerManagement() {
               />
             </div>
             <div>
-              <Label htmlFor="editEmail">Email</Label>
-              <Input
-                id="editEmail"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-              />
-            </div>
-            <div>
               <Label htmlFor="editStatus">Status</Label>
-              <Select value={formData.status} onValueChange={(value: any) => setFormData(prev => ({ ...prev, status: value }))}>
+              <Select value={formData.status} onValueChange={(value: any) => setFormData(prev => ({ 
+                ...prev, 
+                status: value,
+                company: value === 'contractor' ? prev.company : 'TM CZ'
+              }))}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -245,6 +350,47 @@ export function EngineerManagement() {
                 </SelectContent>
               </Select>
             </div>
+            {formData.status === 'contractor' && (
+              <>
+                <div>
+                  <Label htmlFor="editCompany">Company</Label>
+                  <Select value={formData.company} onValueChange={(value) => setFormData(prev => ({ ...prev, company: value }))}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="MB Idea">MB Idea</SelectItem>
+                      <SelectItem value="AERTEC">AERTEC</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="editHourlyRate">Hourly Rate *</Label>
+                    <Input
+                      id="editHourlyRate"
+                      type="number"
+                      step="0.01"
+                      value={formData.hourlyRate}
+                      onChange={(e) => setFormData(prev => ({ ...prev, hourlyRate: e.target.value }))}
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="editCurrency">Currency</Label>
+                    <Select value={formData.currency} onValueChange={(value: 'EUR' | 'CZK') => setFormData(prev => ({ ...prev, currency: value }))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="CZK">CZK</SelectItem>
+                        <SelectItem value="EUR">EUR</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </>
+            )}
             <div className="flex justify-end space-x-2">
               <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
                 Cancel
