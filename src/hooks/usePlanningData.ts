@@ -2,9 +2,10 @@ import { useState, useCallback, useRef, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { PlanningEntry, EngineerInfo } from '@/types/planning';
 import { useToast } from '@/hooks/use-toast';
-
-export { ACTIVE_ENGINEER_STATUSES } from '@/constants/statuses';
 import { useEngineers } from '@/hooks/useEngineers';
+
+// Re-export for backwards compatibility
+export { ACTIVE_ENGINEER_STATUSES } from '@/constants/statuses';
 
 export function usePlanningData() {
   const { toast } = useToast();

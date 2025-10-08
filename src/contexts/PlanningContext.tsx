@@ -31,11 +31,8 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   }, [engineers]);
 
-  // Load engineers independently on mount
-  useEffect(() => {
-    console.log('PlanningProvider: Loading engineers independently...');
-    loadEngineers();
-  }, [loadEngineers]);
+  // Engineers are now loaded via React Query in usePlanningData -> useEngineers
+  // No need for separate mount effect - data comes from cache
 
   // Initial data load
   useEffect(() => {

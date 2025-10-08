@@ -1,8 +1,12 @@
 import { useToast } from '@/hooks/use-toast';
 import { ACTIVE_ENGINEER_STATUSES } from '@/constants/statuses';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetchEngineers, DatabaseEngineer } from '@/services/engineersApi';
+import { fetchEngineers } from '@/services/engineersApi';
+import type { DatabaseEngineer } from '@/services/engineersApi';
 import { supabase } from '@/integrations/supabase/client';
+
+// Re-export for backwards compatibility
+export type { DatabaseEngineer } from '@/services/engineersApi';
 
 export type UIEngineer = {
   id: string;
