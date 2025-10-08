@@ -82,7 +82,9 @@ export function usePlanningMutations({ setPlanningData, engineers }: UsePlanning
       console.log('VERIFIED_PROJECT_UPDATE:', verifiedData);
 
       // Targeted UI patch using primary key (engineer_id, cw, year)
+      // Note: entry.cw includes year (e.g., "CW31-2025"), cw parameter includes year too
       setPlanningData(prev => prev.map(entry => {
+        // Match by engineer_id and cw (both include year format)
         if (entry.engineer_id === engineerId && entry.cw === cw) {
           return { ...entry, projekt: verifiedData.projekt };
         }
@@ -141,7 +143,9 @@ export function usePlanningMutations({ setPlanningData, engineers }: UsePlanning
       console.log('VERIFIED_HOURS_UPDATE:', verifiedData);
 
       // Targeted UI patch using primary key (engineer_id, cw, year)
+      // Note: entry.cw includes year (e.g., "CW31-2025"), cw parameter includes year too
       setPlanningData(prev => prev.map(entry => {
+        // Match by engineer_id and cw (both include year format)
         if (entry.engineer_id === engineerId && entry.cw === cw) {
           return { ...entry, mhTyden: verifiedData.mh_tyden };
         }

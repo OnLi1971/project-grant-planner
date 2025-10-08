@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { PlanningEntry, PlanningContextType } from '@/types/planning';
 import { usePlanningData } from '@/hooks/usePlanningData';
 import { usePlanningMutations } from '@/hooks/usePlanningMutations';
+import { normalizeName } from '@/utils/nameNormalization';
 
 const PlanningContext = createContext<PlanningContextType | undefined>(undefined);
 
@@ -86,17 +87,36 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Wrapper functions to maintain backwards compatibility
   const updatePlanningEntry = useCallback(async (konstrukter: string, cw: string, projekt: string) => {
-    // Find engineer_id from konstrukter name
-    const engineer = engineers.find(e => e.display_name === konstrukter);
-    const engineerId = engineer?.id || '';
-    await updateEntry(engineerId, konstrukter, cw, projekt);
+    // Find engineer_id from konstrukter name using normalization to handle diacritics
+    const normalizedKonstrukter = normalizeName(konstrukter);
+    const engineer = engineers.find(e => 
+      normalizeName(e.display_name) === normalizedKonstrukter || 
+      e.slug === normalizedKonstrukter
+    );
+    
+    if (!engineer) {
+      console.error('Engineer not found:', konstrukter, 'normalized:', normalizedKonstrukter);
+      console.log('Available engineers:', engineers.map(e => ({ name: e.display_name, slug: e.slug })));
+      throw new Error(`Engineer not found: ${konstrukter}`);
+    }
+    
+    await updateEntry(engineer.id, konstrukter, cw, projekt);
   }, [updateEntry, engineers]);
 
   const updatePlanningHours = useCallback(async (konstrukter: string, cw: string, hours: number) => {
-    // Find engineer_id from konstrukter name
-    const engineer = engineers.find(e => e.display_name === konstrukter);
-    const engineerId = engineer?.id || '';
-    await updateHours(engineerId, konstrukter, cw, hours);
+    // Find engineer_id from konstrukter name using normalization to handle diacritics
+    const normalizedKonstrukter = normalizeName(konstrukter);
+    const engineer = engineers.find(e => 
+      normalizeName(e.display_name) === normalizedKonstrukter || 
+      e.slug === normalizedKonstrukter
+    );
+    
+    if (!engineer) {
+      console.error('Engineer not found:', konstrukter, 'normalized:', normalizedKonstrukter);
+      throw new Error(`Engineer not found: ${konstrukter}`);
+    }
+    
+    await updateHours(engineer.id, konstrukter, cw, hours);
   }, [updateHours, engineers]);
 
   const disableRealtime = () => setIsRealtimeEnabled(false);
