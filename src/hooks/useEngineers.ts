@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { ACTIVE_ENGINEER_STATUSES } from '@/hooks/usePlanningData';
+import { ACTIVE_ENGINEER_STATUSES } from '@/constants/statuses';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { fetchEngineers, DatabaseEngineer } from '@/services/engineersApi';
+import { supabase } from '@/integrations/supabase/client';
 
 export type UIEngineer = {
   id: string;
@@ -14,22 +15,6 @@ export type UIEngineer = {
   currency?: 'EUR' | 'CZK';
 };
 
-export type DatabaseEngineer = {
-  id: string;
-  display_name: string;
-  slug: string;
-  email?: string;
-  status: 'active' | 'inactive' | 'contractor' | 'on_leave';
-  fte_percent: number;
-  department_id?: string;
-  manager_id?: string;
-  company: string;
-  hourly_rate?: number;
-  currency?: 'EUR' | 'CZK';
-  created_at: string;
-  updated_at: string;
-};
-
 // Organizational mapping for compatibility (temporary)
 const ORG_MAPPING: Record<string, { company: string; leader: string }> = {
   'fuchs-pavel': { company: 'SBD', leader: 'Fuchs Pavel' },
@@ -40,59 +25,45 @@ const ORG_MAPPING: Record<string, { company: string; leader: string }> = {
   // Add more mappings as needed
 };
 
+const STATUSES = ACTIVE_ENGINEER_STATUSES.join(',');
+export const ENGINEERS_QK = ['engineers', STATUSES] as const;
+
 export function useEngineers() {
-  const [engineers, setEngineers] = useState<UIEngineer[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const fetchEngineers = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const { data, error: fetchError } = await supabase
-        .from('engineers')
-        .select('*')
-        .in('status', ACTIVE_ENGINEER_STATUSES)
-        .order('display_name');
-
-      if (fetchError) {
-        throw fetchError;
-      }
-
-      // Transform DB format to UI format for compatibility
-      const uiEngineers: UIEngineer[] = (data as DatabaseEngineer[]).map(engineer => {
-        const orgInfo = ORG_MAPPING[engineer.slug] || { company: 'Unknown', leader: 'Unknown' };
-        
+  const { data, isLoading, error } = useQuery({
+    queryKey: ENGINEERS_QK,
+    queryFn: () => fetchEngineers(ACTIVE_ENGINEER_STATUSES),
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+    gcTime: 300_000,
+    select: (rows: DatabaseEngineer[]): UIEngineer[] => {
+      return rows.map((engineer) => {
+        const orgInfo = ORG_MAPPING[engineer.slug] || { company: engineer.company || 'Unknown', leader: 'Unknown' };
         return {
           id: engineer.id,
           jmeno: engineer.display_name,
           slug: engineer.slug,
           status: engineer.status,
-          spolecnost: engineer.company, // Use actual company from DB
+          spolecnost: engineer.company,
           orgVedouci: orgInfo.leader,
           hourlyRate: engineer.hourly_rate,
           currency: engineer.currency,
         };
       });
+    },
+    retry: 1,
+  });
 
-      setEngineers(uiEngineers);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch engineers';
-      setError(errorMessage);
-      console.error('Error fetching engineers:', err);
-      toast({
-        title: "Error loading engineers",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const createEngineer = async (displayName: string, email?: string, status?: DatabaseEngineer['status'], company?: string, hourlyRate?: number, currency?: 'EUR' | 'CZK') => {
+  const createEngineer = async (
+    displayName: string,
+    email?: string,
+    status?: DatabaseEngineer['status'],
+    company?: string,
+    hourlyRate?: number,
+    currency?: 'EUR' | 'CZK'
+  ) => {
     try {
       const { data, error } = await supabase.rpc('engineers_create', {
         p_display_name: displayName,
@@ -101,28 +72,16 @@ export function useEngineers() {
         p_fte: 100,
         p_company: company || 'TM CZ',
         p_hourly_rate: hourlyRate,
-        p_currency: currency
+        p_currency: currency,
       });
+      if (error) throw error;
 
-      if (error) {
-        throw error;
-      }
-
-      toast({
-        title: "Engineer created",
-        description: `${displayName} has been added successfully.`,
-      });
-
-      // Refresh the list
-      await fetchEngineers();
+      toast({ title: 'Engineer created', description: `${displayName} has been added successfully.` });
+      await queryClient.invalidateQueries({ queryKey: ENGINEERS_QK });
       return data;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create engineer';
-      toast({
-        title: "Error creating engineer",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      toast({ title: 'Error creating engineer', description: errorMessage, variant: 'destructive' });
       throw err;
     }
   };
@@ -137,50 +96,34 @@ export function useEngineers() {
         p_fte: updates.fte_percent,
         p_company: updates.company,
         p_hourly_rate: updates.hourly_rate,
-        p_currency: updates.currency
+        p_currency: updates.currency,
       });
+      if (error) throw error;
 
-      if (error) {
-        throw error;
-      }
-
-      toast({
-        title: "Engineer updated",
-        description: "Changes have been saved successfully.",
-      });
-
-      // Refresh the list
-      await fetchEngineers();
+      toast({ title: 'Engineer updated', description: 'Changes have been saved successfully.' });
+      await queryClient.invalidateQueries({ queryKey: ENGINEERS_QK });
       return data;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to update engineer';
-      toast({
-        title: "Error updating engineer",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      toast({ title: 'Error updating engineer', description: errorMessage, variant: 'destructive' });
       throw err;
     }
   };
 
-  useEffect(() => {
-    fetchEngineers();
-  }, []);
-
   return {
-    engineers,
+    engineers: (data as UIEngineer[]) || [],
     isLoading,
-    error,
+    error: error ? (error as Error).message : null,
     createEngineer,
     updateEngineer,
-    refetch: fetchEngineers,
+    refetch: () => queryClient.invalidateQueries({ queryKey: ENGINEERS_QK }),
   };
 }
 
 // Utility function to find engineer by various identifiers
 export const findEngineerByName = (engineers: UIEngineer[], targetName: string): UIEngineer | undefined => {
   const normalizedTarget = targetName.toLowerCase().trim();
-  return engineers.find(engineer => 
+  return engineers.find((engineer) =>
     engineer.jmeno.toLowerCase() === normalizedTarget ||
     engineer.slug === normalizedTarget ||
     engineer.jmeno.toLowerCase().includes(normalizedTarget)
@@ -190,7 +133,7 @@ export const findEngineerByName = (engineers: UIEngineer[], targetName: string):
 // Utility to create name mapping for legacy compatibility
 export const createNameMapping = (engineers: UIEngineer[]): Map<string, string> => {
   const mapping = new Map<string, string>();
-  engineers.forEach(engineer => {
+  engineers.forEach((engineer) => {
     mapping.set(engineer.slug, engineer.jmeno);
     mapping.set(engineer.jmeno.toLowerCase(), engineer.jmeno);
   });

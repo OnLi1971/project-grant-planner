@@ -1,15 +1,21 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { PlanningEntry, EngineerInfo } from '@/types/planning';
 import { useToast } from '@/hooks/use-toast';
 
-// Centralized engineer status filter - single source of truth
-export const ACTIVE_ENGINEER_STATUSES = ['active', 'contractor'] as const;
+export { ACTIVE_ENGINEER_STATUSES } from '@/constants/statuses';
+import { useEngineers } from '@/hooks/useEngineers';
 
 export function usePlanningData() {
   const { toast } = useToast();
   const [planningData, setPlanningData] = useState<PlanningEntry[]>([]);
-  const [engineers, setEngineers] = useState<EngineerInfo[]>([]);
+  const { engineers: uiEngineers = [] } = useEngineers() as any;
+  const engineers: EngineerInfo[] = useMemo(() => (uiEngineers as any[]).map((e: any) => ({
+    id: e.id,
+    display_name: e.jmeno,
+    slug: e.slug,
+    status: e.status,
+  })), [uiEngineers]);
   
   // Refs to prevent race conditions
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -17,36 +23,10 @@ export function usePlanningData() {
   const [fetchTimeline, setFetchTimeline] = useState<Array<{id: number, startAt: string, endAt?: string, applied: boolean, source: string}>>([]);
   const fetchTimelineRef = useRef(fetchTimeline);
 
-  // Load engineers with centralized status filter
+  // No-op loader for backwards compatibility; engineers come from React Query cache
   const loadEngineers = useCallback(async (): Promise<EngineerInfo[]> => {
-    try {
-      console.log('Loading engineers from database...');
-      const { data, error } = await supabase
-        .from('engineers')
-        .select('id, display_name, slug, status')
-        .in('status', ACTIVE_ENGINEER_STATUSES)
-        .order('display_name', { ascending: true });
-
-      if (error) {
-        console.error('Error loading engineers:', error);
-        throw error;
-      }
-
-      const engineerList = data.map(engineer => ({
-        id: engineer.id,
-        display_name: engineer.display_name,
-        slug: engineer.slug,
-        status: engineer.status
-      }));
-
-      console.log('Engineers loaded successfully:', engineerList?.length, 'engineers');
-      setEngineers(engineerList || []);
-      return engineerList || [];
-    } catch (error) {
-      console.error('Error loading engineers:', error);
-      return [];
-    }
-  }, []);
+    return engineers;
+  }, [engineers]);
 
   // Load planning data with race condition protection
   const loadPlanningData = useCallback(async (source = 'manual') => {
@@ -70,8 +50,8 @@ export function usePlanningData() {
     });
     
     try {
-      // Load engineers first to create mapping
-      const engineersData = await loadEngineers();
+      // Use engineers from cache (React Query)
+      const engineersData = engineers;
       
       // Check if this request was aborted or superseded
       if (abortControllerRef.current?.signal.aborted || latestFetchIdRef.current !== myFetchId) {
@@ -246,7 +226,7 @@ export function usePlanningData() {
         variant: "destructive",
       });
     }
-  }, [loadEngineers, setPlanningData, toast]);
+  }, [engineers, setPlanningData, toast]);
 
   return {
     planningData,
