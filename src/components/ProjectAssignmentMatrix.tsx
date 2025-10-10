@@ -22,7 +22,8 @@ const organizacniVedouci = [
   'PeMa',
   'DaAm',
   'PeNe',
-  'Dodavatel'
+  'MB Idea',
+  'AERTEC'
 ];
 
 // Mapping of engineers to organizational leaders derived from shared list  
