@@ -1,12 +1,9 @@
 import React, { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/components/AuthProvider';
-import { PlanningTable } from '@/components/PlanningTable';
 import { PlanningEditor } from '@/components/PlanningEditor';
-import { FreeCapacityOverview } from '@/components/FreeCapacityOverview';
 import { ProjectAssignmentMatrix } from '@/components/ProjectAssignmentMatrix';
 import { RevenueOverview } from '@/components/RevenueOverview';
-import { ExecutiveDashboard } from '@/components/ExecutiveDashboard';
 import { ResourceManagement } from '@/components/ResourceManagement';
 import { LicenseManagement } from '@/components/LicenseManagement';
 import { ProjectManagement } from '@/components/ProjectManagement';
@@ -18,11 +15,11 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Edit, Users, Grid3x3, Database, TrendingUp, Settings, Shield, UserPlus, DollarSign, LogOut } from 'lucide-react';
+import { Users, Grid3x3, Database, TrendingUp, Settings, Shield, UserPlus, DollarSign, LogOut } from 'lucide-react';
 
 const Index = () => {
   const { user, loading, signOut } = useAuth();
-  const [outputView, setOutputView] = useState<'overview' | 'free-capacity' | 'matrix' | 'revenue' | 'executive'>('overview');
+  const [outputView, setOutputView] = useState<'matrix' | 'revenue'>('matrix');
   const [managementView, setManagementView] = useState<'projects' | 'resources' | 'licenses' | 'users' | 'engineers' | 'migration'>('projects');
 
   // Show loading while checking auth
@@ -91,22 +88,6 @@ const Index = () => {
               <Card className="p-4 shadow-card-custom">
                 <div className="flex gap-2 mb-6">
                   <Button
-                    variant={outputView === 'overview' ? 'default' : 'outline'}
-                    onClick={() => setOutputView('overview')}
-                    className="flex items-center gap-2"
-                  >
-                    <Calendar className="h-4 w-4" />
-                    Přehled plánování
-                  </Button>
-                  <Button
-                    variant={outputView === 'free-capacity' ? 'default' : 'outline'}
-                    onClick={() => setOutputView('free-capacity')}
-                    className="flex items-center gap-2"
-                  >
-                    <Users className="h-4 w-4" />
-                    Volné kapacity
-                  </Button>
-                  <Button
                     variant={outputView === 'matrix' ? 'default' : 'outline'}
                     onClick={() => setOutputView('matrix')}
                     className="flex items-center gap-2"
@@ -122,27 +103,13 @@ const Index = () => {
                     <DollarSign className="h-4 w-4" />
                     Revenue
                   </Button>
-                  <Button
-                    variant={outputView === 'executive' ? 'default' : 'outline'}
-                    onClick={() => setOutputView('executive')}
-                    className="flex items-center gap-2"
-                  >
-                    <TrendingUp className="h-4 w-4" />
-                    Executive Dashboard
-                  </Button>
                 </div>
               </Card>
               
-              {outputView === 'overview' ? (
-                <PlanningTable />
-              ) : outputView === 'free-capacity' ? (
-                <FreeCapacityOverview />
-              ) : outputView === 'matrix' ? (
+              {outputView === 'matrix' ? (
                 <ProjectAssignmentMatrix />
-              ) : outputView === 'revenue' ? (
-                <RevenueOverview />
               ) : (
-                <ExecutiveDashboard />
+                <RevenueOverview />
               )}
             </TabsContent>
 
