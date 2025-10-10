@@ -51,7 +51,7 @@ export const RevenueOverview = () => {
     'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026'
   ]);
   const [currency, setCurrency] = useState<'CZK' | 'USD'>('CZK');
-  const [projectStatusFilter, setProjectStatusFilter] = useState<'all' | 'realizace' | 'presales'>('all');
+  const [projectStatusFilter, setProjectStatusFilter] = useState<'all' | 'realizace' | 'presales' | 'P0' | 'P1' | 'P2' | 'P3'>('all');
   const [projects, setProjects] = useState<DatabaseProject[]>([]);
   const [customers, setCustomers] = useState<DatabaseCustomer[]>([]);
   const [programs, setPrograms] = useState<DatabaseProgram[]>([]);
@@ -550,9 +550,15 @@ export const RevenueOverview = () => {
       return realizaceProjects;
     } else if (projectStatusFilter === 'presales') {
       return presalesProjects;
+    } else if (['P0', 'P1', 'P2', 'P3'].includes(projectStatusFilter)) {
+      // Filtruj pouze projekty s danou presales fází
+      return projectList.filter(projectCode => {
+        const project = projects.find(p => p.code === projectCode);
+        return project?.presales_phase === projectStatusFilter;
+      });
     }
     return projectList; // 'all'
-  }, [projectList, realizaceProjects, presalesProjects, projectStatusFilter]);
+  }, [projectList, realizaceProjects, presalesProjects, projectStatusFilter, projects]);
 
   // Výpočet celkového revenue pouze pro vybrané měsíce
   const totalRevenue = months.reduce((sum, month) => {
@@ -829,7 +835,7 @@ export const RevenueOverview = () => {
 
               <div className="min-w-[130px]">
                 <Label htmlFor="projectStatus" className="text-xs text-muted-foreground">Status projektu</Label>
-                <Select value={projectStatusFilter} onValueChange={(value: 'all' | 'realizace' | 'presales') => setProjectStatusFilter(value)}>
+                <Select value={projectStatusFilter} onValueChange={(value: 'all' | 'realizace' | 'presales' | 'P0' | 'P1' | 'P2' | 'P3') => setProjectStatusFilter(value)}>
                   <SelectTrigger className="h-8 text-sm">
                     <SelectValue />
                   </SelectTrigger>
@@ -837,6 +843,10 @@ export const RevenueOverview = () => {
                     <SelectItem value="all">PreSales + Realizace</SelectItem>
                     <SelectItem value="realizace">Realizace</SelectItem>
                     <SelectItem value="presales">PreSales</SelectItem>
+                    <SelectItem value="P0">P0</SelectItem>
+                    <SelectItem value="P1">P1</SelectItem>
+                    <SelectItem value="P2">P2</SelectItem>
+                    <SelectItem value="P3">P3</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
