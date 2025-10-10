@@ -134,12 +134,22 @@ export function usePlanningData() {
       allRows.forEach(row => {
         if (!row.konstrukter || !row.cw_full) return;
         
-        // CRITICAL: Always use normalized lookup first, then fallback to raw
-        const rawName = row.konstrukter ?? '';
-        const normName = normalizeName(rawName);
-        const engineer = engineerMap.get(normName) || engineerMap.get(rawName);
+        // PRIORITY 1: Use engineer_id from DB if present
+        // PRIORITY 2: Lookup by normalized name
+        let engineer: EngineerInfo | undefined;
+        
+        if (row.engineer_id) {
+          engineer = engineersData.find(e => e.id === row.engineer_id);
+        }
+        
+        if (!engineer) {
+          const rawName = row.konstrukter ?? '';
+          const normName = normalizeName(rawName);
+          engineer = engineerMap.get(normName) || engineerMap.get(rawName);
+        }
         
         // Primary key: engineer_id + cw + year (clean approach)
+        const normName = normalizeName(row.konstrukter ?? '');
         const key = engineer?.id && row.cw && row.year 
           ? `${engineer.id}-${row.cw}-${row.year}` 
           : `${normName}-${row.cw_full}`; // fallback uses normalized name
@@ -169,15 +179,24 @@ export function usePlanningData() {
         }
       });
 
-      // Convert to PlanningEntry format
+      // Convert to PlanningEntry format with diagnostic logging for contractors
       const planningEntries: PlanningEntry[] = deduplicatedRows.map(row => {
-        const rawName = row.konstrukter ?? '';
-        const normName = normalizeName(rawName);
-        const engineer = engineerMap.get(normName) || engineerMap.get(rawName);
+        // PRIORITY 1: Use engineer_id from DB if present
+        // PRIORITY 2: Lookup by normalized name
+        let engineer: EngineerInfo | undefined;
+        
+        if (row.engineer_id) {
+          engineer = engineersData.find(e => e.id === row.engineer_id);
+        }
+        
+        if (!engineer) {
+          const rawName = row.konstrukter ?? '';
+          const normName = normalizeName(rawName);
+          engineer = engineerMap.get(normName) || engineerMap.get(rawName);
+        }
         
         return {
-          // PRIORITIZE engineer_id from DB (already set by migration/update)
-          engineer_id: row.engineer_id || engineer?.id || null,
+          engineer_id: engineer?.id || null,
           konstrukter: row.konstrukter, // Keep original for display
           cw: row.cw_full,
           mesic: row.mesic || '',
@@ -185,6 +204,26 @@ export function usePlanningData() {
           projekt: row.projekt || 'FREE'
         };
       });
+      
+      // Diagnostic: Log contractor mappings for CW41-2025
+      const contractorDebug = planningEntries
+        .filter(e => e.cw === 'CW41-2025')
+        .map(e => {
+          const eng = engineersData.find(en => en.id === e.engineer_id);
+          return {
+            konstrukter: e.konstrukter,
+            normalized: normalizeName(e.konstrukter),
+            engineer_id: e.engineer_id,
+            status: eng?.status || 'NOT_FOUND',
+            projekt: e.projekt
+          };
+        })
+        .filter(d => d.status === 'contractor' || d.status === 'NOT_FOUND');
+      
+      if (contractorDebug.length > 0) {
+        console.log('=== Contractor mapping debug (CW41-2025) ===');
+        console.table(contractorDebug);
+      }
 
       console.log(`Fetch ${myFetchId} processed ${allRows.length} rows → ${planningEntries.length} entries`);
       
