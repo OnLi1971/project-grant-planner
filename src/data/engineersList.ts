@@ -6,6 +6,9 @@ export interface EngineerInfo {
 
 export const ENGINEERS: EngineerInfo[] = [
   { jmeno: "Ambrož David", orgVedouci: "OnLi", spolecnost: "TM CZ a.s." },
+  { jmeno: "Ivan Bellamy", orgVedouci: "AERTEC", spolecnost: "AERTEC" },
+  { jmeno: "José Carreras", orgVedouci: "AERTEC", spolecnost: "AERTEC" },
+  { jmeno: "Lopez", orgVedouci: "AERTEC", spolecnost: "AERTEC" },
   { jmeno: "Anovčín Branislav", orgVedouci: "DaAm", spolecnost: "TM CZ a.s." },
   { jmeno: "Bartovič Anton", orgVedouci: "DaAm", spolecnost: "TM CZ a.s." },
   { jmeno: "Bartovičová Agáta", orgVedouci: "KaSo", spolecnost: "TM CZ a.s." },
