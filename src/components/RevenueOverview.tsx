@@ -521,7 +521,7 @@ export const RevenueOverview = () => {
       'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026'
     ].filter(month => selectedMonths.includes(month))
     : [
-      'srpen_2025', 'září_2025', 'říjen_2025', 'listopad_2025', 'prosinec_2025',
+      'říjen_2025', 'listopad_2025', 'prosinec_2025',
       'leden_2026', 'únor_2026', 'březen_2026', 'duben_2026', 'květen_2026', 'červen_2026',
       'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026'
     ];
@@ -668,7 +668,6 @@ export const RevenueOverview = () => {
 
   // Možnosti pro kvartální filtr
   const getQuarterOptions = () => [
-    { value: 'Q3-2025', label: 'Q3 2025 (srpen-září)' },
     { value: 'Q4-2025', label: 'Q4 2025 (říjen-prosinec)' },
     { value: 'Q1-2026', label: 'Q1 2026 (leden-březen)' },
     { value: 'Q2-2026', label: 'Q2 2026 (duben-červen)' },
@@ -678,8 +677,6 @@ export const RevenueOverview = () => {
 
   // Možnosti pro měsíční filtr
   const getMonthOptions = () => [
-    { value: 'srpen_2025', label: 'Srpen 2025' },
-    { value: 'září_2025', label: 'Září 2025' },
     { value: 'říjen_2025', label: 'Říjen 2025' },
     { value: 'listopad_2025', label: 'Listopad 2025' },
     { value: 'prosinec_2025', label: 'Prosinec 2025' },
