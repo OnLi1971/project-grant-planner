@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { PlanningEntry, EngineerInfo } from '@/types/planning';
 import { useToast } from '@/hooks/use-toast';
 import { useEngineers } from '@/hooks/useEngineers';
+import { normalizeName } from '@/utils/nameNormalization';
 
 // Re-export for backwards compatibility
 export { ACTIVE_ENGINEER_STATUSES } from '@/constants/statuses';
@@ -64,6 +65,7 @@ export function usePlanningData() {
       engineersData.forEach(eng => {
         engineerMap.set(eng.display_name, eng);
         engineerMap.set(eng.slug, eng);
+        engineerMap.set(normalizeName(eng.display_name), eng);
       });
 
       // Load data from planning_matrix view with pagination
@@ -130,7 +132,7 @@ export function usePlanningData() {
       allRows.forEach(row => {
         if (!row.konstrukter || !row.cw_full) return;
         
-        const engineer = engineerMap.get(row.konstrukter);
+        const engineer = engineerMap.get(row.konstrukter) || engineerMap.get(normalizeName(row.konstrukter));
         // Primary key: engineer_id + cw + year (clean approach)
         const key = engineer?.id && row.cw && row.year 
           ? `${engineer.id}-${row.cw}-${row.year}` 
@@ -150,7 +152,7 @@ export function usePlanningData() {
           if (shouldReplace) {
             seenEntries.set(key, row);
             const existingIndex = deduplicatedRows.findIndex(r => {
-              const existingEng = engineerMap.get(r.konstrukter);
+              const existingEng = engineerMap.get(r.konstrukter) || engineerMap.get(normalizeName(r.konstrukter));
               return existingEng?.id === engineer?.id && r.cw === existing.cw && r.year === existing.year;
             });
             if (existingIndex >= 0) {
@@ -162,7 +164,7 @@ export function usePlanningData() {
 
       // Convert to PlanningEntry format
       const planningEntries: PlanningEntry[] = deduplicatedRows.map(row => {
-        const engineer = engineerMap.get(row.konstrukter);
+        const engineer = engineerMap.get(row.konstrukter) || engineerMap.get(normalizeName(row.konstrukter));
         return {
           engineer_id: engineer?.id || null,
           konstrukter: row.konstrukter,
