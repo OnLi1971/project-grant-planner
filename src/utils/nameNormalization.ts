@@ -16,7 +16,7 @@ export const normalizeName = (name: string): string => {
     .trim();
   
   // 2) Unicode NFD normalizace + odstranění kombinujících diakritických znamének
-  s = s.normalize('NFD').replace(/\p{Diacritic}/gu, '');
+  s = s.normalize('NFD').replace(/\p{M}+/gu, '');
   
   // 3) Speciální výjimky (German ß, Spanish ñ, atd.)
   s = s
