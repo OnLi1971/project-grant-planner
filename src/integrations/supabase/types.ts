@@ -565,6 +565,7 @@ export type Database = {
     Views: {
       planning_matrix: {
         Row: {
+          cw: string | null
           cw_full: string | null
           engineer_id: string | null
           konstrukter: string | null
