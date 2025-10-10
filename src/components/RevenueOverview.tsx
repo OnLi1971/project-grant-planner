@@ -180,7 +180,7 @@ export const RevenueOverview = () => {
   const getWorkingDaysInMonth = (month: string): number => {
     // Základní počet pracovních dnů pro roky 2025-2026 s rokem v názvu
     const baseWorkingDays: { [key: string]: number } = {
-      'srpen_2025': 21, 'září_2025': 22, 'říjen_2025': 23, 'listopad_2025': 20, 'prosinec_2025': 22,
+      'říjen_2025': 23, 'listopad_2025': 20, 'prosinec_2025': 22,
       'leden_2026': 22, 'únor_2026': 20, 'březen_2026': 21, 'duben_2026': 22, 'květen_2026': 21, 'červen_2026': 21,
       'červenec_2026': 23, 'srpen_2026': 21, 'září_2026': 22, 'říjen_2026': 23, 'listopad_2026': 20, 'prosinec_2026': 23
     };
@@ -197,16 +197,8 @@ export const RevenueOverview = () => {
 
   // Přesnější mapování týdnů na měsíce s poměrným rozdělením pro roky 2025-2026
   const weekToMonthMapping: { [key: string]: { [month: string]: number } } = {
-    // Rok 2025 (CW32-52)
-    'CW32': { 'srpen_2025': 1.0 },           // 4-10 srpna 2025 (celý týden)
-    'CW33': { 'srpen_2025': 1.0 },           // 11-17 srpna 2025 (celý týden)  
-    'CW34': { 'srpen_2025': 1.0 },           // 18-24 srpna 2025 (celý týden)
-    'CW35': { 'srpen_2025': 0.6, 'září_2025': 0.4 },  // 25-31 srpna 2025 (3:2 dny)
-    'CW36': { 'září_2025': 1.0 },        // 1-7 září 2025 (celý týden)
-    'CW37': { 'září_2025': 1.0 },        // 8-14 září 2025 (celý týden)
-    'CW38': { 'září_2025': 1.0 },        // 15-21 září 2025 (celý týden)
-    'CW39': { 'září_2025': 1.0 },        // 22-28 září 2025 (celý týden)
-    'CW40': { 'září_2025': 0.4, 'říjen_2025': 0.6 },   // 29 září - 5 října 2025 (2:3 dny)
+    // Rok 2025 (CW40-52) - CW32-39 vynechány (srpen-září historie)
+    'CW40': { 'říjen_2025': 1.0 },   // 29 září - 5 října 2025 (celý týden započítán do října)
     'CW41': { 'říjen_2025': 1.0 },          // 6-12 října 2025 (celý týden)
     'CW42': { 'říjen_2025': 1.0 },          // 13-19 října 2025 (celý týden)
     'CW43': { 'říjen_2025': 1.0 },          // 20-26 října 2025 (celý týden)
