@@ -246,7 +246,14 @@ export const PlanningEditor: React.FC = () => {
   const allProjectCodes = useMemo(() => {
     const staticProjects = availableProjects;
     const dynamicProjects = projects.map(p => p.code);
-    return Array.from(new Set([...staticProjects, ...dynamicProjects]));
+    const allCodes = Array.from(new Set([...staticProjects, ...dynamicProjects]));
+    
+    // Speciální položky na konec
+    const specialItems = ['FREE', 'DOVOLENÁ', 'NEMOC', 'OVER'];
+    const regularProjects = allCodes.filter(code => !specialItems.includes(code)).sort();
+    const specialProjects = allCodes.filter(code => specialItems.includes(code));
+    
+    return [...regularProjects, ...specialProjects];
   }, [projects]);
 
   const handleProjectCreated = (newProject: DatabaseProject) => {
