@@ -521,28 +521,6 @@ export const PlanningEditor: React.FC = () => {
               <MousePointer2 className="h-4 w-4 mr-2" />
               {isMultiSelectMode ? 'Ukončit výběr' : 'Vybrat více týdnů'}
             </Button>
-            <Button variant="outline" onClick={savePlan} className="bg-white/10 hover:bg-white/20 text-white border-white/30 hover:border-white/50">
-              <Save className="h-4 w-4 mr-2" />
-              Uložit plán
-            </Button>
-            <Button variant="outline" onClick={resetToOriginal} className="bg-white/10 hover:bg-white/20 text-white border-white/30 hover:border-white/50">
-              <X className="h-4 w-4 mr-2" />
-              Obnovit původní
-            </Button>
-            <Button variant="outline" onClick={manualRefetch} className="bg-white/10 hover:bg-white/20 text-white border-white/30 hover:border-white/50">
-              <Calendar className="h-4 w-4 mr-2" />
-              Manual Refetch (Test)
-            </Button>
-            <Button onClick={performStep1Test} variant="destructive" size="sm">
-              STEP 1 TEST
-            </Button>
-            <Button onClick={performStep2Test} variant="outline" size="sm">
-              STEP 2 TEST
-            </Button>
-            <Button variant="outline" onClick={checkWeekAxis} className="bg-blue-600 hover:bg-blue-700 text-white border-blue-500 hover:border-blue-600">
-              <Calendar className="h-4 w-4 mr-2" />
-              STEP 3 CHECK
-            </Button>
           </div>
         </div>
       </div>
