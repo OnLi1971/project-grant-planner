@@ -51,6 +51,7 @@ export const RevenueOverview = () => {
     'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026'
   ]);
   const [currency, setCurrency] = useState<'CZK' | 'USD'>('CZK');
+  const [projectStatusFilter, setProjectStatusFilter] = useState<'all' | 'realizace' | 'presales'>('all');
   const [projects, setProjects] = useState<DatabaseProject[]>([]);
   const [customers, setCustomers] = useState<DatabaseCustomer[]>([]);
   const [programs, setPrograms] = useState<DatabaseProgram[]>([]);
@@ -543,6 +544,16 @@ export const RevenueOverview = () => {
     return project?.project_status === 'Pre sales';
   });
 
+  // Filtrujeme projekty podle project_status filtru
+  const filteredProjectList = useMemo(() => {
+    if (projectStatusFilter === 'realizace') {
+      return realizaceProjects;
+    } else if (projectStatusFilter === 'presales') {
+      return presalesProjects;
+    }
+    return projectList; // 'all'
+  }, [projectList, realizaceProjects, presalesProjects, projectStatusFilter]);
+
   // Výpočet celkového revenue pouze pro vybrané měsíce
   const totalRevenue = months.reduce((sum, month) => {
     const monthData = monthlyRevenueByProject[month] || {};
@@ -597,8 +608,8 @@ export const RevenueOverview = () => {
           const monthData = monthlyRevenueByProject[month] || {};
           data.total += Object.values(monthData).reduce((sum: number, value: number) => sum + value, 0);
           
-          // Přidáme data pro všechny projekty (realizace + presales)
-          projectList.forEach(projectCode => {
+          // Přidáme data pouze pro filtrované projekty
+          filteredProjectList.forEach(projectCode => {
             if (!data[projectCode]) data[projectCode] = 0;
             data[projectCode] += monthData[projectCode] || 0;
           });
@@ -625,15 +636,15 @@ export const RevenueOverview = () => {
           total: Object.values(monthData).reduce((sum: number, value: number) => sum + value, 0)
         };
         
-        // Přidáme data pro všechny projekty (realizace + presales)
-        projectList.forEach(projectCode => {
+        // Přidáme data pouze pro filtrované projekty
+        filteredProjectList.forEach(projectCode => {
           data[projectCode] = monthData[projectCode] || 0;
         });
         
         return data;
       });
     }
-  }, [monthlyRevenueByProject, projectList, viewType, months]);
+  }, [monthlyRevenueByProject, filteredProjectList, viewType, months]);
 
   // Možnosti pro filtrování
   const getFilterOptions = () => {
@@ -815,6 +826,20 @@ export const RevenueOverview = () => {
                   </SelectContent>
                 </Select>
               </div>
+
+              <div className="min-w-[130px]">
+                <Label htmlFor="projectStatus" className="text-xs text-muted-foreground">Status projektu</Label>
+                <Select value={projectStatusFilter} onValueChange={(value: 'all' | 'realizace' | 'presales') => setProjectStatusFilter(value)}>
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border z-50">
+                    <SelectItem value="all">Obojí</SelectItem>
+                    <SelectItem value="realizace">Realizace</SelectItem>
+                    <SelectItem value="presales">PreSales</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             {/* Rozšířené filtry v novém řádku */}
@@ -993,7 +1018,7 @@ export const RevenueOverview = () => {
                   }}
                 />
                  {/* Všechny projekty v jednom stacku - realizace + presales */}
-                 {projectList.map((projectCode, index) => {
+                 {filteredProjectList.map((projectCode, index) => {
                    const project = projects.find(p => p.code === projectCode);
                    const isPresales = project?.project_status === 'Pre sales';
                    const color = getProjectColorWithIndex(projectCode, index);
@@ -1010,7 +1035,7 @@ export const RevenueOverview = () => {
                        strokeWidth={isPresales ? 1 : 0}
                        strokeDasharray={isPresales ? "3 3" : undefined}
                      >
-                       {index === projectList.length - 1 && (
+                       {index === filteredProjectList.length - 1 && (
                          <LabelList 
                            dataKey="total"
                            content={(props: any) => renderTotalLabel(props)}
@@ -1049,7 +1074,7 @@ export const RevenueOverview = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {projectList
+                {filteredProjectList
                   .sort((a, b) => {
                     // Najdeme projekty podle kódu
                     const projectA = projects.find(p => p.code === a);
