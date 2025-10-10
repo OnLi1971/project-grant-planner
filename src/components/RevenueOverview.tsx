@@ -834,7 +834,7 @@ export const RevenueOverview = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-background border z-50">
-                    <SelectItem value="all">Obojí</SelectItem>
+                    <SelectItem value="all">PreSales + Realizace</SelectItem>
                     <SelectItem value="realizace">Realizace</SelectItem>
                     <SelectItem value="presales">PreSales</SelectItem>
                   </SelectContent>
