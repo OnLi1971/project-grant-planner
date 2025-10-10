@@ -21,8 +21,6 @@ export function usePlanningData() {
   // Refs to prevent race conditions
   const abortControllerRef = useRef<AbortController | null>(null);
   const latestFetchIdRef = useRef(0);
-  const [fetchTimeline, setFetchTimeline] = useState<Array<{id: number, startAt: string, endAt?: string, applied: boolean, source: string}>>([]);
-  const fetchTimelineRef = useRef(fetchTimeline);
 
   // No-op loader for backwards compatibility; engineers come from React Query cache
   const loadEngineers = useCallback(async (): Promise<EngineerInfo[]> => {
@@ -30,25 +28,14 @@ export function usePlanningData() {
   }, [engineers]);
 
   // Load planning data with race condition protection
-  const loadPlanningData = useCallback(async (source = 'manual') => {
+  const loadPlanningData = useCallback(async () => {
     // Abort previous fetch and apply only the latest
     if (abortControllerRef.current) {
-      console.log('Aborting previous fetch request');
       abortControllerRef.current.abort();
     }
     abortControllerRef.current = new AbortController();
     
     const myFetchId = ++latestFetchIdRef.current;
-    const startAt = new Date().toISOString();
-    const timelineEntry = { id: myFetchId, startAt, applied: false, source };
-    
-    console.log(`Starting fetch ${myFetchId} from ${source}, aborting any previous`);
-    
-    setFetchTimeline(prev => {
-      const newTimeline = [...prev.slice(-5), timelineEntry];
-      fetchTimelineRef.current = newTimeline;
-      return newTimeline;
-    });
     
     try {
       // Use engineers from cache (React Query)
@@ -56,7 +43,6 @@ export function usePlanningData() {
       
       // Check if this request was aborted or superseded
       if (abortControllerRef.current?.signal.aborted || latestFetchIdRef.current !== myFetchId) {
-        console.log(`Fetch ${myFetchId} aborted during engineers load, latest is ${latestFetchIdRef.current}`);
         return;
       }
       
@@ -74,7 +60,6 @@ export function usePlanningData() {
       while (true) {
         // Check abort before each page
         if (abortControllerRef.current?.signal.aborted || latestFetchIdRef.current !== myFetchId) {
-          console.log(`Fetch ${myFetchId} aborted during page ${page}, latest is ${latestFetchIdRef.current}`);
           return;
         }
         
@@ -88,7 +73,6 @@ export function usePlanningData() {
 
         if (pageError) {
           if (pageError.message?.includes('AbortError') || pageError.message?.includes('aborted')) {
-            console.log(`Fetch ${myFetchId} aborted via signal`);
             return;
           }
           console.error(`Page ${page} error:`, pageError);
@@ -110,16 +94,6 @@ export function usePlanningData() {
 
       // Final abort check before processing - apply only if this is still the latest fetch
       if (myFetchId !== latestFetchIdRef.current) {
-        console.log(`Stale fetch ignored ${myFetchId}, latest is ${latestFetchIdRef.current}`);
-        setFetchTimeline(prev => {
-          const newTimeline = prev.map(entry => 
-            entry.id === myFetchId 
-              ? { ...entry, endAt: new Date().toISOString(), applied: false }
-              : entry
-          );
-          fetchTimelineRef.current = newTimeline;
-          return newTimeline;
-        });
         return;
       }
 
@@ -173,53 +147,18 @@ export function usePlanningData() {
         };
       });
 
-      console.log(`Fetch ${myFetchId} processed ${allRows.length} rows → ${planningEntries.length} entries`);
-      
       // Final race condition check before applying data
       if (latestFetchIdRef.current !== myFetchId) {
-        console.log(`Fetch ${myFetchId} superseded before applying data, latest is ${latestFetchIdRef.current}`);
         return;
       }
       
       setPlanningData(planningEntries);
-      
-      // Mark as applied
-      setFetchTimeline(prev => {
-        const newTimeline = prev.map(entry => 
-          entry.id === myFetchId 
-            ? { ...entry, endAt: new Date().toISOString(), applied: true }
-            : entry
-        );
-        fetchTimelineRef.current = newTimeline;
-        return newTimeline;
-      });
     } catch (error: any) {
       console.error('loadPlanningData error:', error);
       
       if (error.name === 'AbortError' || error.message?.includes('aborted')) {
-        console.log(`Fetch ${myFetchId} was aborted`);
-        setFetchTimeline(prev => {
-          const newTimeline = prev.map(entry => 
-            entry.id === myFetchId 
-              ? { ...entry, endAt: new Date().toISOString(), applied: false }
-              : entry
-          );
-          fetchTimelineRef.current = newTimeline;
-          return newTimeline;
-        });
         return;
       }
-      
-      // Mark as failed
-      setFetchTimeline(prev => {
-        const newTimeline = prev.map(entry => 
-          entry.id === myFetchId 
-            ? { ...entry, endAt: new Date().toISOString(), applied: false }
-            : entry
-        );
-        fetchTimelineRef.current = newTimeline;
-        return newTimeline;
-      });
       
       toast({
         title: "Chyba při načítání dat",
@@ -235,7 +174,5 @@ export function usePlanningData() {
     setPlanningData,
     loadPlanningData,
     loadEngineers,
-    fetchTimeline,
-    fetchTimelineRef,
   };
 }

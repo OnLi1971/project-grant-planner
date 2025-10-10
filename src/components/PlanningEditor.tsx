@@ -170,34 +170,17 @@ const generatePlanningDataForEditor = (data: any[]): { [key: string]: WeekPlan[]
 export const PlanningEditor: React.FC = () => {
   const { 
     planningData,
-    engineers, // Use engineers from database
+    engineers,
     updatePlanningEntry, 
-    updatePlanningHours,
-    realtimeStatus, 
-    disableRealtime,
-    enableRealtime,
-    manualRefetch,
-    checkWeekAxis,
-    performStep1Test,
-    fetchTimeline,
-    getCurrentTimeline
+    updatePlanningHours
   } = usePlanning();
   
-  // Convert engineers to the format expected by existing code - MOVED TO TOP
+  // Convert engineers to the format expected by existing code
   const allKonstrukteri = engineers.map(eng => ({
     jmeno: eng.display_name,
     slug: eng.slug,
     id: eng.id
   }));
-
-  // Debug log for allKonstrukteri
-  React.useEffect(() => {
-    console.log('PlanningEditor - allKonstrukteri updated:', allKonstrukteri.length, 'items');
-    console.log('PlanningEditor - engineers from context:', engineers.length, 'items');
-    if (allKonstrukteri.length > 0) {
-      console.log('First konstrukter:', allKonstrukteri[0]);
-    }
-  }, [engineers, allKonstrukteri]);
   
   const [projects, setProjects] = useState<DatabaseProject[]>([]);
   const [loading, setLoading] = useState(true);
@@ -365,33 +348,12 @@ export const PlanningEditor: React.FC = () => {
   };
 
   const currentPlan = planData[selectedKonstrukter] || [];
-  
-  // DIAGNOSTIC: Log UI cell value for Fuchs Pavel CW31-2026  
-  const fuchsCW31UIValue = useMemo(() => {
-    if (selectedKonstrukter === 'Fuchs Pavel') {
-      const plan = planData['Fuchs Pavel'] || [];
-      const cw31Entry = plan.find(entry => entry.cw === 'CW31-2026');
-      console.log('UI_CELL_VALUE - Fuchs Pavel CW31-2026:', cw31Entry?.projekt || 'NOT_FOUND');
-      return cw31Entry?.projekt;
-    }
-    return null;
-  }, [planData, selectedKonstrukter]);
 
   const addNewEngineer = () => {
     const newName = prompt('Zadejte jméno nového konstruktéra:');
     if (newName && !konstrukteri.includes(newName)) {
-      // addEngineer(newName); // Temporarily disabled
       setSelectedKonstrukter(newName);
     }
-  };
-
-  // Placeholder functions for missing context methods
-  const savePlan = () => {
-    console.log('Save plan - placeholder');
-  };
-
-  const resetToOriginal = () => {
-    console.log('Reset to original - placeholder');
   };
 
   const copyPlan = async (from: string, to: string) => {
@@ -420,62 +382,6 @@ export const PlanningEditor: React.FC = () => {
     console.log('Plan copy completed');
     alert(`Plán byl úspěšně zkopírován z ${from} do ${to}`);
   };
-
-  const performStep2Test = async () => {
-    console.log('=== STEP 2 TEST: RACE CONDITION PROTECTION ===');
-    console.log('Current Realtime status:', realtimeStatus);
-    
-    // Show current fetch timeline
-    console.log('FETCH_TIMELINE before test:', fetchTimeline);
-    
-    // Trigger rapid concurrent updates to test race condition protection
-    console.log('Triggering multiple concurrent updates...');
-    
-    // First, update the cell
-    await updatePlanningEntry('Fuchs Pavel', 'CW31-2026', 'ST_BLAVA');
-    
-    // Wait a moment, then trigger multiple fetches rapidly
-    setTimeout(() => {
-      console.log('Triggering first fetch...');
-      manualRefetch();
-    }, 100);
-    
-    setTimeout(() => {
-      console.log('Triggering second fetch...');
-      manualRefetch(); 
-    }, 150);
-    
-    setTimeout(() => {
-      console.log('Triggering third fetch...');
-      manualRefetch();
-    }, 200);
-    
-    // Check results after fetches complete
-    setTimeout(() => {
-      console.log('=== STEP 2 RESULTS ===');
-      const currentTimeline = getCurrentTimeline();
-      console.log('FETCH_TIMELINE after test:', currentTimeline);
-      
-      const appliedFetches = currentTimeline.filter(f => f.applied);
-      const ignoredFetches = currentTimeline.filter(f => !f.applied);
-      
-      console.log('APPLIED_FETCHES:', appliedFetches.length);
-      console.log('IGNORED_FETCHES:', ignoredFetches.length);
-      console.log('TOTAL_TIMELINE_ENTRIES:', currentTimeline.length);
-      
-      if (ignoredFetches.length > 0 || appliedFetches.length === 1) {
-        console.log('✅ RACE PROTECTION: Working - only one fetch applied or stale responses ignored');
-      } else if (appliedFetches.length > 1) {
-        console.log('⚠️ RACE PROTECTION: Multiple fetches completed - this might indicate a problem');
-        console.log('Applied fetches details:', appliedFetches.map(f => ({ id: f.id, source: f.source })));
-      } else {
-        console.log('❌ RACE PROTECTION: May not be working - check timeline');
-        console.log('Full timeline:', currentTimeline);
-      }
-    }, 3000);
-  };
-
-  // DIAGNOSTIC: Check week axis for Step 3 - use the one from context
 
   const handleCopyPlan = () => {
     if (!copyFromKonstrukter || !selectedKonstrukter) {

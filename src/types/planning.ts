@@ -20,12 +20,4 @@ export interface PlanningContextType {
   engineers: EngineerInfo[];
   updatePlanningEntry: (konstrukter: string, cw: string, projekt: string) => Promise<void>;
   updatePlanningHours: (konstrukter: string, cw: string, hours: number) => Promise<void>;
-  realtimeStatus: string;
-  disableRealtime: () => void;
-  enableRealtime: () => void;
-  manualRefetch: () => void;
-  checkWeekAxis: () => any;
-  performStep1Test: () => void;
-  fetchTimeline: Array<{id: number, startAt: string, endAt?: string, applied: boolean, source: string}>;
-  getCurrentTimeline: () => Array<{id: number, startAt: string, endAt?: string, applied: boolean, source: string}>;
 }
