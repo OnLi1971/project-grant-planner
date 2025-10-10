@@ -206,15 +206,36 @@ export const PlanningEditor: React.FC = () => {
   const planData = useMemo(() => {
     const generatedData = generatePlanningDataForEditor(planningData);
     
-    // Ujistím se, že všichni konstruktéři z seznamu jsou k dispozici
-    allKonstrukteri.forEach(konstrukter => {
-      if (!generatedData[konstrukter.jmeno]) {
-        // Pokud konstruktér nemá data, vytvoř pro něj prázdný plán
-        generatedData[konstrukter.jmeno] = generateAllWeeks();
+    // Sjednocení klíčů podle normalizovaného jména –
+    // rekey tak, aby klíč odpovídal kanonickému display name z engineers
+    const rekeyedData: { [key: string]: WeekPlan[] } = { ...generatedData };
+    const existingKeys = Object.keys(generatedData);
+    const keyByNorm = new Map<string, string>();
+    existingKeys.forEach(k => {
+      const nk = normalizeName(k);
+      if (!keyByNorm.has(nk)) keyByNorm.set(nk, k);
+    });
+
+    allKonstrukteri.forEach(konst => {
+      const display = konst.jmeno;
+      const nk = normalizeName(display);
+      const existingKey = keyByNorm.get(nk);
+      if (existingKey && existingKey !== display && generatedData[existingKey]) {
+        rekeyedData[display] = generatedData[existingKey];
+        delete rekeyedData[existingKey];
+        keyByNorm.set(nk, display);
       }
     });
     
-    return generatedData;
+    // Ujistím se, že všichni konstruktéři ze seznamu jsou k dispozici
+    allKonstrukteri.forEach(konstrukter => {
+      if (!rekeyedData[konstrukter.jmeno]) {
+        // Pokud konstruktér nemá data, vytvoř pro něj prázdný plán
+        rekeyedData[konstrukter.jmeno] = generateAllWeeks();
+      }
+    });
+    
+    return rekeyedData;
   }, [planningData, allKonstrukteri]);
   
   const konstrukteri = useMemo(() => allKonstrukteri.map(k => k.jmeno).sort(), [allKonstrukteri]);
