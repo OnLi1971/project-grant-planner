@@ -470,6 +470,82 @@ export const PlanningEditor: React.FC = () => {
     }
   };
 
+  // DIAGNOSTIC: Compare two specific engineers
+  const compareEngineers = (name1: string, name2: string) => {
+    console.log(`\n=== POROVNÁNÍ KONSTRUKTÉRŮ: "${name1}" vs "${name2}" ===\n`);
+    
+    // Find engineers in database
+    const eng1 = engineers.find(e => e.display_name.includes(name1) || name1.includes(e.display_name));
+    const eng2 = engineers.find(e => e.display_name.includes(name2) || name2.includes(e.display_name));
+    
+    console.log('📊 ZÁKLADNÍ ÚDAJE:');
+    console.table([
+      {
+        jmeno: eng1?.display_name || 'NENALEZEN',
+        id: eng1?.id || 'N/A',
+        slug: eng1?.slug || 'N/A',
+        status: eng1?.status || 'N/A'
+      },
+      {
+        jmeno: eng2?.display_name || 'NENALEZEN',
+        id: eng2?.id || 'N/A',
+        slug: eng2?.slug || 'N/A',
+        status: eng2?.status || 'N/A'
+      }
+    ]);
+    
+    // Find planning entries
+    const entries1 = planningData.filter(e => 
+      e.konstrukter.includes(name1) || (eng1 && e.engineer_id === eng1.id)
+    );
+    const entries2 = planningData.filter(e => 
+      e.konstrukter.includes(name2) || (eng2 && e.engineer_id === eng2.id)
+    );
+    
+    console.log(`\n📅 PLANNING ENTRIES (${name1}): ${entries1.length} záznamů`);
+    if (entries1.length > 0) {
+      console.table(entries1.slice(0, 5).map(e => ({
+        cw: e.cw,
+        konstrukter: e.konstrukter,
+        engineer_id: e.engineer_id,
+        projekt: e.projekt,
+        mh: e.mhTyden
+      })));
+    }
+    
+    console.log(`\n📅 PLANNING ENTRIES (${name2}): ${entries2.length} záznamů`);
+    if (entries2.length > 0) {
+      console.table(entries2.slice(0, 5).map(e => ({
+        cw: e.cw,
+        konstrukter: e.konstrukter,
+        engineer_id: e.engineer_id,
+        projekt: e.projekt,
+        mh: e.mhTyden
+      })));
+    }
+    
+    // Check normalization
+    console.log('\n🔍 NORMALIZACE JMEN:');
+    console.log(`${name1}:`);
+    console.log(`  - Original: "${eng1?.display_name || 'N/A'}"`);
+    console.log(`  - Normalized: "${eng1 ? normalizeName(eng1.display_name) : 'N/A'}"`);
+    console.log(`  - V planning entries: "${entries1[0]?.konstrukter || 'N/A'}"`);
+    console.log(`  - Normalized entry: "${entries1[0] ? normalizeName(entries1[0].konstrukter) : 'N/A'}"`);
+    
+    console.log(`\n${name2}:`);
+    console.log(`  - Original: "${eng2?.display_name || 'N/A'}"`);
+    console.log(`  - Normalized: "${eng2 ? normalizeName(eng2.display_name) : 'N/A'}"`);
+    console.log(`  - V planning entries: "${entries2[0]?.konstrukter || 'N/A'}"`);
+    console.log(`  - Normalized entry: "${entries2[0] ? normalizeName(entries2[0].konstrukter) : 'N/A'}"`);
+    
+    // Summary
+    console.log('\n✅ SHRNUTÍ:');
+    const check1 = eng1 && entries1.length > 0 && entries1[0].engineer_id === eng1.id;
+    const check2 = eng2 && entries2.length > 0 && entries2[0].engineer_id === eng2.id;
+    console.log(`${name1}: ${check1 ? '✅ SPRÁVNĚ NAMAPOVÁN' : '❌ PROBLÉM S MAPOVÁNÍM'}`);
+    console.log(`${name2}: ${check2 ? '✅ SPRÁVNĚ NAMAPOVÁN' : '❌ PROBLÉM S MAPOVÁNÍM'}`);
+  };
+
   const handleCopyPlan = () => {
     if (!copyFromKonstrukter || !selectedKonstrukter) {
       return;
@@ -529,6 +605,14 @@ export const PlanningEditor: React.FC = () => {
             >
               <Calendar className="h-4 w-4 mr-2" />
               Kontrola dodavatelů
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => compareEngineers('Pupava', 'Bohusik')} 
+              className="bg-white/10 hover:bg-white/20 text-white border-white/30 hover:border-white/50"
+            >
+              <Calendar className="h-4 w-4 mr-2" />
+              Porovnat Pupava vs Bohusik
             </Button>
           </div>
         </div>
