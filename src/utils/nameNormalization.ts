@@ -1,32 +1,22 @@
 // Utility funkce pro normalizaci jmen konstruktérů
 // Tato funkce replikuje logiku z DB funkce normalize_name() na klientovi
-// Rozšířená verze: pokrývá španělské znaky, whitespace anomálie, Unicode NFD
-
-const ZERO_WIDTH = /[\u200B-\u200D\uFEFF]/g; // Zero-width chars
-const NBSP = /\u00A0/g;                      // Non-breaking space
-const MULTI_SPACE = /\s+/g;                  // Multiple spaces
 
 export const normalizeName = (name: string): string => {
   if (!name) return '';
   
-  // 1) Trim + odstranění neviditelných znaků a NBSP
-  let s = String(name)
-    .replace(ZERO_WIDTH, '')
-    .replace(NBSP, ' ')
-    .trim();
-  
-  // 2) Unicode NFD normalizace + odstranění kombinujících diakritických znamének
-  s = s.normalize('NFD').replace(/\p{M}+/gu, '');
-  
-  // 3) Speciální výjimky (German ß, Spanish ñ, atd.)
-  s = s
-    .replace(/ß/g, 'ss')
-    .replace(/ñ/gi, 'n');
-  
-  // 4) Sjednocení whitespace & lowercase
-  s = s.replace(MULTI_SPACE, ' ').toLowerCase();
-  
-  return s;
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/[áäćčďéěëíîĺľňóöŕřšťúůüýž]/g, (char) => {
+      const map: { [key: string]: string } = {
+        'á': 'a', 'ä': 'a', 'ć': 'c', 'č': 'c', 'ď': 'd',
+        'é': 'e', 'ě': 'e', 'ë': 'e', 'í': 'i', 'î': 'i',
+        'ĺ': 'l', 'ľ': 'l', 'ň': 'n', 'ó': 'o', 'ö': 'o',
+        'ŕ': 'r', 'ř': 'r', 'š': 's', 'ť': 't', 'ú': 'u',
+        'ů': 'u', 'ü': 'u', 'ý': 'y', 'ž': 'z'
+      };
+      return map[char] || char;
+    });
 };
 
 // Utility funkce pro nalezení konstruktéra podle normalizovaného jména

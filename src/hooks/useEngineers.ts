@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { ACTIVE_ENGINEER_STATUSES } from '@/constants/statuses';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -114,15 +113,6 @@ export function useEngineers() {
       throw err;
     }
   };
-
-  useEffect(() => {
-    if (data) {
-      const list = (data as UIEngineer[]);
-      const contractors = list.filter(e => e.status !== 'active');
-      console.log('[Engineers] loaded:', list.length);
-      console.log('[Engineers] contractors sample:', contractors.slice(0, 20).map(e => ({ name: e.jmeno, status: e.status, company: e.spolecnost })));
-    }
-  }, [data]);
 
   return {
     engineers: (data as UIEngineer[]) || [],

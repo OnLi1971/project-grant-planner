@@ -168,11 +168,19 @@ const generatePlanningDataForEditor = (data: any[]): { [key: string]: WeekPlan[]
 
 
 export const PlanningEditor: React.FC = () => {
-  const {
+  const { 
     planningData,
     engineers, // Use engineers from database
     updatePlanningEntry, 
-    updatePlanningHours
+    updatePlanningHours,
+    realtimeStatus, 
+    disableRealtime,
+    enableRealtime,
+    manualRefetch,
+    checkWeekAxis,
+    performStep1Test,
+    fetchTimeline,
+    getCurrentTimeline
   } = usePlanning();
   
   // Convert engineers to the format expected by existing code - MOVED TO TOP
@@ -198,36 +206,15 @@ export const PlanningEditor: React.FC = () => {
   const planData = useMemo(() => {
     const generatedData = generatePlanningDataForEditor(planningData);
     
-    // Sjednocení klíčů podle normalizovaného jména –
-    // rekey tak, aby klíč odpovídal kanonickému display name z engineers
-    const rekeyedData: { [key: string]: WeekPlan[] } = { ...generatedData };
-    const existingKeys = Object.keys(generatedData);
-    const keyByNorm = new Map<string, string>();
-    existingKeys.forEach(k => {
-      const nk = normalizeName(k);
-      if (!keyByNorm.has(nk)) keyByNorm.set(nk, k);
-    });
-
-    allKonstrukteri.forEach(konst => {
-      const display = konst.jmeno;
-      const nk = normalizeName(display);
-      const existingKey = keyByNorm.get(nk);
-      if (existingKey && existingKey !== display && generatedData[existingKey]) {
-        rekeyedData[display] = generatedData[existingKey];
-        delete rekeyedData[existingKey];
-        keyByNorm.set(nk, display);
-      }
-    });
-    
-    // Ujistím se, že všichni konstruktéři ze seznamu jsou k dispozici
+    // Ujistím se, že všichni konstruktéři z seznamu jsou k dispozici
     allKonstrukteri.forEach(konstrukter => {
-      if (!rekeyedData[konstrukter.jmeno]) {
+      if (!generatedData[konstrukter.jmeno]) {
         // Pokud konstruktér nemá data, vytvoř pro něj prázdný plán
-        rekeyedData[konstrukter.jmeno] = generateAllWeeks();
+        generatedData[konstrukter.jmeno] = generateAllWeeks();
       }
     });
     
-    return rekeyedData;
+    return generatedData;
   }, [planningData, allKonstrukteri]);
   
   const konstrukteri = useMemo(() => allKonstrukteri.map(k => k.jmeno).sort(), [allKonstrukteri]);
@@ -434,154 +421,61 @@ export const PlanningEditor: React.FC = () => {
     alert(`Plán byl úspěšně zkopírován z ${from} do ${to}`);
   };
 
-  // DIAGNOSTIC: Check contractor mappings
-  const checkContractorMappings = () => {
-    console.log('=== DIAGNOSTIKA MAPOVÁNÍ DODAVATELŮ ===\n');
+  const performStep2Test = async () => {
+    console.log('=== STEP 2 TEST: RACE CONDITION PROTECTION ===');
+    console.log('Current Realtime status:', realtimeStatus);
     
-    const contractorData = planningData
-      .filter(e => {
-        const eng = engineers.find(en => en.id === e.engineer_id);
-        return eng?.status === 'contractor' || !e.engineer_id;
-      })
-      .map(e => {
-        const eng = engineers.find(en => en.id === e.engineer_id);
-        return {
-          cw: e.cw,
-          konstrukter: e.konstrukter,
-          engineer_id: e.engineer_id,
-          status: eng?.status || 'NOT_FOUND',
-          projekt: e.projekt,
-          mh: e.mhTyden
-        };
-      })
-      .sort((a, b) => a.cw.localeCompare(b.cw));
+    // Show current fetch timeline
+    console.log('FETCH_TIMELINE before test:', fetchTimeline);
     
-    if (contractorData.length === 0) {
-      console.log('✅ Všichni konstruktéři jsou správně namapováni');
-    } else {
-      console.log(`⚠️ Nalezeno ${contractorData.length} záznamů s dodavateli nebo bez namapování:`);
-      console.table(contractorData);
-      console.log('\nDetail - unikátní dodavatelé:');
-      const uniqueContractors = [...new Set(contractorData.map(d => d.konstrukter))];
-      uniqueContractors.forEach(name => {
-        const eng = engineers.find(e => e.display_name === name);
-        console.log(`- ${name}: ${eng ? `ID=${eng.id}, status=${eng.status}` : 'NENALEZEN'}`);
-      });
-    }
-  };
-
-  // DIAGNOSTIC: Compare two specific engineers (diacritics-insensitive, partial match)
-  const compareEngineers = (name1: string, name2: string) => {
-    console.log(`\n=== POROVNÁNÍ KONSTRUKTÉRŮ: "${name1}" vs "${name2}" ===\n`);
-
-    const q1 = normalizeName(name1);
-    const q2 = normalizeName(name2);
-
-    // Prepare normalized candidates
-    const candidates = engineers.map((e) => ({ ...e, _norm: normalizeName(e.display_name) }));
-
-    const findByQuery = (q: string) => {
-      // direct include
-      let found = candidates.find((c) => c._norm.includes(q) || q.includes(c._norm));
-      if (found) return found as typeof candidates[number];
-      // token overlap fallback
-      const tokens = q.split(' ').filter(Boolean);
-      let best: (typeof candidates)[number] | null = null;
-      let bestScore = 0;
-      for (const c of candidates) {
-        const score = tokens.reduce((acc, t) => acc + (c._norm.includes(t) ? 1 : 0), 0);
-        if (score > bestScore) {
-          bestScore = score;
-          best = c;
-        }
+    // Trigger rapid concurrent updates to test race condition protection
+    console.log('Triggering multiple concurrent updates...');
+    
+    // First, update the cell
+    await updatePlanningEntry('Fuchs Pavel', 'CW31-2026', 'ST_BLAVA');
+    
+    // Wait a moment, then trigger multiple fetches rapidly
+    setTimeout(() => {
+      console.log('Triggering first fetch...');
+      manualRefetch();
+    }, 100);
+    
+    setTimeout(() => {
+      console.log('Triggering second fetch...');
+      manualRefetch(); 
+    }, 150);
+    
+    setTimeout(() => {
+      console.log('Triggering third fetch...');
+      manualRefetch();
+    }, 200);
+    
+    // Check results after fetches complete
+    setTimeout(() => {
+      console.log('=== STEP 2 RESULTS ===');
+      const currentTimeline = getCurrentTimeline();
+      console.log('FETCH_TIMELINE after test:', currentTimeline);
+      
+      const appliedFetches = currentTimeline.filter(f => f.applied);
+      const ignoredFetches = currentTimeline.filter(f => !f.applied);
+      
+      console.log('APPLIED_FETCHES:', appliedFetches.length);
+      console.log('IGNORED_FETCHES:', ignoredFetches.length);
+      console.log('TOTAL_TIMELINE_ENTRIES:', currentTimeline.length);
+      
+      if (ignoredFetches.length > 0 || appliedFetches.length === 1) {
+        console.log('✅ RACE PROTECTION: Working - only one fetch applied or stale responses ignored');
+      } else if (appliedFetches.length > 1) {
+        console.log('⚠️ RACE PROTECTION: Multiple fetches completed - this might indicate a problem');
+        console.log('Applied fetches details:', appliedFetches.map(f => ({ id: f.id, source: f.source })));
+      } else {
+        console.log('❌ RACE PROTECTION: May not be working - check timeline');
+        console.log('Full timeline:', currentTimeline);
       }
-      return best;
-    };
-
-    const eng1 = findByQuery(q1);
-    const eng2 = findByQuery(q2);
-
-    console.log('📊 ZÁKLADNÍ ÚDAJE:');
-    console.table([
-      {
-        jmeno: eng1?.display_name || 'NENALEZEN',
-        id: eng1?.id || 'N/A',
-        slug: eng1?.slug || 'N/A',
-        status: eng1?.status || 'N/A',
-      },
-      {
-        jmeno: eng2?.display_name || 'NENALEZEN',
-        id: eng2?.id || 'N/A',
-        slug: eng2?.slug || 'N/A',
-        status: eng2?.status || 'N/A',
-      },
-    ]);
-
-    if (!eng1 || !eng2) {
-      console.log('\n💡 TIP: Kandidáti (top 10):');
-      console.table(
-        candidates
-          .filter((c) => c._norm.includes(q1) || c._norm.includes(q2))
-          .slice(0, 10)
-          .map((c) => ({ jmeno: c.display_name, id: c.id, slug: c.slug, status: c.status }))
-      );
-    }
-
-    // Find planning entries by normalized konstruktér or engineer_id
-    const entries1 = planningData.filter(
-      (e) => normalizeName(e.konstrukter).includes(q1) || (eng1 && e.engineer_id === eng1.id)
-    );
-    const entries2 = planningData.filter(
-      (e) => normalizeName(e.konstrukter).includes(q2) || (eng2 && e.engineer_id === eng2.id)
-    );
-
-    console.log(`\n📅 PLANNING ENTRIES (${name1}): ${entries1.length} záznamů`);
-    if (entries1.length > 0) {
-      console.table(
-        entries1.slice(0, 5).map((e) => ({
-          cw: e.cw,
-          konstrukter: e.konstrukter,
-          engineer_id: e.engineer_id,
-          projekt: e.projekt,
-          mh: e.mhTyden,
-        }))
-      );
-    }
-
-    console.log(`\n📅 PLANNING ENTRIES (${name2}): ${entries2.length} záznamů`);
-    if (entries2.length > 0) {
-      console.table(
-        entries2.slice(0, 5).map((e) => ({
-          cw: e.cw,
-          konstrukter: e.konstrukter,
-          engineer_id: e.engineer_id,
-          projekt: e.projekt,
-          mh: e.mhTyden,
-        }))
-      );
-    }
-
-    // Check normalization
-    console.log('\n🔍 NORMALIZACE JMEN:');
-    console.log(`${name1}:`);
-    console.log(`  - Original: "${eng1?.display_name || 'N/A'}"`);
-    console.log(`  - Normalized: "${eng1 ? normalizeName(eng1.display_name) : 'N/A'}"`);
-    console.log(`  - V planning entries (1. shoda): "${entries1[0]?.konstrukter || 'N/A'}"`);
-    console.log(`  - Normalized entry: "${entries1[0] ? normalizeName(entries1[0].konstrukter) : 'N/A'}"`);
-
-    console.log(`\n${name2}:`);
-    console.log(`  - Original: "${eng2?.display_name || 'N/A'}"`);
-    console.log(`  - Normalized: "${eng2 ? normalizeName(eng2.display_name) : 'N/A'}"`);
-    console.log(`  - V planning entries (1. shoda): "${entries2[0]?.konstrukter || 'N/A'}"`);
-    console.log(`  - Normalized entry: "${entries2[0] ? normalizeName(entries2[0].konstrukter) : 'N/A'}"`);
-
-    // Summary
-    console.log('\n✅ SHRNUTÍ:');
-    const check1 = !!(eng1 && entries1.some((e) => e.engineer_id === eng1.id));
-    const check2 = !!(eng2 && entries2.some((e) => e.engineer_id === eng2.id));
-    console.log(`${name1}: ${check1 ? '✅ SPRÁVNĚ NAMAPOVÁN' : '❌ PROBLÉM S MAPOVÁNÍM'}`);
-    console.log(`${name2}: ${check2 ? '✅ SPRÁVNĚ NAMAPOVÁN' : '❌ PROBLÉM S MAPOVÁNÍM'}`);
+    }, 3000);
   };
+
+  // DIAGNOSTIC: Check week axis for Step 3 - use the one from context
 
   const handleCopyPlan = () => {
     if (!copyFromKonstrukter || !selectedKonstrukter) {
@@ -635,21 +529,19 @@ export const PlanningEditor: React.FC = () => {
               <X className="h-4 w-4 mr-2" />
               Obnovit původní
             </Button>
-            <Button 
-              variant="outline" 
-              onClick={checkContractorMappings} 
-              className="bg-white/10 hover:bg-white/20 text-white border-white/30 hover:border-white/50"
-            >
+            <Button variant="outline" onClick={manualRefetch} className="bg-white/10 hover:bg-white/20 text-white border-white/30 hover:border-white/50">
               <Calendar className="h-4 w-4 mr-2" />
-              Kontrola dodavatelů
+              Manual Refetch (Test)
             </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => compareEngineers('Pupava', 'Bohusik')} 
-              className="bg-white/10 hover:bg-white/20 text-white border-white/30 hover:border-white/50"
-            >
+            <Button onClick={performStep1Test} variant="destructive" size="sm">
+              STEP 1 TEST
+            </Button>
+            <Button onClick={performStep2Test} variant="outline" size="sm">
+              STEP 2 TEST
+            </Button>
+            <Button variant="outline" onClick={checkWeekAxis} className="bg-blue-600 hover:bg-blue-700 text-white border-blue-500 hover:border-blue-600">
               <Calendar className="h-4 w-4 mr-2" />
-              Porovnat Pupava vs Bohusik
+              STEP 3 CHECK
             </Button>
           </div>
         </div>
