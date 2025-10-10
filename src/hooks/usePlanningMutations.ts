@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { PlanningEntry, EngineerInfo } from '@/types/planning';
 import { useToast } from '@/hooks/use-toast';
+import { normalizeName } from '@/utils/nameNormalization';
 
 interface UsePlanningMutationsProps {
   setPlanningData: React.Dispatch<React.SetStateAction<PlanningEntry[]>>;
@@ -82,10 +83,17 @@ export function usePlanningMutations({ setPlanningData, engineers }: UsePlanning
       console.log('VERIFIED_PROJECT_UPDATE:', verifiedData);
 
       // Targeted UI patch using primary key (engineer_id, cw, year)
-      // Note: entry.cw includes year (e.g., "CW31-2025"), cw parameter includes year too
+      // FALLBACK: Also match by normalized konstrukter + cw when engineer_id is null
+      const normKonstrukter = normalizeName(konstrukter);
       setPlanningData(prev => prev.map(entry => {
-        // Match by engineer_id and cw (both include year format)
-        if (entry.engineer_id === engineerId && entry.cw === cw) {
+        // Primary: Match by engineer_id and cw
+        const idMatch = entry.engineer_id === engineerId && entry.cw === cw;
+        // Fallback: Match by normalized name + cw (when engineer_id is null or doesn't match)
+        const nameMatch = !idMatch && 
+          normalizeName(entry.konstrukter) === normKonstrukter && 
+          entry.cw === cw;
+        
+        if (idMatch || nameMatch) {
           return { ...entry, projekt: verifiedData.projekt };
         }
         return entry;
@@ -143,10 +151,17 @@ export function usePlanningMutations({ setPlanningData, engineers }: UsePlanning
       console.log('VERIFIED_HOURS_UPDATE:', verifiedData);
 
       // Targeted UI patch using primary key (engineer_id, cw, year)
-      // Note: entry.cw includes year (e.g., "CW31-2025"), cw parameter includes year too
+      // FALLBACK: Also match by normalized konstrukter + cw when engineer_id is null
+      const normKonstrukter = normalizeName(konstrukter);
       setPlanningData(prev => prev.map(entry => {
-        // Match by engineer_id and cw (both include year format)
-        if (entry.engineer_id === engineerId && entry.cw === cw) {
+        // Primary: Match by engineer_id and cw
+        const idMatch = entry.engineer_id === engineerId && entry.cw === cw;
+        // Fallback: Match by normalized name + cw (when engineer_id is null or doesn't match)
+        const nameMatch = !idMatch && 
+          normalizeName(entry.konstrukter) === normKonstrukter && 
+          entry.cw === cw;
+        
+        if (idMatch || nameMatch) {
           return { ...entry, mhTyden: verifiedData.mh_tyden };
         }
         return entry;

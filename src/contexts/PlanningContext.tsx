@@ -92,11 +92,20 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     );
     
     if (!engineer) {
-      console.error('Engineer not found:', konstrukter, 'normalized:', normalizedKonstrukter);
-      console.log('Available engineers:', engineers.map(e => ({ name: e.display_name, slug: e.slug })));
+      console.error('❌ Engineer not found:', {
+        input: konstrukter,
+        normalized: normalizedKonstrukter,
+        availableEngineers: engineers.slice(0, 50).map(e => ({
+          display_name: e.display_name,
+          normalized: normalizeName(e.display_name),
+          slug: e.slug,
+          status: e.status
+        }))
+      });
       throw new Error(`Engineer not found: ${konstrukter}`);
     }
     
+    console.log('✅ Engineer found:', { konstrukter, engineer_id: engineer.id, status: engineer.status });
     await updateEntry(engineer.id, konstrukter, cw, projekt);
   }, [updateEntry, engineers]);
 
@@ -109,10 +118,20 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     );
     
     if (!engineer) {
-      console.error('Engineer not found:', konstrukter, 'normalized:', normalizedKonstrukter);
+      console.error('❌ Engineer not found:', {
+        input: konstrukter,
+        normalized: normalizedKonstrukter,
+        availableEngineers: engineers.slice(0, 50).map(e => ({
+          display_name: e.display_name,
+          normalized: normalizeName(e.display_name),
+          slug: e.slug,
+          status: e.status
+        }))
+      });
       throw new Error(`Engineer not found: ${konstrukter}`);
     }
     
+    console.log('✅ Engineer found:', { konstrukter, engineer_id: engineer.id, status: engineer.status });
     await updateHours(engineer.id, konstrukter, cw, hours);
   }, [updateHours, engineers]);
 
