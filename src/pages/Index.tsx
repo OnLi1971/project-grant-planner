@@ -43,7 +43,7 @@ const Index = () => {
   }
 
   return (
-    <PlanningProvider>
+    <PlanningProvider key="planning-provider-stable">
       <div className="min-h-screen bg-background">
         <Card className="m-6 p-4 shadow-card-custom">
           <div className="flex justify-between items-center">
