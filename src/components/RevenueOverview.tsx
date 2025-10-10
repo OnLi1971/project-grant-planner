@@ -551,10 +551,10 @@ export const RevenueOverview = () => {
     } else if (projectStatusFilter === 'presales') {
       return presalesProjects;
     } else if (['P0', 'P1', 'P2', 'P3'].includes(projectStatusFilter)) {
-      // Filtruj pouze projekty s danou presales fází
+      // Filtruj pouze presales projekty s danou fází
       return projectList.filter(projectCode => {
         const project = projects.find(p => p.code === projectCode);
-        return project?.presales_phase === projectStatusFilter;
+        return project?.project_status === 'Pre sales' && project?.presales_phase === projectStatusFilter;
       });
     }
     return projectList; // 'all'
