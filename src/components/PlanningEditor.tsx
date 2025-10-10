@@ -168,19 +168,11 @@ const generatePlanningDataForEditor = (data: any[]): { [key: string]: WeekPlan[]
 
 
 export const PlanningEditor: React.FC = () => {
-  const { 
+  const {
     planningData,
     engineers, // Use engineers from database
     updatePlanningEntry, 
-    updatePlanningHours,
-    realtimeStatus, 
-    disableRealtime,
-    enableRealtime,
-    manualRefetch,
-    checkWeekAxis,
-    performStep1Test,
-    fetchTimeline,
-    getCurrentTimeline
+    updatePlanningHours
   } = usePlanning();
   
   // Convert engineers to the format expected by existing code - MOVED TO TOP
@@ -442,61 +434,41 @@ export const PlanningEditor: React.FC = () => {
     alert(`Plán byl úspěšně zkopírován z ${from} do ${to}`);
   };
 
-  const performStep2Test = async () => {
-    console.log('=== STEP 2 TEST: RACE CONDITION PROTECTION ===');
-    console.log('Current Realtime status:', realtimeStatus);
+  // DIAGNOSTIC: Check contractor mappings
+  const checkContractorMappings = () => {
+    console.log('=== DIAGNOSTIKA MAPOVÁNÍ DODAVATELŮ ===\n');
     
-    // Show current fetch timeline
-    console.log('FETCH_TIMELINE before test:', fetchTimeline);
+    const contractorData = planningData
+      .filter(e => {
+        const eng = engineers.find(en => en.id === e.engineer_id);
+        return eng?.status === 'contractor' || !e.engineer_id;
+      })
+      .map(e => {
+        const eng = engineers.find(en => en.id === e.engineer_id);
+        return {
+          cw: e.cw,
+          konstrukter: e.konstrukter,
+          engineer_id: e.engineer_id,
+          status: eng?.status || 'NOT_FOUND',
+          projekt: e.projekt,
+          mh: e.mhTyden
+        };
+      })
+      .sort((a, b) => a.cw.localeCompare(b.cw));
     
-    // Trigger rapid concurrent updates to test race condition protection
-    console.log('Triggering multiple concurrent updates...');
-    
-    // First, update the cell
-    await updatePlanningEntry('Fuchs Pavel', 'CW31-2026', 'ST_BLAVA');
-    
-    // Wait a moment, then trigger multiple fetches rapidly
-    setTimeout(() => {
-      console.log('Triggering first fetch...');
-      manualRefetch();
-    }, 100);
-    
-    setTimeout(() => {
-      console.log('Triggering second fetch...');
-      manualRefetch(); 
-    }, 150);
-    
-    setTimeout(() => {
-      console.log('Triggering third fetch...');
-      manualRefetch();
-    }, 200);
-    
-    // Check results after fetches complete
-    setTimeout(() => {
-      console.log('=== STEP 2 RESULTS ===');
-      const currentTimeline = getCurrentTimeline();
-      console.log('FETCH_TIMELINE after test:', currentTimeline);
-      
-      const appliedFetches = currentTimeline.filter(f => f.applied);
-      const ignoredFetches = currentTimeline.filter(f => !f.applied);
-      
-      console.log('APPLIED_FETCHES:', appliedFetches.length);
-      console.log('IGNORED_FETCHES:', ignoredFetches.length);
-      console.log('TOTAL_TIMELINE_ENTRIES:', currentTimeline.length);
-      
-      if (ignoredFetches.length > 0 || appliedFetches.length === 1) {
-        console.log('✅ RACE PROTECTION: Working - only one fetch applied or stale responses ignored');
-      } else if (appliedFetches.length > 1) {
-        console.log('⚠️ RACE PROTECTION: Multiple fetches completed - this might indicate a problem');
-        console.log('Applied fetches details:', appliedFetches.map(f => ({ id: f.id, source: f.source })));
-      } else {
-        console.log('❌ RACE PROTECTION: May not be working - check timeline');
-        console.log('Full timeline:', currentTimeline);
-      }
-    }, 3000);
+    if (contractorData.length === 0) {
+      console.log('✅ Všichni konstruktéři jsou správně namapováni');
+    } else {
+      console.log(`⚠️ Nalezeno ${contractorData.length} záznamů s dodavateli nebo bez namapování:`);
+      console.table(contractorData);
+      console.log('\nDetail - unikátní dodavatelé:');
+      const uniqueContractors = [...new Set(contractorData.map(d => d.konstrukter))];
+      uniqueContractors.forEach(name => {
+        const eng = engineers.find(e => e.display_name === name);
+        console.log(`- ${name}: ${eng ? `ID=${eng.id}, status=${eng.status}` : 'NENALEZEN'}`);
+      });
+    }
   };
-
-  // DIAGNOSTIC: Check week axis for Step 3 - use the one from context
 
   const handleCopyPlan = () => {
     if (!copyFromKonstrukter || !selectedKonstrukter) {
@@ -550,19 +522,13 @@ export const PlanningEditor: React.FC = () => {
               <X className="h-4 w-4 mr-2" />
               Obnovit původní
             </Button>
-            <Button variant="outline" onClick={manualRefetch} className="bg-white/10 hover:bg-white/20 text-white border-white/30 hover:border-white/50">
+            <Button 
+              variant="outline" 
+              onClick={checkContractorMappings} 
+              className="bg-white/10 hover:bg-white/20 text-white border-white/30 hover:border-white/50"
+            >
               <Calendar className="h-4 w-4 mr-2" />
-              Manual Refetch (Test)
-            </Button>
-            <Button onClick={performStep1Test} variant="destructive" size="sm">
-              STEP 1 TEST
-            </Button>
-            <Button onClick={performStep2Test} variant="outline" size="sm">
-              STEP 2 TEST
-            </Button>
-            <Button variant="outline" onClick={checkWeekAxis} className="bg-blue-600 hover:bg-blue-700 text-white border-blue-500 hover:border-blue-600">
-              <Calendar className="h-4 w-4 mr-2" />
-              STEP 3 CHECK
+              Kontrola dodavatelů
             </Button>
           </div>
         </div>
