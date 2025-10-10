@@ -176,7 +176,8 @@ export function usePlanningData() {
         const engineer = engineerMap.get(normName) || engineerMap.get(rawName);
         
         return {
-          engineer_id: engineer?.id || null,
+          // PRIORITIZE engineer_id from DB (already set by migration/update)
+          engineer_id: row.engineer_id || engineer?.id || null,
           konstrukter: row.konstrukter, // Keep original for display
           cw: row.cw_full,
           mesic: row.mesic || '',
