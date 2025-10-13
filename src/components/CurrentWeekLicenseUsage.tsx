@@ -182,6 +182,9 @@ export const CurrentWeekLicenseUsage: React.FC<CurrentWeekLicenseUsageProps> = (
     licenses.forEach(license => {
       licenseUsage[license.name] = { required: 0, projects: [] };
       
+      // Track unique engineers that need this license across all projects
+      const uniqueEngineersForLicense = new Set<string>();
+      
       Object.entries(projectEngineers).forEach(([projectCode, engineers]) => {
         const projectLicensesForProject = projectLicenseMap[projectCode];
         console.log(`Project licenses for ${projectCode}:`, projectLicensesForProject);
@@ -192,15 +195,21 @@ export const CurrentWeekLicenseUsage: React.FC<CurrentWeekLicenseUsageProps> = (
           );
           console.log(`License assignment for ${license.name} in project ${projectCode}:`, licenseAssignment);
           
-          if (licenseAssignment) {
+          if (licenseAssignment && licenseAssignment.percentage > 0) {
+            // Add these engineers to the unique set
+            engineers.forEach(eng => uniqueEngineersForLicense.add(eng));
+            
+            // Track project for display purposes
             const requiredLicenses = Math.ceil((engineers.length * licenseAssignment.percentage) / 100);
-            licenseUsage[license.name].required += requiredLicenses;
             if (requiredLicenses > 0) {
               licenseUsage[license.name].projects.push(`${projectCode} (${requiredLicenses})`);
             }
           }
         }
       });
+      
+      // Set total required to unique engineers count
+      licenseUsage[license.name].required = uniqueEngineersForLicense.size;
     });
     
     console.log('Final license usage:', licenseUsage);

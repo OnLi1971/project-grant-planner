@@ -272,55 +272,45 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
       const weekData: any = { week };
       const weekOnly = week.replace(' (next year)', '');
       
-      // For each license, calculate usage for this week
-      licenses.forEach(license => {
-        let totalUsage = 0;
-        
-        // Get all engineers working this week (excluding MB Idea contractors and non-license consuming projects)
-        const engineersThisWeek = planningData.filter(entry => {
-          // Extract week without year for comparison (e.g., "CW35-2025" -> "CW35")
-          const cwWithoutYear = entry.cw.split('-')[0];
-          return cwWithoutYear === weekOnly && 
-            entry.projekt !== 'FREE' && 
-            entry.projekt !== 'DOVOLENÁ' &&
-            entry.projekt !== 'NEMOC' &&
-            entry.projekt !== 'OVER' &&
-            entry.projekt !== '' &&
-            entry.mhTyden > 0 &&
-            !MB_IDEA_CONTRACTORS.includes(entry.konstrukter);
-        });
-        
-        // Count unique engineers per project
-        const projectEngineers: { [projectCode: string]: string[] } = {};
-        engineersThisWeek.forEach(entry => {
-          if (!projectEngineers[entry.projekt]) {
-            projectEngineers[entry.projekt] = [];
-          }
-          if (!projectEngineers[entry.projekt].includes(entry.konstrukter)) {
-            projectEngineers[entry.projekt].push(entry.konstrukter);
-          }
-        });
-        
-        console.log(`Week ${weekOnly} project engineers:`, projectEngineers);
-        
-        // Calculate license usage based on project assignments
-        Object.entries(projectEngineers).forEach(([projectCode, engineers]) => {
-          const projectLicensesForProject = projectLicenseMap[projectCode];
-          if (projectLicensesForProject) {
-            const licenseAssignment = projectLicensesForProject.find(al => 
-              al.licenseName === license.name
-            );
-            if (licenseAssignment) {
-              const requiredLicenses = Math.ceil((engineers.length * licenseAssignment.percentage) / 100);
-              totalUsage += requiredLicenses;
-              console.log(`Project ${projectCode}: ${engineers.length} engineers, ${licenseAssignment.percentage}% = ${requiredLicenses} ${license.name} licenses`);
+        // For each license, calculate usage for this week
+        licenses.forEach(license => {
+          // Track unique engineers that need this license (regardless of projects)
+          const uniqueEngineersForLicense = new Set<string>();
+          
+          // Get all engineers working this week (excluding MB Idea contractors and non-license consuming projects)
+          const engineersThisWeek = planningData.filter(entry => {
+            // Extract week without year for comparison (e.g., "CW35-2025" -> "CW35")
+            const cwWithoutYear = entry.cw.split('-')[0];
+            return cwWithoutYear === weekOnly && 
+              entry.projekt !== 'FREE' && 
+              entry.projekt !== 'DOVOLENÁ' &&
+              entry.projekt !== 'NEMOC' &&
+              entry.projekt !== 'OVER' &&
+              entry.projekt !== '' &&
+              entry.mhTyden > 0 &&
+              !MB_IDEA_CONTRACTORS.includes(entry.konstrukter);
+          });
+          
+          // For each engineer, check if any of their projects requires this license
+          engineersThisWeek.forEach(entry => {
+            const projectLicensesForProject = projectLicenseMap[entry.projekt];
+            if (projectLicensesForProject) {
+              const licenseAssignment = projectLicensesForProject.find(al => 
+                al.licenseName === license.name
+              );
+              // If this project needs this license, add engineer to the set
+              if (licenseAssignment && licenseAssignment.percentage > 0) {
+                uniqueEngineersForLicense.add(entry.konstrukter);
+              }
             }
-          }
+          });
+          
+          // Total usage is the count of unique engineers
+          const totalUsage = uniqueEngineersForLicense.size;
+          
+          weekData[license.name] = totalUsage;
+          weekData[`${license.name}_available`] = license.totalSeats;
         });
-        
-        weekData[license.name] = totalUsage;
-        weekData[`${license.name}_available`] = license.totalSeats;
-      });
       
       return weekData;
     });
