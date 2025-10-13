@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, Edit, Save, X, Plus, MousePointer, MousePointer2, FolderPlus, Copy } from 'lucide-react';
 import { usePlanning } from '@/contexts/PlanningContext';
 import { getProjectColor, getCustomerByProjectCode } from '@/utils/colorSystem';
-import { getWeek } from 'date-fns';
+import { getWeek, getISOWeek } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { normalizeName, findEngineerByName } from '@/utils/nameNormalization';
 
@@ -49,9 +49,17 @@ const availableProjects = [
   'NU_CRAIN', 'WA_HVAC', 'ST_JIGS', 'ST_TRAM_HS', 'SAF_FEM', 'FREE', 'DOVOLENÁ', 'NEMOC', 'OVER'
 ];
 
-// Funkce pro zjištění aktuálního týdne
+// Funkce pro zjištění aktuálního týdne (ISO week)
 const getCurrentWeek = (): number => {
-  return getWeek(new Date(), { weekStartsOn: 1 });
+  const today = new Date();
+  const week = getISOWeek(today);
+  console.log('getCurrentWeek called (ISO):', {
+    today: today.toISOString(),
+    isoWeek: week,
+    year: today.getFullYear(),
+    formattedCW: `CW${week.toString().padStart(2, '0')}-${today.getFullYear()}`
+  });
+  return week;
 };
 
 // Funkce pro generování týdnů od aktuálního týdne do celého roku 2026
@@ -586,23 +594,36 @@ export const PlanningEditor: React.FC = () => {
             <tbody>
               {currentPlan.map((week, index) => {
                 const isSelected = selectedWeeks.has(week.cw);
-                const currentWeek = getCurrentWeek();
-                const currentYear = new Date().getFullYear();
+                const today = new Date();
+                const currentWeek = getWeek(today, { weekStartsOn: 1 });
+                const currentYear = today.getFullYear();
                 const currentWeekString = `CW${currentWeek.toString().padStart(2, '0')}-${currentYear}`;
                 const isCurrentWeek = week.cw === currentWeekString;
+                
+                // Debug logging
+                if (week.cw === currentWeekString) {
+                  console.log('✅ FOUND CURRENT WEEK:', {
+                    weekCW: week.cw,
+                    currentWeekString,
+                    isCurrentWeek,
+                    today: today.toISOString(),
+                    currentWeek,
+                    currentYear
+                  });
+                }
                 
                 return (
                 <tr 
                   key={week.cw}
                   className={`
-                    border-b transition-colors cursor-pointer
-                    ${isCurrentWeek ? 'bg-accent/30 border-accent border-l-4 border-l-accent font-semibold shadow-md' :
-                      isSelected ? 'bg-primary/10 border-primary' : 
-                      index % 2 === 0 ? 'bg-planning-cell hover:bg-planning-cell-hover' : 
-                      'bg-planning-stripe hover:bg-planning-cell-hover'}
-                    ${isMultiSelectMode ? 'hover:bg-primary/5' : ''}
+                    border-b transition-colors
+                    ${isCurrentWeek ? 'bg-yellow-100 dark:bg-yellow-900/30 border-yellow-500 border-l-8 border-l-yellow-500 !font-bold shadow-lg ring-2 ring-yellow-500/50' :
+                      isSelected ? 'bg-primary/10 border-primary cursor-pointer' : 
+                      index % 2 === 0 ? 'bg-planning-cell hover:bg-planning-cell-hover cursor-pointer' : 
+                      'bg-planning-stripe hover:bg-planning-cell-hover cursor-pointer'}
+                    ${isMultiSelectMode && !isCurrentWeek ? 'hover:bg-primary/5' : ''}
                   `}
-                  onClick={() => isMultiSelectMode && toggleWeekSelection(week.cw)}
+                  onClick={() => isMultiSelectMode && !isCurrentWeek && toggleWeekSelection(week.cw)}
                 >
                   <td className="p-3 font-mono font-medium relative">
                     {isSelected && (
