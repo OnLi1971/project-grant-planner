@@ -162,16 +162,18 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
     });
     
     // Get engineers for this week (excluding MB Idea contractors and non-license consuming projects)
-    const engineersThisWeek = planningData.filter(entry => 
-      entry.cw === weekOnly && 
-      entry.projekt !== 'FREE' && 
-      entry.projekt !== 'DOVOLENÁ' &&
-      entry.projekt !== 'NEMOC' &&
-      entry.projekt !== 'OVER' &&
-      entry.projekt !== '' &&
-      entry.mhTyden > 0 &&
-      !MB_IDEA_CONTRACTORS.includes(entry.konstrukter)
-    );
+    const engineersThisWeek = planningData.filter(entry => {
+      // Extract week without year for comparison (e.g., "CW35-2025" -> "CW35")
+      const cwWithoutYear = entry.cw.split('-')[0];
+      return cwWithoutYear === weekOnly && 
+        entry.projekt !== 'FREE' && 
+        entry.projekt !== 'DOVOLENÁ' &&
+        entry.projekt !== 'NEMOC' &&
+        entry.projekt !== 'OVER' &&
+        entry.projekt !== '' &&
+        entry.mhTyden > 0 &&
+        !MB_IDEA_CONTRACTORS.includes(entry.konstrukter);
+    });
     
     // Calculate details for selected license (excluding MB Idea contractors)
     const details: EngineerDetail[] = [];
@@ -265,16 +267,18 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
         let totalUsage = 0;
         
         // Get all engineers working this week (excluding MB Idea contractors and non-license consuming projects)
-        const engineersThisWeek = planningData.filter(entry => 
-          entry.cw === weekOnly && 
-          entry.projekt !== 'FREE' && 
-          entry.projekt !== 'DOVOLENÁ' &&
-          entry.projekt !== 'NEMOC' &&
-          entry.projekt !== 'OVER' &&
-          entry.projekt !== '' &&
-          entry.mhTyden > 0 &&
-          !MB_IDEA_CONTRACTORS.includes(entry.konstrukter)
-        );
+        const engineersThisWeek = planningData.filter(entry => {
+          // Extract week without year for comparison (e.g., "CW35-2025" -> "CW35")
+          const cwWithoutYear = entry.cw.split('-')[0];
+          return cwWithoutYear === weekOnly && 
+            entry.projekt !== 'FREE' && 
+            entry.projekt !== 'DOVOLENÁ' &&
+            entry.projekt !== 'NEMOC' &&
+            entry.projekt !== 'OVER' &&
+            entry.projekt !== '' &&
+            entry.mhTyden > 0 &&
+            !MB_IDEA_CONTRACTORS.includes(entry.konstrukter);
+        });
         
         // Count unique engineers per project
         const projectEngineers: { [projectCode: string]: string[] } = {};
