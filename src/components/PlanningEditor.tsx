@@ -586,12 +586,18 @@ export const PlanningEditor: React.FC = () => {
             <tbody>
               {currentPlan.map((week, index) => {
                 const isSelected = selectedWeeks.has(week.cw);
+                const currentWeek = getCurrentWeek();
+                const currentYear = new Date().getFullYear();
+                const currentWeekString = `CW${currentWeek.toString().padStart(2, '0')}-${currentYear}`;
+                const isCurrentWeek = week.cw === currentWeekString;
+                
                 return (
                 <tr 
                   key={week.cw}
                   className={`
                     border-b transition-colors cursor-pointer
-                    ${isSelected ? 'bg-primary/10 border-primary' : 
+                    ${isCurrentWeek ? 'bg-accent/30 border-accent border-l-4 border-l-accent font-semibold shadow-md' :
+                      isSelected ? 'bg-primary/10 border-primary' : 
                       index % 2 === 0 ? 'bg-planning-cell hover:bg-planning-cell-hover' : 
                       'bg-planning-stripe hover:bg-planning-cell-hover'}
                     ${isMultiSelectMode ? 'hover:bg-primary/5' : ''}
