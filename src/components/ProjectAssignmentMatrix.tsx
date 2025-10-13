@@ -9,7 +9,6 @@ import { ChevronDown } from 'lucide-react';
 import { usePlanning } from '@/contexts/PlanningContext';
 import { customers, projectManagers, programs, projects } from '@/data/projectsData';
 import { getWeek } from 'date-fns';
-import { ENGINEERS } from '@/data/engineersList';
 import { normalizeName, createNameMapping } from '@/utils/nameNormalization';
 
 // Organizational structure and project mappings
@@ -25,11 +24,6 @@ const organizacniVedouci = [
   'MB Idea',
   'AERTEC'
 ];
-
-// Mapping of engineers to organizational leaders derived from shared list  
-const konstrukterVedouci: { [key: string]: string } = Object.fromEntries(
-  ENGINEERS.map(e => [normalizeName(e.jmeno), e.orgVedouci])
-);
 
 
 
@@ -121,7 +115,7 @@ const getProjectBadgeStyle = (projekt: string) => {
 };
 
 export const ProjectAssignmentMatrix = () => {
-  const { planningData } = usePlanning();
+  const { planningData, engineers } = usePlanning();
   const [viewMode, setViewMode] = useState<'weeks' | 'months'>('weeks');
   const [filterOrgVedouci, setFilterOrgVedouci] = useState<string[]>(['Všichni']);
   const [filterPM, setFilterPM] = useState<string[]>(['Všichni']);
@@ -130,15 +124,15 @@ export const ProjectAssignmentMatrix = () => {
 
   const displayNameMap = useMemo(() => {
     const map: Record<string, string> = {};
-    ENGINEERS.forEach(e => {
-      map[normalizeName(e.jmeno)] = e.jmeno;
+    engineers.forEach(e => {
+      map[normalizeName(e.display_name)] = e.display_name;
     });
     planningData.forEach(e => {
       const key = normalizeName(e.konstrukter);
       if (!map[key]) map[key] = e.konstrukter;
     });
     return map;
-  }, [planningData]);
+  }, [planningData, engineers]);
 
   // Dynamic project mappings based on projectsData
   const projektInfo = useMemo(() => {
@@ -178,7 +172,7 @@ export const ProjectAssignmentMatrix = () => {
 // Create matrix data structure
   const matrixData = useMemo(() => {
     const engineerKeys = Array.from(new Set([
-      ...ENGINEERS.map(e => normalizeName(e.jmeno)),
+      ...engineers.map(e => normalizeName(e.display_name)),
       ...planningData.map(entry => normalizeName(entry.konstrukter))
     ]));
     const matrix: { [engineer: string]: { [week: string]: string } } = {};
@@ -193,12 +187,12 @@ export const ProjectAssignmentMatrix = () => {
     });
     
     return matrix;
-  }, [planningData]);
+  }, [planningData, engineers]);
 
 // Create monthly aggregated data
   const monthlyData = useMemo(() => {
     const engineerKeys = Array.from(new Set([
-      ...ENGINEERS.map(e => normalizeName(e.jmeno)),
+      ...engineers.map(e => normalizeName(e.display_name)),
       ...planningData.map(entry => normalizeName(entry.konstrukter))
     ]));
     const monthlyMatrix: { [engineer: string]: { [month: string]: { projects: string[], totalHours: number, dominantProject: string } } } = {};
@@ -279,12 +273,12 @@ export const ProjectAssignmentMatrix = () => {
   const filteredEngineers = useMemo(() => {
     let engineers = Object.keys(displayData);
     
-    // Filter by organizational leader
-    if (!filterOrgVedouci.includes('Všichni')) {
-      engineers = engineers.filter(engineer => 
-        filterOrgVedouci.includes(konstrukterVedouci[engineer])
-      );
-    }
+    // TODO: Filter by organizational leader - requires organizational structure in database
+    // if (!filterOrgVedouci.includes('Všichni')) {
+    //   engineers = engineers.filter(engineer => 
+    //     filterOrgVedouci.includes(orgLeaderMap[engineer])
+    //   );
+    // }
     
     if (viewMode === 'weeks') {
       // Filter by PM

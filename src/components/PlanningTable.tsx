@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, Filter, Users } from 'lucide-react';
 import { usePlanning } from '@/contexts/PlanningContext';
 import { getWeek } from 'date-fns';
-import { ENGINEERS } from '@/data/engineersList';
 import { normalizeName } from '@/utils/nameNormalization';
 
 interface EngineerOverview {
@@ -39,18 +38,23 @@ const getAllWeeksToEndOfYear = (): string[] => {
   return weeks;
 };
 
-// Seznam konstruktérů - sdílený seznam všech 45 jmen
-const konstrukteri = ENGINEERS;
-
-
 export const PlanningTable: React.FC = () => {
-  const { planningData } = usePlanning();
+  const { planningData, engineers } = usePlanning();
+  
+  // Transformace engineers z databáze do formátu kompatibilního se starým kódem
+  const engineersData = useMemo(() => {
+    return engineers.map(eng => ({
+      jmeno: eng.display_name,
+      spolecnost: 'TM CZ', // Default, bude později nahrazeno skutečnou hodnotou z databáze
+      orgVedouci: 'Unknown' // Default, bude později nahrazeno skutečnou hodnotou z organizační struktury
+    }));
+  }, [engineers]);
   
   const overviewData = useMemo(() => {
     const allWeeksToEndOfYear = getAllWeeksToEndOfYear();
     
-    return konstrukteri
-      .sort((a, b) => a.jmeno.localeCompare(b.jmeno)) // Seřadit podle abecedy
+    return engineersData
+      .sort((a, b) => a.jmeno.localeCompare(b.jmeno))
       .map(konstrukter => {
         const planDoKonceRoku = allWeeksToEndOfYear.map(cw => {
           // Pro vyhledávání v existujících datech použijeme normalizované jméno
@@ -136,15 +140,15 @@ export const PlanningTable: React.FC = () => {
           status
         };
       });
-  }, [planningData]);
+  }, [planningData, engineersData]);
   
   const [filteredData, setFilteredData] = useState<EngineerOverview[]>(overviewData);
   const [filterOrgVedouci, setFilterOrgVedouci] = useState<string>('all');
   const [filterSpolecnost, setFilterSpolecnost] = useState<string>('all');
   const [searchKonstrukter, setSearchKonstrukter] = useState<string>('');
 
-  const uniqueOrgVedouci = Array.from(new Set(konstrukteri.map(k => k.orgVedouci)));
-  const uniqueSpolecnosti = Array.from(new Set(konstrukteri.map(k => k.spolecnost)));
+  const uniqueOrgVedouci = Array.from(new Set(engineersData.map(k => k.orgVedouci)));
+  const uniqueSpolecnosti = Array.from(new Set(engineersData.map(k => k.spolecnost)));
 
   React.useEffect(() => {
     let filtered = overviewData;
