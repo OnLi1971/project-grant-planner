@@ -177,12 +177,22 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
     
     // Calculate details for selected license (excluding MB Idea contractors)
     const details: EngineerDetail[] = [];
+    const seenEngineers = new Set<string>(); // Track unique engineer-project combinations
     
     engineersThisWeek.forEach(entry => {
       // Skip MB Idea contractors
       if (MB_IDEA_CONTRACTORS.includes(entry.konstrukter)) {
         return;
       }
+      
+      // Create unique key for engineer-project combination
+      const engineerProjectKey = `${entry.konstrukter}-${entry.projekt}`;
+      
+      // Skip if we've already processed this engineer-project combination
+      if (seenEngineers.has(engineerProjectKey)) {
+        return;
+      }
+      seenEngineers.add(engineerProjectKey);
       
       const projectLicensesForProject = projectLicenseMap[entry.projekt];
       if (projectLicensesForProject) {
