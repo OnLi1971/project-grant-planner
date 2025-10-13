@@ -63,12 +63,19 @@ const generateAllWeeks = (): WeekPlan[] => {
   ];
   
   const currentWeek = getCurrentWeek();
-  const startWeek = Math.max(32, currentWeek); // Začneme od aktuálního týdne, ale minimálně od CW32
+  const startWeek = Math.max(1, currentWeek - 4); // Začneme 4 týdny před aktuálním týdnem
   
-  // Nejprve generujeme týdny do konce roku 2025 (CW32-52)
+  // Nejprve generujeme týdny do konce roku 2025
   for (let cw = startWeek; cw <= 52; cw++) {
     let monthIndex;
-    if (cw <= 35) monthIndex = 7; // srpen
+    if (cw <= 4) monthIndex = 0; // leden
+    else if (cw <= 8) monthIndex = 1; // únor
+    else if (cw <= 13) monthIndex = 2; // březen
+    else if (cw <= 17) monthIndex = 3; // duben
+    else if (cw <= 21) monthIndex = 4; // květen
+    else if (cw <= 26) monthIndex = 5; // červen
+    else if (cw <= 30) monthIndex = 6; // červenec
+    else if (cw <= 35) monthIndex = 7; // srpen
     else if (cw <= 39) monthIndex = 8; // září  
     else if (cw <= 43) monthIndex = 9; // říjen
     else if (cw <= 47) monthIndex = 10; // listopad
