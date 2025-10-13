@@ -219,7 +219,7 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
       return Math.min(weekNumber, 52);
     };
     
-    const currentWeek = 35; // CW35 as current week
+    const currentWeek = getCurrentWeek();
     
     // Generate 22 weeks from current week
     for (let i = 0; i < 22; i++) {
@@ -277,27 +277,29 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
         );
         
         // Count unique engineers per project
-        const projectEngineers: { [projectCode: string]: number } = {};
+        const projectEngineers: { [projectCode: string]: string[] } = {};
         engineersThisWeek.forEach(entry => {
           if (!projectEngineers[entry.projekt]) {
-            projectEngineers[entry.projekt] = 0;
+            projectEngineers[entry.projekt] = [];
           }
-          projectEngineers[entry.projekt]++;
+          if (!projectEngineers[entry.projekt].includes(entry.konstrukter)) {
+            projectEngineers[entry.projekt].push(entry.konstrukter);
+          }
         });
         
         console.log(`Week ${weekOnly} project engineers:`, projectEngineers);
         
         // Calculate license usage based on project assignments
-        Object.entries(projectEngineers).forEach(([projectCode, engineerCount]) => {
+        Object.entries(projectEngineers).forEach(([projectCode, engineers]) => {
           const projectLicensesForProject = projectLicenseMap[projectCode];
           if (projectLicensesForProject) {
             const licenseAssignment = projectLicensesForProject.find(al => 
               al.licenseName === license.name
             );
             if (licenseAssignment) {
-              const requiredLicenses = Math.ceil((engineerCount * licenseAssignment.percentage) / 100);
+              const requiredLicenses = Math.ceil((engineers.length * licenseAssignment.percentage) / 100);
               totalUsage += requiredLicenses;
-              console.log(`Project ${projectCode}: ${engineerCount} engineers, ${licenseAssignment.percentage}% = ${requiredLicenses} ${license.name} licenses`);
+              console.log(`Project ${projectCode}: ${engineers.length} engineers, ${licenseAssignment.percentage}% = ${requiredLicenses} ${license.name} licenses`);
             }
           }
         });

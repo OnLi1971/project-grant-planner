@@ -110,8 +110,12 @@ export const CurrentWeekLicenseUsage: React.FC<CurrentWeekLicenseUsageProps> = (
   }, []);
 
   const getCurrentWeek = () => {
-    // Use current week CW35
-    return 'CW35';
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 1);
+    const diff = now.getTime() - start.getTime();
+    const oneWeek = 1000 * 60 * 60 * 24 * 7;
+    const weekNumber = Math.ceil(diff / oneWeek);
+    return `CW${Math.min(weekNumber, 52)}`;
   };
 
   const currentWeekUsage = useMemo(() => {
