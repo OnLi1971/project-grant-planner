@@ -84,9 +84,9 @@ const Index = () => {
               <PlanningEditor />
             </TabsContent>
             
-            <TabsContent value="outputs" className="mt-6 flex flex-col h-[calc(100vh-180px)]">
-              <Card className="p-4 shadow-card-custom flex-shrink-0">
-                <div className="flex gap-2">
+            <TabsContent value="outputs" className="mt-6">
+              <Card className="p-4 shadow-card-custom">
+                <div className="flex gap-2 mb-6">
                   <Button
                     variant={outputView === 'matrix' ? 'default' : 'outline'}
                     onClick={() => setOutputView('matrix')}
@@ -106,13 +106,11 @@ const Index = () => {
                 </div>
               </Card>
               
-              <div className="flex-1 min-h-0 mt-6">
-                {outputView === 'matrix' ? (
-                  <ProjectAssignmentMatrix />
-                ) : (
-                  <RevenueOverview />
-                )}
-              </div>
+              {outputView === 'matrix' ? (
+                <ProjectAssignmentMatrix />
+              ) : (
+                <RevenueOverview />
+              )}
             </TabsContent>
 
             <TabsContent value="management" className="mt-6">
