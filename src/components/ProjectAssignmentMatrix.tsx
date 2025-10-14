@@ -353,18 +353,20 @@ export const ProjectAssignmentMatrix = () => {
     <div className="p-6 space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl font-bold">Matice plánování projektů</CardTitle>
-          <div className="flex items-center gap-4 mt-4">
-            <label className="text-sm font-medium">Zobrazení:</label>
-            <Select value={viewMode} onValueChange={(value: 'weeks' | 'months') => setViewMode(value)}>
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="weeks">Týdny</SelectItem>
-                <SelectItem value="months">Měsíce</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-2xl font-bold">Matice plánování projektů</CardTitle>
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium">Zobrazení:</label>
+              <Select value={viewMode} onValueChange={(value: 'weeks' | 'months') => setViewMode(value)}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="weeks">Týdny</SelectItem>
+                  <SelectItem value="months">Měsíce</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
