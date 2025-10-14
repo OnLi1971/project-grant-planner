@@ -350,28 +350,27 @@ export const ProjectAssignmentMatrix = () => {
   }, [displayData, matrixData, monthlyData, viewMode, filterOrgVedouci, filterPM, filterZakaznik, filterProgram]);
 
   return (
-    <div className="p-6 space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-2xl font-bold">Matice plánování projektů</CardTitle>
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium">Zobrazení:</label>
-              <Select value={viewMode} onValueChange={(value: 'weeks' | 'months') => setViewMode(value)}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="weeks">Týdny</SelectItem>
-                  <SelectItem value="months">Měsíce</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+    <Card className="flex flex-col h-full">
+      <CardHeader className="flex-shrink-0">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-2xl font-bold">Matice plánování projektů</CardTitle>
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium">Zobrazení:</label>
+            <Select value={viewMode} onValueChange={(value: 'weeks' | 'months') => setViewMode(value)}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="weeks">Týdny</SelectItem>
+                <SelectItem value="months">Měsíce</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        </CardHeader>
-        <CardContent>
+        </div>
+      </CardHeader>
+      <CardContent className="flex-1 flex flex-col min-h-0">
           {/* Filters */}
-          <div className="grid grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-4 gap-4 mb-4 flex-shrink-0">
             <div>
               <label className="text-sm font-medium mb-2 block">Organizační vedoucí</label>
               <Popover>
@@ -486,7 +485,7 @@ export const ProjectAssignmentMatrix = () => {
           </div>
 
           {/* Matrix Table */}
-          <div className="overflow-x-auto overflow-y-auto max-h-[85vh]">
+          <div className="overflow-x-auto overflow-y-auto flex-1 min-h-0">
             <table className="w-full border-collapse">
               <thead className="sticky top-0 z-20">
                 {viewMode === 'weeks' ? (
@@ -634,11 +633,10 @@ export const ProjectAssignmentMatrix = () => {
             </table>
           </div>
           
-          <div className="mt-4 text-sm text-muted-foreground">
+          <div className="mt-4 text-sm text-muted-foreground flex-shrink-0">
             Zobrazeno {filteredEngineers.length} konstruktérů
           </div>
-        </CardContent>
-      </Card>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
