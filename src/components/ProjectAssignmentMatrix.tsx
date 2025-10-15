@@ -11,19 +11,33 @@ import { customers, projectManagers, programs, projects } from '@/data/projectsD
 import { getWeek } from 'date-fns';
 import { normalizeName, createNameMapping } from '@/utils/nameNormalization';
 
-// Organizational structure and project mappings
-const organizacniVedouci = [
+// Company mappings
+const spolocnosti = [
   'Všichni',
-  'JoMa',
-  'OnLi', 
-  'KaSo',
-  'PaHo',
-  'PeMa',
-  'DaAm',
-  'PeNe',
   'MB Idea',
-  'AERTEC'
+  'AERTEC',
+  'TM-CZ'
 ];
+
+// Mapping engineers to companies
+const engineerCompanyMapping: { [key: string]: string } = {
+  // MB Idea
+  'bohusik martin': 'MB Idea',
+  'chrenko daniel': 'MB Idea',
+  'chrenko peter': 'MB Idea',
+  'pupava marian': 'MB Idea',
+  'jurcisin peter': 'MB Idea',
+  // AERTEC
+  'ivan bellamy': 'AERTEC',
+  'jose carreras': 'AERTEC',
+  'marta lopez': 'AERTEC',
+  // All others default to TM-CZ
+};
+
+const getEngineerCompany = (engineerName: string): string => {
+  const normalized = normalizeName(engineerName);
+  return engineerCompanyMapping[normalized] || 'TM-CZ';
+};
 
 
 
@@ -117,7 +131,7 @@ const getProjectBadgeStyle = (projekt: string) => {
 export const ProjectAssignmentMatrix = () => {
   const { planningData, engineers } = usePlanning();
   const [viewMode, setViewMode] = useState<'weeks' | 'months'>('weeks');
-  const [filterOrgVedouci, setFilterOrgVedouci] = useState<string[]>(['Všichni']);
+  const [filterSpolecnost, setFilterSpolecnost] = useState<string[]>(['Všichni']);
   const [filterPM, setFilterPM] = useState<string[]>(['Všichni']);
   const [filterZakaznik, setFilterZakaznik] = useState<string[]>(['Všichni']);
   const [filterProgram, setFilterProgram] = useState<string[]>(['Všichni']);
@@ -273,12 +287,14 @@ export const ProjectAssignmentMatrix = () => {
   const filteredEngineers = useMemo(() => {
     let engineers = Object.keys(displayData);
     
-    // TODO: Filter by organizational leader - requires organizational structure in database
-    // if (!filterOrgVedouci.includes('Všichni')) {
-    //   engineers = engineers.filter(engineer => 
-    //     filterOrgVedouci.includes(orgLeaderMap[engineer])
-    //   );
-    // }
+    // Filter by company
+    if (!filterSpolecnost.includes('Všichni')) {
+      engineers = engineers.filter(engineer => {
+        const displayName = displayNameMap[engineer] || engineer;
+        const company = getEngineerCompany(displayName);
+        return filterSpolecnost.includes(company);
+      });
+    }
     
     if (viewMode === 'weeks') {
       // Filter by PM
@@ -347,7 +363,7 @@ export const ProjectAssignmentMatrix = () => {
     }
     
     return engineers.sort();
-  }, [displayData, matrixData, monthlyData, viewMode, filterOrgVedouci, filterPM, filterZakaznik, filterProgram]);
+  }, [displayData, matrixData, monthlyData, viewMode, filterSpolecnost, filterPM, filterZakaznik, filterProgram, displayNameMap]);
 
   return (
     <div className="p-6 space-y-6">
@@ -373,25 +389,25 @@ export const ProjectAssignmentMatrix = () => {
           {/* Filters */}
           <div className="grid grid-cols-4 gap-4 mb-6">
             <div>
-              <label className="text-sm font-medium mb-2 block">Organizační vedoucí</label>
+              <label className="text-sm font-medium mb-2 block">Společnost</label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="w-full justify-between">
-                    {getFilterDisplayText(filterOrgVedouci)}
+                    {getFilterDisplayText(filterSpolecnost)}
                     <ChevronDown className="h-4 w-4 opacity-50" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-60 p-0" align="start">
                   <div className="p-2 max-h-64 overflow-y-auto">
-                    {organizacniVedouci.map(vedouci => (
-                      <div key={vedouci} className="flex items-center space-x-2 py-2 px-2 rounded hover:bg-muted/50">
+                    {spolocnosti.map(spolecnost => (
+                      <div key={spolecnost} className="flex items-center space-x-2 py-2 px-2 rounded hover:bg-muted/50">
                         <Checkbox
-                          id={`org-${vedouci}`}
-                          checked={isFilterActive(filterOrgVedouci, vedouci)}
-                          onCheckedChange={() => toggleFilterValue(filterOrgVedouci, vedouci, setFilterOrgVedouci)}
+                          id={`company-${spolecnost}`}
+                          checked={isFilterActive(filterSpolecnost, spolecnost)}
+                          onCheckedChange={() => toggleFilterValue(filterSpolecnost, spolecnost, setFilterSpolecnost)}
                         />
-                        <label htmlFor={`org-${vedouci}`} className="text-sm cursor-pointer flex-1">
-                          {vedouci}
+                        <label htmlFor={`company-${spolecnost}`} className="text-sm cursor-pointer flex-1">
+                          {spolecnost}
                         </label>
                       </div>
                     ))}
