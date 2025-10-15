@@ -521,19 +521,34 @@ export const PlanningEditor: React.FC = () => {
       <Card className="p-4 shadow-card-custom">
         <div className="flex items-center gap-4 flex-wrap">
           <label className="text-sm font-medium">Konstruktér:</label>
-          <Select value={selectedKonstrukter} onValueChange={(value) => {
-            setSelectedKonstrukter(value);
-            clearSelection(); // Clear selection when changing engineer
-          }}>
-            <SelectTrigger className="w-64">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="max-h-[300px] overflow-y-auto">
-              {konstrukteri.map(konstrukter => (
-                <SelectItem key={konstrukter} value={konstrukter}>{konstrukter}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <Select value={selectedKonstrukter} onValueChange={(value) => {
+              setSelectedKonstrukter(value);
+              clearSelection(); // Clear selection when changing engineer
+            }}>
+              <SelectTrigger className="w-64">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="max-h-[300px] overflow-y-auto">
+                {konstrukteri.map(konstrukter => (
+                  <SelectItem key={konstrukter} value={konstrukter}>{konstrukter}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const currentIndex = konstrukteri.indexOf(selectedKonstrukter);
+                const nextIndex = (currentIndex + 1) % konstrukteri.length;
+                setSelectedKonstrukter(konstrukteri[nextIndex]);
+                clearSelection();
+              }}
+              disabled={konstrukteri.length <= 1}
+            >
+              Další
+            </Button>
+          </div>
           <div className="text-sm text-muted-foreground">
             {konstrukteri.length} konstruktérů k dispozici
           </div>
