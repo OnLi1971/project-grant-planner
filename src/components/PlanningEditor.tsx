@@ -428,25 +428,26 @@ export const PlanningEditor: React.FC = () => {
   return (
     <div className="space-y-6 p-6 bg-background min-h-screen">
       {/* Header */}
-      <div className="bg-gradient-header text-white p-6 rounded-lg shadow-planning">
+      <div className="bg-gradient-header text-white p-4 rounded-lg shadow-planning">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Calendar className="h-8 w-8" />
+          <div className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
             <div>
-              <h1 className="text-2xl font-bold">Plánování konstruktérů - Editor</h1>
-              <p className="text-primary-foreground/80">Editovatelný týdenní plán projektů</p>
+              <h1 className="text-lg font-bold">Plánování konstruktérů - Editor</h1>
+              <p className="text-sm text-primary-foreground/80">Editovatelný týdenní plán projektů</p>
             </div>
           </div>
           <div className="flex gap-2">
             <Button 
               variant={isMultiSelectMode ? "default" : "outline"} 
+              size="sm"
               onClick={() => {
                 setIsMultiSelectMode(!isMultiSelectMode);
                 if (isMultiSelectMode) clearSelection();
               }}
               className="bg-white/10 hover:bg-white/20 text-white border-white/30 hover:border-white/50"
             >
-              <MousePointer2 className="h-4 w-4 mr-2" />
+              <MousePointer2 className="h-3.5 w-3.5 mr-2" />
               {isMultiSelectMode ? 'Ukončit výběr' : 'Vybrat více týdnů'}
             </Button>
           </div>
