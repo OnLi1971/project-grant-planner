@@ -522,6 +522,19 @@ export const PlanningEditor: React.FC = () => {
         <div className="flex items-center gap-4 flex-wrap">
           <label className="text-sm font-medium">Konstruktér:</label>
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const currentIndex = konstrukteri.indexOf(selectedKonstrukter);
+                const prevIndex = (currentIndex - 1 + konstrukteri.length) % konstrukteri.length;
+                setSelectedKonstrukter(konstrukteri[prevIndex]);
+                clearSelection();
+              }}
+              disabled={konstrukteri.length <= 1}
+            >
+              Předchozí
+            </Button>
             <Select value={selectedKonstrukter} onValueChange={(value) => {
               setSelectedKonstrukter(value);
               clearSelection(); // Clear selection when changing engineer
