@@ -649,9 +649,9 @@ export const PlanningEditor: React.FC = () => {
                       isSelected ? 'bg-primary/10 border-primary cursor-pointer' : 
                       index % 2 === 0 ? 'bg-planning-cell hover:bg-planning-cell-hover cursor-pointer' : 
                       'bg-planning-stripe hover:bg-planning-cell-hover cursor-pointer'}
-                    ${isMultiSelectMode && !isCurrentWeek ? 'hover:bg-primary/5' : ''}
+                    ${isMultiSelectMode ? 'hover:bg-primary/5' : ''}
                   `}
-                  onClick={() => isMultiSelectMode && !isCurrentWeek && toggleWeekSelection(week.cw)}
+                  onClick={() => isMultiSelectMode && toggleWeekSelection(week.cw)}
                 >
                   <td className="p-3 font-mono font-medium relative">
                     {isSelected && (
