@@ -85,22 +85,24 @@ const Index = () => {
             </TabsContent>
             
             <TabsContent value="outputs" className="mt-6">
-              <Card className="p-4 shadow-card-custom">
-                <div className="flex gap-2 mb-6">
+              <Card className="p-3 shadow-card-custom">
+                <div className="flex gap-2 mb-4">
                   <Button
                     variant={outputView === 'matrix' ? 'default' : 'outline'}
                     onClick={() => setOutputView('matrix')}
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-2 text-sm h-8"
+                    size="sm"
                   >
-                    <Grid3x3 className="h-4 w-4" />
+                    <Grid3x3 className="h-3.5 w-3.5" />
                     Matice projektů
                   </Button>
                   <Button
                     variant={outputView === 'revenue' ? 'default' : 'outline'}
                     onClick={() => setOutputView('revenue')}
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-2 text-sm h-8"
+                    size="sm"
                   >
-                    <DollarSign className="h-4 w-4" />
+                    <DollarSign className="h-3.5 w-3.5" />
                     Revenue
                   </Button>
                 </div>

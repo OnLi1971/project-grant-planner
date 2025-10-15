@@ -739,9 +739,9 @@ export const RevenueOverview = () => {
   return (
     <div className="space-y-6">
       <Card className="shadow-card-custom">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <TrendingUp className="h-3.5 w-3.5" />
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
             Revenue - Obrat po měsících
           </CardTitle>
         </CardHeader>

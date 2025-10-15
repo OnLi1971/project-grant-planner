@@ -352,9 +352,9 @@ export const ProjectAssignmentMatrix = () => {
   return (
     <div className="p-6 space-y-6">
       <Card>
-        <CardHeader className="pb-3">
+        <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg font-bold">Matice plánování projektů</CardTitle>
+            <CardTitle className="text-2xl font-bold">Matice plánování projektů</CardTitle>
             <div className="flex items-center gap-2">
               <label className="text-sm font-medium">Zobrazení:</label>
               <Select value={viewMode} onValueChange={(value: 'weeks' | 'months') => setViewMode(value)}>
