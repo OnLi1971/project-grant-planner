@@ -15,10 +15,12 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Grid3x3, Database, TrendingUp, Settings, Shield, UserPlus, DollarSign, LogOut } from 'lucide-react';
+import { Users, Grid3x3, Database, TrendingUp, Settings, Shield, UserPlus, DollarSign, LogOut, BarChart3 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const Index = () => {
   const { user, loading, signOut } = useAuth();
+  const navigate = useNavigate();
   const [outputView, setOutputView] = useState<'matrix' | 'revenue'>('matrix');
   const [managementView, setManagementView] = useState<'projects' | 'resources' | 'licenses' | 'users' | 'engineers' | 'migration'>('projects');
 
@@ -46,6 +48,15 @@ const Index = () => {
           <div className="flex justify-between items-center">
             <h1 className="text-2xl font-bold">Plánování kapacit</h1>
             <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/manager')}
+                className="flex items-center gap-2"
+              >
+                <BarChart3 className="h-4 w-4" />
+                Manažerský pohled
+              </Button>
               <span className="text-sm text-muted-foreground">
                 {user.email}
               </span>
