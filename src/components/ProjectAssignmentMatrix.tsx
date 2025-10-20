@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Filter } from 'lucide-react';
 import { usePlanning } from '@/contexts/PlanningContext';
 import { customers, projectManagers, programs, projects } from '@/data/projectsData';
 import { getWeek } from 'date-fns';
@@ -135,8 +135,7 @@ export const ProjectAssignmentMatrix = () => {
   const [filterPM, setFilterPM] = useState<string[]>(['Všichni']);
   const [filterZakaznik, setFilterZakaznik] = useState<string[]>(['Všichni']);
   const [filterProgram, setFilterProgram] = useState<string[]>(['Všichni']);
-  const [filterTyden, setFilterTyden] = useState<string>('Všechny');
-  const [filterProjekt, setFilterProjekt] = useState<string[]>(['Všechny']);
+  const [weekFilters, setWeekFilters] = useState<{ [week: string]: string[] }>({});
 
   const displayNameMap = useMemo(() => {
     const map: Record<string, string> = {};
@@ -185,21 +184,51 @@ export const ProjectAssignmentMatrix = () => {
     return ['Všichni', ...programCodes];
   }, []);
 
-  // List of all unique projects for filter
-  const projektyList = useMemo(() => {
-    const uniqueProjects = new Set<string>();
-    planningData.forEach(entry => {
-      if (entry.projekt) {
-        uniqueProjects.add(entry.projekt);
+  // Get unique projects for a specific week
+  const getProjectsForWeek = (week: string): string[] => {
+    const projects = new Set<string>();
+    Object.keys(matrixData).forEach(engineer => {
+      const project = matrixData[engineer][week];
+      if (project) {
+        projects.add(project);
       }
     });
-    // Add common statuses
-    uniqueProjects.add('FREE');
-    uniqueProjects.add('DOVOLENÁ');
-    uniqueProjects.add('NEMOC');
-    uniqueProjects.add('OVER');
-    return ['Všechny', ...Array.from(uniqueProjects).sort()];
-  }, [planningData]);
+    return ['Všechny', ...Array.from(projects).sort()];
+  };
+
+  // Toggle week filter
+  const toggleWeekFilter = (week: string, project: string) => {
+    setWeekFilters(prev => {
+      const currentFilters = prev[week] || ['Všechny'];
+      let newFilters: string[];
+      
+      if (project === 'Všechny') {
+        newFilters = ['Všechny'];
+      } else {
+        const filtered = currentFilters.filter(p => p !== 'Všechny');
+        if (filtered.includes(project)) {
+          newFilters = filtered.filter(p => p !== project);
+          if (newFilters.length === 0) newFilters = ['Všechny'];
+        } else {
+          newFilters = [...filtered, project];
+        }
+      }
+      
+      return { ...prev, [week]: newFilters };
+    });
+  };
+
+  // Check if week filter is active
+  const isWeekFilterActive = (week: string, project: string): boolean => {
+    const filters = weekFilters[week] || ['Všechny'];
+    return filters.includes(project) || (filters.includes('Všechny') && project === 'Všechny');
+  };
+
+  // Check if week has active filters
+  const hasActiveWeekFilter = (week: string): boolean => {
+    const filters = weekFilters[week];
+    return filters && !filters.includes('Všechny') && filters.length > 0;
+  };
 
 // Create matrix data structure
   const matrixData = useMemo(() => {
@@ -314,25 +343,22 @@ export const ProjectAssignmentMatrix = () => {
       });
     }
 
-    // Filter by specific week and project
-    if (filterTyden !== 'Všechny' && viewMode === 'weeks') {
-      engineers = engineers.filter(engineer => {
-        const project = matrixData[engineer][filterTyden];
-        // If project filter is active, check if the project matches
-        if (!filterProjekt.includes('Všechny')) {
-          return filterProjekt.includes(project);
-        }
-        // If only week filter is active, include all engineers
-        return true;
-      });
-    } else if (!filterProjekt.includes('Všechny') && viewMode === 'weeks') {
-      // If only project filter is active (no specific week)
-      engineers = engineers.filter(engineer => {
-        return weeks.some(week => {
-          const project = matrixData[engineer][week];
-          return filterProjekt.includes(project);
+    // Filter by week-specific filters
+    if (viewMode === 'weeks') {
+      // Check if any week has active filters
+      const activeWeekFilters = Object.entries(weekFilters).filter(
+        ([_, projects]) => !projects.includes('Všechny') && projects.length > 0
+      );
+      
+      if (activeWeekFilters.length > 0) {
+        engineers = engineers.filter(engineer => {
+          // Engineer must match ALL active week filters (AND logic)
+          return activeWeekFilters.every(([week, projects]) => {
+            const engineerProject = matrixData[engineer][week];
+            return projects.includes(engineerProject);
+          });
         });
-      });
+      }
     }
     
     if (viewMode === 'weeks') {
@@ -402,7 +428,7 @@ export const ProjectAssignmentMatrix = () => {
     }
     
     return engineers.sort();
-  }, [displayData, matrixData, monthlyData, viewMode, filterSpolecnost, filterPM, filterZakaznik, filterProgram, filterTyden, filterProjekt, displayNameMap]);
+  }, [displayData, matrixData, monthlyData, viewMode, filterSpolecnost, filterPM, filterZakaznik, filterProgram, weekFilters, displayNameMap]);
 
   return (
     <div className="p-6 space-y-6">
@@ -426,7 +452,7 @@ export const ProjectAssignmentMatrix = () => {
         </CardHeader>
         <CardContent>
           {/* Filters */}
-          <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-4 gap-4 mb-6">
             <div>
               <label className="text-sm font-medium mb-2 block">Společnost</label>
               <Popover>
@@ -511,53 +537,7 @@ export const ProjectAssignmentMatrix = () => {
               </Popover>
             </div>
             
-          </div>
-
-          {/* Second row of filters - Week and Project */}
-          <div className="grid grid-cols-4 gap-4 mb-6">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Týden (CW)</label>
-              <Select value={filterTyden} onValueChange={setFilterTyden}>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Všechny">Všechny týdny</SelectItem>
-                  {weeks.map(week => (
-                    <SelectItem key={week} value={week}>{week}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">Projekt</label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-between">
-                    {getFilterDisplayText(filterProjekt)}
-                    <ChevronDown className="h-4 w-4 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-60 p-0" align="start">
-                  <div className="p-2 max-h-64 overflow-y-auto">
-                    {projektyList.map(projekt => (
-                      <div key={projekt} className="flex items-center space-x-2 py-2 px-2 rounded hover:bg-muted/50">
-                        <Checkbox
-                          id={`project-${projekt}`}
-                          checked={isFilterActive(filterProjekt, projekt)}
-                          onCheckedChange={() => toggleFilterValue(filterProjekt, projekt, setFilterProjekt)}
-                        />
-                        <label htmlFor={`project-${projekt}`} className="text-sm cursor-pointer flex-1">
-                          {projekt}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
-
+            
             <div>
               <label className="text-sm font-medium mb-2 block">Program</label>
               <Popover>
@@ -621,7 +601,40 @@ export const ProjectAssignmentMatrix = () => {
                               monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
                             }`}
                           >
-                            <span className="text-muted-foreground">{week}</span>
+                            <div className="flex items-center justify-center gap-1">
+                              <span className="text-muted-foreground">{week}</span>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    className={`h-5 w-5 p-0 ${hasActiveWeekFilter(week) ? 'text-primary' : 'text-muted-foreground'}`}
+                                  >
+                                    <Filter className="h-3 w-3" />
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-60 p-0" align="start">
+                                  <div className="p-2 max-h-64 overflow-y-auto">
+                                    <div className="font-medium text-sm mb-2 px-2">{week}</div>
+                                    {getProjectsForWeek(week).map(project => (
+                                      <div key={project} className="flex items-center space-x-2 py-2 px-2 rounded hover:bg-muted/50">
+                                        <Checkbox
+                                          id={`week-${week}-project-${project}`}
+                                          checked={isWeekFilterActive(week, project)}
+                                          onCheckedChange={() => toggleWeekFilter(week, project)}
+                                        />
+                                        <label 
+                                          htmlFor={`week-${week}-project-${project}`} 
+                                          className="text-sm cursor-pointer flex-1"
+                                        >
+                                          {project}
+                                        </label>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
+                            </div>
                           </th>
                         ))
                       )}
