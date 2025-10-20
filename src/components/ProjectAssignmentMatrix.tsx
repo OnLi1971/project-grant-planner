@@ -181,7 +181,7 @@ export const ProjectAssignmentMatrix = () => {
 
   const programyList = useMemo(() => {
     const programCodes = programs.map(p => p.code);
-    return ['Všichni', ...programCodes];
+    return ['Všichni', ...programCodes, 'N/A'];
   }, []);
 
   // Get unique projects for a specific week
@@ -387,6 +387,11 @@ export const ProjectAssignmentMatrix = () => {
         engineers = engineers.filter(engineer => {
           return weeks.some(week => {
             const project = matrixData[engineer][week];
+            // Non-project states (FREE, DOVOLENÁ, NEMOC, OVER) are considered as N/A program
+            const nonProjectStates = ['FREE', 'DOVOLENÁ', 'NEMOC', 'OVER'];
+            if (nonProjectStates.includes(project)) {
+              return filterProgram.includes('N/A');
+            }
             return projektInfo[project]?.program && filterProgram.includes(projektInfo[project].program);
           });
         });
@@ -419,9 +424,14 @@ export const ProjectAssignmentMatrix = () => {
         engineers = engineers.filter(engineer => {
           return months.some(month => {
             const monthData = monthlyData[engineer][month.name];
-            return monthData.projects.some(project => 
-              projektInfo[project]?.program && filterProgram.includes(projektInfo[project].program)
-            );
+            return monthData.projects.some(project => {
+              // Non-project states (FREE, DOVOLENÁ, NEMOC, OVER) are considered as N/A program
+              const nonProjectStates = ['FREE', 'DOVOLENÁ', 'NEMOC', 'OVER'];
+              if (nonProjectStates.includes(project)) {
+                return filterProgram.includes('N/A');
+              }
+              return projektInfo[project]?.program && filterProgram.includes(projektInfo[project].program);
+            });
           });
         });
       }
