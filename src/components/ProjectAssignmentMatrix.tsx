@@ -132,7 +132,7 @@ export const ProjectAssignmentMatrix = () => {
   const { planningData, engineers } = usePlanning();
   const [viewMode, setViewMode] = useState<'weeks' | 'months'>('weeks');
   const [filterSpolecnost, setFilterSpolecnost] = useState<string[]>(['Všichni']);
-  const [filterPM, setFilterPM] = useState<string[]>(['Všichni']);
+  const [filterProjekt, setFilterProjekt] = useState<string[]>(['Všichni']);
   const [filterZakaznik, setFilterZakaznik] = useState<string[]>(['Všichni']);
   const [filterProgram, setFilterProgram] = useState<string[]>(['Všichni']);
   const [weekFilters, setWeekFilters] = useState<{ [week: string]: string[] }>({});
@@ -169,9 +169,9 @@ export const ProjectAssignmentMatrix = () => {
   }, []);
 
   // Dynamic filter arrays based on projectsData
-  const projektManagersList = useMemo(() => {
-    const pmNames = projectManagers.map(pm => pm.name);
-    return ['Všichni', ...pmNames];
+  const projektList = useMemo(() => {
+    const projectCodes = projects.map(p => p.code);
+    return ['Všichni', ...projectCodes];
   }, []);
 
   const zakazniciList = useMemo(() => {
@@ -362,12 +362,12 @@ export const ProjectAssignmentMatrix = () => {
     }
     
     if (viewMode === 'weeks') {
-      // Filter by PM
-      if (!filterPM.includes('Všichni')) {
+      // Filter by project
+      if (!filterProjekt.includes('Všichni')) {
         engineers = engineers.filter(engineer => {
           return weeks.some(week => {
             const project = matrixData[engineer][week];
-            return projektInfo[project]?.pm && filterPM.includes(projektInfo[project].pm);
+            return filterProjekt.includes(project);
           });
         });
       }
@@ -398,12 +398,12 @@ export const ProjectAssignmentMatrix = () => {
       }
     } else {
       // Monthly view filters
-      if (!filterPM.includes('Všichni')) {
+      if (!filterProjekt.includes('Všichni')) {
         engineers = engineers.filter(engineer => {
           return months.some(month => {
             const monthData = monthlyData[engineer][month.name];
             return monthData.projects.some(project => 
-              projektInfo[project]?.pm && filterPM.includes(projektInfo[project].pm)
+              filterProjekt.includes(project)
             );
           });
         });
@@ -438,7 +438,7 @@ export const ProjectAssignmentMatrix = () => {
     }
     
     return engineers.sort();
-  }, [displayData, matrixData, monthlyData, viewMode, filterSpolecnost, filterPM, filterZakaznik, filterProgram, weekFilters, displayNameMap]);
+  }, [displayData, matrixData, monthlyData, viewMode, filterSpolecnost, filterProjekt, filterZakaznik, filterProgram, weekFilters, displayNameMap]);
 
   return (
     <div className="p-6 space-y-6">
@@ -492,25 +492,25 @@ export const ProjectAssignmentMatrix = () => {
             </div>
             
             <div>
-              <label className="text-sm font-medium mb-2 block">Project Manager</label>
+              <label className="text-sm font-medium mb-2 block">Projekt</label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="w-full justify-between">
-                    {getFilterDisplayText(filterPM)}
+                    {getFilterDisplayText(filterProjekt)}
                     <ChevronDown className="h-4 w-4 opacity-50" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-60 p-0" align="start">
                   <div className="p-2 max-h-64 overflow-y-auto">
-                    {projektManagersList.map(pm => (
-                      <div key={pm} className="flex items-center space-x-2 py-2 px-2 rounded hover:bg-muted/50">
+                    {projektList.map(projekt => (
+                      <div key={projekt} className="flex items-center space-x-2 py-2 px-2 rounded hover:bg-muted/50">
                         <Checkbox
-                          id={`pm-${pm}`}
-                          checked={isFilterActive(filterPM, pm)}
-                          onCheckedChange={() => toggleFilterValue(filterPM, pm, setFilterPM)}
+                          id={`projekt-${projekt}`}
+                          checked={isFilterActive(filterProjekt, projekt)}
+                          onCheckedChange={() => toggleFilterValue(filterProjekt, projekt, setFilterProjekt)}
                         />
-                        <label htmlFor={`pm-${pm}`} className="text-sm cursor-pointer flex-1">
-                          {pm}
+                        <label htmlFor={`projekt-${projekt}`} className="text-sm cursor-pointer flex-1">
+                          {projekt}
                         </label>
                       </div>
                     ))}
