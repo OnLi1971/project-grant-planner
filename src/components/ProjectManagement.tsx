@@ -747,26 +747,6 @@ export const ProjectManagement = () => {
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="name">Opportunity Description *</Label>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="ST EMU INT"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="code">Kód *</Label>
-                    <Input
-                      id="code"
-                      value={formData.code}
-                      onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                      placeholder="ST_EMU_INT"
-                    />
-                  </div>
-                </div>
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <Label htmlFor="parentOpportunity">Parent Opportunity</Label>
@@ -839,6 +819,26 @@ export const ProjectManagement = () => {
                         ))}
                       </SelectContent>
                     </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="name">Opportunity Description *</Label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      placeholder="ST EMU INT"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="code">Kód *</Label>
+                    <Input
+                      id="code"
+                      value={formData.code}
+                      onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                      placeholder="ST_EMU_INT"
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-4">
