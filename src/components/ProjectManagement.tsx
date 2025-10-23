@@ -765,10 +765,16 @@ export const ProjectManagement = () => {
                   <Label htmlFor="parentOpportunity">Parent Opportunity</Label>
                   <Input
                     id="parentOpportunity"
+                    type="text"
+                    list="parent-opportunities"
                     value={formData.parentOpportunity}
                     onChange={(e) => setFormData({ ...formData, parentOpportunity: e.target.value })}
-                    placeholder="451363, 372699, nebo zadejte číslo"
+                    placeholder="Vyberte nebo zadejte číslo"
                   />
+                  <datalist id="parent-opportunities">
+                    <option value="451363" />
+                    <option value="372699" />
+                  </datalist>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
