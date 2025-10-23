@@ -726,7 +726,7 @@ export const ProjectManagement = () => {
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="name">Název *</Label>
+                    <Label htmlFor="name">Opportunity Description *</Label>
                     <Input
                       id="name"
                       value={formData.name}
