@@ -885,7 +885,7 @@ export const ProjectManagement = () => {
                 {/* Presales specific fields */}
                 {formData.projectStatus === 'Pre sales' && (
                   <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
-                    <h3 className="font-medium text-sm">Presales detaily</h3>
+                    <h3 className="font-medium text-sm">Sales Stage</h3>
                     <div className="grid grid-cols-1 gap-4">
                       <div>
                         <Label htmlFor="presalesPhase">Presales fáze</Label>
