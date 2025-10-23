@@ -728,13 +728,13 @@ export const ProjectManagement = () => {
                 <h2 className="text-xl font-semibold">Správa projektů</h2>
                 <Badge variant="outline">{allProjects.length} projektů</Badge>
               </div>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Přidat projekt
-              </Button>
-            </DialogTrigger>
+              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="flex items-center gap-2">
+                    <Plus className="h-4 w-4" />
+                    Přidat projekt
+                  </Button>
+                </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>
@@ -983,9 +983,9 @@ export const ProjectManagement = () => {
               </div>
             </DialogContent>
           </Dialog>
-        </div>
+            </div>
 
-        <Table>
+            <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Název</TableHead>
@@ -1164,3 +1164,5 @@ export const ProjectManagement = () => {
     </div>
   );
 };
+
+export default ProjectManagement;
