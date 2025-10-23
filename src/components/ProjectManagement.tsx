@@ -542,7 +542,6 @@ export const ProjectManagement = () => {
     setIsAddDialogOpen(false);
     setEditingProject(null);
   };
-  };
 
   const addCustomer = async () => {
     try {
