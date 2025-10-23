@@ -782,7 +782,7 @@ export const ProjectManagement = () => {
                     </Select>
                   </div>
                   <div>
-                    <Label htmlFor="program">Program *</Label>
+                    <Label htmlFor="program">IBU *</Label>
                     <Select value={formData.programId} onValueChange={(value) => setFormData({ ...formData, programId: value })}>
                       <SelectTrigger>
                         <SelectValue placeholder="Vyberte program" />
