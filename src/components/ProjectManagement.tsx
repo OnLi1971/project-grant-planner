@@ -747,7 +747,7 @@ export const ProjectManagement = () => {
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <Label htmlFor="customer">Zákazník *</Label>
+                      <Label htmlFor="customer">Account name *</Label>
                       <Button type="button" variant="outline" size="sm" className="h-6 px-2" onClick={() => setIsAddCustomerDialogOpen(true)}>
                         <Plus className="h-3 w-3 mr-1" />
                         Nový
