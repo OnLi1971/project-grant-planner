@@ -370,7 +370,7 @@ export const ProjectManagement = () => {
     return `${ym}-${lastDay.toString().padStart(2, '0')}`;
   };
   const handleSubmit = async () => {
-    if (!formData.name || !formData.code || !formData.customerId || !formData.projectManagerId || !formData.programId) {
+    if (!formData.name || !formData.code || !formData.customerId || !formData.programId) {
       toast({
         title: "Chyba",
         description: "Všechna povinná pole musí být vyplněna.",
@@ -380,6 +380,18 @@ export const ProjectManagement = () => {
     }
 
     try {
+      // Use first available project manager as default if not set
+      const defaultPmId = formData.projectManagerId || projectManagers[0]?.id;
+      
+      if (!defaultPmId) {
+        toast({
+          title: "Chyba",
+          description: "Není dostupný žádný project manager.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       if (editingProject) {
         // Update existing project
         const { error } = await supabase
@@ -388,7 +400,7 @@ export const ProjectManagement = () => {
             name: formData.name,
             code: formData.code,
             customer_id: formData.customerId,
-            project_manager_id: formData.projectManagerId,
+            project_manager_id: defaultPmId,
             program_id: formData.programId,
             project_type: formData.projectType,
             budget: formData.budget || null,
@@ -427,7 +439,7 @@ export const ProjectManagement = () => {
             name: formData.name,
             code: formData.code,
             customer_id: formData.customerId,
-            project_manager_id: formData.projectManagerId,
+            project_manager_id: defaultPmId,
             program_id: formData.programId,
             project_type: formData.projectType,
             budget: formData.budget || null,
@@ -744,7 +756,7 @@ export const ProjectManagement = () => {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <Label htmlFor="customer">Account name *</Label>
@@ -761,21 +773,6 @@ export const ProjectManagement = () => {
                         {customers.map((customer) => (
                           <SelectItem key={customer.id} value={customer.id}>
                             {customer.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="pm">Project Manager *</Label>
-                    <Select value={formData.projectManagerId} onValueChange={(value) => setFormData({ ...formData, projectManagerId: value })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Vyberte PM" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {projectManagers.map((pm) => (
-                          <SelectItem key={pm.id} value={pm.id}>
-                            {pm.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
