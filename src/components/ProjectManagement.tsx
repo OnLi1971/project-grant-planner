@@ -114,7 +114,8 @@ export const ProjectManagement = () => {
     { value: 'P2', label: 'P2 - RFI/ RFP Responded, Proposal Submitted' },
     { value: 'P3', label: 'P3 - Technically Shortlisted & Upside' },
     { value: 'P3.1', label: 'P3.1 - Technically Shortlisted & Strong Upside' },
-    { value: 'P4', label: 'P4 - Commit/ Verbal Confirmation/ LoI' }
+    { value: 'P4', label: 'P4 - Commit/ Verbal Confirmation/ LoI' },
+    { value: 'P5', label: 'P5 - PO existing' }
   ];
   const { toast } = useToast();
   const { planningData } = usePlanning();
