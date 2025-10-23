@@ -103,7 +103,9 @@ export const ProjectManagement = () => {
     presalesPhase: 'P0',
     presalesStartDate: '',
     presalesEndDate: '',
-    parentOpportunity: ''
+    parentOpportunity: '',
+    crmCreationDate: '',
+    opportunityNumber: ''
   });
 
   const presalesPhases = [
@@ -537,7 +539,9 @@ export const ProjectManagement = () => {
       presalesPhase: 'P0',
       presalesStartDate: '',
       presalesEndDate: '',
-      parentOpportunity: ''
+      parentOpportunity: '',
+      crmCreationDate: '',
+      opportunityNumber: ''
     });
     setIsAddDialogOpen(false);
     setEditingProject(null);
@@ -642,7 +646,9 @@ export const ProjectManagement = () => {
         presalesPhase: (project as any).presales_phase || 'P0',
         presalesStartDate: (project as any).presales_start_date ? normalizeYearMonth((project as any).presales_start_date) : '',
         presalesEndDate: (project as any).presales_end_date ? normalizeYearMonth((project as any).presales_end_date) : '',
-        parentOpportunity: (project as any).parent_opportunity || ''
+        parentOpportunity: (project as any).parent_opportunity || '',
+        crmCreationDate: (project as any).crm_creation_date || '',
+        opportunityNumber: (project as any).opportunity_number || ''
       });
       setIsAddDialogOpen(true);
     } catch (error) {
@@ -761,20 +767,41 @@ export const ProjectManagement = () => {
                     />
                   </div>
                 </div>
-                <div>
-                  <Label htmlFor="parentOpportunity">Parent Opportunity</Label>
-                  <Input
-                    id="parentOpportunity"
-                    type="text"
-                    list="parent-opportunities"
-                    value={formData.parentOpportunity}
-                    onChange={(e) => setFormData({ ...formData, parentOpportunity: e.target.value })}
-                    placeholder="Vyberte nebo zadejte číslo"
-                  />
-                  <datalist id="parent-opportunities">
-                    <option value="451363" />
-                    <option value="372699" />
-                  </datalist>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="parentOpportunity">Parent Opportunity</Label>
+                    <Input
+                      id="parentOpportunity"
+                      type="text"
+                      list="parent-opportunities"
+                      value={formData.parentOpportunity}
+                      onChange={(e) => setFormData({ ...formData, parentOpportunity: e.target.value })}
+                      placeholder="Vyberte nebo zadejte číslo"
+                    />
+                    <datalist id="parent-opportunities">
+                      <option value="451363" />
+                      <option value="372699" />
+                    </datalist>
+                  </div>
+                  <div>
+                    <Label htmlFor="crmCreationDate">CRM Creation Date</Label>
+                    <Input
+                      id="crmCreationDate"
+                      type="date"
+                      value={formData.crmCreationDate}
+                      onChange={(e) => setFormData({ ...formData, crmCreationDate: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="opportunityNumber">Opport. Number</Label>
+                    <Input
+                      id="opportunityNumber"
+                      type="number"
+                      value={formData.opportunityNumber}
+                      onChange={(e) => setFormData({ ...formData, opportunityNumber: e.target.value })}
+                      placeholder="Zadejte číslo"
+                    />
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
