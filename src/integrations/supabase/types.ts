@@ -47,14 +47,18 @@ export type Database = {
           auto_tag_version: number | null
           auto_tags: string[] | null
           canonical_url: string | null
+          clicks: number | null
           created_at: string
           id: string
+          importance: number | null
           is_selected: boolean
           keywords: string[]
           manual_tags: string[] | null
           original_url: string
+          publish_at: string | null
           published_at: string | null
           published_date: string | null
+          status: string | null
           summary: string
           tags: string[] | null
           title: string
@@ -66,14 +70,18 @@ export type Database = {
           auto_tag_version?: number | null
           auto_tags?: string[] | null
           canonical_url?: string | null
+          clicks?: number | null
           created_at?: string
           id?: string
+          importance?: number | null
           is_selected?: boolean
           keywords?: string[]
           manual_tags?: string[] | null
           original_url: string
+          publish_at?: string | null
           published_at?: string | null
           published_date?: string | null
+          status?: string | null
           summary: string
           tags?: string[] | null
           title: string
@@ -85,14 +93,18 @@ export type Database = {
           auto_tag_version?: number | null
           auto_tags?: string[] | null
           canonical_url?: string | null
+          clicks?: number | null
           created_at?: string
           id?: string
+          importance?: number | null
           is_selected?: boolean
           keywords?: string[]
           manual_tags?: string[] | null
           original_url?: string
+          publish_at?: string | null
           published_at?: string | null
           published_date?: string | null
+          status?: string | null
           summary?: string
           tags?: string[] | null
           title?: string
@@ -476,6 +488,7 @@ export type Database = {
           hourly_rate: number | null
           id: string
           name: string
+          parent_opportunity: string | null
           presales_end_date: string | null
           presales_phase: string | null
           presales_start_date: string | null
@@ -500,6 +513,7 @@ export type Database = {
           hourly_rate?: number | null
           id?: string
           name: string
+          parent_opportunity?: string | null
           presales_end_date?: string | null
           presales_phase?: string | null
           presales_start_date?: string | null
@@ -524,6 +538,7 @@ export type Database = {
           hourly_rate?: number | null
           id?: string
           name?: string
+          parent_opportunity?: string | null
           presales_end_date?: string | null
           presales_phase?: string | null
           presales_start_date?: string | null
@@ -581,13 +596,44 @@ export type Database = {
       }
     }
     Functions: {
-      cleanup_expired_idempotency_keys: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      engineers_create: {
-        Args:
-          | {
+      cleanup_expired_idempotency_keys: { Args: never; Returns: undefined }
+      engineers_create:
+        | {
+            Args: {
+              p_department?: string
+              p_display_name: string
+              p_email?: string
+              p_fte?: number
+              p_manager?: string
+              p_status?: Database["public"]["Enums"]["engineer_status"]
+            }
+            Returns: {
+              company: string
+              created_at: string
+              currency: string | null
+              department_id: string | null
+              display_name: string
+              email: string | null
+              end_date: string | null
+              fte_percent: number
+              handle: string | null
+              hourly_rate: number | null
+              id: string
+              manager_id: string | null
+              slug: string
+              start_date: string | null
+              status: Database["public"]["Enums"]["engineer_status"]
+              updated_at: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "engineers"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: {
               p_company?: string
               p_currency?: string
               p_department?: string
@@ -598,36 +644,69 @@ export type Database = {
               p_manager?: string
               p_status?: Database["public"]["Enums"]["engineer_status"]
             }
-          | {
+            Returns: {
+              company: string
+              created_at: string
+              currency: string | null
+              department_id: string | null
+              display_name: string
+              email: string | null
+              end_date: string | null
+              fte_percent: number
+              handle: string | null
+              hourly_rate: number | null
+              id: string
+              manager_id: string | null
+              slug: string
+              start_date: string | null
+              status: Database["public"]["Enums"]["engineer_status"]
+              updated_at: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "engineers"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+      engineers_update:
+        | {
+            Args: {
               p_department?: string
-              p_display_name: string
+              p_display_name?: string
               p_email?: string
               p_fte?: number
+              p_id: string
               p_manager?: string
               p_status?: Database["public"]["Enums"]["engineer_status"]
             }
-        Returns: {
-          company: string
-          created_at: string
-          currency: string | null
-          department_id: string | null
-          display_name: string
-          email: string | null
-          end_date: string | null
-          fte_percent: number
-          handle: string | null
-          hourly_rate: number | null
-          id: string
-          manager_id: string | null
-          slug: string
-          start_date: string | null
-          status: Database["public"]["Enums"]["engineer_status"]
-          updated_at: string
-        }
-      }
-      engineers_update: {
-        Args:
-          | {
+            Returns: {
+              company: string
+              created_at: string
+              currency: string | null
+              department_id: string | null
+              display_name: string
+              email: string | null
+              end_date: string | null
+              fte_percent: number
+              handle: string | null
+              hourly_rate: number | null
+              id: string
+              manager_id: string | null
+              slug: string
+              start_date: string | null
+              status: Database["public"]["Enums"]["engineer_status"]
+              updated_at: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "engineers"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: {
               p_company?: string
               p_currency?: string
               p_department?: string
@@ -639,46 +718,34 @@ export type Database = {
               p_manager?: string
               p_status?: Database["public"]["Enums"]["engineer_status"]
             }
-          | {
-              p_department?: string
-              p_display_name?: string
-              p_email?: string
-              p_fte?: number
-              p_id: string
-              p_manager?: string
-              p_status?: Database["public"]["Enums"]["engineer_status"]
+            Returns: {
+              company: string
+              created_at: string
+              currency: string | null
+              department_id: string | null
+              display_name: string
+              email: string | null
+              end_date: string | null
+              fte_percent: number
+              handle: string | null
+              hourly_rate: number | null
+              id: string
+              manager_id: string | null
+              slug: string
+              start_date: string | null
+              status: Database["public"]["Enums"]["engineer_status"]
+              updated_at: string
             }
-        Returns: {
-          company: string
-          created_at: string
-          currency: string | null
-          department_id: string | null
-          display_name: string
-          email: string | null
-          end_date: string | null
-          fte_percent: number
-          handle: string | null
-          hourly_rate: number | null
-          id: string
-          manager_id: string | null
-          slug: string
-          start_date: string | null
-          status: Database["public"]["Enums"]["engineer_status"]
-          updated_at: string
-        }
-      }
-      is_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      normalize_name: {
-        Args: { name: string }
-        Returns: string
-      }
-      normalize_slug: {
-        Args: { p_name: string }
-        Returns: string
-      }
+            SetofOptions: {
+              from: "*"
+              to: "engineers"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+      is_admin: { Args: never; Returns: boolean }
+      normalize_name: { Args: { name: string }; Returns: string }
+      normalize_slug: { Args: { p_name: string }; Returns: string }
     }
     Enums: {
       engineer_status: "active" | "inactive" | "contractor" | "on_leave"

@@ -102,7 +102,8 @@ export const ProjectManagement = () => {
     probability: 0,
     presalesPhase: 'P0',
     presalesStartDate: '',
-    presalesEndDate: ''
+    presalesEndDate: '',
+    parentOpportunity: ''
   });
 
   const presalesPhases = [
@@ -410,6 +411,7 @@ export const ProjectManagement = () => {
             presales_phase: formData.projectStatus === 'Pre sales' ? formData.presalesPhase : null,
             presales_start_date: formData.projectStatus === 'Pre sales' && formData.presalesStartDate ? monthToStartDate(formData.presalesStartDate) : null,
             presales_end_date: formData.projectStatus === 'Pre sales' && formData.presalesEndDate ? monthToEndDate(formData.presalesEndDate) : null,
+            parent_opportunity: formData.parentOpportunity || null,
             updated_by: (await supabase.auth.getUser()).data.user?.id
           })
           .eq('id', editingProject.id);
@@ -449,6 +451,7 @@ export const ProjectManagement = () => {
             presales_phase: formData.projectStatus === 'Pre sales' ? formData.presalesPhase : null,
             presales_start_date: formData.projectStatus === 'Pre sales' && formData.presalesStartDate ? monthToStartDate(formData.presalesStartDate) : null,
             presales_end_date: formData.projectStatus === 'Pre sales' && formData.presalesEndDate ? monthToEndDate(formData.presalesEndDate) : null,
+            parent_opportunity: formData.parentOpportunity || null,
             status: 'active',
             created_by: (await supabase.auth.getUser()).data.user?.id
           })
@@ -533,10 +536,12 @@ export const ProjectManagement = () => {
       probability: 0,
       presalesPhase: 'P0',
       presalesStartDate: '',
-      presalesEndDate: ''
+      presalesEndDate: '',
+      parentOpportunity: ''
     });
     setIsAddDialogOpen(false);
     setEditingProject(null);
+  };
   };
 
   const addCustomer = async () => {
@@ -637,7 +642,8 @@ export const ProjectManagement = () => {
         probability: project.probability || 0,
         presalesPhase: (project as any).presales_phase || 'P0',
         presalesStartDate: (project as any).presales_start_date ? normalizeYearMonth((project as any).presales_start_date) : '',
-        presalesEndDate: (project as any).presales_end_date ? normalizeYearMonth((project as any).presales_end_date) : ''
+        presalesEndDate: (project as any).presales_end_date ? normalizeYearMonth((project as any).presales_end_date) : '',
+        parentOpportunity: (project as any).parent_opportunity || ''
       });
       setIsAddDialogOpen(true);
     } catch (error) {
@@ -755,6 +761,15 @@ export const ProjectManagement = () => {
                       placeholder="ST_EMU_INT"
                     />
                   </div>
+                </div>
+                <div>
+                  <Label htmlFor="parentOpportunity">Parent Opportunity</Label>
+                  <Input
+                    id="parentOpportunity"
+                    value={formData.parentOpportunity}
+                    onChange={(e) => setFormData({ ...formData, parentOpportunity: e.target.value })}
+                    placeholder="451363, 372699, nebo zadejte číslo"
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
