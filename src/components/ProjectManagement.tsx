@@ -888,7 +888,7 @@ export const ProjectManagement = () => {
                     <h3 className="font-medium text-sm">Sales Stage</h3>
                     <div className="grid grid-cols-1 gap-4">
                       <div>
-                        <Label htmlFor="presalesPhase">Presales fáze</Label>
+                        <Label htmlFor="presalesPhase">Stage Phase</Label>
                         <Select value={formData.presalesPhase} onValueChange={(value) => setFormData({ ...formData, presalesPhase: value })}>
                           <SelectTrigger>
                             <SelectValue />
