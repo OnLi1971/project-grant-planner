@@ -352,6 +352,41 @@ export const PlanningEditor: React.FC = () => {
     clearSelection();
   };
 
+  const handleConfirmReservations = async () => {
+    if (selectedWeeks.size === 0) {
+      alert('Nejsou vybrané žádné týdny.');
+      return;
+    }
+
+    // Najdi všechny předběžné rezervace ve vybraných týdnech
+    const tentativeWeeks = Array.from(selectedWeeks).filter(cw => {
+      const week = planData[selectedKonstrukter]?.find(w => w.cw === cw);
+      return week && week.is_tentative && week.projekt !== 'FREE';
+    });
+
+    if (tentativeWeeks.length === 0) {
+      alert('Ve vybraných týdnech nejsou žádné předběžné rezervace k potvrzení.');
+      return;
+    }
+
+    const confirmed = confirm(
+      `Opravdu chcete potvrdit ${tentativeWeeks.length} předběžných rezervací do realizace? Tyto rezervace se začnou započítávat do revenue.`
+    );
+
+    if (!confirmed) return;
+
+    // Potvrdím každou rezervaci (nastavím is_tentative na false)
+    for (const cw of tentativeWeeks) {
+      const week = planData[selectedKonstrukter]?.find(w => w.cw === cw);
+      if (week) {
+        await updatePlanningEntry(selectedKonstrukter, cw, week.projekt, false);
+      }
+    }
+
+    alert(`${tentativeWeeks.length} rezervací bylo potvrzeno do realizace.`);
+    clearSelection();
+  };
+
   const getProjectBadge = (projekt: string, isTentative?: boolean) => {
     const baseClassName = isTentative ? 'border-[3px] border-dashed !border-yellow-400' : '';
     
@@ -521,6 +556,15 @@ export const PlanningEditor: React.FC = () => {
                 disabled={!bulkProject || bulkHours.trim() === '' || selectedWeeks.size === 0}
               >
                 Použít
+              </Button>
+
+              <Button
+                onClick={handleConfirmReservations}
+                disabled={selectedWeeks.size === 0}
+                variant="default"
+                className="bg-green-600 hover:bg-green-700"
+              >
+                Potvrdit do realizace
               </Button>
 
               <Button
