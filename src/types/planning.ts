@@ -6,6 +6,7 @@ export interface PlanningEntry {
   mesic: string;
   mhTyden?: number;
   projekt: string;
+  is_tentative?: boolean;      // New: flag for tentative reservations
 }
 
 export interface EngineerInfo {

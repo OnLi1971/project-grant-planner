@@ -188,9 +188,9 @@ export const ProjectAssignmentMatrix = () => {
   const getProjectsForWeek = (week: string): string[] => {
     const projects = new Set<string>();
     Object.keys(matrixData).forEach(engineer => {
-      const project = matrixData[engineer][week];
-      if (project) {
-        projects.add(project);
+      const projectData = matrixData[engineer][week];
+      if (projectData?.projekt) {
+        projects.add(projectData.projekt);
       }
     });
     return ['Všechny', ...Array.from(projects).sort()];
@@ -236,14 +236,17 @@ export const ProjectAssignmentMatrix = () => {
       ...engineers.map(e => normalizeName(e.display_name)),
       ...planningData.map(entry => normalizeName(entry.konstrukter))
     ]));
-    const matrix: { [engineer: string]: { [week: string]: string } } = {};
+    const matrix: { [engineer: string]: { [week: string]: { projekt: string; isTentative: boolean } } } = {};
     
     engineerKeys.forEach(engineerKey => {
       matrix[engineerKey] = {};
       weeks.forEach(week => {
         const entry = planningData.find(e => normalizeName(e.konstrukter) === engineerKey && e.cw === week);
         // Default to 'DOVOLENÁ' for CW52, otherwise 'FREE' if no entry exists
-        matrix[engineerKey][week] = entry?.projekt || (week.includes('CW52') ? 'DOVOLENÁ' : 'FREE');
+        matrix[engineerKey][week] = {
+          projekt: entry?.projekt || (week.includes('CW52') ? 'DOVOLENÁ' : 'FREE'),
+          isTentative: entry?.is_tentative || false
+        };
       });
     });
     
@@ -354,7 +357,7 @@ export const ProjectAssignmentMatrix = () => {
         engineers = engineers.filter(engineer => {
           // Engineer must match ALL active week filters (AND logic)
           return activeWeekFilters.every(([week, projects]) => {
-            const engineerProject = matrixData[engineer][week];
+            const engineerProject = matrixData[engineer][week]?.projekt;
             return projects.includes(engineerProject);
           });
         });
@@ -366,7 +369,7 @@ export const ProjectAssignmentMatrix = () => {
       if (!filterProjekt.includes('Všichni')) {
         engineers = engineers.filter(engineer => {
           return weeks.some(week => {
-            const project = matrixData[engineer][week];
+            const project = matrixData[engineer][week]?.projekt;
             return filterProjekt.includes(project);
           });
         });
@@ -376,7 +379,7 @@ export const ProjectAssignmentMatrix = () => {
       if (!filterZakaznik.includes('Všichni')) {
         engineers = engineers.filter(engineer => {
           return weeks.some(week => {
-            const project = matrixData[engineer][week];
+            const project = matrixData[engineer][week]?.projekt;
             return projektInfo[project]?.zakaznik && filterZakaznik.includes(projektInfo[project].zakaznik);
           });
         });
@@ -386,7 +389,7 @@ export const ProjectAssignmentMatrix = () => {
       if (!filterProgram.includes('Všichni')) {
         engineers = engineers.filter(engineer => {
           return weeks.some(week => {
-            const project = matrixData[engineer][week];
+            const project = matrixData[engineer][week]?.projekt;
             // Non-project states (FREE, DOVOLENÁ, NEMOC, OVER) are considered as NA program
             const nonProjectStates = ['FREE', 'DOVOLENÁ', 'NEMOC', 'OVER'];
             if (nonProjectStates.includes(project)) {
@@ -679,7 +682,9 @@ export const ProjectAssignmentMatrix = () => {
                     {viewMode === 'weeks' ? (
                       months.map((month, monthIndex) => 
                         month.weeks.map((week, weekIndex) => {
-                          const project = matrixData[engineer][week];
+                          const projectData = matrixData[engineer][week];
+                          const project = projectData?.projekt;
+                          const isTentative = projectData?.isTentative;
                           return (
                             <td 
                               key={week} 
@@ -689,7 +694,9 @@ export const ProjectAssignmentMatrix = () => {
                             >
                               {project && (
                                 <div 
-                                  className={`text-xs px-1.5 py-0.5 w-full justify-center font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-md inline-flex items-center ${getProjectBadgeStyle(project)}`}
+                                  className={`text-xs px-1.5 py-0.5 w-full justify-center font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-md inline-flex items-center ${getProjectBadgeStyle(project)} ${
+                                    isTentative ? 'border-2 border-dashed !border-yellow-500' : ''
+                                  }`}
                                 >
                                   <span className="truncate max-w-[65px]" title={project}>
                                     {project}
