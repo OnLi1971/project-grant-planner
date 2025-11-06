@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, Filter } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ChevronDown, Filter, Circle } from 'lucide-react';
 import { usePlanning } from '@/contexts/PlanningContext';
 import { customers, projectManagers, programs, projects } from '@/data/projectsData';
 import { getWeek } from 'date-fns';
@@ -676,10 +677,16 @@ export const ProjectAssignmentMatrix = () => {
                     <td className="border border-border p-2 font-semibold sticky left-0 bg-inherit z-10 text-foreground text-sm">
                       {displayNameMap[engineer] || engineer}
                     </td>
-                    {viewMode === 'weeks' ? (
+                     {viewMode === 'weeks' ? (
                       months.map((month, monthIndex) => 
                         month.weeks.map((week, weekIndex) => {
                           const project = matrixData[engineer][week];
+                          // Calculate total hours for this week
+                          const weekHours = planningData
+                            .filter(e => normalizeName(e.konstrukter) === engineer && e.cw === week)
+                            .reduce((sum, entry) => sum + (typeof entry.mhTyden === 'number' ? entry.mhTyden : 0), 0);
+                          const isLowUtilization = weekHours > 0 && weekHours < 35;
+                          
                           return (
                             <td 
                               key={week} 
@@ -688,12 +695,26 @@ export const ProjectAssignmentMatrix = () => {
                               }`}
                             >
                               {project && (
-                                <div 
-                                  className={`text-xs px-1.5 py-0.5 w-full justify-center font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-md inline-flex items-center ${getProjectBadgeStyle(project)}`}
-                                >
-                                  <span className="truncate max-w-[65px]" title={project}>
-                                    {project}
-                                  </span>
+                                <div className="flex items-center justify-center gap-1">
+                                  <div 
+                                    className={`text-xs px-1.5 py-0.5 flex-1 justify-center font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-md inline-flex items-center ${getProjectBadgeStyle(project)}`}
+                                  >
+                                    <span className="truncate max-w-[55px]" title={project}>
+                                      {project}
+                                    </span>
+                                  </div>
+                                  {isLowUtilization && (
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Circle className="h-2.5 w-2.5 fill-yellow-500 text-yellow-500 flex-shrink-0" />
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>Vytížení {weekHours}/40 MH</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  )}
                                 </div>
                               )}
                             </td>
