@@ -442,8 +442,9 @@ export const ProjectAssignmentMatrix = () => {
   }, [displayData, matrixData, monthlyData, viewMode, filterSpolecnost, filterProjekt, filterZakaznik, filterProgram, weekFilters, displayNameMap]);
 
   return (
-    <div className="p-6 space-y-6">
-      <Card>
+    <TooltipProvider>
+      <div className="p-6 space-y-6">
+        <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-2xl font-bold">Matice plánování projektů</CardTitle>
@@ -704,16 +705,14 @@ export const ProjectAssignmentMatrix = () => {
                                     </span>
                                   </div>
                                   {isLowUtilization && (
-                                    <TooltipProvider>
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          <Circle className="h-2.5 w-2.5 fill-yellow-500 text-yellow-500 flex-shrink-0" />
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                          <p>Vytížení {weekHours}/40 MH</p>
-                                        </TooltipContent>
-                                      </Tooltip>
-                                    </TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Circle className="h-2.5 w-2.5 fill-yellow-500 text-yellow-500 flex-shrink-0" />
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Vytížení {weekHours}/40 MH</p>
+                                      </TooltipContent>
+                                    </Tooltip>
                                   )}
                                 </div>
                               )}
@@ -786,5 +785,6 @@ export const ProjectAssignmentMatrix = () => {
         </CardContent>
       </Card>
     </div>
+    </TooltipProvider>
   );
 };
