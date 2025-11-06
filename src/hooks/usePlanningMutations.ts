@@ -50,10 +50,11 @@ export function usePlanningMutations({ setPlanningData, engineers }: UsePlanning
     engineerId: string,
     konstrukter: string,
     cw: string, 
-    projekt: string
+    projekt: string,
+    isTentative?: boolean
   ): Promise<void> => {
     try {
-      console.log('CLEAN_UPDATE_PROJECT:', { engineerId, konstrukter, cw, projekt });
+      console.log('CLEAN_UPDATE_PROJECT:', { engineerId, konstrukter, cw, projekt, isTentative });
 
       // Extract year from CW (e.g., "CW31-2025" → "CW31", 2025)
       const [cwBase, yearStr] = cw.includes('-') ? cw.split('-') : [cw, new Date().getFullYear().toString()];
@@ -64,6 +65,7 @@ export function usePlanningMutations({ setPlanningData, engineers }: UsePlanning
         .from('planning_entries')
         .update({ 
           projekt,
+          is_tentative: isTentative ?? false,
           updated_at: new Date().toISOString()
         })
         .eq('engineer_id', engineerId)
@@ -86,14 +88,14 @@ export function usePlanningMutations({ setPlanningData, engineers }: UsePlanning
       setPlanningData(prev => prev.map(entry => {
         // Match by engineer_id and cw (both include year format)
         if (entry.engineer_id === engineerId && entry.cw === cw) {
-          return { ...entry, projekt: verifiedData.projekt };
+          return { ...entry, projekt: verifiedData.projekt, is_tentative: isTentative ?? false };
         }
         return entry;
       }));
 
       toast({
         title: "Projekt aktualizován",
-        description: `${konstrukter}: ${cw} → ${projekt}`,
+        description: `${konstrukter}: ${cw} → ${projekt}${isTentative ? ' (předběžná rezervace)' : ''}`,
       });
 
     } catch (error) {

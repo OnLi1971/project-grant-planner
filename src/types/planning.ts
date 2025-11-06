@@ -18,6 +18,6 @@ export interface EngineerInfo {
 export interface PlanningContextType {
   planningData: PlanningEntry[];
   engineers: EngineerInfo[];
-  updatePlanningEntry: (konstrukter: string, cw: string, projekt: string) => Promise<void>;
+  updatePlanningEntry: (konstrukter: string, cw: string, projekt: string, isTentative?: boolean) => Promise<void>;
   updatePlanningHours: (konstrukter: string, cw: string, hours: number) => Promise<void>;
 }

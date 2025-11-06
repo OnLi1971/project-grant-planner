@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { Calendar, Edit, Save, X, Plus, MousePointer, MousePointer2, FolderPlus, Copy } from 'lucide-react';
 import { usePlanning } from '@/contexts/PlanningContext';
 import { getProjectColor, getCustomerByProjectCode } from '@/utils/colorSystem';
@@ -231,6 +233,7 @@ export const PlanningEditor: React.FC = () => {
   const [copyFromKonstrukter, setCopyFromKonstrukter] = useState<string>('');
   const [bulkProject, setBulkProject] = useState<string>('');  // vybraný projekt (čeká na potvrzení)
   const [bulkHours, setBulkHours] = useState<string>('');      // hodiny v textu (kvůli prázdné hodnotě)
+  const [bulkIsTentative, setBulkIsTentative] = useState<boolean>(false);  // předběžná rezervace
 
   // Načteme projekty z databáze
   useEffect(() => {
@@ -334,15 +337,16 @@ export const PlanningEditor: React.FC = () => {
       return;
     }
 
-    // Zapisuj pro každý vybraný týden – nejdřív projekt, pak hodiny
+    // Zapisuj pro každý vybraný týden – nejdřív projekt s tentative flagem, pak hodiny
     for (const cw of selectedWeeks) {
-      await updateCell(selectedKonstrukter, cw, 'projekt', bulkProject);
-      await updateCell(selectedKonstrukter, cw, 'mhTyden', hoursNum);
+      await updatePlanningEntry(selectedKonstrukter, cw, bulkProject, bulkIsTentative);
+      await updatePlanningHours(selectedKonstrukter, cw, hoursNum);
     }
 
     // úklid
     setBulkProject('');
     setBulkHours('');
+    setBulkIsTentative(false);
     clearSelection();
   };
 
@@ -494,6 +498,18 @@ export const PlanningEditor: React.FC = () => {
                 }}
               />
 
+              {/* Checkbox pro předběžnou rezervaci */}
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="tentative"
+                  checked={bulkIsTentative}
+                  onCheckedChange={(checked) => setBulkIsTentative(checked as boolean)}
+                />
+                <Label htmlFor="tentative" className="cursor-pointer">
+                  Předběžná rezervace
+                </Label>
+              </div>
+
               {/* 3) Tlačítka – POTVRDIT / ZRUŠIT */}
               <Button
                 onClick={applyBulkChanges}
@@ -507,6 +523,7 @@ export const PlanningEditor: React.FC = () => {
                 onClick={() => {
                   setBulkProject('');
                   setBulkHours('');
+                  setBulkIsTentative(false);
                   clearSelection();
                 }}
               >

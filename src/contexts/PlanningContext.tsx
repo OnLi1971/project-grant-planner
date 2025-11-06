@@ -42,7 +42,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [loadPlanningData]);
 
   // Wrapper functions to maintain backwards compatibility
-  const updatePlanningEntry = useCallback(async (konstrukter: string, cw: string, projekt: string) => {
+  const updatePlanningEntry = useCallback(async (konstrukter: string, cw: string, projekt: string, isTentative?: boolean) => {
     // Find engineer_id from konstrukter name using normalization to handle diacritics
     const normalizedKonstrukter = normalizeName(konstrukter);
     const engineer = engineers.find(e => 
@@ -56,7 +56,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       throw new Error(`Engineer not found: ${konstrukter}`);
     }
     
-    await updateEntry(engineer.id, konstrukter, cw, projekt);
+    await updateEntry(engineer.id, konstrukter, cw, projekt, isTentative);
   }, [updateEntry, engineers]);
 
   const updatePlanningHours = useCallback(async (konstrukter: string, cw: string, hours: number) => {
