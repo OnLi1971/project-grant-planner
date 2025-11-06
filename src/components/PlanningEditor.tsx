@@ -19,6 +19,7 @@ interface WeekPlan {
   mesic: string;
   mhTyden: number;
   projekt: string;
+  is_tentative?: boolean;
 }
 
 interface DatabaseProject {
@@ -146,7 +147,8 @@ const generatePlanningDataForEditor = (data: any[]): { [key: string]: WeekPlan[]
       cw: entry.cw,
       mesic: entry.mesic,
       mhTyden: entry.mhTyden,
-      projekt: entry.projekt
+      projekt: entry.projekt,
+      is_tentative: entry.is_tentative || false
     };
   });
   
@@ -350,16 +352,19 @@ export const PlanningEditor: React.FC = () => {
     clearSelection();
   };
 
-  const getProjectBadge = (projekt: string) => {
-    if (!projekt || projekt === 'FREE') return <Badge variant="secondary">Volný</Badge>;
-    if (projekt === 'DOVOLENÁ') return <Badge variant="outline" className="border-accent">Dovolená</Badge>;
-    if (projekt === 'NEMOC') return <Badge variant="outline" className="border-destructive text-destructive">Nemoc</Badge>;
-    if (projekt === 'OVER') return <Badge variant="outline" className="border-warning text-warning">Režie</Badge>;
+  const getProjectBadge = (projekt: string, isTentative?: boolean) => {
+    const baseClassName = isTentative ? 'border-[3px] border-dashed !border-yellow-400' : '';
+    
+    if (!projekt || projekt === 'FREE') return <Badge variant="secondary" className={baseClassName}>Volný</Badge>;
+    if (projekt === 'DOVOLENÁ') return <Badge variant="outline" className={`border-accent ${baseClassName}`}>Dovolená</Badge>;
+    if (projekt === 'NEMOC') return <Badge variant="outline" className={`border-destructive text-destructive ${baseClassName}`}>Nemoc</Badge>;
+    if (projekt === 'OVER') return <Badge variant="outline" className={`border-warning text-warning ${baseClassName}`}>Režie</Badge>;
     
     const customer = getCustomerByProjectCode(projekt);
     if (customer) {
       return (
         <Badge 
+          className={baseClassName}
           style={{
             backgroundColor: getProjectColor(projekt),
             color: 'white',
@@ -370,7 +375,7 @@ export const PlanningEditor: React.FC = () => {
         </Badge>
       );
     }
-    return <Badge variant="outline">{projekt}</Badge>;
+    return <Badge variant="outline" className={baseClassName}>{projekt}</Badge>;
   };
 
   const currentPlan = planData[selectedKonstrukter] || [];
@@ -792,7 +797,7 @@ export const PlanningEditor: React.FC = () => {
                       <div className="absolute inset-0 bg-primary/20 rounded" />
                     )}
                     <div className="relative z-10">
-                      {getProjectBadge(week.projekt)}
+                      {getProjectBadge(week.projekt, week.is_tentative)}
                     </div>
                   </td>
                 </tr>
