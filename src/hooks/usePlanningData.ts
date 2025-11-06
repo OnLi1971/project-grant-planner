@@ -143,7 +143,8 @@ export function usePlanningData() {
           cw: row.cw_full,
           mesic: row.mesic || '',
           mhTyden: row.mh_tyden || 0,
-          projekt: row.projekt || 'FREE'
+          projekt: row.projekt || 'FREE',
+          is_tentative: row.is_tentative || false
         };
       });
 
