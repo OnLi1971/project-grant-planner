@@ -762,6 +762,57 @@ export const ProjectAssignmentMatrix = () => {
                     )}
                   </tr>
                 ))}
+                {/* Summary row for free capacity */}
+                <tr className="bg-primary/5 border-t-2 border-primary/30">
+                  <td className="border border-border p-2 font-bold sticky left-0 bg-primary/5 z-10 text-foreground text-sm">
+                    Volné kapacity celkem
+                  </td>
+                  {viewMode === 'weeks' ? (
+                    months.map((month, monthIndex) => 
+                      month.weeks.map((week, weekIndex) => {
+                        // Count FREE engineers for this week
+                        const freeCount = filteredEngineers.filter(engineer => {
+                          const projectData = matrixData[engineer][week];
+                          return projectData?.projekt === 'FREE';
+                        }).length;
+                        
+                        return (
+                          <td 
+                            key={week} 
+                            className={`border border-border p-1 text-center font-semibold ${
+                              monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
+                            }`}
+                          >
+                            <div className="text-sm text-foreground">
+                              {freeCount}
+                            </div>
+                          </td>
+                        );
+                      })
+                    )
+                  ) : (
+                    months.map((month, monthIndex) => {
+                      // Count engineers with FREE as dominant project for this month
+                      const freeCount = filteredEngineers.filter(engineer => {
+                        const monthData = monthlyData[engineer][month.name];
+                        return monthData?.dominantProject === 'FREE';
+                      }).length;
+                      
+                      return (
+                        <td 
+                          key={month.name} 
+                          className={`border border-border p-1.5 text-center font-semibold ${
+                            monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
+                          }`}
+                        >
+                          <div className="text-sm text-foreground">
+                            {freeCount}
+                          </div>
+                        </td>
+                      );
+                    })
+                  )}
+                </tr>
               </tbody>
             </table>
           </div>
