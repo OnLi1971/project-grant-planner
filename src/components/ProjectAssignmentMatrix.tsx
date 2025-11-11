@@ -131,7 +131,7 @@ const getProjectBadgeStyle = (projekt: string) => {
 export const ProjectAssignmentMatrix = () => {
   const { planningData, engineers } = usePlanning();
   const [viewMode, setViewMode] = useState<'weeks' | 'months'>('weeks');
-  const [filterSpolecnost, setFilterSpolecnost] = useState<string[]>(['Všichni']);
+  const [filterSpolecnost, setFilterSpolecnost] = useState<string[]>(['TM-CZ']);
   const [filterProjekt, setFilterProjekt] = useState<string[]>(['Všichni']);
   const [filterZakaznik, setFilterZakaznik] = useState<string[]>(['Všichni']);
   const [filterProgram, setFilterProgram] = useState<string[]>(['Všichni']);
