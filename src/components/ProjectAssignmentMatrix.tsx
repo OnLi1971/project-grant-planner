@@ -816,6 +816,71 @@ export const ProjectAssignmentMatrix = () => {
                     })
                   )}
                 </tr>
+                {/* Summary row for project hours */}
+                <tr className="bg-secondary/10 border-t-2 border-secondary/30">
+                  <td className="border border-border p-2 font-bold sticky left-0 bg-secondary/10 z-10 text-foreground text-sm">
+                    Počet hodin
+                  </td>
+                  {viewMode === 'weeks' ? (
+                    months.map((month, monthIndex) => 
+                      month.weeks.map((week, weekIndex) => {
+                        // Sum project hours for this week (excluding FREE, DOVOLENÁ, OVER)
+                        const totalHours = filteredEngineers.reduce((sum, engineer) => {
+                          const projectData = matrixData[engineer][week];
+                          const project = projectData?.projekt;
+                          const hours = projectData?.hours || 0;
+                          if (project === 'FREE' || project === 'DOVOLENÁ' || project === 'OVER') {
+                            return sum;
+                          }
+                          return sum + hours;
+                        }, 0);
+                        
+                        return (
+                          <td 
+                            key={week} 
+                            className={`border border-border p-1 text-center font-semibold ${
+                              monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
+                            }`}
+                          >
+                            <div className="text-sm text-foreground">
+                              {totalHours}h
+                            </div>
+                          </td>
+                        );
+                      })
+                    )
+                  ) : (
+                    months.map((month, monthIndex) => {
+                      // Sum hours across all weeks in the month
+                      const monthWeeks = month.weeks;
+                      const totalHours = monthWeeks.reduce((monthSum, week) => {
+                        const weekHours = filteredEngineers.reduce((sum, engineer) => {
+                          const projectData = matrixData[engineer][week];
+                          const project = projectData?.projekt;
+                          const hours = projectData?.hours || 0;
+                          if (project === 'FREE' || project === 'DOVOLENÁ' || project === 'OVER') {
+                            return sum;
+                          }
+                          return sum + hours;
+                        }, 0);
+                        return monthSum + weekHours;
+                      }, 0);
+                      
+                      return (
+                        <td 
+                          key={month.name} 
+                          className={`border border-border p-1.5 text-center font-semibold ${
+                            monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
+                          }`}
+                        >
+                          <div className="text-sm text-foreground">
+                            {totalHours}h
+                          </div>
+                        </td>
+                      );
+                    })
+                  )}
+                </tr>
                 {/* Summary row for utilization percentage */}
                 <tr className="bg-accent/10 border-t-2 border-accent/30">
                   <td className="border border-border p-2 font-bold sticky left-0 bg-accent/10 z-10 text-foreground text-sm">
