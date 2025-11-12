@@ -975,6 +975,15 @@ export const ProjectAssignmentMatrix = () => {
                         ? Math.round((totalActualHours / totalMaxCapacity) * 100) 
                         : 0;
                       
+                      // Debug log for listopad 2025 MB Idea
+                      if (month.name === 'listopad 2025' && filteredEngineers.some(e => getEngineerCompany(e) === 'MB Idea')) {
+                        console.log('=== LISTOPAD 2025 MB IDEA DEBUG ===');
+                        console.log('Filtered Engineers:', filteredEngineers.filter(e => getEngineerCompany(e) === 'MB Idea'));
+                        console.log('Total Max Capacity:', totalMaxCapacity, 'h');
+                        console.log('Total Actual Hours:', totalActualHours, 'h');
+                        console.log('Utilization:', utilization, '%');
+                      }
+                      
                       return (
                         <td 
                           key={month.name} 
