@@ -816,6 +816,78 @@ export const ProjectAssignmentMatrix = () => {
                     })
                   )}
                 </tr>
+                {/* Summary row for utilization percentage */}
+                <tr className="bg-accent/10 border-t-2 border-accent/30">
+                  <td className="border border-border p-2 font-bold sticky left-0 bg-accent/10 z-10 text-foreground text-sm">
+                    Vytížení
+                  </td>
+                  {viewMode === 'weeks' ? (
+                    months.map((month, monthIndex) => 
+                      month.weeks.map((week, weekIndex) => {
+                        // Calculate utilization percentage
+                        const maxCapacity = filteredEngineers.length * 40;
+                        const actualHours = filteredEngineers.reduce((sum, engineer) => {
+                          const projectData = matrixData[engineer][week];
+                          const project = projectData?.projekt;
+                          const hours = projectData?.hours || 0;
+                          // Don't count FREE, DOVOLENÁ, OVER
+                          if (project === 'FREE' || project === 'DOVOLENÁ' || project === 'OVER') {
+                            return sum;
+                          }
+                          return sum + hours;
+                        }, 0);
+                        const utilization = maxCapacity > 0 ? Math.round((actualHours / maxCapacity) * 100) : 0;
+                        
+                        return (
+                          <td 
+                            key={week} 
+                            className={`border border-border p-1 text-center font-semibold ${
+                              monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
+                            }`}
+                          >
+                            <div className="text-sm text-foreground">
+                              {utilization}%
+                            </div>
+                          </td>
+                        );
+                      })
+                    )
+                  ) : (
+                    months.map((month, monthIndex) => {
+                      // For monthly view, calculate average utilization across weeks
+                      const monthWeeks = month.weeks;
+                      const weekUtilizations = monthWeeks.map(week => {
+                        const maxCapacity = filteredEngineers.length * 40;
+                        const actualHours = filteredEngineers.reduce((sum, engineer) => {
+                          const projectData = matrixData[engineer][week];
+                          const project = projectData?.projekt;
+                          const hours = projectData?.hours || 0;
+                          if (project === 'FREE' || project === 'DOVOLENÁ' || project === 'OVER') {
+                            return sum;
+                          }
+                          return sum + hours;
+                        }, 0);
+                        return maxCapacity > 0 ? (actualHours / maxCapacity) * 100 : 0;
+                      });
+                      const avgUtilization = weekUtilizations.length > 0 
+                        ? Math.round(weekUtilizations.reduce((a, b) => a + b, 0) / weekUtilizations.length)
+                        : 0;
+                      
+                      return (
+                        <td 
+                          key={month.name} 
+                          className={`border border-border p-1.5 text-center font-semibold ${
+                            monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
+                          }`}
+                        >
+                          <div className="text-sm text-foreground">
+                            {avgUtilization}%
+                          </div>
+                        </td>
+                      );
+                    })
+                  )}
+                </tr>
               </tbody>
             </table>
           </div>
