@@ -137,7 +137,6 @@ export const ProjectAssignmentMatrix = () => {
   const [filterZakaznik, setFilterZakaznik] = useState<string[]>(['Všichni']);
   const [filterProgram, setFilterProgram] = useState<string[]>(['Všichni']);
   const [weekFilters, setWeekFilters] = useState<{ [week: string]: string[] }>({});
-  const [debugInfo, setDebugInfo] = useState<string>('');
 
   const displayNameMap = useMemo(() => {
     const map: Record<string, string> = {};
@@ -445,6 +444,65 @@ export const ProjectAssignmentMatrix = () => {
     
     return engineers.sort();
   }, [displayData, matrixData, monthlyData, viewMode, filterSpolecnost, filterProjekt, filterZakaznik, filterProgram, weekFilters, displayNameMap]);
+
+  // Calculate debug info for monthly view (listopad 2025 MB Idea)
+  const debugInfo = useMemo(() => {
+    if (viewMode !== 'months') return '';
+    
+    const mbIdeaEngineers = filteredEngineers.filter(e => getEngineerCompany(e) === 'MB Idea');
+    if (mbIdeaEngineers.length === 0) return '';
+    
+    const listopadMonth = months.find(m => m.name === 'listopad 2025');
+    if (!listopadMonth) return '';
+    
+    const monthMap: { [key: string]: number } = {
+      'leden': 1, 'únor': 2, 'březen': 3, 'duben': 4, 'květen': 5, 'červen': 6,
+      'červenec': 7, 'srpen': 8, 'září': 9, 'říjen': 10, 'listopad': 11, 'prosinec': 12
+    };
+    const [monthName, yearStr] = listopadMonth.name.toLowerCase().split(' ');
+    const monthNum = monthMap[monthName];
+    const year = parseInt(yearStr);
+    
+    let totalMaxCapacity = 0;
+    let totalActualHours = 0;
+    
+    mbIdeaEngineers.forEach(engineer => {
+      const isSlovak = true; // MB Idea is Slovak
+      const workingDays = getWorkingDaysFromMonthName(listopadMonth.name, isSlovak);
+      totalMaxCapacity += workingDays * 8;
+      
+      listopadMonth.weeks.forEach(week => {
+        const projectData = matrixData[engineer][week];
+        const project = projectData?.projekt;
+        const weeklyHours = projectData?.hours || 0;
+        
+        if (project === 'FREE' || project === 'DOVOLENÁ' || project === 'OVER') {
+          return;
+        }
+        
+        const planningEntry = planningData.find(
+          p => normalizeName(p.konstrukter) === normalizeName(engineer) && p.cw === week
+        );
+        
+        if (planningEntry?.week_monday) {
+          const weekMonday = new Date(planningEntry.week_monday);
+          const daysInMonth = getWorkingDaysInWeekForMonth(weekMonday, year, monthNum, isSlovak);
+          const proportion = daysInMonth / 5;
+          totalActualHours += weeklyHours * proportion;
+        }
+      });
+    });
+    
+    const utilization = totalMaxCapacity > 0 
+      ? Math.round((totalActualHours / totalMaxCapacity) * 100) 
+      : 0;
+    
+    return `LISTOPAD 2025 MB IDEA:
+📊 Inženýři: ${mbIdeaEngineers.length} (${mbIdeaEngineers.join(', ')})
+⚡ Max kapacita: ${totalMaxCapacity}h
+🔨 Skutečné hodiny: ${totalActualHours.toFixed(1)}h
+📈 Využití: ${utilization}%`;
+  }, [viewMode, filteredEngineers, matrixData, planningData]);
 
   return (
     <div className="p-6 space-y-6">
@@ -981,16 +1039,6 @@ export const ProjectAssignmentMatrix = () => {
                       const utilization = totalMaxCapacity > 0 
                         ? Math.round((totalActualHours / totalMaxCapacity) * 100) 
                         : 0;
-                      
-                      // Debug info for listopad 2025 MB Idea
-                      if (month.name === 'listopad 2025' && filteredEngineers.some(e => getEngineerCompany(e) === 'MB Idea')) {
-                        const mbIdeaEngineers = filteredEngineers.filter(e => getEngineerCompany(e) === 'MB Idea');
-                        setDebugInfo(`LISTOPAD 2025 MB IDEA:
-📊 Inženýři: ${mbIdeaEngineers.length} (${mbIdeaEngineers.join(', ')})
-⚡ Max kapacita: ${totalMaxCapacity}h
-🔨 Skutečné hodiny: ${totalActualHours.toFixed(1)}h
-📈 Využití: ${utilization}%`);
-                      }
                       
                       return (
                         <td 
