@@ -10,6 +10,7 @@ import { usePlanning } from '@/contexts/PlanningContext';
 import { customers, projectManagers, programs, projects } from '@/data/projectsData';
 import { getWeek } from 'date-fns';
 import { normalizeName, createNameMapping } from '@/utils/nameNormalization';
+import { getWorkingDaysFromMonthName } from '@/utils/workingDays';
 
 // Company mappings
 const spolocnosti = [
@@ -919,11 +920,21 @@ export const ProjectAssignmentMatrix = () => {
                     )
                   ) : (
                     months.map((month, monthIndex) => {
-                      // For monthly view, calculate average utilization across weeks
+                      // For monthly view, calculate utilization based on actual working days
                       const monthWeeks = month.weeks;
-                      const weekUtilizations = monthWeeks.map(week => {
-                        const maxCapacity = filteredEngineers.length * 40;
-                        const actualHours = filteredEngineers.reduce((sum, engineer) => {
+                      
+                      // Calculate max capacity based on working days for each engineer
+                      let totalMaxCapacity = 0;
+                      filteredEngineers.forEach(engineer => {
+                        const engineerCompany = getEngineerCompany(engineer);
+                        const isSlovak = engineerCompany === 'MB Idea';
+                        const workingDays = getWorkingDaysFromMonthName(month.name, isSlovak);
+                        totalMaxCapacity += workingDays * 8; // 8 hours per day
+                      });
+                      
+                      // Sum actual project hours for the month
+                      const actualHours = monthWeeks.reduce((monthSum, week) => {
+                        const weekHours = filteredEngineers.reduce((sum, engineer) => {
                           const projectData = matrixData[engineer][week];
                           const project = projectData?.projekt;
                           const hours = projectData?.hours || 0;
@@ -932,10 +943,11 @@ export const ProjectAssignmentMatrix = () => {
                           }
                           return sum + hours;
                         }, 0);
-                        return maxCapacity > 0 ? (actualHours / maxCapacity) * 100 : 0;
-                      });
-                      const avgUtilization = weekUtilizations.length > 0 
-                        ? Math.round(weekUtilizations.reduce((a, b) => a + b, 0) / weekUtilizations.length)
+                        return monthSum + weekHours;
+                      }, 0);
+                      
+                      const utilization = totalMaxCapacity > 0 
+                        ? Math.round((actualHours / totalMaxCapacity) * 100) 
                         : 0;
                       
                       return (
@@ -944,11 +956,11 @@ export const ProjectAssignmentMatrix = () => {
                           className={`border border-border p-1.5 text-center font-semibold ${
                             monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                           }`}
-                        >
-                          <div className="text-sm text-foreground">
-                            {avgUtilization}%
-                          </div>
-                        </td>
+                          >
+                            <div className="text-sm text-foreground">
+                              {utilization}%
+                            </div>
+                          </td>
                       );
                     })
                   )}
