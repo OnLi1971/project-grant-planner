@@ -975,6 +975,36 @@ export const ProjectAssignmentMatrix = () => {
                         ? Math.round((totalActualHours / totalMaxCapacity) * 100) 
                         : 0;
                       
+                      // Debug log for listopad 2025
+                      if (month.name === 'listopad 2025') {
+                        console.log('=== LISTOPAD 2025 DEBUG ===');
+                        console.log('Filtered Engineers:', filteredEngineers);
+                        console.log('Month weeks:', month.weeks);
+                        console.log('Total Max Capacity:', totalMaxCapacity, 'h');
+                        console.log('Total Actual Hours:', totalActualHours, 'h');
+                        console.log('Utilization:', utilization, '%');
+                        
+                        // Sample one engineer
+                        const sampleEngineer = filteredEngineers[0];
+                        if (sampleEngineer) {
+                          console.log('\nSample Engineer:', sampleEngineer);
+                          console.log('Display name:', displayNameMap[sampleEngineer]);
+                          console.log('Company:', getEngineerCompany(sampleEngineer));
+                          month.weeks.forEach(week => {
+                            const projectData = matrixData[sampleEngineer][week];
+                            const planningEntry = planningData.find(
+                              p => normalizeName(p.konstrukter) === normalizeName(sampleEngineer) && p.cw === week
+                            );
+                            console.log(`  ${week}:`, {
+                              projekt: projectData?.projekt,
+                              hours: projectData?.hours,
+                              has_week_monday: !!planningEntry?.week_monday,
+                              week_monday: planningEntry?.week_monday
+                            });
+                          });
+                        }
+                      }
+                      
                       return (
                         <td 
                           key={month.name} 
