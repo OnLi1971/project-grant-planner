@@ -137,6 +137,7 @@ export const ProjectAssignmentMatrix = () => {
   const [filterZakaznik, setFilterZakaznik] = useState<string[]>(['Všichni']);
   const [filterProgram, setFilterProgram] = useState<string[]>(['Všichni']);
   const [weekFilters, setWeekFilters] = useState<{ [week: string]: string[] }>({});
+  const [debugInfo, setDebugInfo] = useState<string>('');
 
   const displayNameMap = useMemo(() => {
     const map: Record<string, string> = {};
@@ -464,6 +465,12 @@ export const ProjectAssignmentMatrix = () => {
               </Select>
             </div>
           </div>
+          
+          {debugInfo && (
+            <div className="mt-4 bg-primary/10 border border-primary/20 rounded-lg p-3 text-sm font-mono whitespace-pre-wrap">
+              {debugInfo}
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           {/* Filters */}
@@ -975,13 +982,14 @@ export const ProjectAssignmentMatrix = () => {
                         ? Math.round((totalActualHours / totalMaxCapacity) * 100) 
                         : 0;
                       
-                      // Debug log for listopad 2025 MB Idea
+                      // Debug info for listopad 2025 MB Idea
                       if (month.name === 'listopad 2025' && filteredEngineers.some(e => getEngineerCompany(e) === 'MB Idea')) {
-                        console.log('=== LISTOPAD 2025 MB IDEA DEBUG ===');
-                        console.log('Filtered Engineers:', filteredEngineers.filter(e => getEngineerCompany(e) === 'MB Idea'));
-                        console.log('Total Max Capacity:', totalMaxCapacity, 'h');
-                        console.log('Total Actual Hours:', totalActualHours, 'h');
-                        console.log('Utilization:', utilization, '%');
+                        const mbIdeaEngineers = filteredEngineers.filter(e => getEngineerCompany(e) === 'MB Idea');
+                        setDebugInfo(`LISTOPAD 2025 MB IDEA:
+📊 Inženýři: ${mbIdeaEngineers.length} (${mbIdeaEngineers.join(', ')})
+⚡ Max kapacita: ${totalMaxCapacity}h
+🔨 Skutečné hodiny: ${totalActualHours.toFixed(1)}h
+📈 Využití: ${utilization}%`);
                       }
                       
                       return (
