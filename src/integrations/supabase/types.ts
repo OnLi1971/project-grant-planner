@@ -313,6 +313,7 @@ export type Database = {
           projekt: string | null
           updated_at: string | null
           updated_by: string | null
+          week_monday: string | null
           year: number
         }
         Insert: {
@@ -328,6 +329,7 @@ export type Database = {
           projekt?: string | null
           updated_at?: string | null
           updated_by?: string | null
+          week_monday?: string | null
           year: number
         }
         Update: {
@@ -343,6 +345,7 @@ export type Database = {
           projekt?: string | null
           updated_at?: string | null
           updated_by?: string | null
+          week_monday?: string | null
           year?: number
         }
         Relationships: [
@@ -600,6 +603,10 @@ export type Database = {
       }
     }
     Functions: {
+      calculate_week_monday_from_cw: {
+        Args: { p_cw: string; p_year: number }
+        Returns: string
+      }
       cleanup_expired_idempotency_keys: { Args: never; Returns: undefined }
       engineers_create:
         | {
