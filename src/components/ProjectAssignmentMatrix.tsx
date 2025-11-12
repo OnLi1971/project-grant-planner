@@ -10,7 +10,7 @@ import { usePlanning } from '@/contexts/PlanningContext';
 import { customers, projectManagers, programs, projects } from '@/data/projectsData';
 import { getWeek } from 'date-fns';
 import { normalizeName, createNameMapping } from '@/utils/nameNormalization';
-import { getWorkingDaysFromMonthName } from '@/utils/workingDays';
+import { getWorkingDaysFromMonthName, getWorkingDaysInWeekForMonth } from '@/utils/workingDays';
 
 // Company mappings
 const spolocnosti = [
@@ -920,34 +920,59 @@ export const ProjectAssignmentMatrix = () => {
                     )
                   ) : (
                     months.map((month, monthIndex) => {
-                      // For monthly view, calculate utilization based on actual working days
-                      const monthWeeks = month.weeks;
+                      // Parse month to get year and month number
+                      const monthMap: { [key: string]: number } = {
+                        'leden': 1, 'únor': 2, 'březen': 3, 'duben': 4, 'květen': 5, 'červen': 6,
+                        'červenec': 7, 'srpen': 8, 'září': 9, 'říjen': 10, 'listopad': 11, 'prosinec': 12
+                      };
+                      const [monthName, yearStr] = month.name.toLowerCase().split(' ');
+                      const monthNum = monthMap[monthName];
+                      const year = parseInt(yearStr);
                       
-                      // Calculate max capacity based on working days for each engineer
+                      // Calculate proportional hours and capacity
                       let totalMaxCapacity = 0;
+                      let totalActualHours = 0;
+                      
                       filteredEngineers.forEach(engineer => {
                         const engineerCompany = getEngineerCompany(engineer);
                         const isSlovak = engineerCompany === 'MB Idea';
+                        
+                        // Calculate engineer's total capacity for the month
                         const workingDays = getWorkingDaysFromMonthName(month.name, isSlovak);
                         totalMaxCapacity += workingDays * 8; // 8 hours per day
-                      });
-                      
-                      // Sum actual project hours for the month
-                      const actualHours = monthWeeks.reduce((monthSum, week) => {
-                        const weekHours = filteredEngineers.reduce((sum, engineer) => {
+                        
+                        // Sum proportional hours from each week
+                        month.weeks.forEach(week => {
                           const projectData = matrixData[engineer][week];
                           const project = projectData?.projekt;
-                          const hours = projectData?.hours || 0;
+                          const weeklyHours = projectData?.hours || 0;
+                          
+                          // Skip FREE, DOVOLENÁ, OVER
                           if (project === 'FREE' || project === 'DOVOLENÁ' || project === 'OVER') {
-                            return sum;
+                            return;
                           }
-                          return sum + hours;
-                        }, 0);
-                        return monthSum + weekHours;
-                      }, 0);
+                          
+                          // Get week_monday from planning data
+                          const planningEntry = planningData.find(
+                            p => normalizeName(p.konstrukter) === normalizeName(engineer) && p.cw === week
+                          );
+                          
+                          if (planningEntry?.week_monday) {
+                            const weekMonday = new Date(planningEntry.week_monday);
+                            
+                            // Calculate how many working days from this week fall into this month
+                            const daysInMonth = getWorkingDaysInWeekForMonth(weekMonday, year, monthNum, isSlovak);
+                            
+                            // Proportionally allocate weekly hours
+                            // Assume 5 working days per week
+                            const proportion = daysInMonth / 5;
+                            totalActualHours += weeklyHours * proportion;
+                          }
+                        });
+                      });
                       
                       const utilization = totalMaxCapacity > 0 
-                        ? Math.round((actualHours / totalMaxCapacity) * 100) 
+                        ? Math.round((totalActualHours / totalMaxCapacity) * 100) 
                         : 0;
                       
                       return (

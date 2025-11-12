@@ -126,3 +126,36 @@ export const getWorkingDaysFromMonthName = (monthName: string, isSlovak: boolean
 export const getMonthlyCapacity = (workingDays: number, hoursPerDay: number = 8): number => {
   return workingDays * hoursPerDay;
 };
+
+/**
+ * Spočítá, kolik pracovních dnů z daného týdne (Monday-Friday) spadá do daného měsíce
+ * @param weekMonday Pondělí daného týdne
+ * @param year Rok měsíce
+ * @param month Číslo měsíce (1-12)
+ * @param isSlovak Počítat slovenské svátky
+ * @returns Počet pracovních dnů z týdne, které spadají do měsíce
+ */
+export const getWorkingDaysInWeekForMonth = (
+  weekMonday: Date,
+  year: number,
+  month: number,
+  isSlovak: boolean = false
+): number => {
+  const monthStart = new Date(year, month - 1, 1);
+  const monthEnd = new Date(year, month, 0);
+  
+  // Týden = pondělí až pátek (5 dnů)
+  const weekDays: Date[] = [];
+  for (let i = 0; i < 5; i++) {
+    const day = new Date(weekMonday);
+    day.setDate(weekMonday.getDate() + i);
+    weekDays.push(day);
+  }
+  
+  // Spočítej, kolik z těch 5 dnů je v daném měsíci a není svátek
+  return weekDays.filter(day => {
+    if (day < monthStart || day > monthEnd) return false;
+    if (isHoliday(day, isSlovak)) return false;
+    return true;
+  }).length;
+};

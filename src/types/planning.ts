@@ -7,6 +7,7 @@ export interface PlanningEntry {
   mhTyden?: number;
   projekt: string;
   is_tentative?: boolean;      // New: flag for tentative reservations
+  week_monday?: string;        // New: ISO Monday date for proportional calculations
 }
 
 export interface EngineerInfo {
