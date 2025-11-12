@@ -236,7 +236,7 @@ export const ProjectAssignmentMatrix = () => {
       ...engineers.map(e => normalizeName(e.display_name)),
       ...planningData.map(entry => normalizeName(entry.konstrukter))
     ]));
-    const matrix: { [engineer: string]: { [week: string]: { projekt: string; isTentative: boolean } } } = {};
+    const matrix: { [engineer: string]: { [week: string]: { projekt: string; isTentative: boolean; hours: number } } } = {};
     
     engineerKeys.forEach(engineerKey => {
       matrix[engineerKey] = {};
@@ -245,7 +245,8 @@ export const ProjectAssignmentMatrix = () => {
         // Default to 'DOVOLENÁ' for CW52, otherwise 'FREE' if no entry exists
         matrix[engineerKey][week] = {
           projekt: entry?.projekt || (week.includes('CW52') ? 'DOVOLENÁ' : 'FREE'),
-          isTentative: entry?.is_tentative || false
+          isTentative: entry?.is_tentative || false,
+          hours: typeof entry?.mhTyden === 'number' ? entry.mhTyden : 0
         };
       });
     });
@@ -685,6 +686,8 @@ export const ProjectAssignmentMatrix = () => {
                           const projectData = matrixData[engineer][week];
                           const project = projectData?.projekt;
                           const isTentative = projectData?.isTentative;
+                          const hours = projectData?.hours || 0;
+                          const isLowCapacity = hours > 0 && hours <= 35;
                           return (
                             <td 
                               key={week} 
@@ -695,7 +698,7 @@ export const ProjectAssignmentMatrix = () => {
                               {project && (
                                 <div 
                                   className={`text-xs px-1.5 py-0.5 w-full justify-center font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-md inline-flex items-center ${getProjectBadgeStyle(project)} ${
-                                    isTentative ? 'border-[3px] border-dashed !border-yellow-400' : ''
+                                    isTentative || isLowCapacity ? 'border-[3px] border-dashed !border-red-500' : ''
                                   }`}
                                 >
                                   <span className="truncate max-w-[65px]" title={project}>
