@@ -817,6 +817,64 @@ export const ProjectAssignmentMatrix = () => {
                     })
                   )}
                 </tr>
+                {/* Summary row for max free capacity (FREE + tentative) */}
+                <tr className="bg-primary/5 border-t border-primary/20">
+                  <td className="border border-border p-2 font-bold sticky left-0 bg-primary/5 z-10 text-foreground text-sm">
+                    Volné kapacity max.
+                  </td>
+                  {viewMode === 'weeks' ? (
+                    months.map((month, monthIndex) => 
+                      month.weeks.map((week, weekIndex) => {
+                        // Count FREE engineers + tentative engineers for this week
+                        const freeMaxCount = filteredEngineers.filter(engineer => {
+                          const projectData = matrixData[engineer][week];
+                          return projectData?.projekt === 'FREE' || projectData?.isTentative === true;
+                        }).length;
+                        
+                        return (
+                          <td 
+                            key={week} 
+                            className={`border border-border p-1 text-center font-semibold ${
+                              monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
+                            }`}
+                          >
+                            <div className="text-sm text-foreground">
+                              {freeMaxCount}
+                            </div>
+                          </td>
+                        );
+                      })
+                    )
+                  ) : (
+                    months.map((month, monthIndex) => {
+                      // Count engineers with FREE or tentative as dominant project for this month
+                      const freeMaxCount = filteredEngineers.filter(engineer => {
+                        const monthData = monthlyData[engineer][month.name];
+                        // Check if dominant project is FREE or if any week in month is tentative
+                        if (monthData?.dominantProject === 'FREE') return true;
+                        
+                        // Check if any week in this month has tentative planning
+                        return month.weeks.some(week => {
+                          const projectData = matrixData[engineer][week];
+                          return projectData?.isTentative === true;
+                        });
+                      }).length;
+                      
+                      return (
+                        <td 
+                          key={month.name} 
+                          className={`border border-border p-1.5 text-center font-semibold ${
+                            monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
+                          }`}
+                        >
+                          <div className="text-sm text-foreground">
+                            {freeMaxCount}
+                          </div>
+                        </td>
+                      );
+                    })
+                  )}
+                </tr>
                 {/* Summary row for project hours */}
                 <tr className="bg-secondary/10 border-t-2 border-secondary/30">
                   <td className="border border-border p-2 font-bold sticky left-0 bg-secondary/10 z-10 text-foreground text-sm">
