@@ -875,37 +875,6 @@ export const ProjectAssignmentMatrix = () => {
                     })
                   )}
                 </tr>
-                {/* Legend row */}
-                <tr className="bg-muted/30 border-t border-border">
-                  <td className="border border-border p-2 font-medium sticky left-0 bg-muted/30 z-10 text-foreground text-xs">
-                    Legenda:
-                  </td>
-                  <td 
-                    colSpan={viewMode === 'weeks' ? months.reduce((sum, m) => sum + m.weeks.length, 0) : months.length}
-                    className="border border-border p-2"
-                  >
-                    <div className="flex items-center gap-6 flex-wrap text-xs">
-                      <div className="flex items-center gap-2">
-                        <div className="px-3 py-1 bg-primary/20 text-primary rounded-md">
-                          Projekt
-                        </div>
-                        <span className="text-muted-foreground">Plně vytížen</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="px-3 py-1 bg-primary/20 text-primary rounded-md border-[3px] border-dashed border-red-500">
-                          Projekt
-                        </div>
-                        <span className="text-muted-foreground">Částečně vytížen</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="px-3 py-1 bg-primary/20 text-primary rounded-md border-[3px] border-dashed border-yellow-400">
-                          Projekt
-                        </div>
-                        <span className="text-muted-foreground">Předběžně plánován</span>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
                 {/* Summary row for project hours */}
                 <tr className="bg-secondary/10 border-t-2 border-secondary/30">
                   <td className="border border-border p-2 font-bold sticky left-0 bg-secondary/10 z-10 text-foreground text-sm">
@@ -1108,6 +1077,37 @@ export const ProjectAssignmentMatrix = () => {
                       );
                     })
                   )}
+                </tr>
+                {/* Legend row */}
+                <tr className="bg-muted/30 border-t border-border">
+                  <td className="border border-border p-2 font-medium sticky left-0 bg-muted/30 z-10 text-foreground text-xs">
+                    Legenda:
+                  </td>
+                  <td 
+                    colSpan={viewMode === 'weeks' ? months.reduce((sum, m) => sum + m.weeks.length, 0) : months.length}
+                    className="border border-border p-2"
+                  >
+                    <div className="flex items-center gap-6 flex-wrap text-xs">
+                      <div className="flex items-center gap-2">
+                        <div className="px-3 py-1 bg-primary/20 text-primary rounded-md">
+                          Projekt
+                        </div>
+                        <span className="text-muted-foreground">Plně vytížen</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="px-3 py-1 bg-primary/20 text-primary rounded-md border-[3px] border-dashed border-red-500">
+                          Projekt
+                        </div>
+                        <span className="text-muted-foreground">Částečně vytížen</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="px-3 py-1 bg-primary/20 text-primary rounded-md border-[3px] border-dashed border-yellow-400">
+                          Projekt
+                        </div>
+                        <span className="text-muted-foreground">Předběžně plánován</span>
+                      </div>
+                    </div>
+                  </td>
                 </tr>
               </tbody>
             </table>
