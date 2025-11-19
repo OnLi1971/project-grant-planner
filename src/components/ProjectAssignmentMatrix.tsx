@@ -769,7 +769,7 @@ export const ProjectAssignmentMatrix = () => {
                 {/* Summary row for free capacity */}
                 <tr className="bg-primary/5 border-t-2 border-primary/30">
                   <td className="border border-border p-2 font-bold sticky left-0 bg-primary/5 z-10 text-foreground text-sm">
-                    Volné kapacity celkem
+                    Volné kapacity min.
                   </td>
                   {viewMode === 'weeks' ? (
                     months.map((month, monthIndex) => 
