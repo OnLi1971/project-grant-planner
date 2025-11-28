@@ -135,7 +135,7 @@ export const ProjectAssignmentMatrix = () => {
   const [filterSpolecnost, setFilterSpolecnost] = useState<string[]>(['Všichni']);
   const [filterProjekt, setFilterProjekt] = useState<string[]>(['Všichni']);
   const [filterZakaznik, setFilterZakaznik] = useState<string[]>(['Všichni']);
-  const [filterProgram, setFilterProgram] = useState<string[]>(['Rail', 'Mach']);
+  const [filterProgram, setFilterProgram] = useState<string[]>(['RAIL', 'MACH']);
   const [weekFilters, setWeekFilters] = useState<{ [week: string]: string[] }>({});
 
   const displayNameMap = useMemo(() => {
