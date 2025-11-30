@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, Filter } from 'lucide-react';
+import { ChevronDown, Filter, History } from 'lucide-react';
+import { PlanningHistoryDialog } from './PlanningHistoryDialog';
 import { usePlanning } from '@/contexts/PlanningContext';
 import { customers, projectManagers, programs, projects } from '@/data/projectsData';
 import { getWeek } from 'date-fns';
@@ -137,6 +138,7 @@ export const ProjectAssignmentMatrix = () => {
   const [filterZakaznik, setFilterZakaznik] = useState<string[]>(['Všichni']);
   const [filterProgram, setFilterProgram] = useState<string[]>(['RAIL', 'MACH']);
   const [weekFilters, setWeekFilters] = useState<{ [week: string]: string[] }>({});
+  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
 
   const displayNameMap = useMemo(() => {
     const map: Record<string, string> = {};
@@ -452,6 +454,15 @@ export const ProjectAssignmentMatrix = () => {
           <div className="flex items-center justify-between">
             <CardTitle className="text-2xl font-bold">Matice plánování projektů</CardTitle>
             <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setHistoryDialogOpen(true)}
+                className="gap-2"
+              >
+                <History className="h-4 w-4" />
+                Historie změn
+              </Button>
               <label className="text-sm font-medium">Zobrazení:</label>
               <Select value={viewMode} onValueChange={(value: 'weeks' | 'months') => setViewMode(value)}>
                 <SelectTrigger className="w-32">
@@ -1117,6 +1128,13 @@ export const ProjectAssignmentMatrix = () => {
             Zobrazeno {filteredEngineers.length} konstruktérů
           </div>
         </CardContent>
+
+        <PlanningHistoryDialog
+          open={historyDialogOpen}
+          onOpenChange={setHistoryDialogOpen}
+          engineers={engineers}
+          projects={projektList.filter(p => p !== 'Všichni')}
+        />
       </Card>
     </div>
   );
