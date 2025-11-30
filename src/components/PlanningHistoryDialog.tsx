@@ -44,8 +44,8 @@ export function PlanningHistoryDialog({
   const [loading, setLoading] = useState(false);
   
   // Filters
-  const [filterEngineer, setFilterEngineer] = useState<string>('');
-  const [filterProject, setFilterProject] = useState<string>('');
+  const [filterEngineer, setFilterEngineer] = useState<string>('_all');
+  const [filterProject, setFilterProject] = useState<string>('_all');
   const [filterChangeType, setFilterChangeType] = useState<string>('all');
   const [filterDateFrom, setFilterDateFrom] = useState<Date>();
   const [filterDateTo, setFilterDateTo] = useState<Date>();
@@ -65,11 +65,11 @@ export function PlanningHistoryDialog({
         .order('changed_at', { ascending: false })
         .limit(500);
 
-      if (filterEngineer) {
+      if (filterEngineer && filterEngineer !== '_all') {
         query = query.eq('konstrukter', filterEngineer);
       }
 
-      if (filterProject) {
+      if (filterProject && filterProject !== '_all') {
         if (filterChangeType === 'all' || filterChangeType === 'project') {
           query = query.or(`old_value.eq.${filterProject},new_value.eq.${filterProject}`);
         }
@@ -107,8 +107,8 @@ export function PlanningHistoryDialog({
   }, [open, filterEngineer, filterProject, filterChangeType, filterDateFrom, filterDateTo]);
 
   const clearFilters = () => {
-    setFilterEngineer('');
-    setFilterProject('');
+    setFilterEngineer('_all');
+    setFilterProject('_all');
     setFilterChangeType('all');
     setFilterDateFrom(undefined);
     setFilterDateTo(undefined);
@@ -151,7 +151,7 @@ export function PlanningHistoryDialog({
                 <SelectValue placeholder="Konstruktér" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Všichni</SelectItem>
+                <SelectItem value="_all">Všichni</SelectItem>
                 {engineers.map((eng) => (
                   <SelectItem key={eng.display_name} value={eng.display_name}>
                     {eng.display_name}
@@ -165,7 +165,7 @@ export function PlanningHistoryDialog({
                 <SelectValue placeholder="Projekt" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Všechny</SelectItem>
+                <SelectItem value="_all">Všechny</SelectItem>
                 {projects.map((project) => (
                   <SelectItem key={project} value={project}>
                     {project}
