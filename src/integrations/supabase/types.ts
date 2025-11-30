@@ -299,6 +299,59 @@ export type Database = {
         }
         Relationships: []
       }
+      planning_changes: {
+        Row: {
+          change_type: string
+          changed_at: string
+          changed_by: string | null
+          created_at: string
+          cw: string
+          engineer_id: string | null
+          id: string
+          konstrukter: string
+          new_value: string | null
+          old_value: string | null
+          planning_entry_id: string
+          year: number
+        }
+        Insert: {
+          change_type: string
+          changed_at?: string
+          changed_by?: string | null
+          created_at?: string
+          cw: string
+          engineer_id?: string | null
+          id?: string
+          konstrukter: string
+          new_value?: string | null
+          old_value?: string | null
+          planning_entry_id: string
+          year: number
+        }
+        Update: {
+          change_type?: string
+          changed_at?: string
+          changed_by?: string | null
+          created_at?: string
+          cw?: string
+          engineer_id?: string | null
+          id?: string
+          konstrukter?: string
+          new_value?: string | null
+          old_value?: string | null
+          planning_entry_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "planning_changes_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       planning_entries: {
         Row: {
           created_at: string | null
