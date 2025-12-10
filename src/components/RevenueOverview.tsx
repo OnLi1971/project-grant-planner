@@ -38,7 +38,15 @@ interface DatabaseProgram {
   code: string;
 }
 
-export const RevenueOverview = () => {
+interface RevenueOverviewProps {
+  defaultCurrency?: 'CZK' | 'USD';
+  defaultStatusFilter?: 'all' | 'realizace' | 'presales' | 'P0' | 'P1' | 'P2' | 'P3';
+}
+
+export const RevenueOverview = ({ 
+  defaultCurrency = 'CZK',
+  defaultStatusFilter = 'all'
+}: RevenueOverviewProps) => {
   const { planningData } = usePlanning();
   const [filterType, setFilterType] = useState<'all' | 'customer' | 'program' | 'project'>('all');
   const [filterValue, setFilterValue] = useState<string>('all');
@@ -50,8 +58,8 @@ export const RevenueOverview = () => {
     'leden_2026', 'únor_2026', 'březen_2026', 'duben_2026', 'květen_2026', 'červen_2026',
     'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026'
   ]);
-  const [currency, setCurrency] = useState<'CZK' | 'USD'>('CZK');
-  const [projectStatusFilter, setProjectStatusFilter] = useState<'all' | 'realizace' | 'presales' | 'P0' | 'P1' | 'P2' | 'P3'>('all');
+  const [currency, setCurrency] = useState<'CZK' | 'USD'>(defaultCurrency);
+  const [projectStatusFilter, setProjectStatusFilter] = useState<'all' | 'realizace' | 'presales' | 'P0' | 'P1' | 'P2' | 'P3'>(defaultStatusFilter);
   const [projects, setProjects] = useState<DatabaseProject[]>([]);
   const [customers, setCustomers] = useState<DatabaseCustomer[]>([]);
   const [programs, setPrograms] = useState<DatabaseProgram[]>([]);
