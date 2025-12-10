@@ -114,12 +114,27 @@ export function useEngineers() {
     }
   };
 
+  const deleteEngineer = async (id: string) => {
+    try {
+      const { error } = await supabase.from('engineers').delete().eq('id', id);
+      if (error) throw error;
+
+      toast({ title: 'Engineer deleted', description: 'Engineer has been removed successfully.' });
+      await queryClient.invalidateQueries({ queryKey: ENGINEERS_QK });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete engineer';
+      toast({ title: 'Error deleting engineer', description: errorMessage, variant: 'destructive' });
+      throw err;
+    }
+  };
+
   return {
     engineers: (data as UIEngineer[]) || [],
     isLoading,
     error: error ? (error as Error).message : null,
     createEngineer,
     updateEngineer,
+    deleteEngineer,
     refetch: () => queryClient.invalidateQueries({ queryKey: ENGINEERS_QK }),
   };
 }
