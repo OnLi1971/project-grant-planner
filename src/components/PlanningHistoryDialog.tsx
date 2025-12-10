@@ -296,6 +296,8 @@ export function PlanningHistoryDialog({
       finalToTentativeHours,
       netChange: freeToProject.length - projectToFree.length,
       netChangeHours: freeToProjectHours - projectToFreeHours,
+      netTentativeChange: tentativeToFinal.length - finalToTentative.length,
+      netTentativeChangeHours: tentativeToFinalHours - finalToTentativeHours,
       engineerStats: Array.from(engineerStats.entries()).map(([name, stats]) => ({
         name,
         allocated: stats.allocated,
@@ -545,7 +547,7 @@ export function PlanningHistoryDialog({
               </Card>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium flex items-center gap-2">
@@ -572,6 +574,25 @@ export function PlanningHistoryDialog({
                   <div className="text-2xl font-bold">{statistics.finalToTentative}</div>
                   <p className="text-xs text-muted-foreground mt-1">
                     {statistics.finalToTentativeHours}h změněno na předběžné
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium">
+                    Čistá změna (potvrzení)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className={cn(
+                    "text-2xl font-bold",
+                    statistics.netTentativeChange > 0 ? "text-blue-600" : statistics.netTentativeChange < 0 ? "text-amber-600" : ""
+                  )}>
+                    {statistics.netTentativeChange > 0 ? '+' : ''}{statistics.netTentativeChange}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {statistics.netTentativeChangeHours > 0 ? '+' : ''}{statistics.netTentativeChangeHours}h
                   </p>
                 </CardContent>
               </Card>
