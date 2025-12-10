@@ -130,13 +130,21 @@ const getProjectBadgeStyle = (projekt: string) => {
   return 'bg-gray-500 text-white border-gray-600';
 };
 
-export const ProjectAssignmentMatrix = () => {
+interface ProjectAssignmentMatrixProps {
+  defaultViewMode?: 'weeks' | 'months';
+  defaultPrograms?: string[];
+}
+
+export const ProjectAssignmentMatrix = ({ 
+  defaultViewMode = 'weeks',
+  defaultPrograms = ['RAIL', 'MACH']
+}: ProjectAssignmentMatrixProps) => {
   const { planningData, engineers } = usePlanning();
-  const [viewMode, setViewMode] = useState<'weeks' | 'months'>('weeks');
+  const [viewMode, setViewMode] = useState<'weeks' | 'months'>(defaultViewMode);
   const [filterSpolecnost, setFilterSpolecnost] = useState<string[]>(['Všichni']);
   const [filterProjekt, setFilterProjekt] = useState<string[]>(['Všichni']);
   const [filterZakaznik, setFilterZakaznik] = useState<string[]>(['Všichni']);
-  const [filterProgram, setFilterProgram] = useState<string[]>(['RAIL', 'MACH']);
+  const [filterProgram, setFilterProgram] = useState<string[]>(defaultPrograms);
   const [weekFilters, setWeekFilters] = useState<{ [week: string]: string[] }>({});
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
 

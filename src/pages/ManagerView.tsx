@@ -34,7 +34,7 @@ const ManagerView = () => {
         </Card>
 
         <div className="mx-6">
-          <ProjectAssignmentMatrix />
+          <ProjectAssignmentMatrix defaultViewMode="months" defaultPrograms={['RAIL', 'MACH']} />
         </div>
       </div>
     </PlanningProvider>

@@ -34,7 +34,7 @@ const ManagerRevenueView = () => {
         </Card>
 
         <div className="mx-6">
-          <RevenueOverview />
+          <RevenueOverview defaultCurrency="USD" defaultStatusFilter="realizace" />
         </div>
       </div>
     </PlanningProvider>
