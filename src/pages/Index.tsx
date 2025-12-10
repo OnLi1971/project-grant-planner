@@ -15,7 +15,13 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Grid3x3, Database, TrendingUp, Settings, Shield, UserPlus, DollarSign, LogOut, BarChart3 } from 'lucide-react';
+import { Users, Grid3x3, Database, TrendingUp, Settings, Shield, UserPlus, DollarSign, LogOut, BarChart3, ChevronDown } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useNavigate } from 'react-router-dom';
 
 const Index = () => {
@@ -48,15 +54,29 @@ const Index = () => {
           <div className="flex justify-between items-center">
             <h1 className="text-2xl font-bold">Plánování kapacit</h1>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/manager')}
-                className="flex items-center gap-2"
-              >
-                <BarChart3 className="h-4 w-4" />
-                Manažerský pohled
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2"
+                  >
+                    <BarChart3 className="h-4 w-4" />
+                    Manažerský pohled
+                    <ChevronDown className="h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => navigate('/manager')}>
+                    <Grid3x3 className="h-4 w-4 mr-2" />
+                    Plánování kapacit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/manager-revenue')}>
+                    <DollarSign className="h-4 w-4 mr-2" />
+                    Revenue
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <span className="text-sm text-muted-foreground">
                 {user.email}
               </span>
