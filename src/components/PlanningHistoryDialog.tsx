@@ -411,7 +411,12 @@ export function PlanningHistoryDialog({
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-medium">{change.konstrukter}</span>
                           <span className="text-sm">
-                            {change.old_value || 'FREE'} → {change.new_value || 'FREE'}
+                            {change.change_type === 'tentative' 
+                              ? (change.new_value === 'true' ? 'Finální → Předběžná' : 'Předběžná → Finální')
+                              : change.change_type === 'hours'
+                              ? `${change.old_value}h → ${change.new_value}h`
+                              : `${change.old_value || 'FREE'} → ${change.new_value || 'FREE'}`
+                            }
                           </span>
                           <span className="text-sm text-muted-foreground">
                             pro {change.cwRange}-{change.year}
