@@ -42,19 +42,21 @@ interface RevenueOverviewProps {
   defaultCurrency?: 'CZK' | 'USD';
   defaultStatusFilter?: 'all' | 'realizace' | 'presales' | 'P0' | 'P1' | 'P2' | 'P3';
   defaultViewType?: 'mesic' | 'kvartal';
-  defaultPrograms?: string[];
+  defaultProgramCodes?: string[];
 }
 
 export const RevenueOverview = ({ 
   defaultCurrency = 'CZK',
   defaultStatusFilter = 'all',
   defaultViewType = 'mesic',
-  defaultPrograms = []
+  defaultProgramCodes = []
 }: RevenueOverviewProps) => {
   const { planningData } = usePlanning();
-  const [filterType, setFilterType] = useState<'all' | 'customer' | 'program' | 'project'>('all');
+  const [filterType, setFilterType] = useState<'all' | 'customer' | 'program' | 'project'>(
+    defaultProgramCodes.length > 0 ? 'program' : 'all'
+  );
   const [filterValue, setFilterValue] = useState<string>('all');
-  const [selectedPrograms, setSelectedPrograms] = useState<string[]>(defaultPrograms);
+  const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
   const [viewType, setViewType] = useState<'mesic' | 'kvartal'>(defaultViewType);
   const [selectedQuarters, setSelectedQuarters] = useState<string[]>(['Q4-2025', 'Q1-2026', 'Q2-2026', 'Q3-2026', 'Q4-2026']);
   const [selectedMonths, setSelectedMonths] = useState<string[]>([
@@ -68,6 +70,7 @@ export const RevenueOverview = ({
   const [customers, setCustomers] = useState<DatabaseCustomer[]>([]);
   const [programs, setPrograms] = useState<DatabaseProgram[]>([]);
   const [loading, setLoading] = useState(true);
+  const [defaultProgramsApplied, setDefaultProgramsApplied] = useState(false);
 
   // Exchange rate CZK to USD (approximately 23 CZK = 1 USD)
   const exchangeRate = 23;
@@ -131,7 +134,19 @@ export const RevenueOverview = ({
     }
   };
 
-  // Funkce pro výpočet počtu dnů v měsíci
+  // Apply default program codes after programs are loaded
+  useEffect(() => {
+    if (programs.length > 0 && defaultProgramCodes.length > 0 && !defaultProgramsApplied) {
+      const programIds = programs
+        .filter(p => defaultProgramCodes.includes(p.code))
+        .map(p => p.id);
+      if (programIds.length > 0) {
+        setSelectedPrograms(programIds);
+        setDefaultProgramsApplied(true);
+      }
+    }
+  }, [programs, defaultProgramCodes, defaultProgramsApplied]);
+
   const getDaysInMonth = (month: string, year: number = 2025): number => {
     const monthMapping: { [key: string]: number } = {
       'srpen': 8, 'září': 9, 'říjen': 10, 'listopad': 11, 'prosinec': 12,
