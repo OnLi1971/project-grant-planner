@@ -49,6 +49,7 @@ export type Database = {
           canonical_url: string | null
           clicks: number | null
           created_at: string
+          html_content: string | null
           id: string
           importance: number | null
           is_selected: boolean
@@ -72,6 +73,7 @@ export type Database = {
           canonical_url?: string | null
           clicks?: number | null
           created_at?: string
+          html_content?: string | null
           id?: string
           importance?: number | null
           is_selected?: boolean
@@ -95,6 +97,7 @@ export type Database = {
           canonical_url?: string | null
           clicks?: number | null
           created_at?: string
+          html_content?: string | null
           id?: string
           importance?: number | null
           is_selected?: boolean

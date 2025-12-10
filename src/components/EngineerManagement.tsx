@@ -6,16 +6,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Users, Edit, Loader2 } from 'lucide-react';
+import { Plus, Users, Edit, Loader2, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export function EngineerManagement() {
-  const { engineers, isLoading, createEngineer, updateEngineer, refetch } = useEngineers();
+  const { engineers, isLoading, createEngineer, updateEngineer, deleteEngineer, refetch } = useEngineers();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editingEngineer, setEditingEngineer] = useState<any>(null);
+  const [engineerToDelete, setEngineerToDelete] = useState<any>(null);
   const [formData, setFormData] = useState({
     displayName: '',
     status: 'active' as 'active' | 'inactive' | 'contractor' | 'on_leave',
@@ -299,13 +302,26 @@ export function EngineerManagement() {
                       }
                     </TableCell>
                     <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openEditDialog(engineer)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openEditDialog(engineer)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setEngineerToDelete(engineer);
+                            setIsDeleteDialogOpen(true);
+                          }}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -410,6 +426,45 @@ export function EngineerManagement() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Smazat konstruktéra?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Opravdu chcete smazat konstruktéra <strong>{engineerToDelete?.jmeno}</strong>?
+              <br /><br />
+              <span className="text-destructive">
+                Pozor: Plánovací záznamy tohoto konstruktéra zůstanou v systému, ale nebudou přiřazeny žádnému konstruktérovi.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Zrušit</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (engineerToDelete) {
+                  setIsSubmitting(true);
+                  try {
+                    await deleteEngineer(engineerToDelete.id);
+                    setIsDeleteDialogOpen(false);
+                    setEngineerToDelete(null);
+                  } catch (error) {
+                    // Error handled by hook
+                  } finally {
+                    setIsSubmitting(false);
+                  }
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Mazání...' : 'Smazat'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
