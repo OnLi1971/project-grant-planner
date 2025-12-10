@@ -9,7 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Edit, Briefcase, Building, Trash2, X, Eye, Save, Users } from 'lucide-react';
+import { Plus, Edit, Briefcase, Building, Trash2, X, Eye, Save, Users, Archive } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { usePlanning } from '@/contexts/PlanningContext';
 import { getProjectColor, getCustomerByProjectCode } from '@/utils/colorSystem';
 import { supabase } from '@/integrations/supabase/client';
@@ -98,7 +99,7 @@ export const ProjectManagement = () => {
     budget: 0,
     averageHourlyRate: 0,
     assignedLicenses: [] as ProjectLicense[],
-    projectStatus: 'Realizace' as 'Pre sales' | 'Realizace',
+    projectStatus: 'Realizace' as 'Pre sales' | 'Realizace' | 'Dead',
     probability: 0,
     presalesPhase: 'P0',
     presalesStartDate: '',
@@ -107,6 +108,7 @@ export const ProjectManagement = () => {
     crmCreationDate: '',
     opportunityNumber: ''
   });
+  const [showDeadProjects, setShowDeadProjects] = useState(false);
 
   const presalesPhases = [
     { value: 'P0', label: 'P0 - Opportunity Identified' },
@@ -642,7 +644,7 @@ export const ProjectManagement = () => {
           license_id: pl.license_id,
           percentage: pl.percentage
         })) || [],
-        projectStatus: (project.project_status as 'Pre sales' | 'Realizace') || 'Realizace',
+        projectStatus: (project.project_status as 'Pre sales' | 'Realizace' | 'Dead') || 'Realizace',
         probability: project.probability || 0,
         presalesPhase: (project as any).presales_phase || 'P0',
         presalesStartDate: (project as any).presales_start_date ? normalizeYearMonth((project as any).presales_start_date) : '',
@@ -659,22 +661,28 @@ export const ProjectManagement = () => {
 
   // Získej všechny projekty s informací o jejich použití
   const allProjects = useMemo(() => {
-    return projects.map(project => {
-      const customer = customers.find(c => c.id === project.customer_id);
-      const pm = projectManagers.find(p => p.id === project.project_manager_id);
-      const program = programs.find(p => p.id === project.program_id);
-      const usage = planningData.filter(entry => entry.projekt === project.code).length;
-      
-      return {
-        code: project.code,
-        project,
-        customer,
-        pm,
-        program,
-        usage
-      };
-    }).sort((a, b) => b.usage - a.usage);
-  }, [projects, customers, projectManagers, programs, planningData]);
+    return projects
+      .filter(project => showDeadProjects || project.project_status !== 'Dead')
+      .map(project => {
+        const customer = customers.find(c => c.id === project.customer_id);
+        const pm = projectManagers.find(p => p.id === project.project_manager_id);
+        const program = programs.find(p => p.id === project.program_id);
+        const usage = planningData.filter(entry => entry.projekt === project.code).length;
+        
+        return {
+          code: project.code,
+          project,
+          customer,
+          pm,
+          program,
+          usage
+        };
+      }).sort((a, b) => b.usage - a.usage);
+  }, [projects, customers, projectManagers, programs, planningData, showDeadProjects]);
+  
+  const deadProjectsCount = useMemo(() => {
+    return projects.filter(p => p.project_status === 'Dead').length;
+  }, [projects]);
 
   const getProjectBadge = (code: string) => {
     if (!code || code === 'FREE') return <Badge variant="secondary">Volný</Badge>;
@@ -729,10 +737,25 @@ export const ProjectManagement = () => {
         <TabsContent value="projekty" className="space-y-6">
           <Card className="p-6 shadow-card-custom">
             <div className="flex justify-between items-center mb-6">
-              <div className="flex items-center gap-2">
-                <Briefcase className="h-5 w-5" />
-                <h2 className="text-xl font-semibold">Správa projektů</h2>
-                <Badge variant="outline">{allProjects.length} projektů</Badge>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Briefcase className="h-5 w-5" />
+                  <h2 className="text-xl font-semibold">Správa projektů</h2>
+                  <Badge variant="outline">{allProjects.length} projektů</Badge>
+                </div>
+                {deadProjectsCount > 0 && (
+                  <div className="flex items-center gap-2">
+                    <Checkbox 
+                      id="showDead" 
+                      checked={showDeadProjects} 
+                      onCheckedChange={(checked) => setShowDeadProjects(checked === true)}
+                    />
+                    <label htmlFor="showDead" className="text-sm text-muted-foreground cursor-pointer flex items-center gap-1">
+                      <Archive className="h-3 w-3" />
+                      Zobrazit uzavřené ({deadProjectsCount})
+                    </label>
+                  </div>
+                )}
               </div>
               <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                 <DialogTrigger asChild>
@@ -857,13 +880,14 @@ export const ProjectManagement = () => {
                   </div>
                   <div>
                     <Label htmlFor="projectStatus">Status *</Label>
-                    <Select value={formData.projectStatus} onValueChange={(value: 'Pre sales' | 'Realizace') => setFormData({ ...formData, projectStatus: value })}>
+                    <Select value={formData.projectStatus} onValueChange={(value: 'Pre sales' | 'Realizace' | 'Dead') => setFormData({ ...formData, projectStatus: value })}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Pre sales">Pre sales</SelectItem>
                         <SelectItem value="Realizace">Realizace</SelectItem>
+                        <SelectItem value="Dead">Dead (uzavřeno)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1050,32 +1074,35 @@ export const ProjectManagement = () => {
                      {item.project?.project_type}
                    </Badge>
                  </TableCell>
-                 <TableCell>
-                   {item.project?.project_status && (
-                     <div className="flex flex-col gap-1">
-                       <Badge variant={item.project.project_status === 'Pre sales' ? 'outline' : 'default'}>
-                         {item.project.project_status}
-                       </Badge>
-                       {item.project.project_status === 'Pre sales' && (
-                         <div className="text-xs text-muted-foreground space-y-1">
-                           {(item.project as any).presales_phase && (
-                             <div>{(item.project as any).presales_phase}</div>
-                           )}
-                           {item.project.probability && (
-                             <div>Pravděp.: {item.project.probability}%</div>
-                           )}
-                           {((item.project as any).presales_start_date || (item.project as any).presales_end_date) && (
-                             <div>
-                               {(item.project as any).presales_start_date && new Date((item.project as any).presales_start_date).toLocaleDateString('cs-CZ', { month: 'numeric', year: 'numeric' })} 
-                               {(item.project as any).presales_start_date && (item.project as any).presales_end_date && ' - '}
-                               {(item.project as any).presales_end_date && new Date((item.project as any).presales_end_date).toLocaleDateString('cs-CZ', { month: 'numeric', year: 'numeric' })}
-                             </div>
-                           )}
-                         </div>
-                       )}
-                     </div>
-                   )}
-                 </TableCell>
+                  <TableCell>
+                    {item.project?.project_status && (
+                      <div className="flex flex-col gap-1">
+                        <Badge 
+                          variant={item.project.project_status === 'Pre sales' ? 'outline' : item.project.project_status === 'Dead' ? 'destructive' : 'default'}
+                          className={item.project.project_status === 'Dead' ? 'opacity-60' : ''}
+                        >
+                          {item.project.project_status === 'Dead' ? '✗ Dead' : item.project.project_status}
+                        </Badge>
+                        {item.project.project_status === 'Pre sales' && (
+                          <div className="text-xs text-muted-foreground space-y-1">
+                            {(item.project as any).presales_phase && (
+                              <div>{(item.project as any).presales_phase}</div>
+                            )}
+                            {item.project.probability && (
+                              <div>Pravděp.: {item.project.probability}%</div>
+                            )}
+                            {((item.project as any).presales_start_date || (item.project as any).presales_end_date) && (
+                              <div>
+                                {(item.project as any).presales_start_date && new Date((item.project as any).presales_start_date).toLocaleDateString('cs-CZ', { month: 'numeric', year: 'numeric' })} 
+                                {(item.project as any).presales_start_date && (item.project as any).presales_end_date && ' - '}
+                                {(item.project as any).presales_end_date && new Date((item.project as any).presales_end_date).toLocaleDateString('cs-CZ', { month: 'numeric', year: 'numeric' })}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </TableCell>
                   <TableCell>
                     {/* Pro WP projekty: budget v hodinách NEBO průměrná hodinová sazba */}
                     {/* Pro Hodinovka projekty: budget jako hodinová sazba */}
