@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, X, TrendingUp, TrendingDown } from 'lucide-react';
+import { CalendarIcon, X, TrendingUp, TrendingDown, CheckCircle2, Clock } from 'lucide-react';
 import { format, subDays, subMonths, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -222,42 +222,65 @@ export function PlanningHistoryDialog({
       ? endOfWeek(subDays(now, 7), { weekStartsOn: 1 })
       : endOfMonth(subMonths(now, 1));
 
-    const relevantChanges = changes.filter(change => {
+    const relevantProjectChanges = changes.filter(change => {
       const changeDate = new Date(change.changed_at);
       return change.change_type === 'project' && 
              changeDate >= startDate && 
              changeDate <= endDate;
     });
 
-    const freeToProject = relevantChanges.filter(c => 
+    const relevantTentativeChanges = changes.filter(change => {
+      const changeDate = new Date(change.changed_at);
+      return change.change_type === 'tentative' && 
+             changeDate >= startDate && 
+             changeDate <= endDate;
+    });
+
+    const freeToProject = relevantProjectChanges.filter(c => 
       (c.old_value === 'FREE' || c.old_value === null) && 
       c.new_value !== 'FREE' && 
       c.new_value !== 'DOVOLENÁ' &&
       c.new_value !== 'OVER'
     );
 
-    const projectToFree = relevantChanges.filter(c => 
+    const projectToFree = relevantProjectChanges.filter(c => 
       c.old_value !== 'FREE' && 
       c.old_value !== 'DOVOLENÁ' &&
       c.old_value !== 'OVER' &&
       (c.new_value === 'FREE' || c.new_value === null)
     );
 
+    // Tentative changes
+    const tentativeToFinal = relevantTentativeChanges.filter(c => c.new_value === 'false');
+    const finalToTentative = relevantTentativeChanges.filter(c => c.new_value === 'true');
+
     // Calculate hours (assuming 36h per week per engineer)
     const freeToProjectHours = freeToProject.length * 36;
     const projectToFreeHours = projectToFree.length * 36;
+    const tentativeToFinalHours = tentativeToFinal.length * 36;
+    const finalToTentativeHours = finalToTentative.length * 36;
 
     // Group by engineer
-    const engineerStats = new Map<string, { allocated: number, deallocated: number }>();
+    const engineerStats = new Map<string, { allocated: number, deallocated: number, toFinal: number, toTentative: number }>();
     
     freeToProject.forEach(change => {
-      const current = engineerStats.get(change.konstrukter) || { allocated: 0, deallocated: 0 };
+      const current = engineerStats.get(change.konstrukter) || { allocated: 0, deallocated: 0, toFinal: 0, toTentative: 0 };
       engineerStats.set(change.konstrukter, { ...current, allocated: current.allocated + 1 });
     });
 
     projectToFree.forEach(change => {
-      const current = engineerStats.get(change.konstrukter) || { allocated: 0, deallocated: 0 };
+      const current = engineerStats.get(change.konstrukter) || { allocated: 0, deallocated: 0, toFinal: 0, toTentative: 0 };
       engineerStats.set(change.konstrukter, { ...current, deallocated: current.deallocated + 1 });
+    });
+
+    tentativeToFinal.forEach(change => {
+      const current = engineerStats.get(change.konstrukter) || { allocated: 0, deallocated: 0, toFinal: 0, toTentative: 0 };
+      engineerStats.set(change.konstrukter, { ...current, toFinal: current.toFinal + 1 });
+    });
+
+    finalToTentative.forEach(change => {
+      const current = engineerStats.get(change.konstrukter) || { allocated: 0, deallocated: 0, toFinal: 0, toTentative: 0 };
+      engineerStats.set(change.konstrukter, { ...current, toTentative: current.toTentative + 1 });
     });
 
     return {
@@ -267,12 +290,18 @@ export function PlanningHistoryDialog({
       freeToProjectHours,
       projectToFree: projectToFree.length,
       projectToFreeHours,
+      tentativeToFinal: tentativeToFinal.length,
+      tentativeToFinalHours,
+      finalToTentative: finalToTentative.length,
+      finalToTentativeHours,
       netChange: freeToProject.length - projectToFree.length,
       netChangeHours: freeToProjectHours - projectToFreeHours,
       engineerStats: Array.from(engineerStats.entries()).map(([name, stats]) => ({
         name,
         allocated: stats.allocated,
         deallocated: stats.deallocated,
+        toFinal: stats.toFinal,
+        toTentative: stats.toTentative,
         net: stats.allocated - stats.deallocated
       })).sort((a, b) => Math.abs(b.net) - Math.abs(a.net))
     };
@@ -511,6 +540,38 @@ export function PlanningHistoryDialog({
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     {statistics.netChangeHours > 0 ? '+' : ''}{statistics.netChangeHours}h
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-blue-500" />
+                    Předběžná → Finální
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{statistics.tentativeToFinal}</div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {statistics.tentativeToFinalHours}h potvrzeno
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-amber-500" />
+                    Finální → Předběžná
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{statistics.finalToTentative}</div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {statistics.finalToTentativeHours}h změněno na předběžné
                   </p>
                 </CardContent>
               </Card>
