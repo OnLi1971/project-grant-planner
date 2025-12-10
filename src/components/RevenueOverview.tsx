@@ -551,11 +551,13 @@ export const RevenueOverview = () => {
     return projectList; // 'all'
   }, [projectList, realizaceProjects, presalesProjects, projectStatusFilter, projects]);
 
-  // Výpočet celkového revenue pouze pro vybrané měsíce
-  const totalRevenue = months.reduce((sum, month) => {
-    const monthData = monthlyRevenueByProject[month] || {};
-    return sum + Object.values(monthData).reduce((monthSum, projectRevenue) => monthSum + projectRevenue, 0);
-  }, 0);
+  // Výpočet celkového revenue pouze pro vybrané měsíce a filtrované projekty
+  const totalRevenue = useMemo(() => {
+    return months.reduce((sum, month) => {
+      const monthData = monthlyRevenueByProject[month] || {};
+      return sum + filteredProjectList.reduce((monthSum, projectCode) => monthSum + (monthData[projectCode] || 0), 0);
+    }, 0);
+  }, [months, monthlyRevenueByProject, filteredProjectList]);
 
   // Data pro stackovaný graf
   const chartData = useMemo(() => {
@@ -1143,7 +1145,7 @@ export const RevenueOverview = () => {
                   <TableCell className="font-bold">CELKEM</TableCell>
                    {months.map(month => {
                      const monthData = monthlyRevenueByProject[month] || {};
-                     const monthTotal = Object.values(monthData).reduce((sum: number, value: number) => sum + value, 0);
+                     const monthTotal = filteredProjectList.reduce((sum: number, projectCode) => sum + (monthData[projectCode] || 0), 0);
                      return (
                        <TableCell key={month} className="text-right font-mono font-bold">
                          {formatCurrency(monthTotal)}
