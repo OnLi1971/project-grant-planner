@@ -41,17 +41,19 @@ interface DatabaseProgram {
 interface RevenueOverviewProps {
   defaultCurrency?: 'CZK' | 'USD';
   defaultStatusFilter?: 'all' | 'realizace' | 'presales' | 'P0' | 'P1' | 'P2' | 'P3';
+  defaultViewType?: 'mesic' | 'kvartal';
 }
 
 export const RevenueOverview = ({ 
   defaultCurrency = 'CZK',
-  defaultStatusFilter = 'all'
+  defaultStatusFilter = 'all',
+  defaultViewType = 'mesic'
 }: RevenueOverviewProps) => {
   const { planningData } = usePlanning();
   const [filterType, setFilterType] = useState<'all' | 'customer' | 'program' | 'project'>('all');
   const [filterValue, setFilterValue] = useState<string>('all');
   const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
-  const [viewType, setViewType] = useState<'mesic' | 'kvartal'>('mesic');
+  const [viewType, setViewType] = useState<'mesic' | 'kvartal'>(defaultViewType);
   const [selectedQuarters, setSelectedQuarters] = useState<string[]>(['Q4-2025', 'Q1-2026', 'Q2-2026', 'Q3-2026', 'Q4-2026']);
   const [selectedMonths, setSelectedMonths] = useState<string[]>([
     'říjen_2025', 'listopad_2025', 'prosinec_2025',
