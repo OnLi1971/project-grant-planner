@@ -139,6 +139,79 @@ export function PlanningHistoryDialog({
     }
   };
 
+  // Parse CW number for sorting (e.g., "CW48" -> 48)
+  const parseCwNumber = (cw: string): number => {
+    const match = cw.match(/CW(\d+)/i);
+    return match ? parseInt(match[1], 10) : 0;
+  };
+
+  // Group similar changes together
+  interface GroupedChange {
+    id: string;
+    konstrukter: string;
+    cwRange: string;
+    cwList: string[];
+    year: number;
+    change_type: string;
+    old_value: string;
+    new_value: string;
+    changed_at: string;
+    changed_by: string | null;
+    profiles?: {
+      full_name: string | null;
+      email: string;
+    };
+    count: number;
+  }
+
+  const groupedChanges = useMemo(() => {
+    // Group by: konstrukter, change_type, old_value, new_value, changed_by, and timestamp within 5 minutes
+    const groups = new Map<string, GroupedChange>();
+    
+    changes.forEach(change => {
+      // Round timestamp to 5-minute window
+      const changeTime = new Date(change.changed_at);
+      const roundedTime = new Date(Math.floor(changeTime.getTime() / (5 * 60 * 1000)) * (5 * 60 * 1000));
+      
+      const key = `${change.konstrukter}|${change.change_type}|${change.old_value}|${change.new_value}|${change.changed_by}|${roundedTime.getTime()}|${change.year}`;
+      
+      if (groups.has(key)) {
+        const group = groups.get(key)!;
+        if (!group.cwList.includes(change.cw)) {
+          group.cwList.push(change.cw);
+        }
+        group.count++;
+      } else {
+        groups.set(key, {
+          id: change.id,
+          konstrukter: change.konstrukter,
+          cwRange: change.cw,
+          cwList: [change.cw],
+          year: change.year,
+          change_type: change.change_type,
+          old_value: change.old_value,
+          new_value: change.new_value,
+          changed_at: change.changed_at,
+          changed_by: change.changed_by,
+          profiles: change.profiles,
+          count: 1
+        });
+      }
+    });
+
+    // Calculate CW range for each group
+    return Array.from(groups.values()).map(group => {
+      if (group.cwList.length > 1) {
+        // Sort CW values
+        const sortedCws = group.cwList.sort((a, b) => parseCwNumber(a) - parseCwNumber(b));
+        const firstCw = parseCwNumber(sortedCws[0]);
+        const lastCw = parseCwNumber(sortedCws[sortedCws.length - 1]);
+        group.cwRange = `CW${firstCw}-CW${lastCw}`;
+      }
+      return group;
+    }).sort((a, b) => new Date(b.changed_at).getTime() - new Date(a.changed_at).getTime());
+  }, [changes]);
+
   // Calculate statistics
   const statistics = useMemo(() => {
     const now = new Date();
@@ -310,7 +383,7 @@ export function PlanningHistoryDialog({
 
           <div className="flex justify-between items-center">
             <div className="text-sm text-muted-foreground">
-              Zobrazeno změn: {changes.length}
+              Zobrazeno změn: {changes.length} ({groupedChanges.length} seskupeno)
             </div>
             <Button variant="outline" size="sm" onClick={clearFilters}>
               <X className="h-4 w-4 mr-2" />
@@ -322,32 +395,36 @@ export function PlanningHistoryDialog({
           <ScrollArea className="h-[500px] rounded-md border">
             {loading ? (
               <div className="p-8 text-center text-muted-foreground">Načítám...</div>
-            ) : changes.length === 0 ? (
+            ) : groupedChanges.length === 0 ? (
               <div className="p-8 text-center text-muted-foreground">
                 Žádné změny nenalezeny
               </div>
             ) : (
               <div className="p-4 space-y-2">
-                {changes.map((change) => (
+                {groupedChanges.map((change) => (
                   <div
                     key={change.id}
                     className="p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
                   >
                     <div className="flex justify-between items-start gap-4">
                       <div className="flex-1 space-y-1">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-medium">{change.konstrukter}</span>
-                          <span className="text-muted-foreground">•</span>
-                          <span className="text-sm text-muted-foreground">
-                            {change.cw}-{change.year}
+                          <span className="text-sm">
+                            {change.old_value || 'FREE'} → {change.new_value || 'FREE'}
                           </span>
+                          <span className="text-sm text-muted-foreground">
+                            pro {change.cwRange}-{change.year}
+                          </span>
+                          {change.count > 1 && (
+                            <span className="text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                              {change.count} týdnů
+                            </span>
+                          )}
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
                             {getChangeTypeLabel(change.change_type)}
-                          </span>
-                          <span className="text-sm">
-                            {getChangeDescription(change)}
                           </span>
                         </div>
                       </div>
