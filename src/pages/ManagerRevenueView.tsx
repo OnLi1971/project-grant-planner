@@ -34,7 +34,12 @@ const ManagerRevenueView = () => {
         </Card>
 
         <div className="mx-6">
-          <RevenueOverview defaultCurrency="USD" defaultStatusFilter="realizace" defaultViewType="kvartal" />
+          <RevenueOverview 
+            defaultCurrency="USD" 
+            defaultStatusFilter="realizace" 
+            defaultViewType="kvartal" 
+            defaultPrograms={['MACH', 'RAIL']}
+          />
         </div>
       </div>
     </PlanningProvider>
