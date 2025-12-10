@@ -496,105 +496,63 @@ export function PlanningHistoryDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4 text-green-500" />
-                    Alokace (FREE → Projekt)
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{statistics.freeToProject}</div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {statistics.freeToProjectHours}h celkem
-                  </p>
-                </CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+              <Card className="p-3">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1">
+                  <TrendingUp className="h-3 w-3 text-green-500" />
+                  Alokace
+                </div>
+                <div className="text-lg font-bold">{statistics.freeToProject}</div>
+                <p className="text-xs text-muted-foreground">{statistics.freeToProjectHours}h</p>
               </Card>
 
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <TrendingDown className="h-4 w-4 text-red-500" />
-                    Dealokace (Projekt → FREE)
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{statistics.projectToFree}</div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {statistics.projectToFreeHours}h celkem
-                  </p>
-                </CardContent>
+              <Card className="p-3">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1">
+                  <TrendingDown className="h-3 w-3 text-red-500" />
+                  Dealokace
+                </div>
+                <div className="text-lg font-bold">{statistics.projectToFree}</div>
+                <p className="text-xs text-muted-foreground">{statistics.projectToFreeHours}h</p>
               </Card>
 
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium">
-                    Čistá změna
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className={cn(
-                    "text-2xl font-bold",
-                    statistics.netChange > 0 ? "text-green-600" : statistics.netChange < 0 ? "text-red-600" : ""
-                  )}>
-                    {statistics.netChange > 0 ? '+' : ''}{statistics.netChange}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {statistics.netChangeHours > 0 ? '+' : ''}{statistics.netChangeHours}h
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-blue-500" />
-                    Předběžná → Finální
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{statistics.tentativeToFinal}</div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {statistics.tentativeToFinalHours}h potvrzeno
-                  </p>
-                </CardContent>
+              <Card className="p-3">
+                <div className="text-xs font-medium text-muted-foreground mb-1">Čistá změna</div>
+                <div className={cn(
+                  "text-lg font-bold",
+                  statistics.netChange > 0 ? "text-green-600" : statistics.netChange < 0 ? "text-red-600" : ""
+                )}>
+                  {statistics.netChange > 0 ? '+' : ''}{statistics.netChange}
+                </div>
+                <p className="text-xs text-muted-foreground">{statistics.netChangeHours > 0 ? '+' : ''}{statistics.netChangeHours}h</p>
               </Card>
 
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-amber-500" />
-                    Finální → Předběžná
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{statistics.finalToTentative}</div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {statistics.finalToTentativeHours}h změněno na předběžné
-                  </p>
-                </CardContent>
+              <Card className="p-3">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1">
+                  <CheckCircle2 className="h-3 w-3 text-blue-500" />
+                  Potvrzeno
+                </div>
+                <div className="text-lg font-bold">{statistics.tentativeToFinal}</div>
+                <p className="text-xs text-muted-foreground">{statistics.tentativeToFinalHours}h</p>
               </Card>
 
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium">
-                    Čistá změna (potvrzení)
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className={cn(
-                    "text-2xl font-bold",
-                    statistics.netTentativeChange > 0 ? "text-blue-600" : statistics.netTentativeChange < 0 ? "text-amber-600" : ""
-                  )}>
-                    {statistics.netTentativeChange > 0 ? '+' : ''}{statistics.netTentativeChange}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {statistics.netTentativeChangeHours > 0 ? '+' : ''}{statistics.netTentativeChangeHours}h
-                  </p>
-                </CardContent>
+              <Card className="p-3">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1">
+                  <Clock className="h-3 w-3 text-amber-500" />
+                  Zrušeno
+                </div>
+                <div className="text-lg font-bold">{statistics.finalToTentative}</div>
+                <p className="text-xs text-muted-foreground">{statistics.finalToTentativeHours}h</p>
+              </Card>
+
+              <Card className="p-3">
+                <div className="text-xs font-medium text-muted-foreground mb-1">Čistá (potvrz.)</div>
+                <div className={cn(
+                  "text-lg font-bold",
+                  statistics.netTentativeChange > 0 ? "text-blue-600" : statistics.netTentativeChange < 0 ? "text-amber-600" : ""
+                )}>
+                  {statistics.netTentativeChange > 0 ? '+' : ''}{statistics.netTentativeChange}
+                </div>
+                <p className="text-xs text-muted-foreground">{statistics.netTentativeChangeHours > 0 ? '+' : ''}{statistics.netTentativeChangeHours}h</p>
               </Card>
             </div>
 
