@@ -590,40 +590,32 @@ export function PlanningHistoryDialog({
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {statistics.engineerStats.slice(0, 10).map((stat) => {
-                        const total = stat.allocated + stat.deallocated;
-                        const allocPercent = total > 0 ? Math.round((stat.allocated / total) * 100) : 0;
-                        const deallocPercent = total > 0 ? Math.round((stat.deallocated / total) * 100) : 0;
-                        
-                        return (
-                          <div
-                            key={stat.name}
-                            className="flex items-center justify-between p-3 rounded-lg border bg-card"
-                          >
-                            <div className="flex-1">
-                              <div className="font-medium">{stat.name}</div>
-                              <div className="flex gap-4 text-sm text-muted-foreground mt-1">
-                                <span className="flex items-center gap-1">
-                                  <TrendingUp className="h-3 w-3 text-green-500" />
-                                  {stat.allocated} alokací ({stat.allocated * 36}h)
-                                  {total > 0 && <span className="text-green-600 font-medium ml-1">{allocPercent}%</span>}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <TrendingDown className="h-3 w-3 text-red-500" />
-                                  {stat.deallocated} dealokací ({stat.deallocated * 36}h)
-                                  {total > 0 && <span className="text-red-600 font-medium ml-1">{deallocPercent}%</span>}
-                                </span>
-                              </div>
-                            </div>
-                            <div className={cn(
-                              "text-lg font-bold px-3",
-                              stat.net > 0 ? "text-green-600" : stat.net < 0 ? "text-red-600" : ""
-                            )}>
-                              {stat.net > 0 ? '+' : ''}{stat.net}
+                      {statistics.engineerStats.slice(0, 10).map((stat) => (
+                        <div
+                          key={stat.name}
+                          className="flex items-center justify-between p-3 rounded-lg border bg-card"
+                        >
+                          <div className="flex-1">
+                            <div className="font-medium">{stat.name}</div>
+                            <div className="flex gap-4 text-sm text-muted-foreground mt-1">
+                              <span className="flex items-center gap-1">
+                                <TrendingUp className="h-3 w-3 text-green-500" />
+                                {stat.allocated} alokací ({stat.allocated * 36}h)
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <TrendingDown className="h-3 w-3 text-red-500" />
+                                {stat.deallocated} dealokací ({stat.deallocated * 36}h)
+                              </span>
                             </div>
                           </div>
-                        );
-                      })}
+                          <div className={cn(
+                            "text-lg font-bold px-3",
+                            stat.net > 0 ? "text-green-600" : stat.net < 0 ? "text-red-600" : ""
+                          )}>
+                            {stat.net > 0 ? '+' : ''}{stat.net}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </ScrollArea>
