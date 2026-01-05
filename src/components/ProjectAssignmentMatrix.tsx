@@ -43,52 +43,77 @@ const getEngineerCompany = (engineerName: string): string => {
 
 
 
-// Funkce pro výpočet aktuálního kalendářního týdne
-const getCurrentWeek = (): number => {
-  return getWeek(new Date(), { weekStartsOn: 1 });
+// Funkce pro výpočet aktuálního kalendářního týdne a roku
+const getCurrentWeekAndYear = (): { week: number; year: number } => {
+  const now = new Date();
+  return {
+    week: getWeek(now, { weekStartsOn: 1, firstWeekContainsDate: 4 }),
+    year: now.getFullYear()
+  };
 };
 
-// Funkce pro generování týdnů od aktuálního týdne do konce roku
+// Funkce pro generování týdnů od aktuálního týdne na 52 týdnů dopředu
 const getAllWeeks = (): string[] => {
-  const currentWeek = getCurrentWeek();
-  const startWeek = Math.max(32, currentWeek); // Začneme od aktuálního týdne, ale minimálně od CW32
+  const { week: currentWeek, year: currentYear } = getCurrentWeekAndYear();
   
   const weeks = [];
-  // CW32-52 pro rok 2025
-  for (let cw = startWeek; cw <= 52; cw++) {
-    weeks.push(`CW${cw.toString().padStart(2, '0')}-2025`);
+  let week = currentWeek;
+  let year = currentYear;
+  
+  // Generujeme 52 týdnů od aktuálního
+  for (let i = 0; i < 52; i++) {
+    weeks.push(`CW${week.toString().padStart(2, '0')}-${year}`);
+    week++;
+    if (week > 52) {
+      week = 1;
+      year++;
+    }
   }
-  // CW01-52 pro rok 2026 - opraveno na celý rok
-  for (let cw = 1; cw <= 52; cw++) {
-    weeks.push(`CW${cw.toString().padStart(2, '0')}-2026`);
-  }
+  
   return weeks;
 };
 
 const weeks = getAllWeeks();
 
-const months = [
-  { name: 'srpen 2025', weeks: ['CW32-2025', 'CW33-2025', 'CW34-2025', 'CW35-2025'] },
-  { name: 'září 2025', weeks: ['CW36-2025', 'CW37-2025', 'CW38-2025', 'CW39-2025'] },
-  { name: 'říjen 2025', weeks: ['CW40-2025', 'CW41-2025', 'CW42-2025', 'CW43-2025', 'CW44-2025'] },
-  { name: 'listopad 2025', weeks: ['CW45-2025', 'CW46-2025', 'CW47-2025', 'CW48-2025'] },
-  { name: 'prosinec 2025', weeks: ['CW49-2025', 'CW50-2025', 'CW51-2025', 'CW52-2025'] },
-  { name: 'leden 2026', weeks: ['CW01-2026', 'CW02-2026', 'CW03-2026', 'CW04-2026', 'CW05-2026'] },
-  { name: 'únor 2026', weeks: ['CW06-2026', 'CW07-2026', 'CW08-2026', 'CW09-2026'] },
-  { name: 'březen 2026', weeks: ['CW10-2026', 'CW11-2026', 'CW12-2026', 'CW13-2026', 'CW14-2026'] },
-  { name: 'duben 2026', weeks: ['CW15-2026', 'CW16-2026', 'CW17-2026', 'CW18-2026'] },
-  { name: 'květen 2026', weeks: ['CW19-2026', 'CW20-2026', 'CW21-2026', 'CW22-2026', 'CW23-2026'] },
-  { name: 'červen 2026', weeks: ['CW24-2026', 'CW25-2026', 'CW26-2026'] },
-  { name: 'červenec 2026', weeks: ['CW27-2026', 'CW28-2026', 'CW29-2026', 'CW30-2026'] },
-  { name: 'srpen 2026', weeks: ['CW31-2026', 'CW32-2026', 'CW33-2026', 'CW34-2026', 'CW35-2026'] },
-  { name: 'září 2026', weeks: ['CW36-2026', 'CW37-2026', 'CW38-2026', 'CW39-2026'] },
-  { name: 'říjen 2026', weeks: ['CW40-2026', 'CW41-2026', 'CW42-2026', 'CW43-2026', 'CW44-2026'] },
-  { name: 'listopad 2026', weeks: ['CW45-2026', 'CW46-2026', 'CW47-2026', 'CW48-2026'] },
-  { name: 'prosinec 2026', weeks: ['CW49-2026', 'CW50-2026', 'CW51-2026', 'CW52-2026'] }
-].map(month => ({
-  ...month,
-  weeks: month.weeks.filter(week => weeks.includes(week))
-})).filter(month => month.weeks.length > 0);
+// Dynamicky generovat měsíce na základě vygenerovaných týdnů
+const generateMonths = (weeksList: string[]): { name: string; weeks: string[] }[] => {
+  const monthWeekMapping: { [key: string]: { month: number; name: string } } = {
+    '01': { month: 1, name: 'leden' }, '02': { month: 1, name: 'leden' }, '03': { month: 1, name: 'leden' }, '04': { month: 1, name: 'leden' }, '05': { month: 2, name: 'únor' },
+    '06': { month: 2, name: 'únor' }, '07': { month: 2, name: 'únor' }, '08': { month: 2, name: 'únor' }, '09': { month: 3, name: 'březen' },
+    '10': { month: 3, name: 'březen' }, '11': { month: 3, name: 'březen' }, '12': { month: 3, name: 'březen' }, '13': { month: 3, name: 'březen' }, '14': { month: 4, name: 'duben' },
+    '15': { month: 4, name: 'duben' }, '16': { month: 4, name: 'duben' }, '17': { month: 4, name: 'duben' }, '18': { month: 5, name: 'květen' },
+    '19': { month: 5, name: 'květen' }, '20': { month: 5, name: 'květen' }, '21': { month: 5, name: 'květen' }, '22': { month: 5, name: 'květen' }, '23': { month: 6, name: 'červen' },
+    '24': { month: 6, name: 'červen' }, '25': { month: 6, name: 'červen' }, '26': { month: 6, name: 'červen' }, '27': { month: 7, name: 'červenec' },
+    '28': { month: 7, name: 'červenec' }, '29': { month: 7, name: 'červenec' }, '30': { month: 7, name: 'červenec' }, '31': { month: 8, name: 'srpen' },
+    '32': { month: 8, name: 'srpen' }, '33': { month: 8, name: 'srpen' }, '34': { month: 8, name: 'srpen' }, '35': { month: 8, name: 'srpen' },
+    '36': { month: 9, name: 'září' }, '37': { month: 9, name: 'září' }, '38': { month: 9, name: 'září' }, '39': { month: 9, name: 'září' },
+    '40': { month: 10, name: 'říjen' }, '41': { month: 10, name: 'říjen' }, '42': { month: 10, name: 'říjen' }, '43': { month: 10, name: 'říjen' }, '44': { month: 10, name: 'říjen' },
+    '45': { month: 11, name: 'listopad' }, '46': { month: 11, name: 'listopad' }, '47': { month: 11, name: 'listopad' }, '48': { month: 11, name: 'listopad' },
+    '49': { month: 12, name: 'prosinec' }, '50': { month: 12, name: 'prosinec' }, '51': { month: 12, name: 'prosinec' }, '52': { month: 12, name: 'prosinec' }
+  };
+  
+  const monthsMap = new Map<string, string[]>();
+  
+  weeksList.forEach(week => {
+    const match = week.match(/CW(\d+)-(\d+)/);
+    if (match) {
+      const cwNum = match[1];
+      const year = match[2];
+      const monthInfo = monthWeekMapping[cwNum];
+      if (monthInfo) {
+        const monthKey = `${monthInfo.name} ${year}`;
+        if (!monthsMap.has(monthKey)) {
+          monthsMap.set(monthKey, []);
+        }
+        monthsMap.get(monthKey)!.push(week);
+      }
+    }
+  });
+  
+  return Array.from(monthsMap.entries()).map(([name, weeks]) => ({ name, weeks }));
+};
+
+const months = generateMonths(weeks);
 
 const getProjectBadgeStyle = (projekt: string) => {
   // Free, vacation, sick leave and overtime
