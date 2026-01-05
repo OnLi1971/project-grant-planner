@@ -65,7 +65,7 @@ const getCurrentWeek = (): number => {
   return week;
 };
 
-// Funkce pro generování týdnů od aktuálního týdne do celého roku 2026
+// Funkce pro generování týdnů dynamicky od aktuálního týdne
 const generateAllWeeks = (): WeekPlan[] => {
   const weeks: WeekPlan[] = [];
   const months = [
@@ -73,59 +73,56 @@ const generateAllWeeks = (): WeekPlan[] => {
     'červenec', 'srpen', 'září', 'říjen', 'listopad', 'prosinec'
   ];
   
-  const currentWeek = getCurrentWeek();
-  const startWeek = Math.max(1, currentWeek - 4); // Začneme 4 týdny před aktuálním týdnem
+  // Pomocná funkce pro určení měsíce z čísla týdne
+  const getMonthFromWeek = (week: number): number => {
+    if (week <= 4) return 0; // leden
+    if (week <= 8) return 1; // únor
+    if (week <= 13) return 2; // březen
+    if (week <= 17) return 3; // duben
+    if (week <= 21) return 4; // květen
+    if (week <= 26) return 5; // červen
+    if (week <= 30) return 6; // červenec
+    if (week <= 35) return 7; // srpen
+    if (week <= 39) return 8; // září
+    if (week <= 43) return 9; // říjen
+    if (week <= 47) return 10; // listopad
+    return 11; // prosinec
+  };
   
-  // Nejprve generujeme týdny do konce roku 2025
-  for (let cw = startWeek; cw <= 52; cw++) {
-    let monthIndex;
-    if (cw <= 4) monthIndex = 0; // leden
-    else if (cw <= 8) monthIndex = 1; // únor
-    else if (cw <= 13) monthIndex = 2; // březen
-    else if (cw <= 17) monthIndex = 3; // duben
-    else if (cw <= 21) monthIndex = 4; // květen
-    else if (cw <= 26) monthIndex = 5; // červen
-    else if (cw <= 30) monthIndex = 6; // červenec
-    else if (cw <= 35) monthIndex = 7; // srpen
-    else if (cw <= 39) monthIndex = 8; // září  
-    else if (cw <= 43) monthIndex = 9; // říjen
-    else if (cw <= 47) monthIndex = 10; // listopad
-    else monthIndex = 11; // prosinec
-    
-    const mesic = months[monthIndex];
-    
-    weeks.push({
-      cw: `CW${cw.toString().padStart(2, '0')}-2025`,
-      mesic: `${mesic} 2025`,
-      mhTyden: 36, // Defaultní hodnota 36 hodin
-      projekt: cw === 52 ? 'DOVOLENÁ' : 'FREE'  // CW52 defaultně "DOVOLENÁ"
-    });
+  const today = new Date();
+  const currentYear = today.getFullYear();
+  const currentWeek = getCurrentWeek();
+  
+  // Začneme 4 týdny před aktuálním týdnem
+  let startWeek = currentWeek - 4;
+  let startYear = currentYear;
+  
+  // Pokud bychom šli do záporných týdnů, upravíme na předchozí rok
+  if (startWeek < 1) {
+    startWeek = 52 + startWeek;
+    startYear = currentYear - 1;
   }
   
-  // Pak generujeme týdny pro celý rok 2026 (CW01-52)
-  for (let cw = 1; cw <= 52; cw++) {
-    let monthIndex;
-    if (cw <= 5) monthIndex = 0; // leden
-    else if (cw <= 9) monthIndex = 1; // únor
-    else if (cw <= 13) monthIndex = 2; // březen
-    else if (cw <= 17) monthIndex = 3; // duben
-    else if (cw <= 22) monthIndex = 4; // květen
-    else if (cw <= 26) monthIndex = 5; // červen
-    else if (cw <= 30) monthIndex = 6; // červenec
-    else if (cw <= 35) monthIndex = 7; // srpen
-    else if (cw <= 39) monthIndex = 8; // září
-    else if (cw <= 43) monthIndex = 9; // říjen
-    else if (cw <= 47) monthIndex = 10; // listopad
-    else monthIndex = 11; // prosinec
-    
+  // Generujeme 56 týdnů dopředu (4 týdny zpět + 52 týdnů dopředu)
+  let week = startWeek;
+  let year = startYear;
+  
+  for (let i = 0; i < 56; i++) {
+    const monthIndex = getMonthFromWeek(week);
     const mesic = months[monthIndex];
     
     weeks.push({
-      cw: `CW${cw.toString().padStart(2, '0')}-2026`,
-      mesic: `${mesic} 2026`,
+      cw: `CW${week.toString().padStart(2, '0')}-${year}`,
+      mesic: `${mesic} ${year}`,
       mhTyden: 36, // Defaultní hodnota 36 hodin
-      projekt: cw === 52 ? 'DOVOLENÁ' : 'FREE'  // CW52 defaultně "DOVOLENÁ"
+      projekt: week === 52 ? 'DOVOLENÁ' : 'FREE'  // CW52 defaultně "DOVOLENÁ"
     });
+    
+    week++;
+    if (week > 52) {
+      week = 1;
+      year++;
+    }
   }
   
   return weeks;
@@ -160,12 +157,10 @@ const generatePlanningDataForEditor = (data: any[]): { [key: string]: WeekPlan[]
     const allWeeks = generateAllWeeks();
     const currentWeek = getCurrentWeek();
     
-    // Filtrujeme pouze relevantní týdny (CW32-52 pro 2025 + CW01-52 pro 2026)
+    // Filtrujeme pouze relevantní týdny - dynamicky podle generovaných týdnů
+    const generatedCWs = new Set(allWeeks.map(w => w.cw));
     const relevantExistingData = Object.keys(existingDataMap[konstrukter] || {})
-      .filter(cw => {
-        // Nový formát obsahuje rok, takže můžeme filtrovat přímo
-        return cw.includes('-2025') || cw.includes('-2026');
-      })
+      .filter(cw => generatedCWs.has(cw))
       .reduce((acc, cw) => {
         acc[cw] = existingDataMap[konstrukter][cw];
         return acc;
