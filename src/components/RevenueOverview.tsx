@@ -995,46 +995,82 @@ export const RevenueOverview = ({
                     const data = props.payload[0]?.payload;
                     if (!data) return null;
                     
-                    // Spočítáme součty pro Realizace a Presales
-                    let realizaceSum = 0;
-                    let presalesSum = 0;
+                    // Rozdělíme projekty podle statusu a seřadíme podle revenue
+                    const realizaceItems: {code: string, value: number}[] = [];
+                    const presalesItems: {code: string, value: number, probability?: number}[] = [];
                     
-                    projectList.forEach(projectCode => {
+                    filteredProjectList.forEach(projectCode => {
                       const project = projects.find(p => p.code === projectCode);
                       const value = data[projectCode] || 0;
+                      if (value === 0) return; // Přeskočit projekty s nulovou hodnotou
                       
                       if (project?.project_status === 'Pre sales') {
-                        presalesSum += value;
+                        presalesItems.push({ code: projectCode, value, probability: project?.probability || undefined });
                       } else {
-                        realizaceSum += value;
+                        realizaceItems.push({ code: projectCode, value });
                       }
                     });
                     
+                    // Seřadit podle hodnoty sestupně
+                    realizaceItems.sort((a, b) => b.value - a.value);
+                    presalesItems.sort((a, b) => b.value - a.value);
+                    
+                    const realizaceSum = realizaceItems.reduce((sum, item) => sum + item.value, 0);
+                    const presalesSum = presalesItems.reduce((sum, item) => sum + item.value, 0);
                     const total = realizaceSum + presalesSum;
                     
                     return (
-                      <div className="bg-card border border-border rounded-md p-3 shadow-md">
-                        <p className="font-medium mb-2">
-                          {viewType === 'kvartal' ? 'Kvartal' : 'Měsíc'}: {props.label}
+                      <div className="bg-card border border-border rounded-md p-3 shadow-md max-w-sm max-h-96 overflow-y-auto">
+                        <p className="font-medium mb-2 border-b pb-2">
+                          {viewType === 'kvartal' ? 'Kvartál' : 'Měsíc'}: {props.label}
                         </p>
-                        <div className="space-y-1">
-                          {realizaceSum > 0 && (
-                            <div className="flex justify-between items-center gap-4">
-                              <span className="text-sm">Realizace:</span>
-                              <span className="font-medium">{formatCurrency(realizaceSum)}</span>
+                        
+                        {/* Realizace sekce */}
+                        {realizaceItems.length > 0 && (
+                          <div className="mb-3">
+                            <p className="text-xs font-semibold text-muted-foreground mb-1">
+                              REALIZACE ({formatCurrency(realizaceSum)})
+                            </p>
+                            <div className="space-y-0.5 pl-2">
+                              {realizaceItems.map(item => (
+                                <div key={item.code} className="flex justify-between text-sm gap-4">
+                                  <span className="truncate">{item.code}</span>
+                                  <span className="font-mono text-right">{formatCurrency(item.value)}</span>
+                                </div>
+                              ))}
                             </div>
-                          )}
-                          {presalesSum > 0 && (
-                            <div className="flex justify-between items-center gap-4">
-                              <span className="text-sm">Presales:</span>
-                              <span className="font-medium">{formatCurrency(presalesSum)}</span>
+                          </div>
+                        )}
+                        
+                        {/* Presales sekce */}
+                        {presalesItems.length > 0 && (
+                          <div className="mb-3">
+                            <p className="text-xs font-semibold text-muted-foreground mb-1">
+                              PRESALES ({formatCurrency(presalesSum)})
+                            </p>
+                            <div className="space-y-0.5 pl-2">
+                              {presalesItems.map(item => (
+                                <div key={item.code} className="flex justify-between text-sm gap-4">
+                                  <span className="truncate">
+                                    {item.code}
+                                    {item.probability && (
+                                      <span className="text-xs text-muted-foreground ml-1">
+                                        ({item.probability}%)
+                                      </span>
+                                    )}
+                                  </span>
+                                  <span className="font-mono text-right">{formatCurrency(item.value)}</span>
+                                </div>
+                              ))}
                             </div>
-                          )}
-                          <div className="border-t pt-1 mt-2">
-                            <div className="flex justify-between items-center gap-4 font-semibold">
-                              <span>Celkem:</span>
-                              <span>{formatCurrency(total)}</span>
-                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Celkem */}
+                        <div className="border-t pt-2 mt-2">
+                          <div className="flex justify-between font-semibold">
+                            <span>Celkem:</span>
+                            <span>{formatCurrency(total)}</span>
                           </div>
                         </div>
                       </div>
