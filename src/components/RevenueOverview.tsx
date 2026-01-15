@@ -390,6 +390,9 @@ export const RevenueOverview = ({
       const weekMapping = weekToMonthMapping[cwKey];
       if (!weekMapping || entry.mhTyden === 0) return;
 
+      // Přeskočit tentative rezervace - nepočítají se do potvrzeného revenue
+      if (entry.is_tentative === true) return;
+
       // Přeskočit neproduktivní aktivity (case-insensitive porovnání)
       const projektTrimmed = entry.projekt?.trim();
       if (nonRevenueActivities.some(activity => 
