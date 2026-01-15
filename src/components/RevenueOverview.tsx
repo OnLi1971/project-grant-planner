@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { usePlanning } from '@/contexts/PlanningContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
-import { TrendingUp, Filter, Users } from 'lucide-react';
+import { TrendingUp, Filter, Users, DollarSign } from 'lucide-react';
 import { getProjectColorWithIndex } from '@/utils/colorSystem';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
@@ -85,6 +85,24 @@ export const RevenueOverview = ({
     isPresales: boolean;
     probability?: number;
   }[]>([]);
+
+  // State for revenue detail dialog (single click)
+  const [isRevenueDialogOpen, setIsRevenueDialogOpen] = useState(false);
+  const [selectedRevenueData, setSelectedRevenueData] = useState<{
+    period: string;
+    projectCode: string;
+    projectName: string;
+    revenue: number;
+    hours: number;
+    hourlyRate: number;
+    isPresales: boolean;
+    probability?: number;
+  } | null>(null);
+
+  // Refs for click detection (single vs double click)
+  const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const clickCountRef = useRef(0);
+  const lastClickDataRef = useRef<{ data: any; projectCode: string } | null>(null);
 
   // Exchange rate CZK to USD (approximately 23 CZK = 1 USD)
   const exchangeRate = 23;
@@ -557,8 +575,67 @@ export const RevenueOverview = ({
     'Q4-2026': ['říjen_2026', 'listopad_2026', 'prosinec_2026']
   };
 
-  // Handler for clicking on chart bar - shows engineer details
-  const handleBarClick = (data: any, projectCode: string) => {
+  // Handler for single click on chart bar - shows revenue details
+  const handleBarSingleClick = (data: any, projectCode: string) => {
+    const period = data?.payload?.month || data?.month;
+    if (!period) return;
+    
+    const project = projects.find(p => p.code === projectCode);
+    const revenue = data?.payload?.[projectCode] || 0;
+    
+    // Calculate total hours for this project in this period
+    const nonRevenueActivities = ['FREE', 'Dovolena', 'DOVOLENÁ', 'Nemoc', 'NEMOC', 'Školení', 'ŠKOLENÍ', 'Interní', 'INTERNÍ'];
+    
+    let monthsToCheck: string[] = [];
+    if (viewType === 'kvartal') {
+      monthsToCheck = quarterToMonths[period] || [];
+    } else {
+      // Convert display name back to internal format
+      const monthLabelsReverse: { [key: string]: string } = {
+        'říj 25': 'říjen_2025', 'lis 25': 'listopad_2025', 'pro 25': 'prosinec_2025',
+        'led 26': 'leden_2026', 'úno 26': 'únor_2026', 'bře 26': 'březen_2026',
+        'dub 26': 'duben_2026', 'kvě 26': 'květen_2026', 'čer 26': 'červen_2026',
+        'čec 26': 'červenec_2026', 'srp 26': 'srpen_2026', 'zář 26': 'září_2026',
+        'říj 26': 'říjen_2026', 'lis 26': 'listopad_2026', 'pro 26': 'prosinec_2026'
+      };
+      monthsToCheck = [monthLabelsReverse[period] || period];
+    }
+    
+    let totalHours = 0;
+    filteredData.forEach(entry => {
+      if (nonRevenueActivities.some(a => a.toLowerCase() === entry.projekt?.trim()?.toLowerCase())) return;
+      if (entry.is_tentative) return;
+      if (entry.projekt !== projectCode) return;
+      
+      const cwKey = entry.cw.includes('-2026')
+        ? entry.cw.replace('-', '_')
+        : entry.cw.split('-')[0];
+      const weekMapping = weekToMonthMapping[cwKey];
+      if (!weekMapping) return;
+      
+      const matchingMonths = Object.keys(weekMapping).filter(m => monthsToCheck.includes(m));
+      if (matchingMonths.length === 0) return;
+      
+      matchingMonths.forEach(month => {
+        totalHours += (entry.mhTyden || 0) * (weekMapping[month] || 0);
+      });
+    });
+    
+    setSelectedRevenueData({
+      period,
+      projectCode,
+      projectName: project?.name || projectCode,
+      revenue,
+      hours: totalHours,
+      hourlyRate: project?.average_hourly_rate || 0,
+      isPresales: project?.project_status === 'Pre sales',
+      probability: project?.probability
+    });
+    setIsRevenueDialogOpen(true);
+  };
+
+  // Handler for double click on chart bar - shows engineer details
+  const handleBarDoubleClick = (data: any, projectCode: string) => {
     const period = data?.payload?.month || data?.month;
     if (!period) return;
     
@@ -571,8 +648,15 @@ export const RevenueOverview = ({
       // Period is a quarter like "Q4-2025"
       monthsToCheck = quarterToMonths[period] || [];
     } else {
-      // Period is a month name
-      monthsToCheck = [period];
+      // Period is a month display name - convert back
+      const monthLabelsReverse: { [key: string]: string } = {
+        'říj 25': 'říjen_2025', 'lis 25': 'listopad_2025', 'pro 25': 'prosinec_2025',
+        'led 26': 'leden_2026', 'úno 26': 'únor_2026', 'bře 26': 'březen_2026',
+        'dub 26': 'duben_2026', 'kvě 26': 'květen_2026', 'čer 26': 'červen_2026',
+        'čec 26': 'červenec_2026', 'srp 26': 'srpen_2026', 'zář 26': 'září_2026',
+        'říj 26': 'říjen_2026', 'lis 26': 'listopad_2026', 'pro 26': 'prosinec_2026'
+      };
+      monthsToCheck = [monthLabelsReverse[period] || period];
     }
     
     // Find engineers working on this project in the selected period
@@ -645,8 +729,36 @@ export const RevenueOverview = ({
     setIsDetailDialogOpen(true);
   };
 
+  // Unified click handler that distinguishes single vs double click
+  const handleBarClick = (data: any, projectCode: string) => {
+    clickCountRef.current += 1;
+    lastClickDataRef.current = { data, projectCode };
+    
+    if (clickCountRef.current === 1) {
+      // Wait 300ms to see if a second click comes
+      clickTimeoutRef.current = setTimeout(() => {
+        if (clickCountRef.current === 1 && lastClickDataRef.current) {
+          // Single click - show revenue detail
+          handleBarSingleClick(lastClickDataRef.current.data, lastClickDataRef.current.projectCode);
+        }
+        clickCountRef.current = 0;
+        lastClickDataRef.current = null;
+      }, 300);
+    } else if (clickCountRef.current >= 2) {
+      // Double click - show engineers
+      if (clickTimeoutRef.current) {
+        clearTimeout(clickTimeoutRef.current);
+      }
+      clickCountRef.current = 0;
+      if (lastClickDataRef.current) {
+        handleBarDoubleClick(lastClickDataRef.current.data, lastClickDataRef.current.projectCode);
+      }
+      lastClickDataRef.current = null;
+    }
+  };
+
   const monthlyRevenueByProject = calculateMonthlyRevenueByProject();
-  const months = viewType === 'mesic' ? 
+  const months = viewType === 'mesic' ?
     [
       'říjen_2025', 'listopad_2025', 'prosinec_2025',
       'leden_2026', 'únor_2026', 'březen_2026', 'duben_2026', 'květen_2026', 'červen_2026',
@@ -1343,7 +1455,58 @@ export const RevenueOverview = ({
       </Card>
     </div>
 
-      {/* Dialog for engineer details */}
+      {/* Dialog for revenue details (single click) */}
+      <Dialog open={isRevenueDialogOpen} onOpenChange={setIsRevenueDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5" />
+              Revenue detail - {selectedRevenueData?.projectCode}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedRevenueData && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-muted-foreground text-sm">Období:</span>
+                  <p className="font-medium">{selectedRevenueData.period}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground text-sm">Projekt:</span>
+                  <p className="font-medium">{selectedRevenueData.projectName}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground text-sm">Hodinová sazba:</span>
+                  <p className="font-mono">{formatCurrency(selectedRevenueData.hourlyRate)}/h</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground text-sm">Celkem hodin:</span>
+                  <p className="font-mono">{selectedRevenueData.hours.toFixed(1)}h</p>
+                </div>
+                {selectedRevenueData.isPresales && (
+                  <div className="col-span-2">
+                    <span className="text-muted-foreground text-sm">Pravděpodobnost:</span>
+                    <p className="font-mono">{selectedRevenueData.probability}%</p>
+                  </div>
+                )}
+                <div className="col-span-2">
+                  <span className="text-muted-foreground text-sm">Revenue:</span>
+                  <p className="text-2xl font-bold text-primary">
+                    {formatCurrency(selectedRevenueData.revenue)}
+                  </p>
+                </div>
+              </div>
+              
+              <p className="text-sm text-muted-foreground text-center border-t pt-4">
+                💡 Dvojklik pro zobrazení konstruktérů
+              </p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog for engineer details (double click) */}
       <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
@@ -1405,6 +1568,10 @@ export const RevenueOverview = ({
                     </div>
                   </div>
                 </div>
+                
+                <p className="text-sm text-muted-foreground text-center border-t pt-4">
+                  💡 Jeden klik pro zobrazení revenue detailu
+                </p>
               </>
             ) : (
               <div className="text-center py-8 text-muted-foreground">
