@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -163,12 +163,14 @@ interface ProjectAssignmentMatrixProps {
   defaultViewMode?: 'weeks' | 'months';
   defaultPrograms?: string[];
   defaultFilterMode?: 'program' | 'custom';
+  defaultCustomViewId?: string;
 }
 
 export const ProjectAssignmentMatrix = ({ 
   defaultViewMode = 'weeks',
   defaultPrograms = ['RAIL', 'MACH'],
-  defaultFilterMode = 'custom'
+  defaultFilterMode = 'custom',
+  defaultCustomViewId
 }: ProjectAssignmentMatrixProps) => {
   const { planningData, engineers } = usePlanning();
   const [viewMode, setViewMode] = useState<'weeks' | 'months'>(defaultViewMode);
@@ -185,6 +187,17 @@ export const ProjectAssignmentMatrix = ({
   const [customViewName, setCustomViewName] = useState('');
   const [selectedViewId, setSelectedViewId] = useState<string | null>(null);
   const { customViews, saveView, deleteView, isLoading: isLoadingViews } = useCustomEngineerViews();
+
+  // Auto-load default custom view when views are loaded
+  useEffect(() => {
+    if (defaultCustomViewId && customViews.length > 0 && !selectedViewId) {
+      const view = customViews.find(v => v.id === defaultCustomViewId);
+      if (view) {
+        setSelectedCustomEngineers(view.engineers);
+        setSelectedViewId(defaultCustomViewId);
+      }
+    }
+  }, [defaultCustomViewId, customViews, selectedViewId]);
 
   const displayNameMap = useMemo(() => {
     const map: Record<string, string> = {};
