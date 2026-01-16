@@ -162,11 +162,13 @@ const getProjectBadgeStyle = (projekt: string) => {
 interface ProjectAssignmentMatrixProps {
   defaultViewMode?: 'weeks' | 'months';
   defaultPrograms?: string[];
+  defaultFilterMode?: 'program' | 'custom';
 }
 
 export const ProjectAssignmentMatrix = ({ 
   defaultViewMode = 'weeks',
-  defaultPrograms = ['RAIL', 'MACH']
+  defaultPrograms = ['RAIL', 'MACH'],
+  defaultFilterMode = 'custom'
 }: ProjectAssignmentMatrixProps) => {
   const { planningData, engineers } = usePlanning();
   const [viewMode, setViewMode] = useState<'weeks' | 'months'>(defaultViewMode);
@@ -178,7 +180,7 @@ export const ProjectAssignmentMatrix = ({
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
   
   // Custom engineer views
-  const [filterMode, setFilterMode] = useState<'program' | 'custom'>('program');
+  const [filterMode, setFilterMode] = useState<'program' | 'custom'>(defaultFilterMode);
   const [selectedCustomEngineers, setSelectedCustomEngineers] = useState<string[]>([]);
   const [customViewName, setCustomViewName] = useState('');
   const [selectedViewId, setSelectedViewId] = useState<string | null>(null);
