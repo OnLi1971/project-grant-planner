@@ -175,8 +175,6 @@ export const ProjectAssignmentMatrix = ({
   const { planningData, engineers } = usePlanning();
   const [viewMode, setViewMode] = useState<'weeks' | 'months'>(defaultViewMode);
   const [filterSpolecnost, setFilterSpolecnost] = useState<string[]>(['Všichni']);
-  const [filterProjekt, setFilterProjekt] = useState<string[]>(['Všichni']);
-  const [filterZakaznik, setFilterZakaznik] = useState<string[]>(['Všichni']);
   const [filterProgram, setFilterProgram] = useState<string[]>(defaultPrograms);
   const [weekFilters, setWeekFilters] = useState<{ [week: string]: string[] }>({});
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
@@ -231,16 +229,6 @@ export const ProjectAssignmentMatrix = ({
   }, []);
 
   // Dynamic filter arrays based on projectsData
-  const projektList = useMemo(() => {
-    const projectCodes = projects.map(p => p.code);
-    return ['Všichni', ...projectCodes];
-  }, []);
-
-  const zakazniciList = useMemo(() => {
-    const customerNames = customers.map(c => c.name);
-    return ['Všichni', ...customerNames];
-  }, []);
-
   const programyList = useMemo(() => {
     const programCodes = programs.map(p => p.code);
     return ['Všichni', ...programCodes];
@@ -477,25 +465,6 @@ export const ProjectAssignmentMatrix = ({
     }
     
     if (viewMode === 'weeks') {
-      // Filter by project
-      if (!filterProjekt.includes('Všichni')) {
-        engineers = engineers.filter(engineer => {
-          return weeks.some(week => {
-            const project = matrixData[engineer][week]?.projekt;
-            return filterProjekt.includes(project);
-          });
-        });
-      }
-      
-      // Filter by customer
-      if (!filterZakaznik.includes('Všichni')) {
-        engineers = engineers.filter(engineer => {
-          return weeks.some(week => {
-            const project = matrixData[engineer][week]?.projekt;
-            return projektInfo[project]?.zakaznik && filterZakaznik.includes(projektInfo[project].zakaznik);
-          });
-        });
-      }
       
       // Filter by program OR custom selection
       if (filterMode === 'custom') {
@@ -521,27 +490,6 @@ export const ProjectAssignmentMatrix = ({
       }
     } else {
       // Monthly view filters
-      if (!filterProjekt.includes('Všichni')) {
-        engineers = engineers.filter(engineer => {
-          return months.some(month => {
-            const monthData = monthlyData[engineer][month.name];
-            return monthData.projects.some(project => 
-              filterProjekt.includes(project)
-            );
-          });
-        });
-      }
-      
-      if (!filterZakaznik.includes('Všichni')) {
-        engineers = engineers.filter(engineer => {
-          return months.some(month => {
-            const monthData = monthlyData[engineer][month.name];
-            return monthData.projects.some(project => 
-              projektInfo[project]?.zakaznik && filterZakaznik.includes(projektInfo[project].zakaznik)
-            );
-          });
-        });
-      }
       
       // Filter by program OR custom selection
       if (filterMode === 'custom') {
@@ -570,7 +518,7 @@ export const ProjectAssignmentMatrix = ({
     }
     
     return engineers.sort();
-  }, [displayData, matrixData, monthlyData, viewMode, filterSpolecnost, filterProjekt, filterZakaznik, filterProgram, weekFilters, displayNameMap, filterMode, selectedCustomEngineers]);
+  }, [displayData, matrixData, monthlyData, viewMode, filterSpolecnost, filterProgram, weekFilters, displayNameMap, filterMode, selectedCustomEngineers]);
 
   return (
     <div className="p-6 space-y-6">
@@ -603,7 +551,7 @@ export const ProjectAssignmentMatrix = ({
         </CardHeader>
         <CardContent>
           {/* Filters */}
-          <div className="grid grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-2 gap-4 mb-6">
             <div>
               <label className="text-sm font-medium mb-2 block">Společnost</label>
               <Popover>
@@ -624,62 +572,6 @@ export const ProjectAssignmentMatrix = ({
                         />
                         <label htmlFor={`company-${spolecnost}`} className="text-sm cursor-pointer flex-1">
                           {spolecnost}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium mb-2 block">Projekt</label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-between">
-                    {getFilterDisplayText(filterProjekt)}
-                    <ChevronDown className="h-4 w-4 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-60 p-0" align="start">
-                  <div className="p-2 max-h-64 overflow-y-auto">
-                    {projektList.map(projekt => (
-                      <div key={projekt} className="flex items-center space-x-2 py-2 px-2 rounded hover:bg-muted/50">
-                        <Checkbox
-                          id={`projekt-${projekt}`}
-                          checked={isFilterActive(filterProjekt, projekt)}
-                          onCheckedChange={() => toggleFilterValue(filterProjekt, projekt, setFilterProjekt)}
-                        />
-                        <label htmlFor={`projekt-${projekt}`} className="text-sm cursor-pointer flex-1">
-                          {projekt}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium mb-2 block">Zákazník</label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-between">
-                    {getFilterDisplayText(filterZakaznik)}
-                    <ChevronDown className="h-4 w-4 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-60 p-0" align="start">
-                  <div className="p-2 max-h-64 overflow-y-auto">
-                    {zakazniciList.map(zakaznik => (
-                      <div key={zakaznik} className="flex items-center space-x-2 py-2 px-2 rounded hover:bg-muted/50">
-                        <Checkbox
-                          id={`customer-${zakaznik}`}
-                          checked={isFilterActive(filterZakaznik, zakaznik)}
-                          onCheckedChange={() => toggleFilterValue(filterZakaznik, zakaznik, setFilterZakaznik)}
-                        />
-                        <label htmlFor={`customer-${zakaznik}`} className="text-sm cursor-pointer flex-1">
-                          {zakaznik}
                         </label>
                       </div>
                     ))}
@@ -1393,7 +1285,7 @@ export const ProjectAssignmentMatrix = ({
           open={historyDialogOpen}
           onOpenChange={setHistoryDialogOpen}
           engineers={engineers}
-          projects={projektList.filter(p => p !== 'Všichni')}
+          projects={projects.map(p => p.code)}
         />
       </Card>
     </div>
