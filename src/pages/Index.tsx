@@ -140,7 +140,7 @@ const Index = () => {
               </Card>
               
               {outputView === 'matrix' ? (
-                <ProjectAssignmentMatrix />
+                <ProjectAssignmentMatrix defaultFilterMode="custom" />
               ) : (
                 <RevenueOverview />
               )}
