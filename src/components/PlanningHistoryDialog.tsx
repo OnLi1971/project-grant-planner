@@ -51,7 +51,9 @@ export function PlanningHistoryDialog({
   const [filterChangeType, setFilterChangeType] = useState<string>('all');
   const [filterDateFrom, setFilterDateFrom] = useState<Date>();
   const [filterDateTo, setFilterDateTo] = useState<Date>();
-  const [statsTimeRange, setStatsTimeRange] = useState<'week' | 'month'>('week');
+  const [statsTimeRange, setStatsTimeRange] = useState<'week' | 'month' | 'thisMonth' | 'custom'>('week');
+  const [statsCustomDateFrom, setStatsCustomDateFrom] = useState<Date>();
+  const [statsCustomDateTo, setStatsCustomDateTo] = useState<Date>();
 
   const loadChanges = async () => {
     setLoading(true);
@@ -215,12 +217,27 @@ export function PlanningHistoryDialog({
   // Calculate statistics
   const statistics = useMemo(() => {
     const now = new Date();
-    const startDate = statsTimeRange === 'week' 
-      ? startOfWeek(subDays(now, 7), { weekStartsOn: 1 })
-      : startOfMonth(subMonths(now, 1));
-    const endDate = statsTimeRange === 'week'
-      ? endOfWeek(subDays(now, 7), { weekStartsOn: 1 })
-      : endOfMonth(subMonths(now, 1));
+    let startDate: Date;
+    let endDate: Date;
+    
+    switch (statsTimeRange) {
+      case 'week':
+        startDate = startOfWeek(subDays(now, 7), { weekStartsOn: 1 });
+        endDate = endOfWeek(subDays(now, 7), { weekStartsOn: 1 });
+        break;
+      case 'month':
+        startDate = startOfMonth(subMonths(now, 1));
+        endDate = endOfMonth(subMonths(now, 1));
+        break;
+      case 'thisMonth':
+        startDate = startOfMonth(now);
+        endDate = now;
+        break;
+      case 'custom':
+        startDate = statsCustomDateFrom || startOfMonth(now);
+        endDate = statsCustomDateTo || now;
+        break;
+    }
 
     const relevantProjectChanges = changes.filter(change => {
       const changeDate = new Date(change.changed_at);
@@ -307,7 +324,7 @@ export function PlanningHistoryDialog({
         net: stats.allocated - stats.deallocated
       })).sort((a, b) => Math.abs(b.net) - Math.abs(a.net))
     };
-  }, [changes, statsTimeRange]);
+  }, [changes, statsTimeRange, statsCustomDateFrom, statsCustomDateTo]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -481,17 +498,66 @@ export function PlanningHistoryDialog({
           </TabsContent>
 
           <TabsContent value="stats" className="space-y-4 mt-4">
-            <div className="flex justify-between items-center">
-              <Select value={statsTimeRange} onValueChange={(value: 'week' | 'month') => setStatsTimeRange(value)}>
+            <div className="flex flex-wrap gap-3 items-center">
+              <Select value={statsTimeRange} onValueChange={(value: 'week' | 'month' | 'thisMonth' | 'custom') => setStatsTimeRange(value)}>
                 <SelectTrigger className="w-48">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="week">Minulý týden</SelectItem>
                   <SelectItem value="month">Minulý měsíc</SelectItem>
+                  <SelectItem value="thisMonth">Tento měsíc</SelectItem>
+                  <SelectItem value="custom">Vlastní období</SelectItem>
                 </SelectContent>
               </Select>
-              <div className="text-sm text-muted-foreground">
+              
+              {statsTimeRange === 'custom' && (
+                <>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        className={cn("w-36", !statsCustomDateFrom && "text-muted-foreground")}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {statsCustomDateFrom ? format(statsCustomDateFrom, "dd.MM.yyyy") : "Od"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={statsCustomDateFrom}
+                        onSelect={setStatsCustomDateFrom}
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        className={cn("w-36", !statsCustomDateTo && "text-muted-foreground")}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {statsCustomDateTo ? format(statsCustomDateTo, "dd.MM.yyyy") : "Do"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={statsCustomDateTo}
+                        onSelect={setStatsCustomDateTo}
+                        initialFocus
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </>
+              )}
+              
+              <div className="text-sm text-muted-foreground ml-auto">
                 {format(statistics.startDate, 'dd.MM.yyyy')} - {format(statistics.endDate, 'dd.MM.yyyy')}
               </div>
             </div>
