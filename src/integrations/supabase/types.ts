@@ -116,6 +116,33 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_engineer_views: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          selected_engineers: string[]
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          selected_engineers?: string[]
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          selected_engineers?: string[]
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           code: string

@@ -5,13 +5,17 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, Filter, History } from 'lucide-react';
+import { ChevronDown, Filter, History, Save, Trash2, Users } from 'lucide-react';
 import { PlanningHistoryDialog } from './PlanningHistoryDialog';
 import { usePlanning } from '@/contexts/PlanningContext';
 import { customers, projectManagers, programs, projects } from '@/data/projectsData';
 import { getWeek } from 'date-fns';
 import { normalizeName, createNameMapping } from '@/utils/nameNormalization';
 import { getWorkingDaysFromMonthName, getWorkingDaysInWeekForMonth } from '@/utils/workingDays';
+import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
+import { useCustomEngineerViews } from '@/hooks/useCustomEngineerViews';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 // Company mappings
 const spolocnosti = [
@@ -172,6 +176,13 @@ export const ProjectAssignmentMatrix = ({
   const [filterProgram, setFilterProgram] = useState<string[]>(defaultPrograms);
   const [weekFilters, setWeekFilters] = useState<{ [week: string]: string[] }>({});
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+  
+  // Custom engineer views
+  const [filterMode, setFilterMode] = useState<'program' | 'custom'>('program');
+  const [selectedCustomEngineers, setSelectedCustomEngineers] = useState<string[]>([]);
+  const [customViewName, setCustomViewName] = useState('');
+  const [selectedViewId, setSelectedViewId] = useState<string | null>(null);
+  const { customViews, saveView, deleteView, isLoading: isLoadingViews } = useCustomEngineerViews();
 
   const displayNameMap = useMemo(() => {
     const map: Record<string, string> = {};
@@ -219,6 +230,7 @@ export const ProjectAssignmentMatrix = ({
     const programCodes = programs.map(p => p.code);
     return ['Všichni', ...programCodes];
   }, []);
+
 
   // Get unique projects for a specific week
   const getProjectsForWeek = (week: string): string[] => {
@@ -341,6 +353,54 @@ export const ProjectAssignmentMatrix = ({
   // Get display data based on view mode
   const displayData = viewMode === 'weeks' ? matrixData : monthlyData;
 
+  // All engineers list for custom selection - must be after displayData
+  const allEngineersList = useMemo(() => {
+    const allNames = Object.keys(displayData)
+      .map(key => displayNameMap[key] || key)
+      .sort((a, b) => a.localeCompare(b, 'cs'));
+    return allNames;
+  }, [displayData, displayNameMap]);
+
+  // Toggle custom engineer selection
+  const toggleCustomEngineer = (engineer: string) => {
+    setSelectedCustomEngineers(prev => 
+      prev.includes(engineer) 
+        ? prev.filter(e => e !== engineer)
+        : [...prev, engineer]
+    );
+    setSelectedViewId(null); // Clear selected view when manually editing
+  };
+
+  // Load a saved custom view
+  const loadCustomView = (viewId: string) => {
+    const view = customViews.find(v => v.id === viewId);
+    if (view) {
+      setSelectedCustomEngineers(view.engineers);
+      setSelectedViewId(viewId);
+      setFilterMode('custom');
+    }
+  };
+
+  // Save current selection as a new view
+  const handleSaveView = async () => {
+    if (!customViewName.trim() || selectedCustomEngineers.length === 0) return;
+    
+    const success = await saveView(customViewName.trim(), selectedCustomEngineers);
+    if (success) {
+      setCustomViewName('');
+    }
+  };
+
+  // Delete a custom view
+  const handleDeleteView = async (viewId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    await deleteView(viewId);
+    if (selectedViewId === viewId) {
+      setSelectedViewId(null);
+      setSelectedCustomEngineers([]);
+    }
+  };
+
   // Helper functions for multi-select
   const toggleFilterValue = (currentFilter: string[], value: string, setter: (value: string[]) => void) => {
     if (value === 'Všichni') {
@@ -422,8 +482,16 @@ export const ProjectAssignmentMatrix = ({
         });
       }
       
-      // Filter by program
-      if (!filterProgram.includes('Všichni')) {
+      // Filter by program OR custom selection
+      if (filterMode === 'custom') {
+        // Custom selection - filter by selected engineers
+        if (selectedCustomEngineers.length > 0) {
+          engineers = engineers.filter(engineer => {
+            const displayName = displayNameMap[engineer] || engineer;
+            return selectedCustomEngineers.includes(displayName);
+          });
+        }
+      } else if (!filterProgram.includes('Všichni')) {
         engineers = engineers.filter(engineer => {
           return weeks.some(week => {
             const project = matrixData[engineer][week]?.projekt;
@@ -460,7 +528,16 @@ export const ProjectAssignmentMatrix = ({
         });
       }
       
-      if (!filterProgram.includes('Všichni')) {
+      // Filter by program OR custom selection
+      if (filterMode === 'custom') {
+        // Custom selection - filter by selected engineers
+        if (selectedCustomEngineers.length > 0) {
+          engineers = engineers.filter(engineer => {
+            const displayName = displayNameMap[engineer] || engineer;
+            return selectedCustomEngineers.includes(displayName);
+          });
+        }
+      } else if (!filterProgram.includes('Všichni')) {
         engineers = engineers.filter(engineer => {
           return months.some(month => {
             const monthData = monthlyData[engineer][month.name];
@@ -478,7 +555,7 @@ export const ProjectAssignmentMatrix = ({
     }
     
     return engineers.sort();
-  }, [displayData, matrixData, monthlyData, viewMode, filterSpolecnost, filterProjekt, filterZakaznik, filterProgram, weekFilters, displayNameMap]);
+  }, [displayData, matrixData, monthlyData, viewMode, filterSpolecnost, filterProjekt, filterZakaznik, filterProgram, weekFilters, displayNameMap, filterMode, selectedCustomEngineers]);
 
   return (
     <div className="p-6 space-y-6">
@@ -598,28 +675,163 @@ export const ProjectAssignmentMatrix = ({
             
             
             <div>
-              <label className="text-sm font-medium mb-2 block">Program</label>
+              <label className="text-sm font-medium mb-2 block">Program / Vlastní</label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="w-full justify-between">
-                    {getFilterDisplayText(filterProgram)}
+                    {filterMode === 'custom' 
+                      ? (selectedViewId 
+                          ? `📁 ${customViews.find(v => v.id === selectedViewId)?.name || 'Vlastní'}` 
+                          : `Vlastní (${selectedCustomEngineers.length})`)
+                      : getFilterDisplayText(filterProgram)}
                     <ChevronDown className="h-4 w-4 opacity-50" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-60 p-0" align="start">
-                  <div className="p-2 max-h-64 overflow-y-auto">
+                <PopoverContent className="w-80 p-0" align="start">
+                  <div className="p-2">
+                    {/* Standard programs */}
+                    <div className="text-xs font-medium text-muted-foreground mb-1 px-2">Programy</div>
                     {programyList.map(program => (
-                      <div key={program} className="flex items-center space-x-2 py-2 px-2 rounded hover:bg-muted/50">
+                      <div key={program} className="flex items-center space-x-2 py-1.5 px-2 rounded hover:bg-muted/50">
                         <Checkbox
                           id={`program-${program}`}
-                          checked={isFilterActive(filterProgram, program)}
-                          onCheckedChange={() => toggleFilterValue(filterProgram, program, setFilterProgram)}
+                          checked={filterMode === 'program' && isFilterActive(filterProgram, program)}
+                          onCheckedChange={() => {
+                            setFilterMode('program');
+                            setSelectedViewId(null);
+                            toggleFilterValue(filterProgram, program, setFilterProgram);
+                          }}
                         />
                         <label htmlFor={`program-${program}`} className="text-sm cursor-pointer flex-1">
                           {program}
                         </label>
                       </div>
                     ))}
+                    
+                    <Separator className="my-2" />
+                    
+                    {/* Custom option */}
+                    <div className="flex items-center space-x-2 py-1.5 px-2 rounded hover:bg-muted/50">
+                      <Checkbox
+                        id="program-custom"
+                        checked={filterMode === 'custom'}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setFilterMode('custom');
+                          } else {
+                            setFilterMode('program');
+                            setSelectedCustomEngineers([]);
+                            setSelectedViewId(null);
+                          }
+                        }}
+                      />
+                      <label htmlFor="program-custom" className="text-sm cursor-pointer flex-1 flex items-center gap-1">
+                        <Users className="h-4 w-4" />
+                        Vlastní výběr konstruktérů
+                      </label>
+                    </div>
+                    
+                    {/* Custom selection panel */}
+                    {filterMode === 'custom' && (
+                      <div className="mt-2 pt-2 border-t border-border">
+                        {/* Saved views dropdown */}
+                        {customViews.length > 0 && (
+                          <div className="mb-3 px-2">
+                            <label className="text-xs font-medium text-muted-foreground block mb-1">Uložené pohledy:</label>
+                            <div className="space-y-1 max-h-32 overflow-y-auto">
+                              {customViews.map(view => (
+                                <div 
+                                  key={view.id}
+                                  onClick={() => loadCustomView(view.id)}
+                                  className={`flex items-center justify-between py-1.5 px-2 rounded cursor-pointer text-sm ${
+                                    selectedViewId === view.id ? 'bg-primary/10 text-primary' : 'hover:bg-muted/50'
+                                  }`}
+                                >
+                                  <span className="truncate flex-1">
+                                    📁 {view.name} ({view.engineers.length})
+                                  </span>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                                    onClick={(e) => handleDeleteView(view.id, e)}
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Engineer selection */}
+                        <div className="px-2">
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="text-xs font-medium text-muted-foreground">Konstruktéři:</label>
+                            <div className="flex gap-1">
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-5 text-xs px-1"
+                                onClick={() => setSelectedCustomEngineers(allEngineersList)}
+                              >
+                                Vše
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-5 text-xs px-1"
+                                onClick={() => {
+                                  setSelectedCustomEngineers([]);
+                                  setSelectedViewId(null);
+                                }}
+                              >
+                                Nic
+                              </Button>
+                            </div>
+                          </div>
+                          <ScrollArea className="h-48 border rounded p-1">
+                            {allEngineersList.map(engineer => (
+                              <div 
+                                key={engineer} 
+                                className="flex items-center space-x-2 py-1 px-2 hover:bg-muted/50 rounded"
+                              >
+                                <Checkbox
+                                  id={`custom-engineer-${engineer}`}
+                                  checked={selectedCustomEngineers.includes(engineer)}
+                                  onCheckedChange={() => toggleCustomEngineer(engineer)}
+                                />
+                                <label 
+                                  htmlFor={`custom-engineer-${engineer}`} 
+                                  className="text-xs cursor-pointer flex-1 truncate"
+                                >
+                                  {engineer}
+                                </label>
+                              </div>
+                            ))}
+                          </ScrollArea>
+                        </div>
+                        
+                        {/* Save view */}
+                        <div className="mt-3 px-2 flex gap-2">
+                          <Input 
+                            placeholder="Název pohledu..."
+                            value={customViewName}
+                            onChange={(e) => setCustomViewName(e.target.value)}
+                            className="text-sm h-8"
+                          />
+                          <Button 
+                            size="sm" 
+                            className="h-8 px-3"
+                            onClick={handleSaveView} 
+                            disabled={!customViewName.trim() || selectedCustomEngineers.length === 0}
+                          >
+                            <Save className="h-4 w-4 mr-1" />
+                            Uložit
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </PopoverContent>
               </Popover>
