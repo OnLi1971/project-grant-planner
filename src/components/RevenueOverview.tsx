@@ -47,14 +47,12 @@ interface RevenueOverviewProps {
 
 export const RevenueOverview = ({ 
   defaultCurrency = 'CZK',
-  defaultStatusFilter = 'all',
-  defaultViewType = 'mesic',
-  defaultProgramCodes = []
+  defaultStatusFilter = 'realizace',
+  defaultViewType = 'kvartal',
+  defaultProgramCodes = ['MACH', 'RAIL']
 }: RevenueOverviewProps) => {
   const { planningData } = usePlanning();
-  const [filterType, setFilterType] = useState<'all' | 'customer' | 'program' | 'project'>(
-    defaultProgramCodes.length > 0 ? 'program' : 'all'
-  );
+  const [filterType, setFilterType] = useState<'all' | 'customer' | 'program' | 'project'>('program');
   const [filterValue, setFilterValue] = useState<string>('all');
   const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
   const [viewType, setViewType] = useState<'mesic' | 'kvartal'>(defaultViewType);
