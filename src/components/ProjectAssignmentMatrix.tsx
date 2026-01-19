@@ -434,51 +434,6 @@ export const ProjectAssignmentMatrix = ({
     return `${filter.length} vybraných`;
   };
 
-  // Helper: Get engineers allocated to a project in a specific week with details
-  const getEngineersForProjectInWeek = useCallback((projectName: string, week: string): { name: string; isTentative: boolean; hours: number }[] => {
-    const engineerKeys = Object.keys(matrixData);
-    return engineerKeys.filter(engineer => {
-      const projectData = matrixData[engineer][week];
-      return projectData?.projekt === projectName;
-    }).map(engineer => {
-      const projectData = matrixData[engineer][week];
-      return {
-        name: displayNameMap[engineer] || engineer,
-        isTentative: projectData?.isTentative || false,
-        hours: projectData?.hours || 0
-      };
-    });
-  }, [matrixData, displayNameMap]);
-
-  // Helper: Get engineers allocated to a project in a specific month with details
-  const getEngineersForProjectInMonth = useCallback((projectName: string, monthName: string, monthWeeks: string[]): { name: string; isTentative: boolean; hours: number; isPartial: boolean }[] => {
-    const engineerKeys = Object.keys(monthlyData);
-    return engineerKeys.filter(engineer => {
-      const monthData = monthlyData[engineer][monthName];
-      return monthData?.projects.includes(projectName);
-    }).map(engineer => {
-      // Calculate total hours and check tentative status across all weeks in the month
-      let totalHours = 0;
-      let isTentative = false;
-      let weeksOnProject = 0;
-      
-      monthWeeks.forEach(week => {
-        const projectData = matrixData[engineer]?.[week];
-        if (projectData?.projekt === projectName) {
-          totalHours += projectData.hours || 0;
-          if (projectData.isTentative) isTentative = true;
-          weeksOnProject++;
-        }
-      });
-      
-      return {
-        name: displayNameMap[engineer] || engineer,
-        isTentative,
-        hours: totalHours,
-        isPartial: weeksOnProject < monthWeeks.length // Not on project for all weeks in month
-      };
-    });
-  }, [monthlyData, matrixData, displayNameMap]);
 
   // Filter engineers based on selected filters
   const filteredEngineers = useMemo(() => {
@@ -566,6 +521,50 @@ export const ProjectAssignmentMatrix = ({
     
     return engineers.sort();
   }, [displayData, matrixData, monthlyData, viewMode, filterSpolecnost, filterProgram, weekFilters, displayNameMap, filterMode, selectedCustomEngineers]);
+
+  // Helper: Get engineers allocated to a project in a specific week with details (respects current filters)
+  const getEngineersForProjectInWeek = useCallback((projectName: string, week: string): { name: string; isTentative: boolean; hours: number }[] => {
+    return filteredEngineers.filter(engineer => {
+      const projectData = matrixData[engineer][week];
+      return projectData?.projekt === projectName;
+    }).map(engineer => {
+      const projectData = matrixData[engineer][week];
+      return {
+        name: displayNameMap[engineer] || engineer,
+        isTentative: projectData?.isTentative || false,
+        hours: projectData?.hours || 0
+      };
+    });
+  }, [matrixData, displayNameMap, filteredEngineers]);
+
+  // Helper: Get engineers allocated to a project in a specific month with details (respects current filters)
+  const getEngineersForProjectInMonth = useCallback((projectName: string, monthName: string, monthWeeks: string[]): { name: string; isTentative: boolean; hours: number; isPartial: boolean }[] => {
+    return filteredEngineers.filter(engineer => {
+      const monthData = monthlyData[engineer][monthName];
+      return monthData?.projects.includes(projectName);
+    }).map(engineer => {
+      // Calculate total hours and check tentative status across all weeks in the month
+      let totalHours = 0;
+      let isTentative = false;
+      let weeksOnProject = 0;
+      
+      monthWeeks.forEach(week => {
+        const projectData = matrixData[engineer]?.[week];
+        if (projectData?.projekt === projectName) {
+          totalHours += projectData.hours || 0;
+          if (projectData.isTentative) isTentative = true;
+          weeksOnProject++;
+        }
+      });
+      
+      return {
+        name: displayNameMap[engineer] || engineer,
+        isTentative,
+        hours: totalHours,
+        isPartial: weeksOnProject < monthWeeks.length // Not on project for all weeks in month
+      };
+    });
+  }, [monthlyData, matrixData, displayNameMap, filteredEngineers]);
 
   return (
     <TooltipProvider delayDuration={200}>
