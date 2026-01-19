@@ -925,13 +925,14 @@ export const ProjectAssignmentMatrix = ({
                                       const tentativeCount = engineers.filter(e => e.isTentative).length;
                                       const partialCount = engineers.filter(e => e.hours > 0 && e.hours < 35).length;
                                       const fullCount = engineers.filter(e => e.hours >= 35).length;
+                                      const isFreeProject = project === 'FREE';
                                       return (
                                         <div className="text-sm">
                                           <div className="font-semibold mb-1">{project} - {week}</div>
                                           <div className="text-xs text-muted-foreground mb-2 space-y-0.5">
-                                            <div>Alokováno: {engineers.length} konstruktérů</div>
+                                            <div>{isFreeProject ? 'Volných:' : 'Alokováno:'} {engineers.length} konstruktérů</div>
                                             {fullCount > 0 && (
-                                              <div className="text-green-500">● Plně vytížení: {fullCount}</div>
+                                              <div className="text-green-500">● {isFreeProject ? 'Volné kapacity' : 'Plně vytížení'}: {fullCount}</div>
                                             )}
                                             {partialCount > 0 && (
                                               <div className="text-orange-400">◐ Částečně: {partialCount}</div>
@@ -945,7 +946,7 @@ export const ProjectAssignmentMatrix = ({
                                               <div key={eng.name} className="text-xs flex items-center gap-1.5">
                                                 <span className={eng.isTentative ? 'text-yellow-400' : ''}>{eng.name}</span>
                                                 {eng.hours >= 35 ? (
-                                                  <span className="text-green-500 text-[10px]">(plně)</span>
+                                                  <span className="text-green-500 text-[10px]">{isFreeProject ? '(volný)' : '(plně)'}</span>
                                                 ) : eng.hours > 0 && (
                                                   <span className="text-orange-400 text-[10px]">({eng.hours}h)</span>
                                                 )}
