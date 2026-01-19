@@ -434,23 +434,51 @@ export const ProjectAssignmentMatrix = ({
     return `${filter.length} vybraných`;
   };
 
-  // Helper: Get engineers allocated to a project in a specific week
-  const getEngineersForProjectInWeek = useCallback((projectName: string, week: string): string[] => {
+  // Helper: Get engineers allocated to a project in a specific week with details
+  const getEngineersForProjectInWeek = useCallback((projectName: string, week: string): { name: string; isTentative: boolean; hours: number }[] => {
     const engineerKeys = Object.keys(matrixData);
     return engineerKeys.filter(engineer => {
       const projectData = matrixData[engineer][week];
       return projectData?.projekt === projectName;
-    }).map(engineer => displayNameMap[engineer] || engineer);
+    }).map(engineer => {
+      const projectData = matrixData[engineer][week];
+      return {
+        name: displayNameMap[engineer] || engineer,
+        isTentative: projectData?.isTentative || false,
+        hours: projectData?.hours || 0
+      };
+    });
   }, [matrixData, displayNameMap]);
 
-  // Helper: Get engineers allocated to a project in a specific month
-  const getEngineersForProjectInMonth = useCallback((projectName: string, monthName: string): string[] => {
+  // Helper: Get engineers allocated to a project in a specific month with details
+  const getEngineersForProjectInMonth = useCallback((projectName: string, monthName: string, monthWeeks: string[]): { name: string; isTentative: boolean; hours: number; isPartial: boolean }[] => {
     const engineerKeys = Object.keys(monthlyData);
     return engineerKeys.filter(engineer => {
       const monthData = monthlyData[engineer][monthName];
       return monthData?.projects.includes(projectName);
-    }).map(engineer => displayNameMap[engineer] || engineer);
-  }, [monthlyData, displayNameMap]);
+    }).map(engineer => {
+      // Calculate total hours and check tentative status across all weeks in the month
+      let totalHours = 0;
+      let isTentative = false;
+      let weeksOnProject = 0;
+      
+      monthWeeks.forEach(week => {
+        const projectData = matrixData[engineer]?.[week];
+        if (projectData?.projekt === projectName) {
+          totalHours += projectData.hours || 0;
+          if (projectData.isTentative) isTentative = true;
+          weeksOnProject++;
+        }
+      });
+      
+      return {
+        name: displayNameMap[engineer] || engineer,
+        isTentative,
+        hours: totalHours,
+        isPartial: weeksOnProject < monthWeeks.length // Not on project for all weeks in month
+      };
+    });
+  }, [monthlyData, matrixData, displayNameMap]);
 
   // Filter engineers based on selected filters
   const filteredEngineers = useMemo(() => {
@@ -892,18 +920,34 @@ export const ProjectAssignmentMatrix = ({
                                       </span>
                                     </div>
                                   </TooltipTrigger>
-                                  <TooltipContent side="top" className="max-w-[300px]">
+                                  <TooltipContent side="top" className="max-w-[350px]">
                                     {(() => {
                                       const engineers = getEngineersForProjectInWeek(project, week);
+                                      const tentativeCount = engineers.filter(e => e.isTentative).length;
+                                      const partialCount = engineers.filter(e => e.hours > 0 && e.hours < 40).length;
                                       return (
                                         <div className="text-sm">
                                           <div className="font-semibold mb-1">{project} - {week}</div>
-                                          <div className="text-xs text-muted-foreground mb-2">
-                                            Alokováno: {engineers.length} konstruktérů
+                                          <div className="text-xs text-muted-foreground mb-2 space-y-0.5">
+                                            <div>Alokováno: {engineers.length} konstruktérů</div>
+                                            {tentativeCount > 0 && (
+                                              <div className="text-yellow-400">⚠ Předběžně: {tentativeCount}</div>
+                                            )}
+                                            {partialCount > 0 && (
+                                              <div className="text-orange-400">◐ Částečně: {partialCount}</div>
+                                            )}
                                           </div>
                                           <div className="flex flex-col gap-0.5 max-h-[200px] overflow-y-auto">
                                             {engineers.map(eng => (
-                                              <span key={eng} className="text-xs">{eng}</span>
+                                              <div key={eng.name} className="text-xs flex items-center gap-1.5">
+                                                <span className={eng.isTentative ? 'text-yellow-400' : ''}>{eng.name}</span>
+                                                {eng.hours > 0 && eng.hours < 40 && (
+                                                  <span className="text-orange-400 text-[10px]">({eng.hours}h)</span>
+                                                )}
+                                                {eng.isTentative && (
+                                                  <span className="text-yellow-400 text-[10px]">(předběžně)</span>
+                                                )}
+                                              </div>
                                             ))}
                                           </div>
                                         </div>
@@ -954,18 +998,34 @@ export const ProjectAssignmentMatrix = ({
                                         </span>
                                       </div>
                                     </TooltipTrigger>
-                                    <TooltipContent side="top" className="max-w-[300px]">
+                                    <TooltipContent side="top" className="max-w-[350px]">
                                       {(() => {
-                                        const engineers = getEngineersForProjectInMonth(sortedProjects[0], month.name);
+                                        const engineers = getEngineersForProjectInMonth(sortedProjects[0], month.name, month.weeks);
+                                        const tentativeCount = engineers.filter(e => e.isTentative).length;
+                                        const partialCount = engineers.filter(e => e.isPartial).length;
                                         return (
                                           <div className="text-sm">
                                             <div className="font-semibold mb-1">{sortedProjects[0]} - {month.name}</div>
-                                            <div className="text-xs text-muted-foreground mb-2">
-                                              Alokováno: {engineers.length} konstruktérů
+                                            <div className="text-xs text-muted-foreground mb-2 space-y-0.5">
+                                              <div>Alokováno: {engineers.length} konstruktérů</div>
+                                              {tentativeCount > 0 && (
+                                                <div className="text-yellow-400">⚠ Předběžně: {tentativeCount}</div>
+                                              )}
+                                              {partialCount > 0 && (
+                                                <div className="text-orange-400">◐ Částečně: {partialCount}</div>
+                                              )}
                                             </div>
                                             <div className="flex flex-col gap-0.5 max-h-[200px] overflow-y-auto">
                                               {engineers.map(eng => (
-                                                <span key={eng} className="text-xs">{eng}</span>
+                                                <div key={eng.name} className="text-xs flex items-center gap-1.5">
+                                                  <span className={eng.isTentative ? 'text-yellow-400' : ''}>{eng.name}</span>
+                                                  {eng.isPartial && (
+                                                    <span className="text-orange-400 text-[10px]">(částečně)</span>
+                                                  )}
+                                                  {eng.isTentative && (
+                                                    <span className="text-yellow-400 text-[10px]">(předběžně)</span>
+                                                  )}
+                                                </div>
                                               ))}
                                             </div>
                                           </div>
@@ -986,18 +1046,34 @@ export const ProjectAssignmentMatrix = ({
                                           </span>
                                         </div>
                                       </TooltipTrigger>
-                                      <TooltipContent side="top" className="max-w-[300px]">
+                                      <TooltipContent side="top" className="max-w-[350px]">
                                         {(() => {
-                                          const engineers = getEngineersForProjectInMonth(project, month.name);
+                                          const engineers = getEngineersForProjectInMonth(project, month.name, month.weeks);
+                                          const tentativeCount = engineers.filter(e => e.isTentative).length;
+                                          const partialCount = engineers.filter(e => e.isPartial).length;
                                           return (
                                             <div className="text-sm">
                                               <div className="font-semibold mb-1">{project} - {month.name}</div>
-                                              <div className="text-xs text-muted-foreground mb-2">
-                                                Alokováno: {engineers.length} konstruktérů
+                                              <div className="text-xs text-muted-foreground mb-2 space-y-0.5">
+                                                <div>Alokováno: {engineers.length} konstruktérů</div>
+                                                {tentativeCount > 0 && (
+                                                  <div className="text-yellow-400">⚠ Předběžně: {tentativeCount}</div>
+                                                )}
+                                                {partialCount > 0 && (
+                                                  <div className="text-orange-400">◐ Částečně: {partialCount}</div>
+                                                )}
                                               </div>
                                               <div className="flex flex-col gap-0.5 max-h-[200px] overflow-y-auto">
                                                 {engineers.map(eng => (
-                                                  <span key={eng} className="text-xs">{eng}</span>
+                                                  <div key={eng.name} className="text-xs flex items-center gap-1.5">
+                                                    <span className={eng.isTentative ? 'text-yellow-400' : ''}>{eng.name}</span>
+                                                    {eng.isPartial && (
+                                                      <span className="text-orange-400 text-[10px]">(částečně)</span>
+                                                    )}
+                                                    {eng.isTentative && (
+                                                      <span className="text-yellow-400 text-[10px]">(předběžně)</span>
+                                                    )}
+                                                  </div>
                                                 ))}
                                               </div>
                                             </div>
