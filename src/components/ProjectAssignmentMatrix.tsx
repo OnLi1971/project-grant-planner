@@ -575,8 +575,8 @@ export const ProjectAssignmentMatrix = ({
   const getAllocationsForProject = useCallback((projectName: string): AllocationEntry[] => {
     const allocations: AllocationEntry[] = [];
     
-    // Use all engineers from matrixData, not just filtered ones
-    Object.keys(matrixData).forEach(engineer => {
+    // Use only filtered engineers to respect active filters
+    filteredEngineers.forEach(engineer => {
       weeks.forEach(week => {
         const projectData = matrixData[engineer][week];
         if (projectData?.projekt === projectName && projectData.hours > 0) {
@@ -591,7 +591,7 @@ export const ProjectAssignmentMatrix = ({
     });
     
     return allocations;
-  }, [matrixData, displayNameMap]);
+  }, [matrixData, displayNameMap, filteredEngineers, weeks]);
 
   // Handle project click to open allocation dialog
   const handleProjectClick = useCallback((projectName: string, e: React.MouseEvent) => {

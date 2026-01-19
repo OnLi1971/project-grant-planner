@@ -196,8 +196,9 @@ export const ProjectAllocationDialog = ({
 
         {/* Allocation table */}
         {allocations.length > 0 ? (
-          <ScrollArea className="flex-1 min-h-0 border rounded-md" style={{ maxHeight: 'calc(90vh - 280px)' }}>
-            <div className="min-w-max">
+          <div className="flex-1 min-h-0 overflow-hidden border rounded-md" style={{ maxHeight: 'calc(90vh - 280px)' }}>
+            <ScrollArea className="h-full">
+              <div className="min-w-max">
               <Table>
                 <TableHeader className="sticky top-0 bg-background z-10">
                   <TableRow>
@@ -276,8 +277,9 @@ export const ProjectAllocationDialog = ({
                   </TableRow>
                 </TableBody>
               </Table>
-            </div>
-          </ScrollArea>
+              </div>
+            </ScrollArea>
+          </div>
         ) : (
           <div className="flex-1 flex items-center justify-center text-muted-foreground">
             Žádné alokace pro tento projekt
