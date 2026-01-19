@@ -196,7 +196,7 @@ export const ProjectAllocationDialog = ({
 
         {/* Allocation table */}
         {allocations.length > 0 ? (
-          <ScrollArea className="flex-1 border rounded-md">
+          <ScrollArea className="flex-1 min-h-0 border rounded-md" style={{ maxHeight: 'calc(90vh - 280px)' }}>
             <Table>
               <TableHeader className="sticky top-0 bg-background z-10">
                 <TableRow>
