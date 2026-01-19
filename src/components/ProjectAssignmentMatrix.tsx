@@ -7,6 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Button } from '@/components/ui/button';
 import { ChevronDown, Filter, History, Save, Trash2, Users } from 'lucide-react';
 import { PlanningHistoryDialog } from './PlanningHistoryDialog';
+import { ProjectAllocationDialog, AllocationEntry } from './ProjectAllocationDialog';
 import { usePlanning } from '@/contexts/PlanningContext';
 import { customers, projectManagers, programs, projects } from '@/data/projectsData';
 import { getWeek } from 'date-fns';
@@ -179,6 +180,10 @@ export const ProjectAssignmentMatrix = ({
   const [filterProgram, setFilterProgram] = useState<string[]>(defaultPrograms);
   const [weekFilters, setWeekFilters] = useState<{ [week: string]: string[] }>({});
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+  
+  // Project allocation dialog state
+  const [projectDialogOpen, setProjectDialogOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<string | null>(null);
   
   // Custom engineer views
   const [filterMode, setFilterMode] = useState<'program' | 'custom'>(defaultFilterMode);
@@ -566,6 +571,35 @@ export const ProjectAssignmentMatrix = ({
     });
   }, [monthlyData, matrixData, displayNameMap, filteredEngineers]);
 
+  // Get all allocations for a specific project across all weeks (for dialog)
+  const getAllocationsForProject = useCallback((projectName: string): AllocationEntry[] => {
+    const allocations: AllocationEntry[] = [];
+    
+    // Use all engineers from matrixData, not just filtered ones
+    Object.keys(matrixData).forEach(engineer => {
+      weeks.forEach(week => {
+        const projectData = matrixData[engineer][week];
+        if (projectData?.projekt === projectName && projectData.hours > 0) {
+          allocations.push({
+            engineer: displayNameMap[engineer] || engineer,
+            week,
+            hours: projectData.hours,
+            isTentative: projectData.isTentative || false
+          });
+        }
+      });
+    });
+    
+    return allocations;
+  }, [matrixData, displayNameMap]);
+
+  // Handle project click to open allocation dialog
+  const handleProjectClick = useCallback((projectName: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedProject(projectName);
+    setProjectDialogOpen(true);
+  }, []);
+
   return (
     <TooltipProvider delayDuration={200}>
     <div className="p-6 space-y-6">
@@ -910,6 +944,7 @@ export const ProjectAssignmentMatrix = ({
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <div 
+                                      onClick={(e) => handleProjectClick(project, e)}
                                       className={`text-xs px-1.5 py-0.5 w-full justify-center font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-md inline-flex items-center cursor-pointer ${getProjectBadgeStyle(project)} ${
                                         isTentative ? 'border-[3px] border-dashed !border-yellow-400' : (isLowCapacity ? 'border-[3px] border-dashed !border-red-500' : '')
                                       }`}
@@ -999,6 +1034,7 @@ export const ProjectAssignmentMatrix = ({
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <div 
+                                        onClick={(e) => handleProjectClick(sortedProjects[0], e)}
                                         className={`text-xs px-1.5 py-0.5 w-full justify-center font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-md inline-flex items-center cursor-pointer ${getProjectBadgeStyle(sortedProjects[0])}`}
                                       >
                                         <span className="truncate max-w-[95px]" title={sortedProjects[0]}>
@@ -1061,6 +1097,7 @@ export const ProjectAssignmentMatrix = ({
                                     <Tooltip key={index}>
                                       <TooltipTrigger asChild>
                                         <div 
+                                          onClick={(e) => handleProjectClick(project, e)}
                                           className={`text-xs px-1 py-0.5 w-full justify-center font-normal opacity-75 rounded-sm inline-flex items-center cursor-pointer ${getProjectBadgeStyle(project)}`}
                                         >
                                           <span className="truncate max-w-[85px] text-xs" title={project}>
@@ -1483,6 +1520,17 @@ export const ProjectAssignmentMatrix = ({
           onOpenChange={setHistoryDialogOpen}
           engineers={engineers}
           projects={projects.map(p => p.code)}
+        />
+        
+        <ProjectAllocationDialog
+          open={projectDialogOpen}
+          onOpenChange={setProjectDialogOpen}
+          projectName={selectedProject || ''}
+          allocations={selectedProject ? getAllocationsForProject(selectedProject) : []}
+          projectInfo={projects.find(p => p.code === selectedProject)}
+          customers={customers}
+          projectManagers={projectManagers}
+          programs={programs}
         />
       </Card>
     </div>
