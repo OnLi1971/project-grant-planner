@@ -1008,31 +1008,41 @@ export const ProjectAssignmentMatrix = ({
                                       {(() => {
                                         const engineers = getEngineersForProjectInMonth(sortedProjects[0], month.name, month.weeks);
                                         const tentativeCount = engineers.filter(e => e.isTentative).length;
-                                        const partialCount = engineers.filter(e => e.isPartial).length;
+                                        const avgHoursPerWeek = month.weeks.length > 0 ? engineers.map(e => e.hours / month.weeks.length) : [];
+                                        const fullCount = engineers.filter((e, i) => avgHoursPerWeek[i] >= 35).length;
+                                        const partialCount = engineers.filter((e, i) => avgHoursPerWeek[i] > 0 && avgHoursPerWeek[i] < 35).length;
                                         return (
                                           <div className="text-sm">
                                             <div className="font-semibold mb-1">{sortedProjects[0]} - {month.name}</div>
                                             <div className="text-xs text-muted-foreground mb-2 space-y-0.5">
                                               <div>Alokováno: {engineers.length} konstruktérů</div>
-                                              {tentativeCount > 0 && (
-                                                <div className="text-yellow-400">⚠ Předběžně: {tentativeCount}</div>
+                                              {fullCount > 0 && (
+                                                <div className="text-green-500">● Plně vytížení: {fullCount}</div>
                                               )}
                                               {partialCount > 0 && (
                                                 <div className="text-orange-400">◐ Částečně: {partialCount}</div>
                                               )}
+                                              {tentativeCount > 0 && (
+                                                <div className="text-yellow-400">⚠ Předběžně: {tentativeCount}</div>
+                                              )}
                                             </div>
                                             <div className="flex flex-col gap-0.5 max-h-[200px] overflow-y-auto">
-                                              {engineers.map(eng => (
-                                                <div key={eng.name} className="text-xs flex items-center gap-1.5">
-                                                  <span className={eng.isTentative ? 'text-yellow-400' : ''}>{eng.name}</span>
-                                                  {eng.isPartial && (
-                                                    <span className="text-orange-400 text-[10px]">(částečně)</span>
-                                                  )}
-                                                  {eng.isTentative && (
-                                                    <span className="text-yellow-400 text-[10px]">(předběžně)</span>
-                                                  )}
-                                                </div>
-                                              ))}
+                                              {engineers.map((eng, i) => {
+                                                const avgHours = avgHoursPerWeek[i] || 0;
+                                                return (
+                                                  <div key={eng.name} className="text-xs flex items-center gap-1.5">
+                                                    <span className={eng.isTentative ? 'text-yellow-400' : ''}>{eng.name}</span>
+                                                    {avgHours >= 35 ? (
+                                                      <span className="text-green-500 text-[10px]">(plně)</span>
+                                                    ) : avgHours > 0 && (
+                                                      <span className="text-orange-400 text-[10px]">({Math.round(avgHours)}h/t)</span>
+                                                    )}
+                                                    {eng.isTentative && (
+                                                      <span className="text-yellow-400 text-[10px]">(předběžně)</span>
+                                                    )}
+                                                  </div>
+                                                );
+                                              })}
                                             </div>
                                           </div>
                                         );
@@ -1056,31 +1066,41 @@ export const ProjectAssignmentMatrix = ({
                                         {(() => {
                                           const engineers = getEngineersForProjectInMonth(project, month.name, month.weeks);
                                           const tentativeCount = engineers.filter(e => e.isTentative).length;
-                                          const partialCount = engineers.filter(e => e.isPartial).length;
+                                          const avgHoursPerWeek = month.weeks.length > 0 ? engineers.map(e => e.hours / month.weeks.length) : [];
+                                          const fullCount = engineers.filter((e, i) => avgHoursPerWeek[i] >= 35).length;
+                                          const partialCount = engineers.filter((e, i) => avgHoursPerWeek[i] > 0 && avgHoursPerWeek[i] < 35).length;
                                           return (
                                             <div className="text-sm">
                                               <div className="font-semibold mb-1">{project} - {month.name}</div>
                                               <div className="text-xs text-muted-foreground mb-2 space-y-0.5">
                                                 <div>Alokováno: {engineers.length} konstruktérů</div>
-                                                {tentativeCount > 0 && (
-                                                  <div className="text-yellow-400">⚠ Předběžně: {tentativeCount}</div>
+                                                {fullCount > 0 && (
+                                                  <div className="text-green-500">● Plně vytížení: {fullCount}</div>
                                                 )}
                                                 {partialCount > 0 && (
                                                   <div className="text-orange-400">◐ Částečně: {partialCount}</div>
                                                 )}
+                                                {tentativeCount > 0 && (
+                                                  <div className="text-yellow-400">⚠ Předběžně: {tentativeCount}</div>
+                                                )}
                                               </div>
                                               <div className="flex flex-col gap-0.5 max-h-[200px] overflow-y-auto">
-                                                {engineers.map(eng => (
-                                                  <div key={eng.name} className="text-xs flex items-center gap-1.5">
-                                                    <span className={eng.isTentative ? 'text-yellow-400' : ''}>{eng.name}</span>
-                                                    {eng.isPartial && (
-                                                      <span className="text-orange-400 text-[10px]">(částečně)</span>
-                                                    )}
-                                                    {eng.isTentative && (
-                                                      <span className="text-yellow-400 text-[10px]">(předběžně)</span>
-                                                    )}
-                                                  </div>
-                                                ))}
+                                                {engineers.map((eng, i) => {
+                                                  const avgHours = avgHoursPerWeek[i] || 0;
+                                                  return (
+                                                    <div key={eng.name} className="text-xs flex items-center gap-1.5">
+                                                      <span className={eng.isTentative ? 'text-yellow-400' : ''}>{eng.name}</span>
+                                                      {avgHours >= 35 ? (
+                                                        <span className="text-green-500 text-[10px]">(plně)</span>
+                                                      ) : avgHours > 0 && (
+                                                        <span className="text-orange-400 text-[10px]">({Math.round(avgHours)}h/t)</span>
+                                                      )}
+                                                      {eng.isTentative && (
+                                                        <span className="text-yellow-400 text-[10px]">(předběžně)</span>
+                                                      )}
+                                                    </div>
+                                                  );
+                                                })}
                                               </div>
                                             </div>
                                           );
