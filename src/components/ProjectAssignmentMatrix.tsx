@@ -926,11 +926,13 @@ export const ProjectAssignmentMatrix = ({
                                       const partialCount = engineers.filter(e => e.hours > 0 && e.hours < 35).length;
                                       const fullCount = engineers.filter(e => e.hours >= 35).length;
                                       const isFreeProject = project === 'FREE';
+                                      const totalHours = engineers.reduce((sum, e) => sum + e.hours, 0);
                                       return (
                                         <div className="text-sm">
                                           <div className="font-semibold mb-1">{project} - {week}</div>
                                           <div className="text-xs text-muted-foreground mb-2 space-y-0.5">
                                             <div>{isFreeProject ? 'Volných:' : 'Alokováno:'} {engineers.length} konstruktérů</div>
+                                            <div className="text-blue-400">📊 Celkem: {totalHours}h</div>
                                             {fullCount > 0 && (
                                               <div className="text-green-500">● {isFreeProject ? 'Volné kapacity' : 'Plně vytížení'}: {fullCount}</div>
                                             )}
@@ -1011,13 +1013,17 @@ export const ProjectAssignmentMatrix = ({
                                         const avgHoursPerWeek = month.weeks.length > 0 ? engineers.map(e => e.hours / month.weeks.length) : [];
                                         const fullCount = engineers.filter((e, i) => avgHoursPerWeek[i] >= 35).length;
                                         const partialCount = engineers.filter((e, i) => avgHoursPerWeek[i] > 0 && avgHoursPerWeek[i] < 35).length;
+                                        const totalHours = engineers.reduce((sum, e) => sum + e.hours, 0);
+                                        const avgHoursPerWeekTotal = month.weeks.length > 0 ? Math.round(totalHours / month.weeks.length) : totalHours;
+                                        const isFreeProject = sortedProjects[0] === 'FREE';
                                         return (
                                           <div className="text-sm">
                                             <div className="font-semibold mb-1">{sortedProjects[0]} - {month.name}</div>
                                             <div className="text-xs text-muted-foreground mb-2 space-y-0.5">
-                                              <div>Alokováno: {engineers.length} konstruktérů</div>
+                                              <div>{isFreeProject ? 'Volných:' : 'Alokováno:'} {engineers.length} konstruktérů</div>
+                                              <div className="text-blue-400">📊 Celkem: {totalHours}h ({avgHoursPerWeekTotal}h/týden)</div>
                                               {fullCount > 0 && (
-                                                <div className="text-green-500">● Plně vytížení: {fullCount}</div>
+                                                <div className="text-green-500">● {isFreeProject ? 'Volné kapacity' : 'Plně vytížení'}: {fullCount}</div>
                                               )}
                                               {partialCount > 0 && (
                                                 <div className="text-orange-400">◐ Částečně: {partialCount}</div>
@@ -1069,13 +1075,17 @@ export const ProjectAssignmentMatrix = ({
                                           const avgHoursPerWeek = month.weeks.length > 0 ? engineers.map(e => e.hours / month.weeks.length) : [];
                                           const fullCount = engineers.filter((e, i) => avgHoursPerWeek[i] >= 35).length;
                                           const partialCount = engineers.filter((e, i) => avgHoursPerWeek[i] > 0 && avgHoursPerWeek[i] < 35).length;
+                                          const totalHours = engineers.reduce((sum, e) => sum + e.hours, 0);
+                                          const avgHoursPerWeekTotal = month.weeks.length > 0 ? Math.round(totalHours / month.weeks.length) : totalHours;
+                                          const isFreeProject = project === 'FREE';
                                           return (
                                             <div className="text-sm">
                                               <div className="font-semibold mb-1">{project} - {month.name}</div>
                                               <div className="text-xs text-muted-foreground mb-2 space-y-0.5">
-                                                <div>Alokováno: {engineers.length} konstruktérů</div>
+                                                <div>{isFreeProject ? 'Volných:' : 'Alokováno:'} {engineers.length} konstruktérů</div>
+                                                <div className="text-blue-400">📊 Celkem: {totalHours}h ({avgHoursPerWeekTotal}h/týden)</div>
                                                 {fullCount > 0 && (
-                                                  <div className="text-green-500">● Plně vytížení: {fullCount}</div>
+                                                  <div className="text-green-500">● {isFreeProject ? 'Volné kapacity' : 'Plně vytížení'}: {fullCount}</div>
                                                 )}
                                                 {partialCount > 0 && (
                                                   <div className="text-orange-400">◐ Částečně: {partialCount}</div>
