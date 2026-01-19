@@ -7,7 +7,7 @@ import {
 } from '@/components/ui/dialog';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Table,
   TableBody,
@@ -277,8 +277,6 @@ export const ProjectAllocationDialog = ({
                 </TableBody>
               </Table>
             </div>
-            <ScrollBar orientation="vertical" />
-            <ScrollBar orientation="horizontal" />
           </ScrollArea>
         ) : (
           <div className="flex-1 flex items-center justify-center text-muted-foreground">
