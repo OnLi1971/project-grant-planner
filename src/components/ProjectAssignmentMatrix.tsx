@@ -924,24 +924,30 @@ export const ProjectAssignmentMatrix = ({
                                     {(() => {
                                       const engineers = getEngineersForProjectInWeek(project, week);
                                       const tentativeCount = engineers.filter(e => e.isTentative).length;
-                                      const partialCount = engineers.filter(e => e.hours > 0 && e.hours < 40).length;
+                                      const partialCount = engineers.filter(e => e.hours > 0 && e.hours < 35).length;
+                                      const fullCount = engineers.filter(e => e.hours >= 35).length;
                                       return (
                                         <div className="text-sm">
                                           <div className="font-semibold mb-1">{project} - {week}</div>
                                           <div className="text-xs text-muted-foreground mb-2 space-y-0.5">
                                             <div>Alokováno: {engineers.length} konstruktérů</div>
-                                            {tentativeCount > 0 && (
-                                              <div className="text-yellow-400">⚠ Předběžně: {tentativeCount}</div>
+                                            {fullCount > 0 && (
+                                              <div className="text-green-500">● Plně vytížení: {fullCount}</div>
                                             )}
                                             {partialCount > 0 && (
                                               <div className="text-orange-400">◐ Částečně: {partialCount}</div>
+                                            )}
+                                            {tentativeCount > 0 && (
+                                              <div className="text-yellow-400">⚠ Předběžně: {tentativeCount}</div>
                                             )}
                                           </div>
                                           <div className="flex flex-col gap-0.5 max-h-[200px] overflow-y-auto">
                                             {engineers.map(eng => (
                                               <div key={eng.name} className="text-xs flex items-center gap-1.5">
                                                 <span className={eng.isTentative ? 'text-yellow-400' : ''}>{eng.name}</span>
-                                                {eng.hours > 0 && eng.hours < 40 && (
+                                                {eng.hours >= 35 ? (
+                                                  <span className="text-green-500 text-[10px]">(plně)</span>
+                                                ) : eng.hours > 0 && (
                                                   <span className="text-orange-400 text-[10px]">({eng.hours}h)</span>
                                                 )}
                                                 {eng.isTentative && (
