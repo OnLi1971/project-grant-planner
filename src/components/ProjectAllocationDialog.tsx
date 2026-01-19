@@ -7,7 +7,7 @@ import {
 } from '@/components/ui/dialog';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import {
   Table,
   TableBody,
@@ -197,84 +197,88 @@ export const ProjectAllocationDialog = ({
         {/* Allocation table */}
         {allocations.length > 0 ? (
           <ScrollArea className="flex-1 min-h-0 border rounded-md" style={{ maxHeight: 'calc(90vh - 280px)' }}>
-            <Table>
-              <TableHeader className="sticky top-0 bg-background z-10">
-                <TableRow>
-                  <TableHead className="sticky left-0 bg-background z-20 min-w-[180px] font-semibold">
-                    Konstruktér
-                  </TableHead>
-                  {weeks.map(week => (
-                    <TableHead key={week} className="text-center min-w-[80px] text-xs">
-                      {week}
+            <div className="min-w-max">
+              <Table>
+                <TableHeader className="sticky top-0 bg-background z-10">
+                  <TableRow>
+                    <TableHead className="sticky left-0 bg-background z-20 min-w-[180px] font-semibold">
+                      Konstruktér
                     </TableHead>
+                    {weeks.map(week => (
+                      <TableHead key={week} className="text-center min-w-[80px] text-xs">
+                        {week}
+                      </TableHead>
+                    ))}
+                    <TableHead className="text-center min-w-[80px] font-semibold bg-muted/30">
+                      Celkem
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {engineers.map((engineer, index) => (
+                    <TableRow key={engineer} className={index % 2 === 1 ? 'bg-muted/20' : ''}>
+                      <TableCell className="sticky left-0 bg-inherit z-10 font-medium">
+                        {engineer}
+                      </TableCell>
+                      {weeks.map(week => {
+                        const allocation = allocationMatrix[engineer]?.[week];
+                        const hasAllocation = allocation && allocation.hours > 0;
+                        const isFullyAllocated = allocation?.hours >= 35;
+                        
+                        return (
+                          <TableCell 
+                            key={week} 
+                            className={`text-center text-sm ${
+                              hasAllocation 
+                                ? allocation.isTentative 
+                                  ? 'bg-yellow-500/20' 
+                                  : isFullyAllocated 
+                                    ? 'bg-green-500/10' 
+                                    : 'bg-orange-500/10'
+                                : ''
+                            }`}
+                          >
+                            {hasAllocation ? (
+                              <span className={`font-medium ${
+                                allocation.isTentative 
+                                  ? 'text-yellow-600' 
+                                  : isFullyAllocated 
+                                    ? 'text-green-600' 
+                                    : 'text-orange-600'
+                              }`}>
+                                {allocation.hours}h
+                                {allocation.isTentative && <span className="text-[10px] ml-0.5">?</span>}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground/30">-</span>
+                            )}
+                          </TableCell>
+                        );
+                      })}
+                      <TableCell className="text-center font-bold bg-muted/30">
+                        {rowTotals[engineer]}h
+                      </TableCell>
+                    </TableRow>
                   ))}
-                  <TableHead className="text-center min-w-[80px] font-semibold bg-muted/30">
-                    Celkem
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {engineers.map((engineer, index) => (
-                  <TableRow key={engineer} className={index % 2 === 1 ? 'bg-muted/20' : ''}>
-                    <TableCell className="sticky left-0 bg-inherit z-10 font-medium">
-                      {engineer}
+                  {/* Column totals row */}
+                  <TableRow className="bg-muted/50 border-t-2">
+                    <TableCell className="sticky left-0 bg-muted/50 z-10 font-bold">
+                      Celkem
                     </TableCell>
-                    {weeks.map(week => {
-                      const allocation = allocationMatrix[engineer]?.[week];
-                      const hasAllocation = allocation && allocation.hours > 0;
-                      const isFullyAllocated = allocation?.hours >= 35;
-                      
-                      return (
-                        <TableCell 
-                          key={week} 
-                          className={`text-center text-sm ${
-                            hasAllocation 
-                              ? allocation.isTentative 
-                                ? 'bg-yellow-500/20' 
-                                : isFullyAllocated 
-                                  ? 'bg-green-500/10' 
-                                  : 'bg-orange-500/10'
-                              : ''
-                          }`}
-                        >
-                          {hasAllocation ? (
-                            <span className={`font-medium ${
-                              allocation.isTentative 
-                                ? 'text-yellow-600' 
-                                : isFullyAllocated 
-                                  ? 'text-green-600' 
-                                  : 'text-orange-600'
-                            }`}>
-                              {allocation.hours}h
-                              {allocation.isTentative && <span className="text-[10px] ml-0.5">?</span>}
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground/30">-</span>
-                          )}
-                        </TableCell>
-                      );
-                    })}
-                    <TableCell className="text-center font-bold bg-muted/30">
-                      {rowTotals[engineer]}h
+                    {weeks.map(week => (
+                      <TableCell key={week} className="text-center font-bold">
+                        {columnTotals[week]}h
+                      </TableCell>
+                    ))}
+                    <TableCell className="text-center font-bold bg-primary/10 text-primary">
+                      {stats.totalHours}h
                     </TableCell>
                   </TableRow>
-                ))}
-                {/* Column totals row */}
-                <TableRow className="bg-muted/50 border-t-2">
-                  <TableCell className="sticky left-0 bg-muted/50 z-10 font-bold">
-                    Celkem
-                  </TableCell>
-                  {weeks.map(week => (
-                    <TableCell key={week} className="text-center font-bold">
-                      {columnTotals[week]}h
-                    </TableCell>
-                  ))}
-                  <TableCell className="text-center font-bold bg-primary/10 text-primary">
-                    {stats.totalHours}h
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
+                </TableBody>
+              </Table>
+            </div>
+            <ScrollBar orientation="vertical" />
+            <ScrollBar orientation="horizontal" />
           </ScrollArea>
         ) : (
           <div className="flex-1 flex items-center justify-center text-muted-foreground">
