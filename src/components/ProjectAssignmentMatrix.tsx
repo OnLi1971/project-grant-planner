@@ -1323,7 +1323,8 @@ export const ProjectAssignmentMatrix = ({
                     })
                   )}
                 </tr>
-                {/* Summary row for max free capacity (FREE + tentative) */}
+                {/* Summary row for max free capacity (FREE + tentative) - hide in customer view */}
+                {!customerViewMode && (
                 <tr className="bg-primary/5 border-t border-primary/20">
                   <td className="border border-border p-2 font-bold sticky left-0 bg-primary/5 z-10 text-foreground text-sm">
                     Volné kapacity max.
@@ -1381,7 +1382,9 @@ export const ProjectAssignmentMatrix = ({
                     })
                   )}
                 </tr>
-                {/* Summary row for project hours */}
+                )}
+                {/* Summary row for project hours - hide in customer view */}
+                {!customerViewMode && (
                 <tr className="bg-secondary/10 border-t-2 border-secondary/30">
                   <td className="border border-border p-2 font-bold sticky left-0 bg-secondary/10 z-10 text-foreground text-sm">
                     Počet hodin
@@ -1446,7 +1449,9 @@ export const ProjectAssignmentMatrix = ({
                     })
                   )}
                 </tr>
-                {/* Summary row for utilization percentage */}
+                )}
+                {/* Summary row for utilization percentage - hide in customer view */}
+                {!customerViewMode && (
                 <tr className="bg-accent/10 border-t-2 border-accent/30">
                   <td className="border border-border p-2 font-bold sticky left-0 bg-accent/10 z-10 text-foreground text-sm">
                     Vytížení
@@ -1584,7 +1589,9 @@ export const ProjectAssignmentMatrix = ({
                     })
                   )}
                 </tr>
-                {/* Legend row */}
+                )}
+                {/* Legend row - hide in customer view */}
+                {!customerViewMode && (
                 <tr className="bg-muted/30 border-t border-border">
                   <td className="border border-border p-2 font-medium sticky left-0 bg-muted/30 z-10 text-foreground text-xs">
                     Legenda:
@@ -1615,6 +1622,7 @@ export const ProjectAssignmentMatrix = ({
                     </div>
                   </td>
                 </tr>
+                )}
               </tbody>
             </table>
           </div>
