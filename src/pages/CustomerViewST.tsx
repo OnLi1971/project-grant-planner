@@ -5,6 +5,7 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { Card } from '@/components/ui/card';
 import { format } from 'date-fns';
 import { cs } from 'date-fns/locale';
+import { RAIL_EL_ENGINEERS } from '@/constants/railElEngineers';
 
 const CustomerViewST = () => {
   const today = format(new Date(), 'd. MMMM yyyy', { locale: cs });
@@ -33,7 +34,7 @@ const CustomerViewST = () => {
             defaultViewMode="months" 
             defaultPrograms={['RAIL', 'MACH']} 
             defaultFilterMode="custom"
-            defaultCustomViewId="58440758-41f8-438c-a8dd-cc03d38b3789"
+            defaultSelectedEngineers={RAIL_EL_ENGINEERS}
             customerViewMode="ST"
           />
         </div>
