@@ -177,18 +177,32 @@ const getShortMonthName = (fullName: string): string => {
   return `${shortMonthNames[month] || parts[0]} ${year}`;
 };
 
+// Customer view constants - which projects are visible for each customer prefix
+const CUSTOMER_VISIBLE_PROJECTS: Record<string, string[]> = {
+  'ST': ['FREE', 'OVER', 'DOVOLENÁ', 'NEMOC']
+};
+
+const isProjectVisibleForCustomer = (project: string, customerPrefix: string | undefined): boolean => {
+  if (!customerPrefix) return true; // Normal view - everything visible
+  
+  const alwaysVisible = CUSTOMER_VISIBLE_PROJECTS[customerPrefix] || [];
+  return project.startsWith(`${customerPrefix}_`) || alwaysVisible.includes(project);
+};
+
 interface ProjectAssignmentMatrixProps {
   defaultViewMode?: 'weeks' | 'months';
   defaultPrograms?: string[];
   defaultFilterMode?: 'program' | 'custom';
   defaultCustomViewId?: string;
+  customerViewMode?: string; // Customer prefix (e.g., "ST") for customer-specific view
 }
 
 export const ProjectAssignmentMatrix = ({ 
   defaultViewMode = 'months',
   defaultPrograms = ['RAIL', 'MACH'],
   defaultFilterMode = 'custom',
-  defaultCustomViewId
+  defaultCustomViewId,
+  customerViewMode
 }: ProjectAssignmentMatrixProps) => {
   const { planningData, engineers } = usePlanning();
   const [viewMode, setViewMode] = useState<'weeks' | 'months'>(defaultViewMode);
@@ -643,32 +657,41 @@ export const ProjectAssignmentMatrix = ({
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-2xl font-bold">Matice plánování projektů</CardTitle>
+            <CardTitle className="text-2xl font-bold">
+              {customerViewMode ? 'Přehled kapacit' : 'Matice plánování projektů'}
+            </CardTitle>
             <div className="flex items-center gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setHistoryDialogOpen(true)}
-                className="gap-2"
-              >
-                <History className="h-4 w-4" />
-                Historie změn
-              </Button>
-              <label className="text-sm font-medium">Zobrazení:</label>
-              <Select value={viewMode} onValueChange={(value: 'weeks' | 'months') => setViewMode(value)}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="weeks">Týdny</SelectItem>
-                  <SelectItem value="months">Měsíce</SelectItem>
-                </SelectContent>
-              </Select>
+              {!customerViewMode && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setHistoryDialogOpen(true)}
+                  className="gap-2"
+                >
+                  <History className="h-4 w-4" />
+                  Historie změn
+                </Button>
+              )}
+              {!customerViewMode && (
+                <>
+                  <label className="text-sm font-medium">Zobrazení:</label>
+                  <Select value={viewMode} onValueChange={(value: 'weeks' | 'months') => setViewMode(value)}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="weeks">Týdny</SelectItem>
+                      <SelectItem value="months">Měsíce</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </>
+              )}
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          {/* Filters */}
+          {/* Filters - hidden in customer view */}
+          {!customerViewMode && (
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div>
               <label className="text-sm font-medium mb-2 block">Společnost</label>
@@ -862,6 +885,7 @@ export const ProjectAssignmentMatrix = ({
               </Popover>
             </div>
           </div>
+          )}
 
           {/* Matrix Table */}
           <div className="overflow-x-auto overflow-y-auto max-h-[85vh]">
@@ -1068,130 +1092,169 @@ export const ProjectAssignmentMatrix = ({
                               {hasProjects && (
                                 <div className="flex flex-col gap-1">
                                   {/* Main project */}
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
+                                  {(() => {
+                                    const mainProject = sortedProjects[0];
+                                    const showText = isProjectVisibleForCustomer(mainProject, customerViewMode);
+                                    
+                                    const badgeContent = (
                                       <div 
-                                        onClick={(e) => handleProjectClick(sortedProjects[0], e)}
-                                        className={`text-xs px-1.5 py-0.5 w-full justify-center font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-md inline-flex items-center cursor-pointer ${getProjectBadgeStyle(sortedProjects[0])}`}
+                                        onClick={customerViewMode ? undefined : (e) => handleProjectClick(mainProject, e)}
+                                        className={`text-xs px-1.5 py-0.5 w-full justify-center font-medium shadow-sm ${!customerViewMode ? 'hover:shadow-md cursor-pointer' : ''} transition-all duration-200 rounded-md inline-flex items-center ${getProjectBadgeStyle(mainProject)}`}
                                       >
-                                        <span className="truncate max-w-[55px]" title={sortedProjects[0]}>
-                                          {sortedProjects[0]}
-                                        </span>
+                                        {showText ? (
+                                          <span className="truncate max-w-[55px]" title={mainProject}>
+                                            {mainProject}
+                                          </span>
+                                        ) : (
+                                          <span className="opacity-0">-</span>
+                                        )}
                                       </div>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="top" className="max-w-[350px]">
-                                      {(() => {
-                                        const engineers = getEngineersForProjectInMonth(sortedProjects[0], month.name, month.weeks);
-                                        const tentativeCount = engineers.filter(e => e.isTentative).length;
-                                        const avgHoursPerWeek = month.weeks.length > 0 ? engineers.map(e => e.hours / month.weeks.length) : [];
-                                        const fullCount = engineers.filter((e, i) => avgHoursPerWeek[i] >= 35).length;
-                                        const partialCount = engineers.filter((e, i) => avgHoursPerWeek[i] > 0 && avgHoursPerWeek[i] < 35).length;
-                                        const totalHours = engineers.reduce((sum, e) => sum + e.hours, 0);
-                                        const avgHoursPerWeekTotal = month.weeks.length > 0 ? Math.round(totalHours / month.weeks.length) : totalHours;
-                                        const isFreeProject = sortedProjects[0] === 'FREE';
-                                        return (
-                                          <div className="text-sm">
-                                            <div className="font-semibold mb-1">{sortedProjects[0]} - {month.name}</div>
-                                            <div className="text-xs text-muted-foreground mb-2 space-y-0.5">
-                                              <div>{isFreeProject ? 'Volných:' : 'Alokováno:'} {engineers.length} konstruktérů</div>
-                                              <div className="text-blue-400">📊 Celkem: {totalHours}h ({avgHoursPerWeekTotal}h/týden)</div>
-                                              {fullCount > 0 && (
-                                                <div className="text-green-500">● {isFreeProject ? 'Volné kapacity' : 'Plně vytížení'}: {fullCount}</div>
-                                              )}
-                                              {partialCount > 0 && (
-                                                <div className="text-orange-400">◐ Částečně: {partialCount}</div>
-                                              )}
-                                              {tentativeCount > 0 && (
-                                                <div className="text-yellow-400">⚠ Předběžně: {tentativeCount}</div>
-                                              )}
-                                            </div>
-                                            <div className="flex flex-col gap-0.5 max-h-[200px] overflow-y-auto">
-                                              {engineers.map((eng, i) => {
-                                                const avgHours = avgHoursPerWeek[i] || 0;
-                                                return (
-                                                  <div key={eng.name} className="text-xs flex items-center gap-1.5">
-                                                    <span className={eng.isTentative ? 'text-yellow-400' : ''}>{eng.name}</span>
-                                                    {avgHours >= 35 ? (
-                                                      <span className="text-green-500 text-[10px]">(plně)</span>
-                                                    ) : avgHours > 0 && (
-                                                      <span className="text-orange-400 text-[10px]">({Math.round(avgHours)}h/t)</span>
-                                                    )}
-                                                    {eng.isTentative && (
-                                                      <span className="text-yellow-400 text-[10px]">(předběžně)</span>
-                                                    )}
-                                                  </div>
-                                                );
-                                              })}
-                                            </div>
-                                          </div>
-                                        );
-                                      })()}
-                                    </TooltipContent>
-                                  </Tooltip>
+                                    );
+                                    
+                                    // In customer view, no tooltip
+                                    if (customerViewMode) {
+                                      return badgeContent;
+                                    }
+                                    
+                                    // Normal view with tooltip
+                                    return (
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          {badgeContent}
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top" className="max-w-[350px]">
+                                          {(() => {
+                                            const engineers = getEngineersForProjectInMonth(mainProject, month.name, month.weeks);
+                                            const tentativeCount = engineers.filter(e => e.isTentative).length;
+                                            const avgHoursPerWeek = month.weeks.length > 0 ? engineers.map(e => e.hours / month.weeks.length) : [];
+                                            const fullCount = engineers.filter((e, i) => avgHoursPerWeek[i] >= 35).length;
+                                            const partialCount = engineers.filter((e, i) => avgHoursPerWeek[i] > 0 && avgHoursPerWeek[i] < 35).length;
+                                            const totalHours = engineers.reduce((sum, e) => sum + e.hours, 0);
+                                            const avgHoursPerWeekTotal = month.weeks.length > 0 ? Math.round(totalHours / month.weeks.length) : totalHours;
+                                            const isFreeProject = mainProject === 'FREE';
+                                            return (
+                                              <div className="text-sm">
+                                                <div className="font-semibold mb-1">{mainProject} - {month.name}</div>
+                                                <div className="text-xs text-muted-foreground mb-2 space-y-0.5">
+                                                  <div>{isFreeProject ? 'Volných:' : 'Alokováno:'} {engineers.length} konstruktérů</div>
+                                                  <div className="text-blue-400">📊 Celkem: {totalHours}h ({avgHoursPerWeekTotal}h/týden)</div>
+                                                  {fullCount > 0 && (
+                                                    <div className="text-green-500">● {isFreeProject ? 'Volné kapacity' : 'Plně vytížení'}: {fullCount}</div>
+                                                  )}
+                                                  {partialCount > 0 && (
+                                                    <div className="text-orange-400">◐ Částečně: {partialCount}</div>
+                                                  )}
+                                                  {tentativeCount > 0 && (
+                                                    <div className="text-yellow-400">⚠ Předběžně: {tentativeCount}</div>
+                                                  )}
+                                                </div>
+                                                <div className="flex flex-col gap-0.5 max-h-[200px] overflow-y-auto">
+                                                  {engineers.map((eng, i) => {
+                                                    const avgHours = avgHoursPerWeek[i] || 0;
+                                                    return (
+                                                      <div key={eng.name} className="text-xs flex items-center gap-1.5">
+                                                        <span className={eng.isTentative ? 'text-yellow-400' : ''}>{eng.name}</span>
+                                                        {avgHours >= 35 ? (
+                                                          <span className="text-green-500 text-[10px]">(plně)</span>
+                                                        ) : avgHours > 0 && (
+                                                          <span className="text-orange-400 text-[10px]">({Math.round(avgHours)}h/t)</span>
+                                                        )}
+                                                        {eng.isTentative && (
+                                                          <span className="text-yellow-400 text-[10px]">(předběžně)</span>
+                                                        )}
+                                                      </div>
+                                                    );
+                                                  })}
+                                                </div>
+                                              </div>
+                                            );
+                                          })()}
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    );
+                                  })()}
                                   
                                   {/* Additional projects */}
-                                  {sortedProjects.slice(1).map((project, index) => (
-                                    <Tooltip key={index}>
-                                      <TooltipTrigger asChild>
-                                        <div 
-                                          onClick={(e) => handleProjectClick(project, e)}
-                                          className={`text-xs px-1 py-0.5 w-full justify-center font-normal opacity-75 rounded-sm inline-flex items-center cursor-pointer ${getProjectBadgeStyle(project)}`}
-                                        >
+                                  {sortedProjects.slice(1).map((project, index) => {
+                                    const showText = isProjectVisibleForCustomer(project, customerViewMode);
+                                    
+                                    const badgeContent = (
+                                      <div 
+                                        onClick={customerViewMode ? undefined : (e) => handleProjectClick(project, e)}
+                                        className={`text-xs px-1 py-0.5 w-full justify-center font-normal opacity-75 rounded-sm inline-flex items-center ${!customerViewMode ? 'cursor-pointer' : ''} ${getProjectBadgeStyle(project)}`}
+                                      >
+                                        {showText ? (
                                           <span className="truncate max-w-[85px] text-xs" title={project}>
                                             {project}
                                           </span>
-                                        </div>
-                                      </TooltipTrigger>
-                                      <TooltipContent side="top" className="max-w-[350px]">
-                                        {(() => {
-                                          const engineers = getEngineersForProjectInMonth(project, month.name, month.weeks);
-                                          const tentativeCount = engineers.filter(e => e.isTentative).length;
-                                          const avgHoursPerWeek = month.weeks.length > 0 ? engineers.map(e => e.hours / month.weeks.length) : [];
-                                          const fullCount = engineers.filter((e, i) => avgHoursPerWeek[i] >= 35).length;
-                                          const partialCount = engineers.filter((e, i) => avgHoursPerWeek[i] > 0 && avgHoursPerWeek[i] < 35).length;
-                                          const totalHours = engineers.reduce((sum, e) => sum + e.hours, 0);
-                                          const avgHoursPerWeekTotal = month.weeks.length > 0 ? Math.round(totalHours / month.weeks.length) : totalHours;
-                                          const isFreeProject = project === 'FREE';
-                                          return (
-                                            <div className="text-sm">
-                                              <div className="font-semibold mb-1">{project} - {month.name}</div>
-                                              <div className="text-xs text-muted-foreground mb-2 space-y-0.5">
-                                                <div>{isFreeProject ? 'Volných:' : 'Alokováno:'} {engineers.length} konstruktérů</div>
-                                                <div className="text-blue-400">📊 Celkem: {totalHours}h ({avgHoursPerWeekTotal}h/týden)</div>
-                                                {fullCount > 0 && (
-                                                  <div className="text-green-500">● {isFreeProject ? 'Volné kapacity' : 'Plně vytížení'}: {fullCount}</div>
-                                                )}
-                                                {partialCount > 0 && (
-                                                  <div className="text-orange-400">◐ Částečně: {partialCount}</div>
-                                                )}
-                                                {tentativeCount > 0 && (
-                                                  <div className="text-yellow-400">⚠ Předběžně: {tentativeCount}</div>
-                                                )}
+                                        ) : (
+                                          <span className="opacity-0">-</span>
+                                        )}
+                                      </div>
+                                    );
+                                    
+                                    // In customer view, no tooltip
+                                    if (customerViewMode) {
+                                      return <React.Fragment key={index}>{badgeContent}</React.Fragment>;
+                                    }
+                                    
+                                    // Normal view with tooltip
+                                    return (
+                                      <Tooltip key={index}>
+                                        <TooltipTrigger asChild>
+                                          {badgeContent}
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top" className="max-w-[350px]">
+                                          {(() => {
+                                            const engineers = getEngineersForProjectInMonth(project, month.name, month.weeks);
+                                            const tentativeCount = engineers.filter(e => e.isTentative).length;
+                                            const avgHoursPerWeek = month.weeks.length > 0 ? engineers.map(e => e.hours / month.weeks.length) : [];
+                                            const fullCount = engineers.filter((e, i) => avgHoursPerWeek[i] >= 35).length;
+                                            const partialCount = engineers.filter((e, i) => avgHoursPerWeek[i] > 0 && avgHoursPerWeek[i] < 35).length;
+                                            const totalHours = engineers.reduce((sum, e) => sum + e.hours, 0);
+                                            const avgHoursPerWeekTotal = month.weeks.length > 0 ? Math.round(totalHours / month.weeks.length) : totalHours;
+                                            const isFreeProject = project === 'FREE';
+                                            return (
+                                              <div className="text-sm">
+                                                <div className="font-semibold mb-1">{project} - {month.name}</div>
+                                                <div className="text-xs text-muted-foreground mb-2 space-y-0.5">
+                                                  <div>{isFreeProject ? 'Volných:' : 'Alokováno:'} {engineers.length} konstruktérů</div>
+                                                  <div className="text-blue-400">📊 Celkem: {totalHours}h ({avgHoursPerWeekTotal}h/týden)</div>
+                                                  {fullCount > 0 && (
+                                                    <div className="text-green-500">● {isFreeProject ? 'Volné kapacity' : 'Plně vytížení'}: {fullCount}</div>
+                                                  )}
+                                                  {partialCount > 0 && (
+                                                    <div className="text-orange-400">◐ Částečně: {partialCount}</div>
+                                                  )}
+                                                  {tentativeCount > 0 && (
+                                                    <div className="text-yellow-400">⚠ Předběžně: {tentativeCount}</div>
+                                                  )}
+                                                </div>
+                                                <div className="flex flex-col gap-0.5 max-h-[200px] overflow-y-auto">
+                                                  {engineers.map((eng, i) => {
+                                                    const avgHours = avgHoursPerWeek[i] || 0;
+                                                    return (
+                                                      <div key={eng.name} className="text-xs flex items-center gap-1.5">
+                                                        <span className={eng.isTentative ? 'text-yellow-400' : ''}>{eng.name}</span>
+                                                        {avgHours >= 35 ? (
+                                                          <span className="text-green-500 text-[10px]">(plně)</span>
+                                                        ) : avgHours > 0 && (
+                                                          <span className="text-orange-400 text-[10px]">({Math.round(avgHours)}h/t)</span>
+                                                        )}
+                                                        {eng.isTentative && (
+                                                          <span className="text-yellow-400 text-[10px]">(předběžně)</span>
+                                                        )}
+                                                      </div>
+                                                    );
+                                                  })}
+                                                </div>
                                               </div>
-                                              <div className="flex flex-col gap-0.5 max-h-[200px] overflow-y-auto">
-                                                {engineers.map((eng, i) => {
-                                                  const avgHours = avgHoursPerWeek[i] || 0;
-                                                  return (
-                                                    <div key={eng.name} className="text-xs flex items-center gap-1.5">
-                                                      <span className={eng.isTentative ? 'text-yellow-400' : ''}>{eng.name}</span>
-                                                      {avgHours >= 35 ? (
-                                                        <span className="text-green-500 text-[10px]">(plně)</span>
-                                                      ) : avgHours > 0 && (
-                                                        <span className="text-orange-400 text-[10px]">({Math.round(avgHours)}h/t)</span>
-                                                      )}
-                                                      {eng.isTentative && (
-                                                        <span className="text-yellow-400 text-[10px]">(předběžně)</span>
-                                                      )}
-                                                    </div>
-                                                  );
-                                                })}
-                                              </div>
-                                            </div>
-                                          );
-                                        })()}
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  ))}
+                                            );
+                                          })()}
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    );
+                                  })}
                                 </div>
                               )}
                            </td>
