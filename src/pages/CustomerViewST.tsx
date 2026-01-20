@@ -31,8 +31,9 @@ const CustomerViewST = () => {
         <div className="mx-6">
           <ProjectAssignmentMatrix 
             defaultViewMode="months" 
-            defaultPrograms={['RAIL']} 
-            defaultFilterMode="program"
+            defaultPrograms={['RAIL', 'MACH']} 
+            defaultFilterMode="custom"
+            defaultCustomViewId="58440758-41f8-438c-a8dd-cc03d38b3789"
             customerViewMode="ST"
           />
         </div>
