@@ -194,6 +194,7 @@ interface ProjectAssignmentMatrixProps {
   defaultPrograms?: string[];
   defaultFilterMode?: 'program' | 'custom';
   defaultCustomViewId?: string;
+  defaultSelectedEngineers?: string[]; // Hardcoded list of engineers (for public pages without DB access)
   customerViewMode?: string; // Customer prefix (e.g., "ST") for customer-specific view
 }
 
@@ -202,6 +203,7 @@ export const ProjectAssignmentMatrix = ({
   defaultPrograms = ['RAIL', 'MACH'],
   defaultFilterMode = 'custom',
   defaultCustomViewId,
+  defaultSelectedEngineers,
   customerViewMode
 }: ProjectAssignmentMatrixProps) => {
   const { planningData, engineers } = usePlanning();
@@ -222,16 +224,23 @@ export const ProjectAssignmentMatrix = ({
   const [selectedViewId, setSelectedViewId] = useState<string | null>(null);
   const { customViews, saveView, deleteView, isLoading: isLoadingViews } = useCustomEngineerViews();
 
-  // Auto-load default custom view when views are loaded
+  // Auto-load default selected engineers (hardcoded list for public pages)
   useEffect(() => {
-    if (defaultCustomViewId && customViews.length > 0 && !selectedViewId) {
+    if (defaultSelectedEngineers && defaultSelectedEngineers.length > 0 && selectedCustomEngineers.length === 0) {
+      setSelectedCustomEngineers(defaultSelectedEngineers);
+    }
+  }, [defaultSelectedEngineers]);
+
+  // Auto-load default custom view when views are loaded (for logged-in users)
+  useEffect(() => {
+    if (!defaultSelectedEngineers && defaultCustomViewId && customViews.length > 0 && !selectedViewId) {
       const view = customViews.find(v => v.id === defaultCustomViewId);
       if (view) {
         setSelectedCustomEngineers(view.engineers);
         setSelectedViewId(defaultCustomViewId);
       }
     }
-  }, [defaultCustomViewId, customViews, selectedViewId]);
+  }, [defaultCustomViewId, customViews, selectedViewId, defaultSelectedEngineers]);
 
   const displayNameMap = useMemo(() => {
     const map: Record<string, string> = {};
