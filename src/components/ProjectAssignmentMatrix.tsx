@@ -574,9 +574,21 @@ export const ProjectAssignmentMatrix = ({
   // Get all allocations for a specific project across all weeks (for dialog)
   const getAllocationsForProject = useCallback((projectName: string): AllocationEntry[] => {
     const allocations: AllocationEntry[] = [];
+    const alternativeActivities = ['DOVOLENÁ', 'NEMOC', 'OVER'];
     
-    // Use only filtered engineers to respect active filters
+    // First pass: find engineers with at least one allocation on this project
+    const engineersOnProject = new Set<string>();
     filteredEngineers.forEach(engineer => {
+      weeks.forEach(week => {
+        const projectData = matrixData[engineer][week];
+        if (projectData?.projekt === projectName && projectData.hours > 0) {
+          engineersOnProject.add(engineer);
+        }
+      });
+    });
+    
+    // Second pass: for these engineers, add entries for all weeks
+    engineersOnProject.forEach(engineer => {
       weeks.forEach(week => {
         const projectData = matrixData[engineer][week];
         if (projectData?.projekt === projectName && projectData.hours > 0) {
@@ -585,6 +597,15 @@ export const ProjectAssignmentMatrix = ({
             week,
             hours: projectData.hours,
             isTentative: projectData.isTentative || false
+          });
+        } else if (projectData?.projekt && alternativeActivities.includes(projectData.projekt)) {
+          // Add alternative activity entry (vacation, sick leave, overtime)
+          allocations.push({
+            engineer: displayNameMap[engineer] || engineer,
+            week,
+            hours: 0,
+            isTentative: false,
+            alternativeActivity: projectData.projekt
           });
         }
       });
