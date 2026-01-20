@@ -1030,12 +1030,22 @@ export const RevenueOverview = ({
                               REALIZACE ({formatCurrency(realizaceSum)})
                             </p>
                             <div className="space-y-0.5 pl-2">
-                              {realizaceItems.map(item => (
-                                <div key={item.code} className="flex justify-between text-sm gap-4">
-                                  <span className="truncate">{item.code}</span>
-                                  <span className="font-mono text-right">{formatCurrency(item.value)}</span>
-                                </div>
-                              ))}
+                              {realizaceItems.map(item => {
+                                const projectIndex = filteredProjectList.indexOf(item.code);
+                                const color = getProjectColorWithIndex(item.code, projectIndex);
+                                return (
+                                  <div key={item.code} className="flex justify-between text-sm gap-4 items-center">
+                                    <div className="flex items-center gap-1.5 min-w-0">
+                                      <span 
+                                        className="inline-block w-2.5 h-2.5 rounded-sm flex-shrink-0" 
+                                        style={{ backgroundColor: color }}
+                                      />
+                                      <span className="truncate">{item.code}</span>
+                                    </div>
+                                    <span className="font-mono text-right flex-shrink-0">{formatCurrency(item.value)}</span>
+                                  </div>
+                                );
+                              })}
                             </div>
                           </div>
                         )}
@@ -1047,19 +1057,29 @@ export const RevenueOverview = ({
                               PRESALES ({formatCurrency(presalesSum)})
                             </p>
                             <div className="space-y-0.5 pl-2">
-                              {presalesItems.map(item => (
-                                <div key={item.code} className="flex justify-between text-sm gap-4">
-                                  <span className="truncate">
-                                    {item.code}
-                                    {item.probability && (
-                                      <span className="text-xs text-muted-foreground ml-1">
-                                        ({item.probability}%)
+                              {presalesItems.map(item => {
+                                const projectIndex = filteredProjectList.indexOf(item.code);
+                                const color = getProjectColorWithIndex(item.code, projectIndex);
+                                return (
+                                  <div key={item.code} className="flex justify-between text-sm gap-4 items-center">
+                                    <div className="flex items-center gap-1.5 min-w-0">
+                                      <span 
+                                        className="inline-block w-2.5 h-2.5 rounded-sm flex-shrink-0" 
+                                        style={{ backgroundColor: color, opacity: 0.7 }}
+                                      />
+                                      <span className="truncate">
+                                        {item.code}
+                                        {item.probability && (
+                                          <span className="text-xs text-muted-foreground ml-1">
+                                            ({item.probability}%)
+                                          </span>
+                                        )}
                                       </span>
-                                    )}
-                                  </span>
-                                  <span className="font-mono text-right">{formatCurrency(item.value)}</span>
-                                </div>
-                              ))}
+                                    </div>
+                                    <span className="font-mono text-right flex-shrink-0">{formatCurrency(item.value)}</span>
+                                  </div>
+                                );
+                              })}
                             </div>
                           </div>
                         )}
