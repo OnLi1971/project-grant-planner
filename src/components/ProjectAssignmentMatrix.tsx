@@ -185,7 +185,7 @@ interface ProjectAssignmentMatrixProps {
 }
 
 export const ProjectAssignmentMatrix = ({ 
-  defaultViewMode = 'weeks',
+  defaultViewMode = 'months',
   defaultPrograms = ['RAIL', 'MACH'],
   defaultFilterMode = 'custom',
   defaultCustomViewId
