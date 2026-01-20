@@ -161,6 +161,22 @@ const getProjectBadgeStyle = (projekt: string) => {
   return 'bg-gray-500 text-white border-gray-600';
 };
 
+const REGIME_ACTIVITIES = ['DOVOLENÁ', 'NEMOC', 'OVER'];
+
+// Short month names for compact display
+const shortMonthNames: Record<string, string> = {
+  'leden': 'Led', 'únor': 'Úno', 'březen': 'Bře', 'duben': 'Dub',
+  'květen': 'Kvě', 'červen': 'Čvn', 'červenec': 'Čvc', 'srpen': 'Srp',
+  'září': 'Zář', 'říjen': 'Říj', 'listopad': 'Lis', 'prosinec': 'Pro'
+};
+
+const getShortMonthName = (fullName: string): string => {
+  const parts = fullName.split(' ');
+  const month = parts[0].toLowerCase();
+  const year = parts[1]?.slice(-2) || '';
+  return `${shortMonthNames[month] || parts[0]} ${year}`;
+};
+
 interface ProjectAssignmentMatrixProps {
   defaultViewMode?: 'weeks' | 'months';
   defaultPrograms?: string[];
@@ -922,18 +938,18 @@ export const ProjectAssignmentMatrix = ({
                   </>
                 ) : (
                   <tr>
-                    <th className="border-2 border-border p-2 bg-background text-left sticky left-0 sticky top-0 z-30 min-w-[200px] font-semibold text-sm">
+                    <th className="border-2 border-border p-1 bg-background text-left sticky left-0 sticky top-0 z-30 min-w-[140px] font-semibold text-xs">
                       Konstruktér
                     </th>
                     {months.map((month, monthIndex) => (
                       <th 
                         key={month.name} 
-                        className={`border-2 border-border p-2 bg-background text-center font-bold text-base min-w-[150px] sticky top-0 z-20 ${
+                        className={`border-2 border-border p-1 bg-background text-center font-bold text-xs min-w-[70px] sticky top-0 z-20 ${
                           monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                         }`}
                       >
-                        <div className="flex items-center justify-center gap-2">
-                          <span className="text-primary">{month.name}</span>
+                        <div className="flex items-center justify-center">
+                          <span className="text-primary">{getShortMonthName(month.name)}</span>
                         </div>
                       </th>
                     ))}
@@ -943,7 +959,7 @@ export const ProjectAssignmentMatrix = ({
               <tbody>
                 {filteredEngineers.map((engineer, index) => (
                   <tr key={engineer} className={`transition-colors hover:bg-muted/20 ${index % 2 === 1 ? 'bg-muted/30' : 'bg-background'}`}>
-                    <td className="border border-border p-2 font-semibold sticky left-0 bg-inherit z-10 text-foreground text-sm">
+                    <td className="border border-border p-1 font-semibold sticky left-0 bg-inherit z-10 text-foreground text-xs">
                       {displayNameMap[engineer] || engineer}
                     </td>
                     {viewMode === 'weeks' ? (
@@ -1045,7 +1061,7 @@ export const ProjectAssignmentMatrix = ({
                         return (
                            <td 
                              key={month.name} 
-                             className={`border border-border p-1.5 text-center align-top ${
+                             className={`border border-border p-0.5 text-center align-top ${
                                monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                              }`}
                            >
@@ -1058,7 +1074,7 @@ export const ProjectAssignmentMatrix = ({
                                         onClick={(e) => handleProjectClick(sortedProjects[0], e)}
                                         className={`text-xs px-1.5 py-0.5 w-full justify-center font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-md inline-flex items-center cursor-pointer ${getProjectBadgeStyle(sortedProjects[0])}`}
                                       >
-                                        <span className="truncate max-w-[95px]" title={sortedProjects[0]}>
+                                        <span className="truncate max-w-[55px]" title={sortedProjects[0]}>
                                           {sortedProjects[0]}
                                         </span>
                                       </div>
