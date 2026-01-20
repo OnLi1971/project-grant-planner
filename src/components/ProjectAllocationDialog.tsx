@@ -167,17 +167,11 @@ export const ProjectAllocationDialog = ({
         )}
 
         {/* Statistics cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 py-2">
+        <div className="grid grid-cols-3 gap-2 py-2">
           <Card className="bg-muted/30">
             <CardContent className="p-2 text-center">
               <div className="text-lg font-bold text-primary">{stats.totalHours}h</div>
               <div className="text-[10px] text-muted-foreground">Celkem hodin</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-muted/30">
-            <CardContent className="p-2 text-center">
-              <div className="text-lg font-bold text-foreground">{stats.uniqueEngineers}</div>
-              <div className="text-[10px] text-muted-foreground">Konstruktérů</div>
             </CardContent>
           </Card>
           <Card className="bg-green-500/10">
