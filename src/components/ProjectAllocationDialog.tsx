@@ -8,6 +8,7 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 import {
   Table,
   TableBody,
@@ -23,6 +24,7 @@ export interface AllocationEntry {
   week: string;
   hours: number;
   isTentative: boolean;
+  alternativeActivity?: string; // 'DOVOLENÁ', 'NEMOC', 'OVER'
 }
 
 interface ProjectAllocationDialogProps {
@@ -51,6 +53,24 @@ const monthWeekMapping: { [key: string]: { month: number; name: string } } = {
   '40': { month: 10, name: 'říjen' }, '41': { month: 10, name: 'říjen' }, '42': { month: 10, name: 'říjen' }, '43': { month: 10, name: 'říjen' }, '44': { month: 10, name: 'říjen' },
   '45': { month: 11, name: 'listopad' }, '46': { month: 11, name: 'listopad' }, '47': { month: 11, name: 'listopad' }, '48': { month: 11, name: 'listopad' },
   '49': { month: 12, name: 'prosinec' }, '50': { month: 12, name: 'prosinec' }, '51': { month: 12, name: 'prosinec' }, '52': { month: 12, name: 'prosinec' }
+};
+// Helper functions for alternative activities
+const getActivityLabel = (activity: string): string => {
+  switch (activity) {
+    case 'DOVOLENÁ': return 'DOV';
+    case 'NEMOC': return 'NEM';
+    case 'OVER': return 'OVR';
+    default: return '-';
+  }
+};
+
+const getActivityStyle = (activity: string): string => {
+  switch (activity) {
+    case 'DOVOLENÁ': return 'bg-blue-100 text-blue-700 border-blue-300 dark:bg-blue-900/30 dark:text-blue-400';
+    case 'NEMOC': return 'bg-red-100 text-red-700 border-red-300 dark:bg-red-900/30 dark:text-red-400';
+    case 'OVER': return 'bg-purple-100 text-purple-700 border-purple-300 dark:bg-purple-900/30 dark:text-purple-400';
+    default: return '';
+  }
 };
 
 export const ProjectAllocationDialog = ({
@@ -121,9 +141,9 @@ export const ProjectAllocationDialog = ({
     return uniqueEngineers.sort((a, b) => a.localeCompare(b, 'cs'));
   }, [allocations]);
 
-  // Create allocation matrix for weekly view: { engineer: { week: { hours, isTentative } } }
+  // Create allocation matrix for weekly view: { engineer: { week: { hours, isTentative, alternativeActivity } } }
   const weeklyAllocationMatrix = useMemo(() => {
-    const matrix: Record<string, Record<string, { hours: number; isTentative: boolean }>> = {};
+    const matrix: Record<string, Record<string, { hours: number; isTentative: boolean; alternativeActivity?: string }>> = {};
     
     engineers.forEach(eng => {
       matrix[eng] = {};
@@ -131,17 +151,21 @@ export const ProjectAllocationDialog = ({
     
     allocations.forEach(a => {
       if (!matrix[a.engineer]) matrix[a.engineer] = {};
-      matrix[a.engineer][a.week] = { hours: a.hours, isTentative: a.isTentative };
+      matrix[a.engineer][a.week] = { 
+        hours: a.hours, 
+        isTentative: a.isTentative,
+        alternativeActivity: a.alternativeActivity 
+      };
     });
     
     return matrix;
   }, [allocations, engineers]);
 
-  // Create allocation matrix for monthly view: { engineer: { month: { hours, isTentative, weekCount } } }
+  // Create allocation matrix for monthly view: { engineer: { month: { hours, isTentative, weekCount, alternativeActivity } } }
   const monthlyAllocationMatrix = useMemo(() => {
     if (viewMode !== 'months') return {};
     
-    const matrix: Record<string, Record<string, { hours: number; isTentative: boolean; weekCount: number }>> = {};
+    const matrix: Record<string, Record<string, { hours: number; isTentative: boolean; weekCount: number; alternativeActivity?: string }>> = {};
     
     engineers.forEach(eng => {
       matrix[eng] = {};
@@ -157,6 +181,10 @@ export const ProjectAllocationDialog = ({
         matrix[a.engineer][month].weekCount += 1;
         if (a.isTentative) {
           matrix[a.engineer][month].isTentative = true;
+        }
+        // Track alternative activity if all entries in month are the same activity
+        if (a.alternativeActivity) {
+          matrix[a.engineer][month].alternativeActivity = a.alternativeActivity;
         }
       }
     });
@@ -336,6 +364,13 @@ export const ProjectAllocationDialog = ({
                                   {allocation.hours}h
                                   {allocation.isTentative && <span className="text-[9px] ml-0.5">?</span>}
                                 </span>
+                              ) : allocation?.alternativeActivity ? (
+                                <Badge 
+                                  variant="outline" 
+                                  className={`text-[9px] px-1 py-0 ${getActivityStyle(allocation.alternativeActivity)}`}
+                                >
+                                  {getActivityLabel(allocation.alternativeActivity)}
+                                </Badge>
                               ) : (
                                 <span className="text-muted-foreground/30">-</span>
                               )}
@@ -374,7 +409,7 @@ export const ProjectAllocationDialog = ({
         )}
 
         {/* Legend */}
-        <div className="flex items-center gap-3 pt-2 border-t text-[10px] text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-3 pt-2 border-t text-[10px] text-muted-foreground">
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 rounded bg-green-500/20 border border-green-500/30"></div>
             <span>Plné vytížení (35+ h)</span>
@@ -386,6 +421,19 @@ export const ProjectAllocationDialog = ({
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 rounded bg-yellow-500/30 border border-yellow-500/50"></div>
             <span>Předběžná rezervace (?)</span>
+          </div>
+          <Separator orientation="vertical" className="h-4" />
+          <div className="flex items-center gap-1">
+            <Badge variant="outline" className="text-[9px] px-1 py-0 bg-blue-100 text-blue-700 border-blue-300">DOV</Badge>
+            <span>Dovolená</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Badge variant="outline" className="text-[9px] px-1 py-0 bg-red-100 text-red-700 border-red-300">NEM</Badge>
+            <span>Nemoc</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Badge variant="outline" className="text-[9px] px-1 py-0 bg-purple-100 text-purple-700 border-purple-300">OVR</Badge>
+            <span>Režie/Overtime</span>
           </div>
         </div>
       </DialogContent>
