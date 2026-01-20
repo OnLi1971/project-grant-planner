@@ -1531,6 +1531,7 @@ export const ProjectAssignmentMatrix = ({
           customers={customers}
           projectManagers={projectManagers}
           programs={programs}
+          viewMode={viewMode}
         />
       </Card>
     </div>

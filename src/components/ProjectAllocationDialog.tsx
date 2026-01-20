@@ -34,7 +34,24 @@ interface ProjectAllocationDialogProps {
   customers?: Customer[];
   projectManagers?: ProjectManager[];
   programs?: Program[];
+  viewMode?: 'weeks' | 'months';
 }
+
+// Week to month mapping
+const monthWeekMapping: { [key: string]: { month: number; name: string } } = {
+  '01': { month: 1, name: 'leden' }, '02': { month: 1, name: 'leden' }, '03': { month: 1, name: 'leden' }, '04': { month: 1, name: 'leden' }, '05': { month: 2, name: 'únor' },
+  '06': { month: 2, name: 'únor' }, '07': { month: 2, name: 'únor' }, '08': { month: 2, name: 'únor' }, '09': { month: 3, name: 'březen' },
+  '10': { month: 3, name: 'březen' }, '11': { month: 3, name: 'březen' }, '12': { month: 3, name: 'březen' }, '13': { month: 3, name: 'březen' }, '14': { month: 4, name: 'duben' },
+  '15': { month: 4, name: 'duben' }, '16': { month: 4, name: 'duben' }, '17': { month: 4, name: 'duben' }, '18': { month: 5, name: 'květen' },
+  '19': { month: 5, name: 'květen' }, '20': { month: 5, name: 'květen' }, '21': { month: 5, name: 'květen' }, '22': { month: 5, name: 'květen' }, '23': { month: 6, name: 'červen' },
+  '24': { month: 6, name: 'červen' }, '25': { month: 6, name: 'červen' }, '26': { month: 6, name: 'červen' }, '27': { month: 7, name: 'červenec' },
+  '28': { month: 7, name: 'červenec' }, '29': { month: 7, name: 'červenec' }, '30': { month: 7, name: 'červenec' }, '31': { month: 8, name: 'srpen' },
+  '32': { month: 8, name: 'srpen' }, '33': { month: 8, name: 'srpen' }, '34': { month: 8, name: 'srpen' }, '35': { month: 8, name: 'srpen' },
+  '36': { month: 9, name: 'září' }, '37': { month: 9, name: 'září' }, '38': { month: 9, name: 'září' }, '39': { month: 9, name: 'září' },
+  '40': { month: 10, name: 'říjen' }, '41': { month: 10, name: 'říjen' }, '42': { month: 10, name: 'říjen' }, '43': { month: 10, name: 'říjen' }, '44': { month: 10, name: 'říjen' },
+  '45': { month: 11, name: 'listopad' }, '46': { month: 11, name: 'listopad' }, '47': { month: 11, name: 'listopad' }, '48': { month: 11, name: 'listopad' },
+  '49': { month: 12, name: 'prosinec' }, '50': { month: 12, name: 'prosinec' }, '51': { month: 12, name: 'prosinec' }, '52': { month: 12, name: 'prosinec' }
+};
 
 export const ProjectAllocationDialog = ({
   open,
@@ -45,6 +62,7 @@ export const ProjectAllocationDialog = ({
   customers,
   projectManagers,
   programs,
+  viewMode = 'weeks',
 }: ProjectAllocationDialogProps) => {
   // Get unique weeks sorted chronologically
   const weeks = useMemo(() => {
@@ -58,14 +76,53 @@ export const ProjectAllocationDialog = ({
     });
   }, [allocations]);
 
+  // Get unique months sorted chronologically (for monthly view)
+  const monthsData = useMemo(() => {
+    if (viewMode !== 'months') return { columns: [], weekToMonth: {} as Record<string, string> };
+    
+    const weekToMonth: Record<string, string> = {};
+    const monthsMap = new Map<string, { name: string; weeks: string[]; order: number }>();
+    
+    weeks.forEach(week => {
+      const match = week.match(/CW(\d+)-(\d+)/);
+      if (match) {
+        const cwNum = match[1];
+        const year = match[2];
+        const monthInfo = monthWeekMapping[cwNum];
+        if (monthInfo) {
+          const monthKey = `${monthInfo.name} ${year}`;
+          weekToMonth[week] = monthKey;
+          
+          if (!monthsMap.has(monthKey)) {
+            monthsMap.set(monthKey, { 
+              name: monthKey, 
+              weeks: [], 
+              order: parseInt(year) * 100 + monthInfo.month 
+            });
+          }
+          monthsMap.get(monthKey)!.weeks.push(week);
+        }
+      }
+    });
+    
+    const columns = Array.from(monthsMap.values())
+      .sort((a, b) => a.order - b.order)
+      .map(m => m.name);
+    
+    return { columns, weekToMonth };
+  }, [weeks, viewMode]);
+
+  // Display columns based on view mode
+  const displayColumns = viewMode === 'months' ? monthsData.columns : weeks;
+
   // Get unique engineers sorted alphabetically
   const engineers = useMemo(() => {
     const uniqueEngineers = [...new Set(allocations.map(a => a.engineer))];
     return uniqueEngineers.sort((a, b) => a.localeCompare(b, 'cs'));
   }, [allocations]);
 
-  // Create allocation matrix: { engineer: { week: { hours, isTentative } } }
-  const allocationMatrix = useMemo(() => {
+  // Create allocation matrix for weekly view: { engineer: { week: { hours, isTentative } } }
+  const weeklyAllocationMatrix = useMemo(() => {
     const matrix: Record<string, Record<string, { hours: number; isTentative: boolean }>> = {};
     
     engineers.forEach(eng => {
@@ -79,6 +136,36 @@ export const ProjectAllocationDialog = ({
     
     return matrix;
   }, [allocations, engineers]);
+
+  // Create allocation matrix for monthly view: { engineer: { month: { hours, isTentative, weekCount } } }
+  const monthlyAllocationMatrix = useMemo(() => {
+    if (viewMode !== 'months') return {};
+    
+    const matrix: Record<string, Record<string, { hours: number; isTentative: boolean; weekCount: number }>> = {};
+    
+    engineers.forEach(eng => {
+      matrix[eng] = {};
+      monthsData.columns.forEach(month => {
+        matrix[eng][month] = { hours: 0, isTentative: false, weekCount: 0 };
+      });
+    });
+    
+    allocations.forEach(a => {
+      const month = monthsData.weekToMonth[a.week];
+      if (month && matrix[a.engineer]?.[month]) {
+        matrix[a.engineer][month].hours += a.hours;
+        matrix[a.engineer][month].weekCount += 1;
+        if (a.isTentative) {
+          matrix[a.engineer][month].isTentative = true;
+        }
+      }
+    });
+    
+    return matrix;
+  }, [allocations, engineers, monthsData, viewMode]);
+
+  // Use appropriate matrix based on view mode
+  const allocationMatrix = viewMode === 'months' ? monthlyAllocationMatrix : weeklyAllocationMatrix;
 
   // Calculate statistics
   const stats = useMemo(() => {
@@ -103,23 +190,23 @@ export const ProjectAllocationDialog = ({
   const rowTotals = useMemo(() => {
     const totals: Record<string, number> = {};
     engineers.forEach(eng => {
-      totals[eng] = weeks.reduce((sum, week) => {
-        return sum + (allocationMatrix[eng]?.[week]?.hours || 0);
+      totals[eng] = displayColumns.reduce((sum, col) => {
+        return sum + (allocationMatrix[eng]?.[col]?.hours || 0);
       }, 0);
     });
     return totals;
-  }, [engineers, weeks, allocationMatrix]);
+  }, [engineers, displayColumns, allocationMatrix]);
 
-  // Calculate column totals (per week)
+  // Calculate column totals (per column - week or month)
   const columnTotals = useMemo(() => {
     const totals: Record<string, number> = {};
-    weeks.forEach(week => {
-      totals[week] = engineers.reduce((sum, eng) => {
-        return sum + (allocationMatrix[eng]?.[week]?.hours || 0);
+    displayColumns.forEach(col => {
+      totals[col] = engineers.reduce((sum, eng) => {
+        return sum + (allocationMatrix[eng]?.[col]?.hours || 0);
       }, 0);
     });
     return totals;
-  }, [engineers, weeks, allocationMatrix]);
+  }, [engineers, displayColumns, allocationMatrix]);
 
   // Get project metadata
   const customer = customers?.find(c => c.id === projectInfo?.customerId);
@@ -199,9 +286,9 @@ export const ProjectAllocationDialog = ({
                       <TableHead className="sticky left-0 bg-background z-20 min-w-[130px] font-semibold text-xs py-1.5 px-2">
                         Konstruktér
                       </TableHead>
-                      {weeks.map(week => (
-                        <TableHead key={week} className="text-center min-w-[50px] text-[10px] py-1.5 px-1">
-                          {week}
+                      {displayColumns.map(col => (
+                        <TableHead key={col} className={`text-center ${viewMode === 'months' ? 'min-w-[80px]' : 'min-w-[50px]'} text-[10px] py-1.5 px-1`}>
+                          {col}
                         </TableHead>
                       ))}
                       <TableHead className="text-center min-w-[50px] font-semibold bg-muted/30 text-xs py-1.5 px-1">
@@ -215,14 +302,19 @@ export const ProjectAllocationDialog = ({
                         <TableCell className="sticky left-0 bg-inherit z-10 font-medium text-xs py-1 px-2">
                           {engineer}
                         </TableCell>
-                        {weeks.map(week => {
-                          const allocation = allocationMatrix[engineer]?.[week];
+                        {displayColumns.map(col => {
+                          const allocation = allocationMatrix[engineer]?.[col];
                           const hasAllocation = allocation && allocation.hours > 0;
-                          const isFullyAllocated = allocation?.hours >= 35;
+                          // For monthly view, calculate average per week for coloring threshold
+                          const weekCount = viewMode === 'months' && 'weekCount' in (allocation || {}) 
+                            ? (allocation as { hours: number; isTentative: boolean; weekCount: number }).weekCount 
+                            : 1;
+                          const avgHoursPerWeek = hasAllocation ? allocation.hours / weekCount : 0;
+                          const isFullyAllocated = avgHoursPerWeek >= 35;
                           
                           return (
                             <TableCell 
-                              key={week} 
+                              key={col} 
                               className={`text-center text-[11px] py-1 px-1 ${
                                 hasAllocation 
                                   ? allocation.isTentative 
@@ -260,9 +352,9 @@ export const ProjectAllocationDialog = ({
                       <TableCell className="sticky left-0 bg-muted/50 z-10 font-bold text-xs py-1 px-2">
                         Celkem
                       </TableCell>
-                      {weeks.map(week => (
-                        <TableCell key={week} className="text-center font-bold text-xs py-1 px-1">
-                          {columnTotals[week]}h
+                      {displayColumns.map(col => (
+                        <TableCell key={col} className="text-center font-bold text-xs py-1 px-1">
+                          {columnTotals[col]}h
                         </TableCell>
                       ))}
                       <TableCell className="text-center font-bold bg-primary/10 text-primary text-xs py-1 px-1">
