@@ -79,25 +79,47 @@ const getAllWeeks = (): string[] => {
   return weeks;
 };
 
-const weeks = getAllWeeks();
+const allWeeks = getAllWeeks();
+
+// Month week mapping - maps CW number to month info
+const monthWeekMapping: { [key: string]: { month: number; name: string } } = {
+  '01': { month: 1, name: 'leden' }, '02': { month: 1, name: 'leden' }, '03': { month: 1, name: 'leden' }, '04': { month: 1, name: 'leden' }, '05': { month: 2, name: 'únor' },
+  '06': { month: 2, name: 'únor' }, '07': { month: 2, name: 'únor' }, '08': { month: 2, name: 'únor' }, '09': { month: 3, name: 'březen' },
+  '10': { month: 3, name: 'březen' }, '11': { month: 3, name: 'březen' }, '12': { month: 3, name: 'březen' }, '13': { month: 3, name: 'březen' }, '14': { month: 4, name: 'duben' },
+  '15': { month: 4, name: 'duben' }, '16': { month: 4, name: 'duben' }, '17': { month: 4, name: 'duben' }, '18': { month: 5, name: 'květen' },
+  '19': { month: 5, name: 'květen' }, '20': { month: 5, name: 'květen' }, '21': { month: 5, name: 'květen' }, '22': { month: 5, name: 'květen' }, '23': { month: 6, name: 'červen' },
+  '24': { month: 6, name: 'červen' }, '25': { month: 6, name: 'červen' }, '26': { month: 6, name: 'červen' }, '27': { month: 7, name: 'červenec' },
+  '28': { month: 7, name: 'červenec' }, '29': { month: 7, name: 'červenec' }, '30': { month: 7, name: 'červenec' }, '31': { month: 8, name: 'srpen' },
+  '32': { month: 8, name: 'srpen' }, '33': { month: 8, name: 'srpen' }, '34': { month: 8, name: 'srpen' }, '35': { month: 8, name: 'srpen' },
+  '36': { month: 9, name: 'září' }, '37': { month: 9, name: 'září' }, '38': { month: 9, name: 'září' }, '39': { month: 9, name: 'září' },
+  '40': { month: 10, name: 'říjen' }, '41': { month: 10, name: 'říjen' }, '42': { month: 10, name: 'říjen' }, '43': { month: 10, name: 'říjen' }, '44': { month: 10, name: 'říjen' },
+  '45': { month: 11, name: 'listopad' }, '46': { month: 11, name: 'listopad' }, '47': { month: 11, name: 'listopad' }, '48': { month: 11, name: 'listopad' },
+  '49': { month: 12, name: 'prosinec' }, '50': { month: 12, name: 'prosinec' }, '51': { month: 12, name: 'prosinec' }, '52': { month: 12, name: 'prosinec' }
+};
+
+// Filter weeks based on maxEndDate
+const filterWeeksByMaxDate = (weeksList: string[], maxEndDate?: { month: number; year: number }): string[] => {
+  if (!maxEndDate) return weeksList;
+  
+  return weeksList.filter(week => {
+    const match = week.match(/CW(\d+)-(\d+)/);
+    if (!match) return false;
+    const cwNum = parseInt(match[1]);
+    const year = parseInt(match[2]);
+    
+    if (year < maxEndDate.year) return true;
+    if (year > maxEndDate.year) return false;
+    
+    // Get month for this week
+    const monthInfo = monthWeekMapping[cwNum.toString().padStart(2, '0')];
+    if (!monthInfo) return false;
+    
+    return monthInfo.month <= maxEndDate.month;
+  });
+};
 
 // Dynamicky generovat měsíce na základě vygenerovaných týdnů
 const generateMonths = (weeksList: string[]): { name: string; weeks: string[] }[] => {
-  const monthWeekMapping: { [key: string]: { month: number; name: string } } = {
-    '01': { month: 1, name: 'leden' }, '02': { month: 1, name: 'leden' }, '03': { month: 1, name: 'leden' }, '04': { month: 1, name: 'leden' }, '05': { month: 2, name: 'únor' },
-    '06': { month: 2, name: 'únor' }, '07': { month: 2, name: 'únor' }, '08': { month: 2, name: 'únor' }, '09': { month: 3, name: 'březen' },
-    '10': { month: 3, name: 'březen' }, '11': { month: 3, name: 'březen' }, '12': { month: 3, name: 'březen' }, '13': { month: 3, name: 'březen' }, '14': { month: 4, name: 'duben' },
-    '15': { month: 4, name: 'duben' }, '16': { month: 4, name: 'duben' }, '17': { month: 4, name: 'duben' }, '18': { month: 5, name: 'květen' },
-    '19': { month: 5, name: 'květen' }, '20': { month: 5, name: 'květen' }, '21': { month: 5, name: 'květen' }, '22': { month: 5, name: 'květen' }, '23': { month: 6, name: 'červen' },
-    '24': { month: 6, name: 'červen' }, '25': { month: 6, name: 'červen' }, '26': { month: 6, name: 'červen' }, '27': { month: 7, name: 'červenec' },
-    '28': { month: 7, name: 'červenec' }, '29': { month: 7, name: 'červenec' }, '30': { month: 7, name: 'červenec' }, '31': { month: 8, name: 'srpen' },
-    '32': { month: 8, name: 'srpen' }, '33': { month: 8, name: 'srpen' }, '34': { month: 8, name: 'srpen' }, '35': { month: 8, name: 'srpen' },
-    '36': { month: 9, name: 'září' }, '37': { month: 9, name: 'září' }, '38': { month: 9, name: 'září' }, '39': { month: 9, name: 'září' },
-    '40': { month: 10, name: 'říjen' }, '41': { month: 10, name: 'říjen' }, '42': { month: 10, name: 'říjen' }, '43': { month: 10, name: 'říjen' }, '44': { month: 10, name: 'říjen' },
-    '45': { month: 11, name: 'listopad' }, '46': { month: 11, name: 'listopad' }, '47': { month: 11, name: 'listopad' }, '48': { month: 11, name: 'listopad' },
-    '49': { month: 12, name: 'prosinec' }, '50': { month: 12, name: 'prosinec' }, '51': { month: 12, name: 'prosinec' }, '52': { month: 12, name: 'prosinec' }
-  };
-  
   const monthsMap = new Map<string, string[]>();
   
   weeksList.forEach(week => {
@@ -118,8 +140,6 @@ const generateMonths = (weeksList: string[]): { name: string; weeks: string[] }[
   
   return Array.from(monthsMap.entries()).map(([name, weeks]) => ({ name, weeks }));
 };
-
-const months = generateMonths(weeks);
 
 const getProjectBadgeStyle = (projekt: string) => {
   // Free, vacation, sick leave and overtime
@@ -196,6 +216,7 @@ interface ProjectAssignmentMatrixProps {
   defaultCustomViewId?: string;
   defaultSelectedEngineers?: string[]; // Hardcoded list of engineers (for public pages without DB access)
   customerViewMode?: string; // Customer prefix (e.g., "ST") for customer-specific view
+  maxEndDate?: { month: number; year: number }; // Limit the view to a specific end date
 }
 
 export const ProjectAssignmentMatrix = ({ 
@@ -204,7 +225,8 @@ export const ProjectAssignmentMatrix = ({
   defaultFilterMode = 'custom',
   defaultCustomViewId,
   defaultSelectedEngineers,
-  customerViewMode
+  customerViewMode,
+  maxEndDate
 }: ProjectAssignmentMatrixProps) => {
   const { planningData, engineers } = usePlanning();
   const [viewMode, setViewMode] = useState<'weeks' | 'months'>(defaultViewMode);
@@ -223,6 +245,10 @@ export const ProjectAssignmentMatrix = ({
   const [customViewName, setCustomViewName] = useState('');
   const [selectedViewId, setSelectedViewId] = useState<string | null>(null);
   const { customViews, saveView, deleteView, isLoading: isLoadingViews } = useCustomEngineerViews();
+
+  // Filter weeks and months based on maxEndDate
+  const weeks = useMemo(() => filterWeeksByMaxDate(allWeeks, maxEndDate), [maxEndDate]);
+  const months = useMemo(() => generateMonths(weeks), [weeks]);
 
   // Auto-load default selected engineers (hardcoded list for public pages)
   useEffect(() => {
