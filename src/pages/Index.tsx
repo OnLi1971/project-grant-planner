@@ -75,6 +75,10 @@ const Index = () => {
                     <DollarSign className="h-4 w-4 mr-2" />
                     Revenue
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/customer/st')}>
+                    <Users className="h-4 w-4 mr-2" />
+                    Pohled pro ST
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
               <span className="text-sm text-muted-foreground">
