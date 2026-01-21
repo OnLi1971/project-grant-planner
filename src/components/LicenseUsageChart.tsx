@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
 import { getProjectColorWithIndex } from '@/utils/colorSystem';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -85,6 +86,7 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
   const [selectedWeek, setSelectedWeek] = useState<string>('');
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [weekDetails, setWeekDetails] = useState<EngineerDetail[]>([]);
+  const [viewMode, setViewMode] = useState<'weeks' | 'months'>('weeks');
 
   // Load project licenses from database
   useEffect(() => {
@@ -142,8 +144,7 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
 
   // Handle bar click to show details
   const handleBarClick = (data: any) => {
-    const week = data.week;
-    const weekOnly = week.replace(' (next year)', '');
+    const weekFull = data.week;
     
     if (!selectedLicense || !projectLicenses.length) return;
     
@@ -162,10 +163,9 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
     });
     
     // Get engineers for this week (excluding MB Idea contractors and non-license consuming projects)
+    // Now comparing full week string including year (e.g., "CW35-2025")
     const engineersThisWeek = planningData.filter(entry => {
-      // Extract week without year for comparison (e.g., "CW35-2025" -> "CW35")
-      const cwWithoutYear = entry.cw.split('-')[0];
-      return cwWithoutYear === weekOnly && 
+      return entry.cw === weekFull && 
         entry.projekt !== 'FREE' && 
         entry.projekt !== 'DOVOLENÁ' &&
         entry.projekt !== 'NEMOC' &&
@@ -211,13 +211,13 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
       }
     });
     
-    console.log('Week details for', week, ':', details);
+    console.log('Week details for', weekFull, ':', details);
     
-    setSelectedWeek(week);
+    setSelectedWeek(weekFull);
     setWeekDetails(details);
     setIsDetailDialogOpen(true);
   };
-  // Generate weeks starting from current week
+  // Generate weeks starting from current week until end of 2026
   const generateWeeks = useMemo(() => {
     const weeks: string[] = [];
     
@@ -231,107 +231,186 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
       return Math.min(weekNumber, 52);
     };
     
+    const now = new Date();
+    const currentYear = now.getFullYear();
     const currentWeek = getCurrentWeek();
     
-    // Generate 22 weeks from current week
-    for (let i = 0; i < 22; i++) {
-      let weekNum = currentWeek + i;
-      let year = '';
-      
+    let weekNum = currentWeek;
+    let year = currentYear;
+    
+    // Generate weeks until end of 2026
+    while (year < 2027) {
+      weeks.push(`CW${weekNum.toString().padStart(2, '0')}-${year}`);
+      weekNum++;
       if (weekNum > 52) {
-        weekNum = weekNum - 52;
-        year = ' (next year)';
+        weekNum = 1;
+        year++;
       }
-      
-      weeks.push(`CW${weekNum}${year}`);
     }
     
     return weeks;
   }, []);
 
-  const chartData = useMemo(() => {
-    if (projectLicenses.length === 0) return [];
+  // Mapping of CW numbers to months
+  const cwToMonth: { [key: string]: string } = {
+    '01': 'leden', '02': 'leden', '03': 'leden', '04': 'leden', '05': 'únor',
+    '06': 'únor', '07': 'únor', '08': 'únor', '09': 'březen', '10': 'březen',
+    '11': 'březen', '12': 'březen', '13': 'březen', '14': 'duben', '15': 'duben',
+    '16': 'duben', '17': 'duben', '18': 'květen', '19': 'květen', '20': 'květen',
+    '21': 'květen', '22': 'červen', '23': 'červen', '24': 'červen', '25': 'červen',
+    '26': 'červen', '27': 'červenec', '28': 'červenec', '29': 'červenec', '30': 'červenec',
+    '31': 'srpen', '32': 'srpen', '33': 'srpen', '34': 'srpen', '35': 'srpen',
+    '36': 'září', '37': 'září', '38': 'září', '39': 'září', '40': 'říjen',
+    '41': 'říjen', '42': 'říjen', '43': 'říjen', '44': 'listopad', '45': 'listopad',
+    '46': 'listopad', '47': 'listopad', '48': 'prosinec', '49': 'prosinec',
+    '50': 'prosinec', '51': 'prosinec', '52': 'prosinec',
+  };
+
+  // Generate months from weeks
+  const generateMonths = useMemo(() => {
+    const monthsMap = new Map<string, string[]>();
     
-    // Create project license map from database data
-    const projectLicenseMap: { [projectCode: string]: { licenseId: string; licenseName: string; percentage: number }[] } = {};
+    generateWeeks.forEach(week => {
+      const match = week.match(/CW(\d+)-(\d+)/);
+      if (match) {
+        const cwNum = match[1];
+        const year = match[2];
+        const monthName = cwToMonth[cwNum] || 'prosinec';
+        const monthKey = `${monthName} ${year}`;
+        
+        if (!monthsMap.has(monthKey)) {
+          monthsMap.set(monthKey, []);
+        }
+        monthsMap.get(monthKey)!.push(week);
+      }
+    });
+    
+    return Array.from(monthsMap.entries()).map(([name, weeks]) => ({ name, weeks }));
+  }, [generateWeeks]);
+
+  // Create project license map from database data
+  const projectLicenseMap = useMemo(() => {
+    const map: { [projectCode: string]: { licenseId: string; licenseName: string; percentage: number }[] } = {};
     
     projectLicenses.forEach(pl => {
-      if (!projectLicenseMap[pl.project_code]) {
-        projectLicenseMap[pl.project_code] = [];
+      if (!map[pl.project_code]) {
+        map[pl.project_code] = [];
       }
-      projectLicenseMap[pl.project_code].push({
+      map[pl.project_code].push({
         licenseId: pl.license_id,
         licenseName: pl.license_name,
         percentage: pl.percentage
       });
     });
     
-    console.log('Project license map:', projectLicenseMap);
+    return map;
+  }, [projectLicenses]);
+
+  // Helper to check if entry is valid for license calculation
+  const isValidEntry = (entry: any) => {
+    return entry.projekt !== 'FREE' && 
+      entry.projekt !== 'DOVOLENÁ' &&
+      entry.projekt !== 'NEMOC' &&
+      entry.projekt !== 'OVER' &&
+      entry.projekt !== '' &&
+      entry.mhTyden > 0 &&
+      !MB_IDEA_CONTRACTORS.includes(entry.konstrukter);
+  };
+
+  // Weekly chart data
+  const chartData = useMemo(() => {
+    if (projectLicenses.length === 0) return [];
     
-    return generateWeeks.map(week => {
-      const weekData: any = { week };
-      const weekOnly = week.replace(' (next year)', '');
+    return generateWeeks.map(weekFull => {
+      const weekData: any = { week: weekFull };
       
-        // For each license, calculate usage for this week
-        licenses.forEach(license => {
-          // Track unique engineers that need this license (regardless of projects)
-          const uniqueEngineersForLicense = new Set<string>();
+      // For each license, calculate usage for this week
+      licenses.forEach(license => {
+        // Track unique engineers that need this license
+        const uniqueEngineersForLicense = new Set<string>();
+        
+        // Get all engineers working this week - now comparing full week string with year
+        const engineersThisWeek = planningData.filter(entry => {
+          return entry.cw === weekFull && isValidEntry(entry);
+        });
+        
+        // For each engineer, check if any of their projects requires this license
+        engineersThisWeek.forEach(entry => {
+          const projectLicensesForProject = projectLicenseMap[entry.projekt];
+          if (projectLicensesForProject) {
+            const licenseAssignment = projectLicensesForProject.find(al => 
+              al.licenseName === license.name
+            );
+            if (licenseAssignment && licenseAssignment.percentage > 0) {
+              uniqueEngineersForLicense.add(entry.konstrukter);
+            }
+          }
+        });
+        
+        weekData[license.name] = uniqueEngineersForLicense.size;
+        weekData[`${license.name}_available`] = license.totalSeats;
+      });
+      
+      return weekData;
+    });
+  }, [planningData, licenses, projectLicenses, generateWeeks, projectLicenseMap]);
+
+  // Monthly chart data - aggregated peak usage per month
+  const monthlyChartData = useMemo(() => {
+    if (projectLicenses.length === 0) return [];
+    
+    return generateMonths.map(month => {
+      const monthData: any = { week: month.name };
+      
+      licenses.forEach(license => {
+        // For each week in the month, get unique engineers count
+        const weeklyUsages: number[] = month.weeks.map(weekFull => {
+          const uniqueEngineers = new Set<string>();
           
-          // Get all engineers working this week (excluding MB Idea contractors and non-license consuming projects)
           const engineersThisWeek = planningData.filter(entry => {
-            // Extract week without year for comparison (e.g., "CW35-2025" -> "CW35")
-            const cwWithoutYear = entry.cw.split('-')[0];
-            return cwWithoutYear === weekOnly && 
-              entry.projekt !== 'FREE' && 
-              entry.projekt !== 'DOVOLENÁ' &&
-              entry.projekt !== 'NEMOC' &&
-              entry.projekt !== 'OVER' &&
-              entry.projekt !== '' &&
-              entry.mhTyden > 0 &&
-              !MB_IDEA_CONTRACTORS.includes(entry.konstrukter);
+            return entry.cw === weekFull && isValidEntry(entry);
           });
           
-          // For each engineer, check if any of their projects requires this license
           engineersThisWeek.forEach(entry => {
             const projectLicensesForProject = projectLicenseMap[entry.projekt];
             if (projectLicensesForProject) {
               const licenseAssignment = projectLicensesForProject.find(al => 
                 al.licenseName === license.name
               );
-              // If this project needs this license, add engineer to the set
               if (licenseAssignment && licenseAssignment.percentage > 0) {
-                uniqueEngineersForLicense.add(entry.konstrukter);
+                uniqueEngineers.add(entry.konstrukter);
               }
             }
           });
           
-          // Total usage is the count of unique engineers
-          const totalUsage = uniqueEngineersForLicense.size;
-          
-          weekData[license.name] = totalUsage;
-          weekData[`${license.name}_available`] = license.totalSeats;
+          return uniqueEngineers.size;
         });
+        
+        // Use maximum (peak) usage for the month
+        monthData[license.name] = Math.max(...weeklyUsages, 0);
+        monthData[`${license.name}_available`] = license.totalSeats;
+      });
       
-      return weekData;
+      return monthData;
     });
-  }, [planningData, licenses, projectLicenses, generateWeeks]);
+  }, [planningData, licenses, projectLicenses, generateMonths, projectLicenseMap]);
 
-  // Filter chart data for selected license only
+  // Filter chart data for selected license only (based on view mode)
   const filteredChartData = useMemo(() => {
     if (!selectedLicense) return [];
     
     const selectedLicenseData = licenses.find(l => l.name === selectedLicense);
     if (!selectedLicenseData) return [];
     
-    console.log('Selected license data:', selectedLicenseData);
+    const sourceData = viewMode === 'months' ? monthlyChartData : chartData;
     
-    return chartData.map(weekData => ({
+    return sourceData.map(weekData => ({
       week: weekData.week,
       usage: weekData[selectedLicense] || 0,
       available: selectedLicenseData.totalSeats,
       licenseLimit: selectedLicenseData.totalSeats
     }));
-  }, [chartData, selectedLicense, licenses]);
+  }, [chartData, monthlyChartData, selectedLicense, licenses, viewMode]);
 
   // Get over-allocated licenses for alerts
   const overAllocatedWeeks = useMemo(() => {
@@ -397,28 +476,50 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
           <div>
             <h3 className="text-lg font-semibold">Plánované využití licencí</h3>
             <p className="text-sm text-muted-foreground">
-              Graf zobrazuje požadavky na licence na základě naplánovaných projektů
+              Graf zobrazuje požadavky na licence na základě naplánovaných projektů (do konce 2026)
             </p>
           </div>
           
-          <div className="w-64">
-            <Select value={selectedLicense} onValueChange={setSelectedLicense}>
-              <SelectTrigger>
-                <SelectValue placeholder="Vyberte licenci" />
-              </SelectTrigger>
-              <SelectContent>
-                {licenses.map((license) => (
-                  <SelectItem key={license.name} value={license.name}>
-                    {license.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex items-center gap-4">
+            <div className="flex gap-2">
+              <Button
+                variant={viewMode === 'weeks' ? 'default' : 'outline'}
+                onClick={() => setViewMode('weeks')}
+                size="sm"
+              >
+                Týdny
+              </Button>
+              <Button
+                variant={viewMode === 'months' ? 'default' : 'outline'}
+                onClick={() => setViewMode('months')}
+                size="sm"
+              >
+                Měsíce
+              </Button>
+            </div>
+            
+            <div className="w-64">
+              <Select value={selectedLicense} onValueChange={setSelectedLicense}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Vyberte licenci" />
+                </SelectTrigger>
+                <SelectContent>
+                  {licenses.map((license) => (
+                    <SelectItem key={license.name} value={license.name}>
+                      {license.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           
           <div className="text-xs text-muted-foreground flex items-center gap-1">
             <Info className="h-3 w-3" />
-            Klikněte na sloupec pro zobrazení detailů konstruktérů
+            {viewMode === 'weeks' 
+              ? 'Klikněte na sloupec pro zobrazení detailů konstruktérů'
+              : 'Měsíční pohled zobrazuje maximální (špičkové) využití v daném měsíci'
+            }
           </div>
         </div>
         
