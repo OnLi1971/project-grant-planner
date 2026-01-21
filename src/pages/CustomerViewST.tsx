@@ -36,6 +36,7 @@ const CustomerViewST = () => {
             defaultFilterMode="custom"
             defaultSelectedEngineers={RAIL_EL_ENGINEERS}
             customerViewMode="ST"
+            maxEndDate={{ month: 12, year: 2026 }}
           />
         </div>
       </div>
