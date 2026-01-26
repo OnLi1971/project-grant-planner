@@ -118,6 +118,33 @@ export const CurrentWeekLicenseUsage: React.FC<CurrentWeekLicenseUsageProps> = (
     return `CW${Math.min(weekNumber, 52)}`;
   };
 
+  // Aggregate licenses with the same name (sum totalSeats)
+  const aggregatedLicenses = useMemo(() => {
+    const licenseMap = new Map<string, {
+      name: string;
+      totalSeats: number;
+      ids: string[];
+      provider: string;
+    }>();
+    
+    licenses.forEach(license => {
+      const existing = licenseMap.get(license.name);
+      if (existing) {
+        existing.totalSeats += license.totalSeats;
+        existing.ids.push(license.id);
+      } else {
+        licenseMap.set(license.name, {
+          name: license.name,
+          totalSeats: license.totalSeats,
+          ids: [license.id],
+          provider: license.provider
+        });
+      }
+    });
+    
+    return Array.from(licenseMap.values());
+  }, [licenses]);
+
   const currentWeekUsage = useMemo(() => {
     const currentWeek = getCurrentWeek();
     
@@ -176,11 +203,11 @@ export const CurrentWeekLicenseUsage: React.FC<CurrentWeekLicenseUsageProps> = (
     
     console.log('Project engineers:', projectEngineers);
     
-    // Calculate license usage
-    const licenseUsage: { [licenseName: string]: { required: number; projects: string[] } } = {};
+    // Calculate license usage - using aggregated licenses
+    const licenseUsage: { [licenseName: string]: { required: number; projects: string[]; totalSeats: number } } = {};
     
-    licenses.forEach(license => {
-      licenseUsage[license.name] = { required: 0, projects: [] };
+    aggregatedLicenses.forEach(license => {
+      licenseUsage[license.name] = { required: 0, projects: [], totalSeats: license.totalSeats };
       
       // Track unique engineers that need this license across all projects
       const uniqueEngineersForLicense = new Set<string>();
@@ -215,7 +242,7 @@ export const CurrentWeekLicenseUsage: React.FC<CurrentWeekLicenseUsageProps> = (
     console.log('Final license usage:', licenseUsage);
     
     return { currentWeek, licenseUsage };
-  }, [planningData, licenses, projectLicenses]);
+  }, [planningData, aggregatedLicenses, projectLicenses]);
 
   return (
     <Card className="p-6">
@@ -226,12 +253,12 @@ export const CurrentWeekLicenseUsage: React.FC<CurrentWeekLicenseUsageProps> = (
       </div>
       
       <div className="space-y-3">
-        {licenses.map(license => {
-          const usage = currentWeekUsage.licenseUsage[license.name] || { required: 0, projects: [] };
+        {aggregatedLicenses.map(license => {
+          const usage = currentWeekUsage.licenseUsage[license.name] || { required: 0, projects: [], totalSeats: license.totalSeats };
           const isOverAllocated = usage.required > license.totalSeats;
           
           return (
-            <div key={license.id} className="flex items-center justify-between p-3 rounded-lg border">
+            <div key={license.name} className="flex items-center justify-between p-3 rounded-lg border">
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <span className="font-medium">{license.name}</span>

@@ -81,12 +81,49 @@ interface LicenseUsageChartProps {
 
 export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }) => {
   const { planningData } = usePlanning();
-  const [selectedLicense, setSelectedLicense] = useState<string>(licenses[0]?.name || '');
   const [projectLicenses, setProjectLicenses] = useState<ProjectLicense[]>([]);
   const [selectedWeek, setSelectedWeek] = useState<string>('');
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [weekDetails, setWeekDetails] = useState<EngineerDetail[]>([]);
   const [viewMode, setViewMode] = useState<'weeks' | 'months'>('weeks');
+
+  // Aggregate licenses with the same name (sum totalSeats)
+  const aggregatedLicenses = useMemo(() => {
+    const licenseMap = new Map<string, {
+      name: string;
+      totalSeats: number;
+      ids: string[];
+      expirationDates: string[];
+    }>();
+    
+    licenses.forEach(license => {
+      const existing = licenseMap.get(license.name);
+      if (existing) {
+        existing.totalSeats += license.totalSeats;
+        existing.ids.push(license.id);
+        existing.expirationDates.push(license.expirationDate);
+      } else {
+        licenseMap.set(license.name, {
+          name: license.name,
+          totalSeats: license.totalSeats,
+          ids: [license.id],
+          expirationDates: [license.expirationDate]
+        });
+      }
+    });
+    
+    return Array.from(licenseMap.values());
+  }, [licenses]);
+
+  // Initialize selected license with first aggregated license
+  const [selectedLicense, setSelectedLicense] = useState<string>('');
+  
+  // Update selected license when aggregatedLicenses changes
+  useEffect(() => {
+    if (aggregatedLicenses.length > 0 && !selectedLicense) {
+      setSelectedLicense(aggregatedLicenses[0].name);
+    }
+  }, [aggregatedLicenses, selectedLicense]);
 
   // Load project licenses from database
   useEffect(() => {
@@ -317,15 +354,15 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
       !MB_IDEA_CONTRACTORS.includes(entry.konstrukter);
   };
 
-  // Weekly chart data
+  // Weekly chart data - use aggregated licenses for calculations
   const chartData = useMemo(() => {
     if (projectLicenses.length === 0) return [];
     
     return generateWeeks.map(weekFull => {
       const weekData: any = { week: weekFull };
       
-      // For each license, calculate usage for this week
-      licenses.forEach(license => {
+      // For each aggregated license, calculate usage for this week
+      aggregatedLicenses.forEach(license => {
         // Track unique engineers that need this license
         const uniqueEngineersForLicense = new Set<string>();
         
@@ -348,21 +385,21 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
         });
         
         weekData[license.name] = uniqueEngineersForLicense.size;
-        weekData[`${license.name}_available`] = license.totalSeats;
+        weekData[`${license.name}_available`] = license.totalSeats; // Now aggregated total
       });
       
       return weekData;
     });
-  }, [planningData, licenses, projectLicenses, generateWeeks, projectLicenseMap]);
+  }, [planningData, aggregatedLicenses, projectLicenses, generateWeeks, projectLicenseMap]);
 
-  // Monthly chart data - aggregated peak usage per month
+  // Monthly chart data - aggregated peak usage per month (using aggregated licenses)
   const monthlyChartData = useMemo(() => {
     if (projectLicenses.length === 0) return [];
     
     return generateMonths.map(month => {
       const monthData: any = { week: month.name };
       
-      licenses.forEach(license => {
+      aggregatedLicenses.forEach(license => {
         // For each week in the month, get unique engineers count
         const weeklyUsages: number[] = month.weeks.map(weekFull => {
           const uniqueEngineers = new Set<string>();
@@ -388,38 +425,39 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
         
         // Use maximum (peak) usage for the month
         monthData[license.name] = Math.max(...weeklyUsages, 0);
-        monthData[`${license.name}_available`] = license.totalSeats;
+        monthData[`${license.name}_available`] = license.totalSeats; // Now aggregated total
       });
       
       return monthData;
     });
-  }, [planningData, licenses, projectLicenses, generateMonths, projectLicenseMap]);
+  }, [planningData, aggregatedLicenses, projectLicenses, generateMonths, projectLicenseMap]);
 
-  // Filter chart data for selected license only (based on view mode)
+  // Filter chart data for selected license only (based on view mode) - using aggregated totals
   const filteredChartData = useMemo(() => {
     if (!selectedLicense) return [];
     
-    const selectedLicenseData = licenses.find(l => l.name === selectedLicense);
-    if (!selectedLicenseData) return [];
+    // Find aggregated license (sum of all with same name)
+    const aggregatedLicense = aggregatedLicenses.find(l => l.name === selectedLicense);
+    const totalAvailable = aggregatedLicense?.totalSeats || 0;
     
     const sourceData = viewMode === 'months' ? monthlyChartData : chartData;
     
     return sourceData.map(weekData => ({
       week: weekData.week,
       usage: weekData[selectedLicense] || 0,
-      available: selectedLicenseData.totalSeats,
-      licenseLimit: selectedLicenseData.totalSeats
+      available: totalAvailable,  // Aggregated limit
+      licenseLimit: totalAvailable
     }));
-  }, [chartData, monthlyChartData, selectedLicense, licenses, viewMode]);
+  }, [chartData, monthlyChartData, selectedLicense, aggregatedLicenses, viewMode]);
 
-  // Get over-allocated licenses for alerts
+  // Get over-allocated licenses for alerts - using aggregated totals
   const overAllocatedWeeks = useMemo(() => {
     const issues: { week: string; license: string; required: number; available: number }[] = [];
     
     chartData.forEach(weekData => {
-      licenses.forEach(license => {
+      aggregatedLicenses.forEach(license => {
         const required = weekData[license.name] || 0;
-        const available = license.totalSeats;
+        const available = license.totalSeats; // Aggregated count
         if (required > available) {
           issues.push({
             week: weekData.week,
@@ -432,12 +470,12 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
     });
     
     return issues;
-  }, [chartData, licenses]);
+  }, [chartData, aggregatedLicenses]);
 
   const chartConfig: ChartConfig = useMemo(() => {
     const config: ChartConfig = {};
     
-    licenses.forEach((license, index) => {
+    aggregatedLicenses.forEach((license, index) => {
       // Použijeme fallback barvu z našeho systému, protože licence nejsou přímo vázané na projekty
       const fallbackColors = [
         'hsl(213 88% 45%)',    // primary
@@ -457,7 +495,7 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
     });
     
     return config;
-  }, [licenses]);
+  }, [aggregatedLicenses]);
 
   return (
     <div className="space-y-4">
@@ -498,15 +536,15 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
               </Button>
             </div>
             
-            <div className="w-64">
+            <div className="w-72">
               <Select value={selectedLicense} onValueChange={setSelectedLicense}>
                 <SelectTrigger>
                   <SelectValue placeholder="Vyberte licenci" />
                 </SelectTrigger>
                 <SelectContent>
-                  {licenses.map((license) => (
+                  {aggregatedLicenses.map((license) => (
                     <SelectItem key={license.name} value={license.name}>
-                      {license.name}
+                      {license.name} ({license.totalSeats} licencí)
                     </SelectItem>
                   ))}
                 </SelectContent>
