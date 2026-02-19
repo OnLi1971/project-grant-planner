@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Users, Calendar, Filter, Download, FileText } from 'lucide-react';
+import { Users, Calendar, Filter, Download, FileText, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -85,19 +85,27 @@ export const FreeCapacityOverview = () => {
   // Debug logging to check data reactivity
   console.log('FreeCapacityOverview: planningData updated', planningData.length, 'entries');
 
+  // Helper to extract CW number from full format (e.g., "CW08-2026" -> "CW08")
+  const extractCW = (cwFull: string): string => {
+    return cwFull.replace(/-\d{4}$/, '');
+  };
+
   // Enhanced data processing with better reactivity
   const processedData = useMemo(() => {
     console.log('FreeCapacityOverview: Processing data with', planningData.length, 'entries');
-    const engineersMap: { [key: string]: { cw: string; projekt: string }[] } = {};
+    const engineersMap: { [key: string]: { cw: string; cwFull: string; projekt: string; isTentative: boolean }[] } = {};
     
     // Skupinování dat podle konstruktéra
     planningData.forEach(entry => {
       if (!engineersMap[entry.konstrukter]) {
         engineersMap[entry.konstrukter] = [];
       }
+      const cwShort = extractCW(entry.cw);
       engineersMap[entry.konstrukter].push({
-        cw: entry.cw,
-        projekt: entry.projekt
+        cw: cwShort,
+        cwFull: entry.cw,
+        projekt: entry.projekt,
+        isTentative: entry.is_tentative || false
       });
     });
 
@@ -166,6 +174,38 @@ export const FreeCapacityOverview = () => {
       .filter(engineer => engineer.totalWeeks > 0) // Only show engineers with data in selected period
       .sort((a, b) => b.freeWeeks - a.freeWeeks);
   }, [processedData, filteredWeeks]);
+
+  // Summary statistics: total hours, final, tentative
+  const summaryStats = useMemo(() => {
+    const HOURS_PER_WEEK = 36;
+    let totalAllocatedWeeks = 0;
+    let finalWeeks = 0;
+    let tentativeWeeks = 0;
+
+    engineersWithFreeCapacity.forEach(engineer => {
+      const relevantWeeks = engineer.weeks.filter(week => filteredWeeks.includes(week.cw));
+      relevantWeeks.forEach(week => {
+        const isFree = week.projekt === 'FREE' || week.projekt === '' || !week.projekt;
+        if (!isFree) {
+          totalAllocatedWeeks++;
+          if (week.isTentative) {
+            tentativeWeeks++;
+          } else {
+            finalWeeks++;
+          }
+        }
+      });
+    });
+
+    return {
+      totalHours: totalAllocatedWeeks * HOURS_PER_WEEK,
+      finalHours: finalWeeks * HOURS_PER_WEEK,
+      tentativeHours: tentativeWeeks * HOURS_PER_WEEK,
+      totalWeeks: totalAllocatedWeeks,
+      finalWeeks,
+      tentativeWeeks
+    };
+  }, [engineersWithFreeCapacity, filteredWeeks]);
 
   // Celkové statistiky
   const totalEngineers = Object.keys(processedData).length;
@@ -550,6 +590,46 @@ export const FreeCapacityOverview = () => {
           </div>
         </div>
       </Card>
+
+      {/* Summary Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="p-4 shadow-card-custom">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Clock className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Celkem hodin (alokováno)</p>
+              <p className="text-2xl font-bold">{summaryStats.totalHours.toLocaleString('cs-CZ')} h</p>
+              <p className="text-xs text-muted-foreground">{summaryStats.totalWeeks} týdnů</p>
+            </div>
+          </div>
+        </Card>
+        <Card className="p-4 shadow-card-custom">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-success/10">
+              <CheckCircle className="h-5 w-5 text-success" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Finální</p>
+              <p className="text-2xl font-bold">{summaryStats.finalHours.toLocaleString('cs-CZ')} h</p>
+              <p className="text-xs text-muted-foreground">{summaryStats.finalWeeks} týdnů</p>
+            </div>
+          </div>
+        </Card>
+        <Card className="p-4 shadow-card-custom">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-warning/10">
+              <AlertCircle className="h-5 w-5 text-warning" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Předběžné</p>
+              <p className="text-2xl font-bold">{summaryStats.tentativeHours.toLocaleString('cs-CZ')} h</p>
+              <p className="text-xs text-muted-foreground">{summaryStats.tentativeWeeks} týdnů</p>
+            </div>
+          </div>
+        </Card>
+      </div>
 
       {/* Engineers with Free Capacity */}
       <Card className="shadow-planning">
