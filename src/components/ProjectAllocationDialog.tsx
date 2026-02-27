@@ -236,6 +236,17 @@ export const ProjectAllocationDialog = ({
     return totals;
   }, [engineers, displayColumns, allocationMatrix]);
 
+  // Calculate column engineer counts (per column - week or month)
+  const columnEngineerCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    displayColumns.forEach(col => {
+      counts[col] = engineers.filter(eng => 
+        (allocationMatrix[eng]?.[col]?.hours || 0) > 0
+      ).length;
+    });
+    return counts;
+  }, [engineers, displayColumns, allocationMatrix]);
+
   // Get project metadata
   const customer = customers?.find(c => c.id === projectInfo?.customerId);
   const pm = projectManagers?.find(p => p.id === projectInfo?.projectManagerId);
@@ -394,6 +405,20 @@ export const ProjectAllocationDialog = ({
                       ))}
                       <TableCell className="text-center font-bold bg-primary/10 text-primary text-xs py-1 px-1">
                         {stats.totalHours}h
+                      </TableCell>
+                    </TableRow>
+                    {/* FTE row */}
+                    <TableRow className="bg-muted/40 border-t">
+                      <TableCell className="sticky left-0 bg-muted/40 z-10 font-bold text-xs py-1 px-2">
+                        FTE
+                      </TableCell>
+                      {displayColumns.map(col => (
+                        <TableCell key={col} className="text-center font-bold text-xs py-1 px-1 text-blue-600">
+                          {columnEngineerCounts[col] || 0}
+                        </TableCell>
+                      ))}
+                      <TableCell className="text-center font-bold bg-primary/10 text-xs py-1 px-1">
+                        {stats.uniqueEngineers}
                       </TableCell>
                     </TableRow>
                   </TableBody>
