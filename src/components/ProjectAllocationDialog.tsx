@@ -262,7 +262,7 @@ export const ProjectAllocationDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-7xl w-[95vw] max-h-[80vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-7xl w-[95vw] max-h-[92vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-lg font-bold flex items-center gap-2">
             {projectName}
