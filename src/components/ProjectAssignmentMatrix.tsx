@@ -1476,6 +1476,71 @@ export const ProjectAssignmentMatrix = ({
                   )}
                 </tr>
                 )}
+                {/* Summary row for FTE - hide in customer view */}
+                {!customerViewMode && (
+                <tr className="bg-secondary/10 border-t border-secondary/20">
+                  <td className="border border-border p-2 font-bold sticky left-0 bg-secondary/10 z-10 text-foreground text-sm">
+                    Celkem FTE
+                  </td>
+                  {viewMode === 'weeks' ? (
+                    months.map((month, monthIndex) => 
+                      month.weeks.map((week, weekIndex) => {
+                        const totalHours = filteredEngineers.reduce((sum, engineer) => {
+                          const projectData = matrixData[engineer][week];
+                          const project = projectData?.projekt;
+                          const hours = projectData?.hours || 0;
+                          if (project === 'FREE' || project === 'DOVOLENÁ' || project === 'OVER') {
+                            return sum;
+                          }
+                          return sum + hours;
+                        }, 0);
+                        const fte = (totalHours / 40).toFixed(1);
+                        return (
+                          <td 
+                            key={week} 
+                            className={`border border-border p-1 text-center font-semibold ${
+                              monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
+                            }`}
+                          >
+                            <div className="text-sm text-foreground">
+                              {fte}
+                            </div>
+                          </td>
+                        );
+                      })
+                    )
+                  ) : (
+                    months.map((month, monthIndex) => {
+                      const monthWeeks = month.weeks;
+                      const totalHours = monthWeeks.reduce((monthSum, week) => {
+                        const weekHours = filteredEngineers.reduce((sum, engineer) => {
+                          const projectData = matrixData[engineer][week];
+                          const project = projectData?.projekt;
+                          const hours = projectData?.hours || 0;
+                          if (project === 'FREE' || project === 'DOVOLENÁ' || project === 'OVER') {
+                            return sum;
+                          }
+                          return sum + hours;
+                        }, 0);
+                        return monthSum + weekHours;
+                      }, 0);
+                      const fte = (totalHours / 40).toFixed(1);
+                      return (
+                        <td 
+                          key={month.name} 
+                          className={`border border-border p-1.5 text-center font-semibold ${
+                            monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
+                          }`}
+                        >
+                          <div className="text-sm text-foreground">
+                            {fte}
+                          </div>
+                        </td>
+                      );
+                    })
+                  )}
+                </tr>
+                )}
                 {/* Summary row for utilization percentage - hide in customer view */}
                 {!customerViewMode && (
                 <tr className="bg-accent/10 border-t-2 border-accent/30">
