@@ -300,27 +300,6 @@ export const ProjectAllocationDialog = ({
           </div>
         )}
 
-        {/* Statistics cards */}
-        <div className="grid grid-cols-3 gap-2 py-2">
-          <Card className="bg-muted/30">
-            <CardContent className="p-2 text-center">
-              <div className="text-lg font-bold text-primary">{stats.totalHours}h</div>
-              <div className="text-[10px] text-muted-foreground">Celkem hodin</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-green-500/10">
-            <CardContent className="p-2 text-center">
-              <div className="text-lg font-bold text-green-600">{stats.finalHours}h</div>
-              <div className="text-[10px] text-muted-foreground">Finální ({stats.finalAllocations})</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-yellow-500/10">
-            <CardContent className="p-2 text-center">
-              <div className="text-lg font-bold text-yellow-600">{stats.tentativeHours}h</div>
-              <div className="text-[10px] text-muted-foreground">Předběžně ({stats.tentativeAllocations})</div>
-            </CardContent>
-          </Card>
-        </div>
 
         {/* Allocation table */}
         {allocations.length > 0 ? (
