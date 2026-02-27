@@ -425,6 +425,7 @@ export const ProjectAllocationDialog = ({
                   </TableBody>
                 </Table>
               </div>
+              <ScrollBar orientation="vertical" className="w-3 bg-muted/50 [&>div]:bg-primary/60 [&>div]:hover:bg-primary/80" />
               <ScrollBar orientation="horizontal" className="h-3 bg-muted/50 [&>div]:bg-primary/60 [&>div]:hover:bg-primary/80" />
             </ScrollArea>
           </div>
