@@ -310,12 +310,12 @@ export const ProjectAllocationDialog = ({
                   <TableHeader className="sticky top-0 bg-background z-10">
                     {viewMode === 'weeks' && (
                       <TableRow>
-                        <TableHead className="sticky left-0 bg-background z-20 min-w-[130px]" />
+                        <TableHead className="sticky left-0 bg-background z-20 min-w-[90px]" />
                         {monthGroups.map((group, idx) => (
                           <TableHead
                             key={`${group.name}-${idx}`}
                             colSpan={group.colSpan}
-                            className="text-center text-[10px] font-bold border-b py-1 px-0 uppercase tracking-wider"
+                            className="text-center text-[10px] font-bold border-b py-0.5 px-0 uppercase tracking-wider"
                           >
                             {group.name}
                           </TableHead>
