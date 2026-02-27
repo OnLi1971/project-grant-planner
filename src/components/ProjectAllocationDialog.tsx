@@ -192,6 +192,25 @@ export const ProjectAllocationDialog = ({
     return matrix;
   }, [allocations, engineers, monthsData, viewMode]);
 
+  // Month groups for weekly view header
+  const monthGroups = useMemo(() => {
+    if (viewMode !== 'weeks') return [];
+    const groups: { name: string; colSpan: number }[] = [];
+    weeks.forEach(week => {
+      const match = week.match(/CW(\d+)-(\d+)/);
+      if (match) {
+        const monthInfo = monthWeekMapping[match[1]];
+        const label = `${monthInfo?.name || '?'} ${match[2]}`;
+        if (groups.length > 0 && groups[groups.length - 1].name === label) {
+          groups[groups.length - 1].colSpan++;
+        } else {
+          groups.push({ name: label, colSpan: 1 });
+        }
+      }
+    });
+    return groups;
+  }, [weeks, viewMode]);
+
   // Use appropriate matrix based on view mode
   const allocationMatrix = viewMode === 'months' ? monthlyAllocationMatrix : weeklyAllocationMatrix;
 
@@ -310,6 +329,21 @@ export const ProjectAllocationDialog = ({
               <div className="min-w-max pb-4">
                 <Table>
                   <TableHeader className="sticky top-0 bg-background z-10">
+                    {viewMode === 'weeks' && (
+                      <TableRow>
+                        <TableHead className="sticky left-0 bg-background z-20 min-w-[130px]" />
+                        {monthGroups.map((group, idx) => (
+                          <TableHead
+                            key={`${group.name}-${idx}`}
+                            colSpan={group.colSpan}
+                            className="text-center text-[10px] font-semibold border-b py-1 px-0"
+                          >
+                            {group.name}
+                          </TableHead>
+                        ))}
+                        <TableHead className="bg-muted/30 min-w-[50px]" />
+                      </TableRow>
+                    )}
                     <TableRow>
                       <TableHead className="sticky left-0 bg-background z-20 min-w-[130px] font-semibold text-xs py-1.5 px-2">
                         Konstruktér
