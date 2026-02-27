@@ -336,7 +336,7 @@ export const ProjectAllocationDialog = ({
                           <TableHead
                             key={`${group.name}-${idx}`}
                             colSpan={group.colSpan}
-                            className="text-center text-[8px] font-semibold border-b py-0 px-0 leading-tight"
+                            className="text-center text-[10px] font-semibold border-b py-1 px-0"
                           >
                             {group.name}
                           </TableHead>
