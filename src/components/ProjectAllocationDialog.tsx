@@ -324,7 +324,7 @@ export const ProjectAllocationDialog = ({
                       </TableRow>
                     )}
                     <TableRow>
-                      <TableHead className="sticky left-0 bg-background z-20 min-w-[130px] font-semibold text-xs py-1.5 px-2">
+                      <TableHead className="sticky left-0 bg-background z-20 min-w-[90px] font-semibold text-xs py-1.5 px-2">
                         Konstruktér
                       </TableHead>
                       {displayColumns.map(col => (
