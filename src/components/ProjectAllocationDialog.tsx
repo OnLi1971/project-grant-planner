@@ -396,6 +396,19 @@ export const ProjectAllocationDialog = ({
                         {stats.totalHours}h
                       </TableCell>
                     </TableRow>
+                    <TableRow className="bg-secondary/10">
+                      <TableCell className="sticky left-0 bg-secondary/10 z-10 font-bold text-xs py-1 px-2">
+                        Celkem FTE
+                      </TableCell>
+                      {displayColumns.map(col => (
+                        <TableCell key={col} className="text-center font-bold text-xs py-1 px-1">
+                          {(columnTotals[col] / 40).toFixed(1)}
+                        </TableCell>
+                      ))}
+                      <TableCell className="text-center font-bold bg-primary/10 text-primary text-xs py-1 px-1">
+                        {(stats.totalHours / 40).toFixed(1)}
+                      </TableCell>
+                    </TableRow>
                   </TableBody>
                 </Table>
               </div>
