@@ -316,7 +316,7 @@ export const ProjectAllocationDialog = ({
                       </TableHead>
                       {displayColumns.map(col => (
                         <TableHead key={col} className={`text-center ${viewMode === 'months' ? 'min-w-[80px]' : 'min-w-[50px]'} text-[10px] py-1.5 px-1`}>
-                          {col}
+                          {col.replace(/-\d{4}$/, '')}
                         </TableHead>
                       ))}
                       <TableHead className="text-center min-w-[50px] font-semibold bg-muted/30 text-xs py-1.5 px-1">
