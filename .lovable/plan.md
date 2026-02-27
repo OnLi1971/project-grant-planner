@@ -1,44 +1,57 @@
 
 
-## Plán: Přidat řádek s počtem konstruktérů (FTE) pod Celkem
+## Plán: Přidat počet konstruktérů do summary karet
 
-### Změna v `src/components/ProjectAllocationDialog.tsx`
+### Změna v `src/components/FreeCapacityOverview.tsx`
 
-#### 1. Přidat výpočet `columnEngineerCounts`
+#### 1. Rozšířit `summaryStats` o počty konstruktérů
 
-Nový `useMemo` – pro každý sloupec (týden/měsíc) spočítá počet unikátních konstruktérů s nenulovými hodinami:
+Přidat do výpočtu sledování unikátních konstruktérů (celkem, finální, předběžné):
 
 ```tsx
-const columnEngineerCounts = useMemo(() => {
-  const counts: Record<string, number> = {};
-  displayColumns.forEach(col => {
-    counts[col] = engineers.filter(eng => 
-      (allocationMatrix[eng]?.[col]?.hours || 0) > 0
-    ).length;
+const summaryStats = useMemo(() => {
+  const HOURS_PER_WEEK = 36;
+  let totalAllocatedWeeks = 0;
+  let finalWeeks = 0;
+  let tentativeWeeks = 0;
+  const totalEngineersSet = new Set<string>();
+  const finalEngineersSet = new Set<string>();
+  const tentativeEngineersSet = new Set<string>();
+
+  engineersWithFreeCapacity.forEach(engineer => {
+    const relevantWeeks = engineer.weeks.filter(week => filteredWeeks.includes(week.cw));
+    relevantWeeks.forEach(week => {
+      const isFree = week.projekt === 'FREE' || week.projekt === '' || !week.projekt;
+      if (!isFree) {
+        totalAllocatedWeeks++;
+        totalEngineersSet.add(engineer.konstrukter);
+        if (week.isTentative) {
+          tentativeWeeks++;
+          tentativeEngineersSet.add(engineer.konstrukter);
+        } else {
+          finalWeeks++;
+          finalEngineersSet.add(engineer.konstrukter);
+        }
+      }
+    });
   });
-  return counts;
-}, [engineers, displayColumns, allocationMatrix]);
+
+  return {
+    // ... existing fields ...
+    totalEngineers: totalEngineersSet.size,
+    finalEngineers: finalEngineersSet.size,
+    tentativeEngineers: tentativeEngineersSet.size,
+  };
+}, [...]);
 ```
 
-#### 2. Přidat nový řádek `FTE` pod řádek `Celkem`
+#### 2. Zobrazit počty v kartách
 
-Nový `<TableRow>` hned za stávající "Celkem" řádek (řádky ~386-398):
+Pod každou kartou přidat řádek s počtem konstruktérů:
 
-```tsx
-<TableRow className="bg-muted/40 border-t">
-  <TableCell className="sticky left-0 bg-muted/40 z-10 font-bold text-xs py-1 px-2">
-    FTE
-  </TableCell>
-  {displayColumns.map(col => (
-    <TableCell key={col} className="text-center font-bold text-xs py-1 px-1 text-blue-600">
-      {columnEngineerCounts[col] || 0}
-    </TableCell>
-  ))}
-  <TableCell className="text-center font-bold bg-primary/10 text-xs py-1 px-1">
-    {stats.uniqueEngineers}
-  </TableCell>
-</TableRow>
-```
+- **Celkem hodin**: `{summaryStats.totalEngineers} konstruktérů`
+- **Finální**: `{summaryStats.finalEngineers} konstruktérů`
+- **Předběžné**: `{summaryStats.tentativeEngineers} konstruktérů`
 
-Výsledek: pod řádkem "Celkem 280h / 968h / 2584h" bude řádek "FTE 2 / 7 / 15" (počet konstruktérů s alokací v daném období).
+Formát: nový `<p className="text-xs text-muted-foreground">` pod existující řádek s týdny.
 
