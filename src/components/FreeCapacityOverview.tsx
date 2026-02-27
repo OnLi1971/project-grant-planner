@@ -181,9 +181,6 @@ export const FreeCapacityOverview = () => {
     let totalAllocatedWeeks = 0;
     let finalWeeks = 0;
     let tentativeWeeks = 0;
-    const totalEngineersSet = new Set<string>();
-    const finalEngineersSet = new Set<string>();
-    const tentativeEngineersSet = new Set<string>();
 
     engineersWithFreeCapacity.forEach(engineer => {
       const relevantWeeks = engineer.weeks.filter(week => filteredWeeks.includes(week.cw));
@@ -191,13 +188,10 @@ export const FreeCapacityOverview = () => {
         const isFree = week.projekt === 'FREE' || week.projekt === '' || !week.projekt;
         if (!isFree) {
           totalAllocatedWeeks++;
-          totalEngineersSet.add(engineer.name);
           if (week.isTentative) {
             tentativeWeeks++;
-            tentativeEngineersSet.add(engineer.name);
           } else {
             finalWeeks++;
-            finalEngineersSet.add(engineer.name);
           }
         }
       });
@@ -209,10 +203,7 @@ export const FreeCapacityOverview = () => {
       tentativeHours: tentativeWeeks * HOURS_PER_WEEK,
       totalWeeks: totalAllocatedWeeks,
       finalWeeks,
-      tentativeWeeks,
-      totalEngineers: totalEngineersSet.size,
-      finalEngineers: finalEngineersSet.size,
-      tentativeEngineers: tentativeEngineersSet.size,
+      tentativeWeeks
     };
   }, [engineersWithFreeCapacity, filteredWeeks]);
 
@@ -610,7 +601,7 @@ export const FreeCapacityOverview = () => {
             <div>
               <p className="text-sm text-muted-foreground">Celkem hodin (alokováno)</p>
               <p className="text-2xl font-bold">{summaryStats.totalHours.toLocaleString('cs-CZ')} h</p>
-              <p className="text-xs text-muted-foreground">{summaryStats.totalWeeks} týdnů · {summaryStats.totalEngineers} konstruktérů</p>
+              <p className="text-xs text-muted-foreground">{summaryStats.totalWeeks} týdnů</p>
             </div>
           </div>
         </Card>
@@ -622,7 +613,7 @@ export const FreeCapacityOverview = () => {
             <div>
               <p className="text-sm text-muted-foreground">Finální</p>
               <p className="text-2xl font-bold">{summaryStats.finalHours.toLocaleString('cs-CZ')} h</p>
-              <p className="text-xs text-muted-foreground">{summaryStats.finalWeeks} týdnů · {summaryStats.finalEngineers} konstruktérů</p>
+              <p className="text-xs text-muted-foreground">{summaryStats.finalWeeks} týdnů</p>
             </div>
           </div>
         </Card>
@@ -634,7 +625,7 @@ export const FreeCapacityOverview = () => {
             <div>
               <p className="text-sm text-muted-foreground">Předběžné</p>
               <p className="text-2xl font-bold">{summaryStats.tentativeHours.toLocaleString('cs-CZ')} h</p>
-              <p className="text-xs text-muted-foreground">{summaryStats.tentativeWeeks} týdnů · {summaryStats.tentativeEngineers} konstruktérů</p>
+              <p className="text-xs text-muted-foreground">{summaryStats.tentativeWeeks} týdnů</p>
             </div>
           </div>
         </Card>
