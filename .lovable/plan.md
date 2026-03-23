@@ -1,57 +1,36 @@
 
 
-## Plán: Přidat řádek měsíců nad týdenní hlavičky v ProjectAllocationDialog
+## Plán: Oprava statistik - odstranění limitu 500 záznamů
 
-### Změna v `src/components/ProjectAllocationDialog.tsx`
+### Problém
 
-Přidat nový `<TableRow>` nad stávající řádek s CW hlavičkami (jen v `viewMode === 'weeks'`). Tento řádek bude obsahovat sloučené buňky (`colSpan`) pro každý měsíc, seskupené podle `monthWeekMapping`.
+Funkce `loadChanges()` na řádku 71 má `.limit(500)`, což znamená, že se načte maximálně 500 záznamů. Statistiky se počítají z tohoto omezeného datasetu. Za 3 měsíce je pravděpodobně mnohem víc než 500 změn, takže statistiky ukazují neúplná data (např. jen 10 alokací místo skutečného počtu).
 
-#### Implementace
+### Řešení
 
-1. **Vypočítat měsíční skupiny z `weeks`** — seskupit po sobě jdoucí týdny do měsíců pomocí existujícího `monthWeekMapping`, spočítat `colSpan` pro každý měsíc.
+Oddělit načítání dat pro statistiky od historie změn:
 
-2. **Přidat nový `<TableRow>` do `<TableHeader>`** před stávající řádek s CW:
+1. **Přidat samostatnou funkci `loadStatsChanges()`** která:
+   - Načítá data **bez limitu** (s paginací po 1000 záznamech, podobně jako v `usePlanningData`)
+   - Filtruje pouze podle data statistického období (ne podle filtrů historie)
+   - Načítá pouze `change_type`, `old_value`, `new_value`, `konstrukter`, `changed_at` (bez joinu na profiles)
 
-```tsx
-<TableHeader className="sticky top-0 bg-background z-10">
-  {viewMode === 'weeks' && (
-    <TableRow>
-      <TableHead className="sticky left-0 bg-background z-20" />
-      {monthGroups.map(group => (
-        <TableHead 
-          key={group.name} 
-          colSpan={group.colSpan} 
-          className="text-center text-[10px] font-semibold border-b py-1 px-0"
-        >
-          {group.name}
-        </TableHead>
-      ))}
-      <TableHead className="bg-muted/30" />
-    </TableRow>
-  )}
-  {/* existující řádek s CW hlavičkami */}
-  <TableRow>...</TableRow>
-</TableHeader>
-```
+2. **Přidat nový state `statsChanges`** pro data statistik, oddělený od `changes` (historie)
 
-3. **`monthGroups` useMemo** — iteruje přes `weeks` (sorted), mapuje každý na měsíc+rok, seskupuje sousední stejné měsíce do jedné skupiny s `colSpan`:
+3. **Upravit `statistics` useMemo** aby používal `statsChanges` místo `changes`
 
-```tsx
-const monthGroups = useMemo(() => {
-  const groups: { name: string; colSpan: number }[] = [];
-  weeks.forEach(week => {
-    const match = week.match(/CW(\d+)-(\d+)/);
-    if (match) {
-      const monthInfo = monthWeekMapping[match[1]];
-      const label = `${monthInfo?.name || '?'} ${match[2]}`;
-      if (groups.length > 0 && groups[groups.length - 1].name === label) {
-        groups[groups.length - 1].colSpan++;
-      } else {
-        groups.push({ name: label, colSpan: 1 });
-      }
-    }
-  });
-  return groups;
-}, [weeks]);
-```
+4. **Spouštět `loadStatsChanges()`** při otevření dialogu a při změně `statsTimeRange` / `statsCustomDateFrom` / `statsCustomDateTo` — rovnou s date filtrem v query, aby se tahal jen relevantní rozsah
+
+### Technické detaily
+
+**Nová funkce `loadStatsChanges`:**
+- Query s `.gte('changed_at', startDate)` a `.lte('changed_at', endDate)` přímo v SQL
+- Paginace: smyčka po 1000 záznamech dokud nejsou všechna data
+- Bez `.limit()` omezení na celkový počet
+- Filtruje pouze `change_type in ('project', 'tentative')`
+
+**Historie (`loadChanges`) zůstane s limitem 500** — pro zobrazení posledních změn to stačí.
+
+### Soubor
+- `src/components/PlanningHistoryDialog.tsx`
 
