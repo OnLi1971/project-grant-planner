@@ -288,42 +288,10 @@ export function PlanningHistoryDialog({
 
   // Calculate statistics
   const statistics = useMemo(() => {
-    const now = new Date();
-    let startDate: Date;
-    let endDate: Date;
-    
-    switch (statsTimeRange) {
-      case 'week':
-        startDate = startOfWeek(subDays(now, 7), { weekStartsOn: 1 });
-        endDate = endOfWeek(subDays(now, 7), { weekStartsOn: 1 });
-        break;
-      case 'month':
-        startDate = startOfMonth(subMonths(now, 1));
-        endDate = endOfMonth(subMonths(now, 1));
-        break;
-      case 'thisMonth':
-        startDate = startOfMonth(now);
-        endDate = now;
-        break;
-      case 'custom':
-        startDate = statsCustomDateFrom || startOfMonth(now);
-        endDate = statsCustomDateTo || now;
-        break;
-    }
+    const { startDate, endDate } = statsDateRange;
 
-    const relevantProjectChanges = changes.filter(change => {
-      const changeDate = new Date(change.changed_at);
-      return change.change_type === 'project' && 
-             changeDate >= startDate && 
-             changeDate <= endDate;
-    });
-
-    const relevantTentativeChanges = changes.filter(change => {
-      const changeDate = new Date(change.changed_at);
-      return change.change_type === 'tentative' && 
-             changeDate >= startDate && 
-             changeDate <= endDate;
-    });
+    const relevantProjectChanges = statsChanges.filter(c => c.change_type === 'project');
+    const relevantTentativeChanges = statsChanges.filter(c => c.change_type === 'tentative');
 
     const freeToProject = relevantProjectChanges.filter(c => 
       (c.old_value === 'FREE' || c.old_value === null) && 
@@ -339,17 +307,14 @@ export function PlanningHistoryDialog({
       (c.new_value === 'FREE' || c.new_value === null)
     );
 
-    // Tentative changes
     const tentativeToFinal = relevantTentativeChanges.filter(c => c.new_value === 'false');
     const finalToTentative = relevantTentativeChanges.filter(c => c.new_value === 'true');
 
-    // Calculate hours (assuming 36h per week per engineer)
     const freeToProjectHours = freeToProject.length * 36;
     const projectToFreeHours = projectToFree.length * 36;
     const tentativeToFinalHours = tentativeToFinal.length * 36;
     const finalToTentativeHours = finalToTentative.length * 36;
 
-    // Group by engineer
     const engineerStats = new Map<string, { allocated: number, deallocated: number, toFinal: number, toTentative: number }>();
     
     freeToProject.forEach(change => {
@@ -396,7 +361,7 @@ export function PlanningHistoryDialog({
         net: stats.allocated - stats.deallocated
       })).sort((a, b) => Math.abs(b.net) - Math.abs(a.net))
     };
-  }, [changes, statsTimeRange, statsCustomDateFrom, statsCustomDateTo]);
+  }, [statsChanges, statsDateRange]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
