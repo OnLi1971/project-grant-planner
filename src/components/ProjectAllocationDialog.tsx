@@ -25,6 +25,7 @@ export interface AllocationEntry {
   hours: number;
   isTentative: boolean;
   alternativeActivity?: string; // 'DOVOLENÁ', 'NEMOC', 'OVER'
+  isPartialFree?: boolean; // partial free capacity (engineer has <40h on other projects)
 }
 
 interface ProjectAllocationDialogProps {
