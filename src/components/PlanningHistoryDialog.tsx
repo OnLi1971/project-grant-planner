@@ -337,6 +337,16 @@ export function PlanningHistoryDialog({
       engineerStats.set(change.konstrukter, { ...current, toTentative: current.toTentative + 1 });
     });
 
+    // Čistý alokační poměr (Net Allocation Ratio) = alokace / dealokace
+    const netAllocationRatio = projectToFree.length > 0 
+      ? freeToProject.length / projectToFree.length 
+      : freeToProject.length > 0 ? Infinity : 0;
+
+    // Index stability = 1 - (dealokace / alokace)
+    const stabilityIndex = freeToProject.length > 0 
+      ? 1 - (projectToFree.length / freeToProject.length) 
+      : projectToFree.length > 0 ? -Infinity : 1;
+
     return {
       startDate,
       endDate,
@@ -352,6 +362,8 @@ export function PlanningHistoryDialog({
       netChangeHours: freeToProjectHours - projectToFreeHours,
       netTentativeChange: tentativeToFinal.length - finalToTentative.length,
       netTentativeChangeHours: tentativeToFinalHours - finalToTentativeHours,
+      netAllocationRatio,
+      stabilityIndex,
       engineerStats: Array.from(engineerStats.entries()).map(([name, stats]) => ({
         name,
         allocated: stats.allocated,
@@ -599,7 +611,7 @@ export function PlanningHistoryDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2">
               <Card className="p-3">
                 <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1">
                   <TrendingUp className="h-3 w-3 text-green-500" />
@@ -627,6 +639,28 @@ export function PlanningHistoryDialog({
                   {statistics.netChange > 0 ? '+' : ''}{statistics.netChange}
                 </div>
                 <p className="text-xs text-muted-foreground">{statistics.netChangeHours > 0 ? '+' : ''}{statistics.netChangeHours}h</p>
+              </Card>
+
+              <Card className="p-3">
+                <div className="text-xs font-medium text-muted-foreground mb-1">Alokační poměr</div>
+                <div className={cn(
+                  "text-lg font-bold",
+                  statistics.netAllocationRatio > 1 ? "text-green-600" : statistics.netAllocationRatio < 1 ? "text-red-600" : ""
+                )}>
+                  {statistics.netAllocationRatio === Infinity ? '∞' : statistics.netAllocationRatio.toFixed(2)}
+                </div>
+                <p className="text-xs text-muted-foreground">alokace / dealokace</p>
+              </Card>
+
+              <Card className="p-3">
+                <div className="text-xs font-medium text-muted-foreground mb-1">Index stability</div>
+                <div className={cn(
+                  "text-lg font-bold",
+                  statistics.stabilityIndex > 0 ? "text-green-600" : statistics.stabilityIndex < 0 ? "text-red-600" : ""
+                )}>
+                  {statistics.stabilityIndex === -Infinity ? '-∞' : (statistics.stabilityIndex * 100).toFixed(0)}%
+                </div>
+                <p className="text-xs text-muted-foreground">1 − (deal / alok)</p>
               </Card>
 
               <Card className="p-3">
