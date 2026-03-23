@@ -167,7 +167,7 @@ export const ProjectAllocationDialog = ({
   const monthlyAllocationMatrix = useMemo(() => {
     if (viewMode !== 'months') return {};
     
-    const matrix: Record<string, Record<string, { hours: number; isTentative: boolean; weekCount: number; alternativeActivity?: string }>> = {};
+    const matrix: Record<string, Record<string, { hours: number; isTentative: boolean; weekCount: number; alternativeActivity?: string; isPartialFree?: boolean }>> = {};
     
     engineers.forEach(eng => {
       matrix[eng] = {};
