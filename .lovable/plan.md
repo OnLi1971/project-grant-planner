@@ -1,29 +1,31 @@
 
 
-## Plan: Add legend for Allocation Ratio and Stability Index
+## Plan: Show partially free engineers in FREE allocation dialog
 
-### Change in `src/components/PlanningHistoryDialog.tsx`
+### Problem
+The FREE project dialog only shows engineers explicitly assigned to FREE. Engineers allocated to other projects with less than 40h/week (e.g., 30h on ST_EMU_INT = 10h free) are not shown.
 
-Add an info legend box below or after the two index cards explaining what each metric means and how to interpret the values.
+### Solution
+Modify `getAllocationsForProject` in `ProjectAssignmentMatrix.tsx` to add a special case when `projectName === 'FREE'`:
 
-**Implementation:**
+1. **Keep existing logic** for engineers explicitly on FREE
+2. **Add partial free capacity**: For each filtered engineer in each week, if their project is NOT FREE/DOVOLENÁ/NEMOC/OVER and hours < 40, calculate `freeHours = 40 - hours` and add an allocation entry marked as partial
+3. **Add `isPartialFree` flag** to `AllocationEntry` interface in `ProjectAllocationDialog.tsx`
+4. **Style partial entries in yellow** in the dialog table — yellow text and yellow background (similar to tentative styling but distinct)
 
-1. Add a small collapsible or always-visible legend section after the statistics grid (or below the two index cards) with:
+### Changes
 
-```
-Alokační poměr (alokace / dealokace):
-  > 1.0 = tým roste (více alokací než dealokací)
-  = 1.0 = tým je stabilní
-  < 1.0 = tým se zmenšuje
+**`src/components/ProjectAllocationDialog.tsx`**:
+- Add `isPartialFree?: boolean` to `AllocationEntry` interface
+- In cell rendering, add condition: if `isPartialFree`, use yellow styling (e.g., `text-yellow-500`, `bg-yellow-500/15`)
 
-Index stability (1 − dealokace/alokace), v %:
-  > 0% = stabilní/rostoucí tým
-  = 0% = vyrovnaný stav
-  < 0% = nestabilní, více odchodů než příchodů
-```
+**`src/components/ProjectAssignmentMatrix.tsx`**:
+- In `getAllocationsForProject`, when `projectName === 'FREE'`:
+  - After collecting explicit FREE engineers, also scan all filtered engineers
+  - For each week where engineer has a non-regime project with hours < 40, add entry with `hours: 40 - actualHours`, `isPartialFree: true`
+  - Add these engineers to `engineersOnProject` set so they appear in the table
 
-2. Use a small `Alert` or a subtle `div` with `text-xs text-muted-foreground` styling, with an info icon, placed right after the statistics grid.
-
-### File
-- `src/components/PlanningHistoryDialog.tsx` — add legend block after the stats grid row
+### File list
+- `src/components/ProjectAllocationDialog.tsx`
+- `src/components/ProjectAssignmentMatrix.tsx`
 
