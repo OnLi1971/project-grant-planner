@@ -1,31 +1,17 @@
 
 
-## Plan: Show partially free engineers in FREE allocation dialog
+## Plán: Oprava thresholdu částečné volné kapacity na 30h
 
-### Problem
-The FREE project dialog only shows engineers explicitly assigned to FREE. Engineers allocated to other projects with less than 40h/week (e.g., 30h on ST_EMU_INT = 10h free) are not shown.
+### Problém
+Aktuální kód v `ProjectAssignmentMatrix.tsx` (řádky 661 a 679) používá `< 40` jako threshold. Uživatel chce `< 30` — zobrazit jako částečně volné jen ty, kteří mají méně než 30h/týden na projektu.
 
-### Solution
-Modify `getAllocationsForProject` in `ProjectAssignmentMatrix.tsx` to add a special case when `projectName === 'FREE'`:
+### Změna
 
-1. **Keep existing logic** for engineers explicitly on FREE
-2. **Add partial free capacity**: For each filtered engineer in each week, if their project is NOT FREE/DOVOLENÁ/NEMOC/OVER and hours < 40, calculate `freeHours = 40 - hours` and add an allocation entry marked as partial
-3. **Add `isPartialFree` flag** to `AllocationEntry` interface in `ProjectAllocationDialog.tsx`
-4. **Style partial entries in yellow** in the dialog table — yellow text and yellow background (similar to tentative styling but distinct)
+**`src/components/ProjectAssignmentMatrix.tsx`** — 2 místa:
+- Řádek 661: změnit `projectData.hours < 40` → `projectData.hours < 30`
+- Řádek 679: změnit `projectData.hours < 40` → `projectData.hours < 30`
+- Oba řádky: výpočet volných hodin zůstává `40 - projectData.hours`
 
-### Changes
-
-**`src/components/ProjectAllocationDialog.tsx`**:
-- Add `isPartialFree?: boolean` to `AllocationEntry` interface
-- In cell rendering, add condition: if `isPartialFree`, use yellow styling (e.g., `text-yellow-500`, `bg-yellow-500/15`)
-
-**`src/components/ProjectAssignmentMatrix.tsx`**:
-- In `getAllocationsForProject`, when `projectName === 'FREE'`:
-  - After collecting explicit FREE engineers, also scan all filtered engineers
-  - For each week where engineer has a non-regime project with hours < 40, add entry with `hours: 40 - actualHours`, `isPartialFree: true`
-  - Add these engineers to `engineersOnProject` set so they appear in the table
-
-### File list
-- `src/components/ProjectAllocationDialog.tsx`
-- `src/components/ProjectAssignmentMatrix.tsx`
+**`src/components/ProjectAllocationDialog.tsx`** — legenda:
+- Aktualizovat text legendy u žluté barvy na "Částečná volná kapacita (< 30h/týden)"
 
