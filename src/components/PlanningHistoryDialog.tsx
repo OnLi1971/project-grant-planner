@@ -337,6 +337,16 @@ export function PlanningHistoryDialog({
       engineerStats.set(change.konstrukter, { ...current, toTentative: current.toTentative + 1 });
     });
 
+    // Čistý alokační poměr (Net Allocation Ratio) = alokace / dealokace
+    const netAllocationRatio = projectToFree.length > 0 
+      ? freeToProject.length / projectToFree.length 
+      : freeToProject.length > 0 ? Infinity : 0;
+
+    // Index stability = 1 - (dealokace / alokace)
+    const stabilityIndex = freeToProject.length > 0 
+      ? 1 - (projectToFree.length / freeToProject.length) 
+      : projectToFree.length > 0 ? -Infinity : 1;
+
     return {
       startDate,
       endDate,
@@ -352,6 +362,8 @@ export function PlanningHistoryDialog({
       netChangeHours: freeToProjectHours - projectToFreeHours,
       netTentativeChange: tentativeToFinal.length - finalToTentative.length,
       netTentativeChangeHours: tentativeToFinalHours - finalToTentativeHours,
+      netAllocationRatio,
+      stabilityIndex,
       engineerStats: Array.from(engineerStats.entries()).map(([name, stats]) => ({
         name,
         allocated: stats.allocated,
