@@ -184,9 +184,11 @@ export const ProjectAllocationDialog = ({
         if (a.isTentative) {
           matrix[a.engineer][month].isTentative = true;
         }
-        // Track alternative activity if all entries in month are the same activity
         if (a.alternativeActivity) {
           matrix[a.engineer][month].alternativeActivity = a.alternativeActivity;
+        }
+        if (a.isPartialFree) {
+          matrix[a.engineer][month].isPartialFree = true;
         }
       }
     });
