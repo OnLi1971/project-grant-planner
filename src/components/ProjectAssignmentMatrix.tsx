@@ -658,7 +658,7 @@ export const ProjectAssignmentMatrix = ({
       filteredEngineers.forEach(engineer => {
         weeks.forEach(week => {
           const projectData = matrixData[engineer][week];
-          if (projectData?.projekt && !regimeProjects.includes(projectData.projekt) && projectData.hours > 0 && projectData.hours < 40) {
+          if (projectData?.projekt && !regimeProjects.includes(projectData.projekt) && projectData.hours > 0 && projectData.hours < 30) {
             engineersOnProject.add(engineer);
           }
         });
