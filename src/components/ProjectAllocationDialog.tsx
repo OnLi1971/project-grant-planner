@@ -25,6 +25,7 @@ export interface AllocationEntry {
   hours: number;
   isTentative: boolean;
   alternativeActivity?: string; // 'DOVOLENÁ', 'NEMOC', 'OVER'
+  isPartialFree?: boolean; // partial free capacity (engineer has <40h on other projects)
 }
 
 interface ProjectAllocationDialogProps {
@@ -141,9 +142,9 @@ export const ProjectAllocationDialog = ({
     return uniqueEngineers.sort((a, b) => a.localeCompare(b, 'cs'));
   }, [allocations]);
 
-  // Create allocation matrix for weekly view: { engineer: { week: { hours, isTentative, alternativeActivity } } }
+  // Create allocation matrix for weekly view: { engineer: { week: { hours, isTentative, alternativeActivity, isPartialFree } } }
   const weeklyAllocationMatrix = useMemo(() => {
-    const matrix: Record<string, Record<string, { hours: number; isTentative: boolean; alternativeActivity?: string }>> = {};
+    const matrix: Record<string, Record<string, { hours: number; isTentative: boolean; alternativeActivity?: string; isPartialFree?: boolean }>> = {};
     
     engineers.forEach(eng => {
       matrix[eng] = {};
@@ -154,7 +155,8 @@ export const ProjectAllocationDialog = ({
       matrix[a.engineer][a.week] = { 
         hours: a.hours, 
         isTentative: a.isTentative,
-        alternativeActivity: a.alternativeActivity 
+        alternativeActivity: a.alternativeActivity,
+        isPartialFree: a.isPartialFree,
       };
     });
     
@@ -165,7 +167,7 @@ export const ProjectAllocationDialog = ({
   const monthlyAllocationMatrix = useMemo(() => {
     if (viewMode !== 'months') return {};
     
-    const matrix: Record<string, Record<string, { hours: number; isTentative: boolean; weekCount: number; alternativeActivity?: string }>> = {};
+    const matrix: Record<string, Record<string, { hours: number; isTentative: boolean; weekCount: number; alternativeActivity?: string; isPartialFree?: boolean }>> = {};
     
     engineers.forEach(eng => {
       matrix[eng] = {};
@@ -182,9 +184,11 @@ export const ProjectAllocationDialog = ({
         if (a.isTentative) {
           matrix[a.engineer][month].isTentative = true;
         }
-        // Track alternative activity if all entries in month are the same activity
         if (a.alternativeActivity) {
           matrix[a.engineer][month].alternativeActivity = a.alternativeActivity;
+        }
+        if (a.isPartialFree) {
+          matrix[a.engineer][month].isPartialFree = true;
         }
       }
     });
@@ -358,24 +362,29 @@ export const ProjectAllocationDialog = ({
                               key={col} 
                               className={`text-center text-[11px] py-1 px-1 ${
                                 hasAllocation 
-                                  ? allocation.isTentative 
-                                    ? 'bg-yellow-500/20' 
-                                    : isFullyAllocated 
-                                      ? 'bg-green-500/10' 
-                                      : 'bg-orange-500/10'
+                                  ? allocation.isPartialFree
+                                    ? 'bg-yellow-500/15'
+                                    : allocation.isTentative 
+                                      ? 'bg-yellow-500/20' 
+                                      : isFullyAllocated 
+                                        ? 'bg-green-500/10' 
+                                        : 'bg-orange-500/10'
                                   : ''
                               }`}
                             >
                               {hasAllocation ? (
                                 <span className={`font-medium ${
-                                  allocation.isTentative 
-                                    ? 'text-yellow-600' 
-                                    : isFullyAllocated 
-                                      ? 'text-green-600' 
-                                      : 'text-orange-600'
+                                  allocation.isPartialFree
+                                    ? 'text-yellow-500'
+                                    : allocation.isTentative 
+                                      ? 'text-yellow-600' 
+                                      : isFullyAllocated 
+                                        ? 'text-green-600' 
+                                        : 'text-orange-600'
                                 }`}>
                                   {allocation.hours}h
                                   {allocation.isTentative && <span className="text-[9px] ml-0.5">?</span>}
+                                  {allocation.isPartialFree && <span className="text-[9px] ml-0.5">~</span>}
                                 </span>
                               ) : allocation?.alternativeActivity ? (
                                 <Badge 
@@ -448,6 +457,10 @@ export const ProjectAllocationDialog = ({
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 rounded bg-yellow-500/30 border border-yellow-500/50"></div>
             <span>Předběžná rezervace (?)</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-3 h-3 rounded bg-yellow-500/15 border border-yellow-500/40"></div>
+            <span>Částečná volná kapacita (~)</span>
           </div>
           <Separator orientation="vertical" className="h-4" />
           <div className="flex items-center gap-1">

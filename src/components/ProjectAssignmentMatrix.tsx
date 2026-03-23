@@ -640,6 +640,7 @@ export const ProjectAssignmentMatrix = ({
   const getAllocationsForProject = useCallback((projectName: string): AllocationEntry[] => {
     const allocations: AllocationEntry[] = [];
     const alternativeActivities = ['DOVOLENÁ', 'NEMOC', 'OVER'];
+    const regimeProjects = ['FREE', 'DOVOLENÁ', 'NEMOC', 'OVER'];
     
     // First pass: find engineers with at least one allocation on this project
     const engineersOnProject = new Set<string>();
@@ -651,6 +652,18 @@ export const ProjectAssignmentMatrix = ({
         }
       });
     });
+
+    // For FREE project: also find engineers with partial capacity (<40h on non-regime projects)
+    if (projectName === 'FREE') {
+      filteredEngineers.forEach(engineer => {
+        weeks.forEach(week => {
+          const projectData = matrixData[engineer][week];
+          if (projectData?.projekt && !regimeProjects.includes(projectData.projekt) && projectData.hours > 0 && projectData.hours < 40) {
+            engineersOnProject.add(engineer);
+          }
+        });
+      });
+    }
     
     // Second pass: for these engineers, add entries for all weeks
     engineersOnProject.forEach(engineer => {
@@ -662,6 +675,15 @@ export const ProjectAssignmentMatrix = ({
             week,
             hours: projectData.hours,
             isTentative: projectData.isTentative || false
+          });
+        } else if (projectName === 'FREE' && projectData?.projekt && !regimeProjects.includes(projectData.projekt) && projectData.hours > 0 && projectData.hours < 40) {
+          // Add partial free capacity entry
+          allocations.push({
+            engineer: displayNameMap[engineer] || engineer,
+            week,
+            hours: 40 - projectData.hours,
+            isTentative: false,
+            isPartialFree: true
           });
         } else if (projectData?.projekt && alternativeActivities.includes(projectData.projekt)) {
           // Add alternative activity entry (vacation, sick leave, overtime)
