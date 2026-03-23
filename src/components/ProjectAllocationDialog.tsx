@@ -359,11 +359,13 @@ export const ProjectAllocationDialog = ({
                               key={col} 
                               className={`text-center text-[11px] py-1 px-1 ${
                                 hasAllocation 
-                                  ? allocation.isTentative 
-                                    ? 'bg-yellow-500/20' 
-                                    : isFullyAllocated 
-                                      ? 'bg-green-500/10' 
-                                      : 'bg-orange-500/10'
+                                  ? allocation.isPartialFree
+                                    ? 'bg-yellow-500/15'
+                                    : allocation.isTentative 
+                                      ? 'bg-yellow-500/20' 
+                                      : isFullyAllocated 
+                                        ? 'bg-green-500/10' 
+                                        : 'bg-orange-500/10'
                                   : ''
                               }`}
                             >
