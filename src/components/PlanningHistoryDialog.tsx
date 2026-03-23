@@ -693,6 +693,11 @@ export function PlanningHistoryDialog({
               </Card>
             </div>
 
+            <div className="text-xs text-muted-foreground p-3 bg-muted/30 rounded-lg border space-y-1">
+              <p><strong>Alokační poměr</strong> (alokace / dealokace): &gt; 1.0 = tým roste (více alokací než dealokací) · = 1.0 = stabilní · &lt; 1.0 = tým se zmenšuje</p>
+              <p><strong>Index stability</strong> (1 − dealokace / alokace), v %: &gt; 0% = stabilní/rostoucí tým · = 0% = vyrovnaný stav · &lt; 0% = nestabilní, více odchodů než příchodů</p>
+            </div>
+
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Změny podle konstruktéra</CardTitle>
