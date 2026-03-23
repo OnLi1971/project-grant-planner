@@ -1,36 +1,29 @@
 
 
-## Plán: Oprava statistik - odstranění limitu 500 záznamů
+## Plan: Add legend for Allocation Ratio and Stability Index
 
-### Problém
+### Change in `src/components/PlanningHistoryDialog.tsx`
 
-Funkce `loadChanges()` na řádku 71 má `.limit(500)`, což znamená, že se načte maximálně 500 záznamů. Statistiky se počítají z tohoto omezeného datasetu. Za 3 měsíce je pravděpodobně mnohem víc než 500 změn, takže statistiky ukazují neúplná data (např. jen 10 alokací místo skutečného počtu).
+Add an info legend box below or after the two index cards explaining what each metric means and how to interpret the values.
 
-### Řešení
+**Implementation:**
 
-Oddělit načítání dat pro statistiky od historie změn:
+1. Add a small collapsible or always-visible legend section after the statistics grid (or below the two index cards) with:
 
-1. **Přidat samostatnou funkci `loadStatsChanges()`** která:
-   - Načítá data **bez limitu** (s paginací po 1000 záznamech, podobně jako v `usePlanningData`)
-   - Filtruje pouze podle data statistického období (ne podle filtrů historie)
-   - Načítá pouze `change_type`, `old_value`, `new_value`, `konstrukter`, `changed_at` (bez joinu na profiles)
+```
+Alokační poměr (alokace / dealokace):
+  > 1.0 = tým roste (více alokací než dealokací)
+  = 1.0 = tým je stabilní
+  < 1.0 = tým se zmenšuje
 
-2. **Přidat nový state `statsChanges`** pro data statistik, oddělený od `changes` (historie)
+Index stability (1 − dealokace/alokace), v %:
+  > 0% = stabilní/rostoucí tým
+  = 0% = vyrovnaný stav
+  < 0% = nestabilní, více odchodů než příchodů
+```
 
-3. **Upravit `statistics` useMemo** aby používal `statsChanges` místo `changes`
+2. Use a small `Alert` or a subtle `div` with `text-xs text-muted-foreground` styling, with an info icon, placed right after the statistics grid.
 
-4. **Spouštět `loadStatsChanges()`** při otevření dialogu a při změně `statsTimeRange` / `statsCustomDateFrom` / `statsCustomDateTo` — rovnou s date filtrem v query, aby se tahal jen relevantní rozsah
-
-### Technické detaily
-
-**Nová funkce `loadStatsChanges`:**
-- Query s `.gte('changed_at', startDate)` a `.lte('changed_at', endDate)` přímo v SQL
-- Paginace: smyčka po 1000 záznamech dokud nejsou všechna data
-- Bez `.limit()` omezení na celkový počet
-- Filtruje pouze `change_type in ('project', 'tentative')`
-
-**Historie (`loadChanges`) zůstane s limitem 500** — pro zobrazení posledních změn to stačí.
-
-### Soubor
-- `src/components/PlanningHistoryDialog.tsx`
+### File
+- `src/components/PlanningHistoryDialog.tsx` — add legend block after the stats grid row
 
