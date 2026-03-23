@@ -107,11 +107,81 @@ export function PlanningHistoryDialog({
     }
   };
 
+  // Compute stats date range
+  const statsDateRange = useMemo(() => {
+    const now = new Date();
+    let startDate: Date;
+    let endDate: Date;
+    
+    switch (statsTimeRange) {
+      case 'week':
+        startDate = startOfWeek(subDays(now, 7), { weekStartsOn: 1 });
+        endDate = endOfWeek(subDays(now, 7), { weekStartsOn: 1 });
+        break;
+      case 'month':
+        startDate = startOfMonth(subMonths(now, 1));
+        endDate = endOfMonth(subMonths(now, 1));
+        break;
+      case 'thisMonth':
+        startDate = startOfMonth(now);
+        endDate = now;
+        break;
+      case 'custom':
+        startDate = statsCustomDateFrom || startOfMonth(now);
+        endDate = statsCustomDateTo || now;
+        break;
+    }
+    return { startDate, endDate };
+  }, [statsTimeRange, statsCustomDateFrom, statsCustomDateTo]);
+
+  // Load ALL changes for statistics (no limit, with pagination)
+  const loadStatsChanges = async () => {
+    setStatsLoading(true);
+    try {
+      const endOfDay = new Date(statsDateRange.endDate);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      let allRows: PlanningChange[] = [];
+      let page = 0;
+      const pageSize = 1000;
+
+      while (true) {
+        const from = page * pageSize;
+        const to = from + pageSize - 1;
+        const { data: batch, error } = await supabase
+          .from('planning_changes')
+          .select('id, konstrukter, cw, year, change_type, old_value, new_value, changed_at, changed_by')
+          .in('change_type', ['project', 'tentative'])
+          .gte('changed_at', statsDateRange.startDate.toISOString())
+          .lte('changed_at', endOfDay.toISOString())
+          .range(from, to);
+
+        if (error) throw error;
+        if (!batch || batch.length === 0) break;
+        allRows.push(...(batch as PlanningChange[]));
+        if (batch.length < pageSize) break;
+        page++;
+      }
+
+      setStatsChanges(allRows);
+    } catch (error) {
+      console.error('Error loading stats changes:', error);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (open) {
       loadChanges();
     }
   }, [open, filterEngineer, filterProject, filterChangeType, filterDateFrom, filterDateTo]);
+
+  useEffect(() => {
+    if (open) {
+      loadStatsChanges();
+    }
+  }, [open, statsDateRange]);
 
   const clearFilters = () => {
     setFilterEngineer('_all');
