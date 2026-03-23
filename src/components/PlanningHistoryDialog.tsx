@@ -43,7 +43,9 @@ export function PlanningHistoryDialog({
   projects
 }: PlanningHistoryDialogProps) {
   const [changes, setChanges] = useState<PlanningChange[]>([]);
+  const [statsChanges, setStatsChanges] = useState<PlanningChange[]>([]);
   const [loading, setLoading] = useState(false);
+  const [statsLoading, setStatsLoading] = useState(false);
   
   // Filters
   const [filterEngineer, setFilterEngineer] = useState<string>('_all');
