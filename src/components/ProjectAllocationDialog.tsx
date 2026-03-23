@@ -460,7 +460,7 @@ export const ProjectAllocationDialog = ({
           </div>
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 rounded bg-yellow-500/15 border border-yellow-500/40"></div>
-            <span>Částečná volná kapacita (~)</span>
+            <span>Částečná volná kapacita (&lt; 30h/týden) (~)</span>
           </div>
           <Separator orientation="vertical" className="h-4" />
           <div className="flex items-center gap-1">
