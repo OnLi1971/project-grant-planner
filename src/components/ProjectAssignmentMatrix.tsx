@@ -676,7 +676,7 @@ export const ProjectAssignmentMatrix = ({
             hours: projectData.hours,
             isTentative: projectData.isTentative || false
           });
-        } else if (projectName === 'FREE' && projectData?.projekt && !regimeProjects.includes(projectData.projekt) && projectData.hours > 0 && projectData.hours < 40) {
+        } else if (projectName === 'FREE' && projectData?.projekt && !regimeProjects.includes(projectData.projekt) && projectData.hours > 0 && projectData.hours < 30) {
           // Add partial free capacity entry
           allocations.push({
             engineer: displayNameMap[engineer] || engineer,
