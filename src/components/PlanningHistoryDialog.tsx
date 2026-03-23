@@ -642,6 +642,28 @@ export function PlanningHistoryDialog({
               </Card>
 
               <Card className="p-3">
+                <div className="text-xs font-medium text-muted-foreground mb-1">Alokační poměr</div>
+                <div className={cn(
+                  "text-lg font-bold",
+                  statistics.netAllocationRatio > 1 ? "text-green-600" : statistics.netAllocationRatio < 1 ? "text-red-600" : ""
+                )}>
+                  {statistics.netAllocationRatio === Infinity ? '∞' : statistics.netAllocationRatio.toFixed(2)}
+                </div>
+                <p className="text-xs text-muted-foreground">alokace / dealokace</p>
+              </Card>
+
+              <Card className="p-3">
+                <div className="text-xs font-medium text-muted-foreground mb-1">Index stability</div>
+                <div className={cn(
+                  "text-lg font-bold",
+                  statistics.stabilityIndex > 0 ? "text-green-600" : statistics.stabilityIndex < 0 ? "text-red-600" : ""
+                )}>
+                  {statistics.stabilityIndex === -Infinity ? '-∞' : (statistics.stabilityIndex * 100).toFixed(0)}%
+                </div>
+                <p className="text-xs text-muted-foreground">1 − (deal / alok)</p>
+              </Card>
+
+              <Card className="p-3">
                 <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1">
                   <CheckCircle2 className="h-3 w-3 text-blue-500" />
                   Potvrzeno
