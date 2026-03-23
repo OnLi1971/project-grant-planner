@@ -142,9 +142,9 @@ export const ProjectAllocationDialog = ({
     return uniqueEngineers.sort((a, b) => a.localeCompare(b, 'cs'));
   }, [allocations]);
 
-  // Create allocation matrix for weekly view: { engineer: { week: { hours, isTentative, alternativeActivity } } }
+  // Create allocation matrix for weekly view: { engineer: { week: { hours, isTentative, alternativeActivity, isPartialFree } } }
   const weeklyAllocationMatrix = useMemo(() => {
-    const matrix: Record<string, Record<string, { hours: number; isTentative: boolean; alternativeActivity?: string }>> = {};
+    const matrix: Record<string, Record<string, { hours: number; isTentative: boolean; alternativeActivity?: string; isPartialFree?: boolean }>> = {};
     
     engineers.forEach(eng => {
       matrix[eng] = {};
@@ -155,7 +155,8 @@ export const ProjectAllocationDialog = ({
       matrix[a.engineer][a.week] = { 
         hours: a.hours, 
         isTentative: a.isTentative,
-        alternativeActivity: a.alternativeActivity 
+        alternativeActivity: a.alternativeActivity,
+        isPartialFree: a.isPartialFree,
       };
     });
     
