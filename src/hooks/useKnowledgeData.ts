@@ -3,14 +3,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 export type KnowledgeItem = { id: string; name: string; created_at: string };
-type KnowledgeTable = 'knowledge_software' | 'knowledge_pdm_plm' | 'knowledge_specialization';
+type KnowledgeTable = 'knowledge_software' | 'knowledge_pdm_plm' | 'knowledge_specialization' | 'knowledge_oblast';
 type JunctionTable = 'engineer_software' | 'engineer_pdm_plm' | 'engineer_specialization';
 type JunctionFkColumn = 'software_id' | 'pdm_plm_id' | 'specialization_id';
 
-const TABLE_CONFIG: Record<KnowledgeTable, { junction: JunctionTable; fk: JunctionFkColumn }> = {
+const TABLE_CONFIG: Record<'knowledge_software' | 'knowledge_pdm_plm', { junction: JunctionTable; fk: JunctionFkColumn }> = {
   knowledge_software: { junction: 'engineer_software', fk: 'software_id' },
   knowledge_pdm_plm: { junction: 'engineer_pdm_plm', fk: 'pdm_plm_id' },
-  knowledge_specialization: { junction: 'engineer_specialization', fk: 'specialization_id' },
 };
 
 export function useKnowledgeList(table: KnowledgeTable) {
@@ -21,7 +20,7 @@ export function useKnowledgeList(table: KnowledgeTable) {
   const { data = [], isLoading } = useQuery({
     queryKey: qk,
     queryFn: async () => {
-      const { data, error } = await supabase.from(table).select('*').order('name');
+      const { data, error } = await (supabase.from(table as any).select('*').order('name') as any);
       if (error) throw error;
       return data as KnowledgeItem[];
     },
@@ -30,7 +29,7 @@ export function useKnowledgeList(table: KnowledgeTable) {
 
   const addItem = useMutation({
     mutationFn: async (name: string) => {
-      const { error } = await supabase.from(table).insert({ name: name.trim() });
+      const { error } = await (supabase.from(table as any).insert({ name: name.trim() }) as any);
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: qk }); toast({ title: 'Přidáno' }); },
@@ -39,7 +38,7 @@ export function useKnowledgeList(table: KnowledgeTable) {
 
   const updateItem = useMutation({
     mutationFn: async ({ id, name }: { id: string; name: string }) => {
-      const { error } = await supabase.from(table).update({ name: name.trim() }).eq('id', id);
+      const { error } = await (supabase.from(table as any).update({ name: name.trim() }).eq('id', id) as any);
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: qk }); toast({ title: 'Upraveno' }); },
@@ -48,7 +47,7 @@ export function useKnowledgeList(table: KnowledgeTable) {
 
   const deleteItem = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from(table).delete().eq('id', id);
+      const { error } = await (supabase.from(table as any).delete().eq('id', id) as any);
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: qk }); toast({ title: 'Smazáno' }); },
@@ -58,24 +57,38 @@ export function useKnowledgeList(table: KnowledgeTable) {
   return { items: data, isLoading, addItem, updateItem, deleteItem };
 }
 
+export type SpecializationAssignment = {
+  id?: string;
+  oblast_id: string;
+  specialization_id: string;
+  level: string;
+  granted_date: string | null;
+};
+
 export function useEngineerKnowledge(engineerId: string | null) {
   const qc = useQueryClient();
 
   const { data: assignments, isLoading } = useQuery({
     queryKey: ['engineer-knowledge', engineerId],
     queryFn: async () => {
-      if (!engineerId) return { software: [], pdmPlm: [], specialization: [] };
+      if (!engineerId) return { software: [], pdmPlm: [], specializations: [] };
 
       const [sw, pdm, spec] = await Promise.all([
         supabase.from('engineer_software').select('software_id').eq('engineer_id', engineerId),
         supabase.from('engineer_pdm_plm').select('pdm_plm_id').eq('engineer_id', engineerId),
-        supabase.from('engineer_specialization').select('specialization_id').eq('engineer_id', engineerId),
+        supabase.from('engineer_specialization').select('id, oblast_id, specialization_id, level, granted_date').eq('engineer_id', engineerId),
       ]);
 
       return {
         software: (sw.data || []).map(r => r.software_id),
         pdmPlm: (pdm.data || []).map(r => r.pdm_plm_id),
-        specialization: (spec.data || []).map(r => r.specialization_id),
+        specializations: (spec.data || []).map(r => ({
+          id: r.id,
+          oblast_id: r.oblast_id,
+          specialization_id: r.specialization_id,
+          level: r.level,
+          granted_date: r.granted_date,
+        })) as SpecializationAssignment[],
       };
     },
     enabled: !!engineerId,
@@ -86,9 +99,8 @@ export function useEngineerKnowledge(engineerId: string | null) {
     engId: string,
     softwareIds: string[],
     pdmPlmIds: string[],
-    specializationIds: string[]
+    specializations: SpecializationAssignment[]
   ) => {
-    // Delete old, insert new for each category
     await Promise.all([
       (async () => {
         await supabase.from('engineer_software').delete().eq('engineer_id', engId);
@@ -110,9 +122,15 @@ export function useEngineerKnowledge(engineerId: string | null) {
       })(),
       (async () => {
         await supabase.from('engineer_specialization').delete().eq('engineer_id', engId);
-        if (specializationIds.length > 0) {
+        if (specializations.length > 0) {
           const { error } = await supabase.from('engineer_specialization').insert(
-            specializationIds.map(id => ({ engineer_id: engId, specialization_id: id }))
+            specializations.map(s => ({
+              engineer_id: engId,
+              oblast_id: s.oblast_id,
+              specialization_id: s.specialization_id,
+              level: s.level,
+              granted_date: s.granted_date || null,
+            }))
           );
           if (error) throw error;
         }
@@ -123,7 +141,7 @@ export function useEngineerKnowledge(engineerId: string | null) {
   };
 
   return {
-    assignments: assignments || { software: [], pdmPlm: [], specialization: [] },
+    assignments: assignments || { software: [], pdmPlm: [], specializations: [] },
     isLoading,
     saveAssignments,
   };

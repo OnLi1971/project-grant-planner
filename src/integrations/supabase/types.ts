@@ -279,15 +279,30 @@ export type Database = {
       }
       engineer_specialization: {
         Row: {
+          created_at: string
           engineer_id: string
+          granted_date: string | null
+          id: string
+          level: string
+          oblast_id: string
           specialization_id: string
         }
         Insert: {
+          created_at?: string
           engineer_id: string
+          granted_date?: string | null
+          id?: string
+          level?: string
+          oblast_id: string
           specialization_id: string
         }
         Update: {
+          created_at?: string
           engineer_id?: string
+          granted_date?: string | null
+          id?: string
+          level?: string
+          oblast_id?: string
           specialization_id?: string
         }
         Relationships: [
@@ -304,6 +319,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "planning_matrix"
             referencedColumns: ["engineer_id"]
+          },
+          {
+            foreignKeyName: "engineer_specialization_oblast_id_fkey"
+            columns: ["oblast_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_oblast"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "engineer_specialization_specialization_id_fkey"
@@ -401,6 +423,24 @@ export type Database = {
           expires_at?: string | null
           id?: string
           key?: string
+        }
+        Relationships: []
+      }
+      knowledge_oblast: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
         }
         Relationships: []
       }
