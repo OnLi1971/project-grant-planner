@@ -24,7 +24,8 @@ export function EngineerManagement() {
     status: 'active' as 'active' | 'inactive' | 'contractor' | 'on_leave',
     company: 'TM CZ' as string,
     hourlyRate: '' as string,
-    currency: 'CZK' as 'EUR' | 'CZK'
+    currency: 'CZK' as 'EUR' | 'CZK',
+    location: 'PRG' as 'PRG' | 'PLZ' | 'SK'
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -62,7 +63,8 @@ export function EngineerManagement() {
         formData.status, // status
         formData.company,
         hourlyRate,
-        currency
+        currency,
+        formData.location
       );
       setIsCreateDialogOpen(false);
       setFormData({ 
@@ -70,7 +72,8 @@ export function EngineerManagement() {
         status: 'active', 
         company: 'TM CZ', 
         hourlyRate: '', 
-        currency: 'CZK' 
+        currency: 'CZK',
+        location: 'PRG'
       });
     } catch (error) {
       // Error already handled by the hook
@@ -105,8 +108,9 @@ export function EngineerManagement() {
         fte_percent: 100,
         company: formData.company,
         hourly_rate: hourlyRate,
-        currency: currency
-      });
+        currency: currency,
+        location: formData.location
+      } as any);
       setIsEditDialogOpen(false);
       setEditingEngineer(null);
       setFormData({ 
@@ -114,7 +118,8 @@ export function EngineerManagement() {
         status: 'active', 
         company: 'TM CZ', 
         hourlyRate: '', 
-        currency: 'CZK' 
+        currency: 'CZK',
+        location: 'PRG'
       });
     } catch (error) {
       // Error already handled by the hook
@@ -130,7 +135,8 @@ export function EngineerManagement() {
       status: engineer.status,
       company: engineer.spolecnost || 'TM CZ',
       hourlyRate: engineer.hourlyRate ? engineer.hourlyRate.toString() : '',
-      currency: engineer.currency || 'CZK'
+      currency: engineer.currency || 'CZK',
+      location: engineer.location || 'PRG'
     });
     setIsEditDialogOpen(true);
   };
