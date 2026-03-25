@@ -1,66 +1,46 @@
 
 
-## Plan: Restructure Specialization to include Oblast, Level, and Date
+## Plan: Link Specializations to Oblast (parent-child relationship)
 
-The current `knowledge_specialization` table is a simple name list. The user wants a richer structure matching their existing system (visible in the screenshot), with Oblast (area), Odborná specializace (specialization name), Úroveň A-F (level), and Datum udělení (date granted).
+The user wants specializations to belong to a specific Oblast. Currently both are flat lists. We need to add an `oblast_id` foreign key to `knowledge_specialization` and update the UI accordingly.
 
-### 1. Database changes
+### 1. Database migration
 
-**Rename/restructure `knowledge_specialization`** — keep it as the master list of specialization names.
+Add `oblast_id` column to `knowledge_specialization` referencing `knowledge_oblast`:
 
-**Create new `knowledge_oblast` table** — master list of Oblast values (areas/domains):
 ```sql
-CREATE TABLE public.knowledge_oblast (
-  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  name text NOT NULL UNIQUE,
-  created_at timestamptz DEFAULT now()
-);
+ALTER TABLE public.knowledge_specialization 
+  ADD COLUMN oblast_id uuid REFERENCES public.knowledge_oblast(id) ON DELETE CASCADE;
+
+-- Link existing specializations to correct oblasti
+UPDATE public.knowledge_specialization SET oblast_id = (SELECT id FROM public.knowledge_oblast WHERE name = 'Kolejová vozidla') 
+  WHERE name IN ('Hrubá stavba', 'Stanoviště strojvedoucího/kabina řidiče');
+
+UPDATE public.knowledge_specialization SET oblast_id = (SELECT id FROM public.knowledge_oblast WHERE name = 'Obecné strojírenství') 
+  WHERE oblast_id IS NULL;
 ```
-Pre-fill with: `Obecné strojírenství`, `Kolejová vozidla`.
 
-**Replace `engineer_specialization` junction table** with a richer structure:
-```sql
-DROP TABLE IF EXISTS public.engineer_specialization;
-CREATE TABLE public.engineer_specialization (
-  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  engineer_id uuid NOT NULL REFERENCES public.engineers(id) ON DELETE CASCADE,
-  oblast_id uuid NOT NULL REFERENCES public.knowledge_oblast(id) ON DELETE CASCADE,
-  specialization_id uuid NOT NULL REFERENCES public.knowledge_specialization(id) ON DELETE CASCADE,
-  level text NOT NULL DEFAULT 'A' CHECK (level IN ('A','B','C','D','E','F')),
-  granted_date date,
-  created_at timestamptz DEFAULT now()
-);
-```
-RLS policies: same pattern (authenticated SELECT, editor/admin INSERT/UPDATE/DELETE).
+### 2. KnowledgeManagement.tsx — Specializace tab update
 
-**Pre-fill `knowledge_specialization`** with values from the screenshot:
-- Svařence turbínových těles a příslušenství
-- Servis parních turbín
-- Konstrukce a renovace turbín a turbínových těles
-- Svařované konstrukce
-- Zpracování dokumentace (katalogy, dokumenty potřebné k certifikaci, atd.)
-- Hrubá stavba
-- Stanoviště strojvedoucího/kabina řidiče
+Replace the simple `KnowledgeTab` for specializations with a custom component that:
+- Shows a table with columns: **Název**, **Oblast** (badge/label)
+- Add dialog includes an Oblast select dropdown + name input
+- Edit dialog includes both fields
+- Specializations are grouped or show their parent Oblast visually
 
-### 2. Add Oblast tab to KnowledgeManagement
+### 3. EngineerManagement.tsx — Specialization editor update
 
-Add a 4th tab "Oblast" to the `KnowledgeManagement` component for CRUD on `knowledge_oblast`. Update `useKnowledgeData` to support the new table.
+When user selects an Oblast in a spec row, filter the Specializace dropdown to only show specializations belonging to that Oblast. This makes the relationship clear and prevents mismatches.
 
-### 3. Update EngineerManagement specialization section
+### 4. useKnowledgeData.ts
 
-Replace the simple multi-select for specializations with a **table-based editor** in the engineer dialog:
-- Each row: Oblast (select from `knowledge_oblast`), Specializace (select from `knowledge_specialization`), Úroveň (select A-F), Datum udělení (date input)
-- "Přidat řádek" button to add new entries
-- Delete button per row
-- Load/save from the new `engineer_specialization` table
-
-### 4. Update hooks
-
-- **`useKnowledgeData.ts`**: Add `knowledge_oblast` support. Update `useEngineerKnowledge` to load/save the new structured specialization data (oblast_id, specialization_id, level, granted_date) instead of simple IDs.
+- Update the `KnowledgeItem` type to optionally include `oblast_id`
+- Update the specialization add/update mutations to include `oblast_id`
+- Add a query variant or extend existing one to fetch specializations with their oblast
 
 ### Files changed
-- New migration SQL (drop old junction, create new tables, seed data, RLS)
-- `src/hooks/useKnowledgeData.ts` — add oblast support, restructure specialization assignments
-- `src/components/KnowledgeManagement.tsx` — add Oblast tab (now 4 tabs)
-- `src/components/EngineerManagement.tsx` — replace specialization multi-select with table editor
+- New migration SQL (add `oblast_id` to `knowledge_specialization`, update existing data)
+- `src/hooks/useKnowledgeData.ts` — extend types and mutations for `oblast_id`
+- `src/components/KnowledgeManagement.tsx` — custom Specializace tab with Oblast selector
+- `src/components/EngineerManagement.tsx` — filter specializations by selected Oblast in spec rows
 
