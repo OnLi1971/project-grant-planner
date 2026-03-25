@@ -352,6 +352,9 @@ export function EngineerManagement() {
                   <TableHead>Company</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Location</TableHead>
+                  <TableHead>Software</TableHead>
+                  <TableHead>PDM/PLM</TableHead>
+                  <TableHead>Specializace</TableHead>
                   <TableHead>Rate</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -364,6 +367,9 @@ export function EngineerManagement() {
                     <TableCell>{engineer.spolecnost}</TableCell>
                     <TableCell>{getStatusBadge(engineer.status)}</TableCell>
                     <TableCell>{engineer.location || 'PRG'}</TableCell>
+                    <TableCell className="text-sm">{engineer.software || '-'}</TableCell>
+                    <TableCell className="text-sm">{engineer.pdmPlm || '-'}</TableCell>
+                    <TableCell className="text-sm">{engineer.specialization || '-'}</TableCell>
                     <TableCell>
                       {engineer.status === 'contractor' && engineer.hourlyRate 
                         ? `${engineer.hourlyRate} ${engineer.currency}` 
