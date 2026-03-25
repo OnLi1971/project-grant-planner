@@ -203,6 +203,117 @@ export type Database = {
         }
         Relationships: []
       }
+      engineer_pdm_plm: {
+        Row: {
+          engineer_id: string
+          pdm_plm_id: string
+        }
+        Insert: {
+          engineer_id: string
+          pdm_plm_id: string
+        }
+        Update: {
+          engineer_id?: string
+          pdm_plm_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "engineer_pdm_plm_engineer_id_fkey"
+            columns: ["engineer_id"]
+            isOneToOne: false
+            referencedRelation: "engineers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "engineer_pdm_plm_engineer_id_fkey"
+            columns: ["engineer_id"]
+            isOneToOne: false
+            referencedRelation: "planning_matrix"
+            referencedColumns: ["engineer_id"]
+          },
+          {
+            foreignKeyName: "engineer_pdm_plm_pdm_plm_id_fkey"
+            columns: ["pdm_plm_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_pdm_plm"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      engineer_software: {
+        Row: {
+          engineer_id: string
+          software_id: string
+        }
+        Insert: {
+          engineer_id: string
+          software_id: string
+        }
+        Update: {
+          engineer_id?: string
+          software_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "engineer_software_engineer_id_fkey"
+            columns: ["engineer_id"]
+            isOneToOne: false
+            referencedRelation: "engineers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "engineer_software_engineer_id_fkey"
+            columns: ["engineer_id"]
+            isOneToOne: false
+            referencedRelation: "planning_matrix"
+            referencedColumns: ["engineer_id"]
+          },
+          {
+            foreignKeyName: "engineer_software_software_id_fkey"
+            columns: ["software_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_software"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      engineer_specialization: {
+        Row: {
+          engineer_id: string
+          specialization_id: string
+        }
+        Insert: {
+          engineer_id: string
+          specialization_id: string
+        }
+        Update: {
+          engineer_id?: string
+          specialization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "engineer_specialization_engineer_id_fkey"
+            columns: ["engineer_id"]
+            isOneToOne: false
+            referencedRelation: "engineers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "engineer_specialization_engineer_id_fkey"
+            columns: ["engineer_id"]
+            isOneToOne: false
+            referencedRelation: "planning_matrix"
+            referencedColumns: ["engineer_id"]
+          },
+          {
+            foreignKeyName: "engineer_specialization_specialization_id_fkey"
+            columns: ["specialization_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_specialization"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       engineers: {
         Row: {
           company: string
@@ -290,6 +401,60 @@ export type Database = {
           expires_at?: string | null
           id?: string
           key?: string
+        }
+        Relationships: []
+      }
+      knowledge_pdm_plm: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      knowledge_software: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      knowledge_specialization: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
         }
         Relationships: []
       }
