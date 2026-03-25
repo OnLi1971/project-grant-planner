@@ -10,6 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Users, Edit, Loader2, Trash2 } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 
 export function EngineerManagement() {
@@ -293,6 +294,35 @@ export function EngineerManagement() {
                       </div>
                     </>
                   )}
+                  <Separator className="my-2" />
+                  <h4 className="text-sm font-semibold text-muted-foreground">Správa znalostí</h4>
+                  <div>
+                    <Label htmlFor="software">Software</Label>
+                    <Input
+                      id="software"
+                      value={formData.software}
+                      onChange={(e) => setFormData(prev => ({ ...prev, software: e.target.value }))}
+                      placeholder="e.g., CATIA, NX, SolidWorks"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="pdmPlm">PDM/PLM</Label>
+                    <Input
+                      id="pdmPlm"
+                      value={formData.pdmPlm}
+                      onChange={(e) => setFormData(prev => ({ ...prev, pdmPlm: e.target.value }))}
+                      placeholder="e.g., Teamcenter, Enovia"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="specialization">Odborná specializace</Label>
+                    <Input
+                      id="specialization"
+                      value={formData.specialization}
+                      onChange={(e) => setFormData(prev => ({ ...prev, specialization: e.target.value }))}
+                      placeholder="e.g., Stress, Design, Systems"
+                    />
+                  </div>
                   <div className="flex justify-end space-x-2">
                     <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                       Cancel
@@ -460,6 +490,35 @@ export function EngineerManagement() {
                 </div>
               </>
             )}
+            <Separator className="my-2" />
+            <h4 className="text-sm font-semibold text-muted-foreground">Správa znalostí</h4>
+            <div>
+              <Label htmlFor="editSoftware">Software</Label>
+              <Input
+                id="editSoftware"
+                value={formData.software}
+                onChange={(e) => setFormData(prev => ({ ...prev, software: e.target.value }))}
+                placeholder="e.g., CATIA, NX, SolidWorks"
+              />
+            </div>
+            <div>
+              <Label htmlFor="editPdmPlm">PDM/PLM</Label>
+              <Input
+                id="editPdmPlm"
+                value={formData.pdmPlm}
+                onChange={(e) => setFormData(prev => ({ ...prev, pdmPlm: e.target.value }))}
+                placeholder="e.g., Teamcenter, Enovia"
+              />
+            </div>
+            <div>
+              <Label htmlFor="editSpecialization">Odborná specializace</Label>
+              <Input
+                id="editSpecialization"
+                value={formData.specialization}
+                onChange={(e) => setFormData(prev => ({ ...prev, specialization: e.target.value }))}
+                placeholder="e.g., Stress, Design, Systems"
+              />
+            </div>
             <div className="flex justify-end space-x-2">
               <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
                 Cancel
