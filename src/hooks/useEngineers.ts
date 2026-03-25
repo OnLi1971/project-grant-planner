@@ -90,6 +90,9 @@ export function useEngineers() {
         p_hourly_rate: hourlyRate,
         p_currency: currency,
         p_location: location || 'PRG',
+        p_software: software,
+        p_pdm_plm: pdmPlm,
+        p_specialization: specialization,
       });
       if (error) throw error;
 
@@ -115,6 +118,9 @@ export function useEngineers() {
         p_hourly_rate: updates.hourly_rate,
         p_currency: updates.currency,
         p_location: (updates as any).location,
+        p_software: (updates as any).software,
+        p_pdm_plm: (updates as any).pdm_plm,
+        p_specialization: (updates as any).specialization,
       });
       if (error) throw error;
 

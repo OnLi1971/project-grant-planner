@@ -25,7 +25,10 @@ export function EngineerManagement() {
     company: 'TM CZ' as string,
     hourlyRate: '' as string,
     currency: 'CZK' as 'EUR' | 'CZK',
-    location: 'PRG' as 'PRG' | 'PLZ' | 'SK'
+    location: 'PRG' as 'PRG' | 'PLZ' | 'SK',
+    software: '',
+    pdmPlm: '',
+    specialization: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
