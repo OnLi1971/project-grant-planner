@@ -108,20 +108,20 @@ export function useEngineers() {
 
   const updateEngineer = async (id: string, updates: Partial<DatabaseEngineer>) => {
     try {
-      const { data, error } = await supabase.rpc('engineers_update', {
-        p_id: id,
-        p_display_name: updates.display_name,
-        p_email: updates.email,
-        p_status: updates.status,
-        p_fte: updates.fte_percent,
-        p_company: updates.company,
-        p_hourly_rate: updates.hourly_rate,
-        p_currency: updates.currency,
-        p_location: (updates as any).location,
-        p_software: (updates as any).software,
-        p_pdm_plm: (updates as any).pdm_plm,
-        p_specialization: (updates as any).specialization,
-      });
+      const params: Record<string, any> = { p_id: id };
+      if (updates.display_name != null) params.p_display_name = updates.display_name;
+      if (updates.email != null) params.p_email = updates.email;
+      if (updates.status != null) params.p_status = updates.status;
+      if (updates.fte_percent != null) params.p_fte = updates.fte_percent;
+      if (updates.company != null) params.p_company = updates.company;
+      if (updates.hourly_rate != null) params.p_hourly_rate = updates.hourly_rate;
+      if (updates.currency != null) params.p_currency = updates.currency;
+      if ((updates as any).location != null) params.p_location = (updates as any).location;
+      if ((updates as any).software != null) params.p_software = (updates as any).software;
+      if ((updates as any).pdm_plm != null) params.p_pdm_plm = (updates as any).pdm_plm;
+      if ((updates as any).specialization != null) params.p_specialization = (updates as any).specialization;
+
+      const { data, error } = await supabase.rpc('engineers_update', params as any);
       if (error) throw error;
 
       toast({ title: 'Engineer updated', description: 'Changes have been saved successfully.' });
@@ -129,6 +129,7 @@ export function useEngineers() {
       return data;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to update engineer';
+      console.error('engineers_update error:', err);
       toast({ title: 'Error updating engineer', description: errorMessage, variant: 'destructive' });
       throw err;
     }
