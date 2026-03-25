@@ -1,46 +1,43 @@
 
+Opravím to jako problém vstupu a validace dat, ne jen jako kosmetiku.
 
-## Plan: Link Specializations to Oblast (parent-child relationship)
+1. Nahradím současné `type="date"` u `Datum udělení`
+- V `src/components/EngineerManagement.tsx` už nebudu používat nativní browser date input, protože ten tady zjevně špatně interpretuje ruční psaní roku a ukládá rok `0002`.
+- Místo toho použiju řízené pole:
+  - textový vstup ve formátu `dd.MM.yyyy`, aby šel rok normálně napsat,
+  - vedle toho kalendář přes existující `Calendar + Popover` pattern, který už v projektu je.
+- V UI se bude zobrazovat český formát, ale do DB se bude ukládat vždy bezpečný ISO formát `yyyy-MM-dd`.
 
-The user wants specializations to belong to a specific Oblast. Currently both are flat lists. We need to add an `oblast_id` foreign key to `knowledge_specialization` and update the UI accordingly.
+2. Přidám převod a validaci datumu před uložením
+- Před `saveAssignments(...)` zvaliduji každý řádek specializace:
+  - datum musí být buď prázdné, nebo validní datum,
+  - rok musí být rozumný rozsah (např. 1900–2100),
+  - při nevalidním datu se ukládání zablokuje a ukáže se přesná hláška s číslem řádku.
+- Tím se zabrání tomu, aby se do DB znovu propsal nesmysl typu `0002-06-19`.
 
-### 1. Database migration
+3. Zpevním i datovou vrstvu
+- V `src/hooks/useKnowledgeData.ts` doplním normalizaci/guard před insertem do `engineer_specialization`, aby se tam neposlal nevalidní řetězec ani při budoucí změně UI.
+- Tím bude ochrana dvojitá: ve formuláři i těsně před zápisem.
 
-Add `oblast_id` column to `knowledge_specialization` referencing `knowledge_oblast`:
+4. Opravím už uložená chybná data
+- V DB už je aktuálně uložený minimálně jeden chybný záznam s rokem `0002` (`Fuchs Pavel / Hrubá stavba / 0002-06-19`).
+- Přidám malou migraci, která:
+  - opraví tento konkrétní chybný záznam na správný rok `2017`,
+  - a zároveň přidá jednoduchou DB kontrolu, aby se absurdně nízké roky už nemohly uložit.
 
-```sql
-ALTER TABLE public.knowledge_specialization 
-  ADD COLUMN oblast_id uuid REFERENCES public.knowledge_oblast(id) ON DELETE CASCADE;
+5. Otestuji tok editace konstruktéra
+- Ověřím scénáře:
+  - ruční zadání roku 2017,
+  - výběr data z kalendáře,
+  - uložení bez data,
+  - znovuotevření dialogu a správné načtení uloženého datumu.
 
--- Link existing specializations to correct oblasti
-UPDATE public.knowledge_specialization SET oblast_id = (SELECT id FROM public.knowledge_oblast WHERE name = 'Kolejová vozidla') 
-  WHERE name IN ('Hrubá stavba', 'Stanoviště strojvedoucího/kabina řidiče');
+Dotčené soubory:
+- `src/components/EngineerManagement.tsx`
+- `src/hooks/useKnowledgeData.ts`
+- nová malá migrace v `supabase/migrations/...`
 
-UPDATE public.knowledge_specialization SET oblast_id = (SELECT id FROM public.knowledge_oblast WHERE name = 'Obecné strojírenství') 
-  WHERE oblast_id IS NULL;
-```
-
-### 2. KnowledgeManagement.tsx — Specializace tab update
-
-Replace the simple `KnowledgeTab` for specializations with a custom component that:
-- Shows a table with columns: **Název**, **Oblast** (badge/label)
-- Add dialog includes an Oblast select dropdown + name input
-- Edit dialog includes both fields
-- Specializations are grouped or show their parent Oblast visually
-
-### 3. EngineerManagement.tsx — Specialization editor update
-
-When user selects an Oblast in a spec row, filter the Specializace dropdown to only show specializations belonging to that Oblast. This makes the relationship clear and prevents mismatches.
-
-### 4. useKnowledgeData.ts
-
-- Update the `KnowledgeItem` type to optionally include `oblast_id`
-- Update the specialization add/update mutations to include `oblast_id`
-- Add a query variant or extend existing one to fetch specializations with their oblast
-
-### Files changed
-- New migration SQL (add `oblast_id` to `knowledge_specialization`, update existing data)
-- `src/hooks/useKnowledgeData.ts` — extend types and mutations for `oblast_id`
-- `src/components/KnowledgeManagement.tsx` — custom Specializace tab with Oblast selector
-- `src/components/EngineerManagement.tsx` — filter specializations by selected Oblast in spec rows
-
+Výsledek:
+- rok půjde zadat správně,
+- do databáze se bude ukládat správný formát,
+- současná chyba `0002` zmizí i u už uloženého záznamu.
