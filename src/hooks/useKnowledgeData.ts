@@ -126,15 +126,24 @@ export function useEngineerKnowledge(engineerId: string | null) {
       (async () => {
         await supabase.from('engineer_specialization').delete().eq('engineer_id', engId);
         if (specializations.length > 0) {
-          const { error } = await supabase.from('engineer_specialization').insert(
-            specializations.map(s => ({
+          const sanitized = specializations.map(s => {
+            let grantedDate = s.granted_date || null;
+            if (grantedDate) {
+              const year = parseInt(grantedDate.split('-')[0], 10);
+              if (isNaN(year) || year < 1900 || year > 2100) {
+                console.warn(`Invalid granted_date year: ${grantedDate}, setting to null`);
+                grantedDate = null;
+              }
+            }
+            return {
               engineer_id: engId,
               oblast_id: s.oblast_id,
               specialization_id: s.specialization_id,
               level: s.level,
-              granted_date: s.granted_date || null,
-            }))
-          );
+              granted_date: grantedDate,
+            };
+          });
+          const { error } = await supabase.from('engineer_specialization').insert(sanitized);
           if (error) throw error;
         }
       })(),
