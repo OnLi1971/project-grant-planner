@@ -18,6 +18,9 @@ export type UIEngineer = {
   hourlyRate?: number;
   currency?: 'EUR' | 'CZK';
   location?: 'PRG' | 'PLZ' | 'SK';
+  software?: string;
+  pdmPlm?: string;
+  specialization?: string;
 };
 
 // Organizational mapping for compatibility (temporary)
