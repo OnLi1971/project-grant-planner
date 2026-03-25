@@ -14,6 +14,9 @@ export type DatabaseEngineer = {
   hourly_rate?: number;
   currency?: 'EUR' | 'CZK';
   location?: 'PRG' | 'PLZ' | 'SK';
+  software?: string;
+  pdm_plm?: string;
+  specialization?: string;
   created_at: string;
   updated_at: string;
 };

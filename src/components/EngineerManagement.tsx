@@ -10,6 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Users, Edit, Loader2, Trash2 } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 
 export function EngineerManagement() {
@@ -25,7 +26,10 @@ export function EngineerManagement() {
     company: 'TM CZ' as string,
     hourlyRate: '' as string,
     currency: 'CZK' as 'EUR' | 'CZK',
-    location: 'PRG' as 'PRG' | 'PLZ' | 'SK'
+    location: 'PRG' as 'PRG' | 'PLZ' | 'SK',
+    software: '',
+    pdmPlm: '',
+    specialization: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -59,12 +63,15 @@ export function EngineerManagement() {
       
       await createEngineer(
         formData.displayName, 
-        undefined, // no email 
-        formData.status, // status
+        undefined,
+        formData.status,
         formData.company,
         hourlyRate,
         currency,
-        formData.location
+        formData.location,
+        formData.software || undefined,
+        formData.pdmPlm || undefined,
+        formData.specialization || undefined
       );
       setIsCreateDialogOpen(false);
       setFormData({ 
@@ -73,7 +80,10 @@ export function EngineerManagement() {
         company: 'TM CZ', 
         hourlyRate: '', 
         currency: 'CZK',
-        location: 'PRG'
+        location: 'PRG',
+        software: '',
+        pdmPlm: '',
+        specialization: ''
       });
     } catch (error) {
       // Error already handled by the hook
@@ -109,7 +119,10 @@ export function EngineerManagement() {
         company: formData.company,
         hourly_rate: hourlyRate,
         currency: currency,
-        location: formData.location
+        location: formData.location,
+        software: formData.software || undefined,
+        pdm_plm: formData.pdmPlm || undefined,
+        specialization: formData.specialization || undefined
       } as any);
       setIsEditDialogOpen(false);
       setEditingEngineer(null);
@@ -119,7 +132,10 @@ export function EngineerManagement() {
         company: 'TM CZ', 
         hourlyRate: '', 
         currency: 'CZK',
-        location: 'PRG'
+        location: 'PRG',
+        software: '',
+        pdmPlm: '',
+        specialization: ''
       });
     } catch (error) {
       // Error already handled by the hook
@@ -136,7 +152,10 @@ export function EngineerManagement() {
       company: engineer.spolecnost || 'TM CZ',
       hourlyRate: engineer.hourlyRate ? engineer.hourlyRate.toString() : '',
       currency: engineer.currency || 'CZK',
-      location: engineer.location || 'PRG'
+      location: engineer.location || 'PRG',
+      software: engineer.software || '',
+      pdmPlm: engineer.pdmPlm || '',
+      specialization: engineer.specialization || ''
     });
     setIsEditDialogOpen(true);
   };
@@ -275,6 +294,35 @@ export function EngineerManagement() {
                       </div>
                     </>
                   )}
+                  <Separator className="my-2" />
+                  <h4 className="text-sm font-semibold text-muted-foreground">Správa znalostí</h4>
+                  <div>
+                    <Label htmlFor="software">Software</Label>
+                    <Input
+                      id="software"
+                      value={formData.software}
+                      onChange={(e) => setFormData(prev => ({ ...prev, software: e.target.value }))}
+                      placeholder="e.g., CATIA, NX, SolidWorks"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="pdmPlm">PDM/PLM</Label>
+                    <Input
+                      id="pdmPlm"
+                      value={formData.pdmPlm}
+                      onChange={(e) => setFormData(prev => ({ ...prev, pdmPlm: e.target.value }))}
+                      placeholder="e.g., Teamcenter, Enovia"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="specialization">Odborná specializace</Label>
+                    <Input
+                      id="specialization"
+                      value={formData.specialization}
+                      onChange={(e) => setFormData(prev => ({ ...prev, specialization: e.target.value }))}
+                      placeholder="e.g., Stress, Design, Systems"
+                    />
+                  </div>
                   <div className="flex justify-end space-x-2">
                     <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
                       Cancel
@@ -304,6 +352,9 @@ export function EngineerManagement() {
                   <TableHead>Company</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Location</TableHead>
+                  <TableHead>Software</TableHead>
+                  <TableHead>PDM/PLM</TableHead>
+                  <TableHead>Specializace</TableHead>
                   <TableHead>Rate</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -316,6 +367,9 @@ export function EngineerManagement() {
                     <TableCell>{engineer.spolecnost}</TableCell>
                     <TableCell>{getStatusBadge(engineer.status)}</TableCell>
                     <TableCell>{engineer.location || 'PRG'}</TableCell>
+                    <TableCell className="text-sm">{engineer.software || '-'}</TableCell>
+                    <TableCell className="text-sm">{engineer.pdmPlm || '-'}</TableCell>
+                    <TableCell className="text-sm">{engineer.specialization || '-'}</TableCell>
                     <TableCell>
                       {engineer.status === 'contractor' && engineer.hourlyRate 
                         ? `${engineer.hourlyRate} ${engineer.currency}` 
@@ -442,6 +496,35 @@ export function EngineerManagement() {
                 </div>
               </>
             )}
+            <Separator className="my-2" />
+            <h4 className="text-sm font-semibold text-muted-foreground">Správa znalostí</h4>
+            <div>
+              <Label htmlFor="editSoftware">Software</Label>
+              <Input
+                id="editSoftware"
+                value={formData.software}
+                onChange={(e) => setFormData(prev => ({ ...prev, software: e.target.value }))}
+                placeholder="e.g., CATIA, NX, SolidWorks"
+              />
+            </div>
+            <div>
+              <Label htmlFor="editPdmPlm">PDM/PLM</Label>
+              <Input
+                id="editPdmPlm"
+                value={formData.pdmPlm}
+                onChange={(e) => setFormData(prev => ({ ...prev, pdmPlm: e.target.value }))}
+                placeholder="e.g., Teamcenter, Enovia"
+              />
+            </div>
+            <div>
+              <Label htmlFor="editSpecialization">Odborná specializace</Label>
+              <Input
+                id="editSpecialization"
+                value={formData.specialization}
+                onChange={(e) => setFormData(prev => ({ ...prev, specialization: e.target.value }))}
+                placeholder="e.g., Stress, Design, Systems"
+              />
+            </div>
             <div className="flex justify-end space-x-2">
               <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
                 Cancel

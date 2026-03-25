@@ -18,6 +18,9 @@ export type UIEngineer = {
   hourlyRate?: number;
   currency?: 'EUR' | 'CZK';
   location?: 'PRG' | 'PLZ' | 'SK';
+  software?: string;
+  pdmPlm?: string;
+  specialization?: string;
 };
 
 // Organizational mapping for compatibility (temporary)
@@ -56,6 +59,9 @@ export function useEngineers() {
           hourlyRate: engineer.hourly_rate,
           currency: engineer.currency,
           location: engineer.location,
+          software: engineer.software,
+          pdmPlm: engineer.pdm_plm,
+          specialization: engineer.specialization,
         };
       });
     },
@@ -69,7 +75,10 @@ export function useEngineers() {
     company?: string,
     hourlyRate?: number,
     currency?: 'EUR' | 'CZK',
-    location?: 'PRG' | 'PLZ' | 'SK'
+    location?: 'PRG' | 'PLZ' | 'SK',
+    software?: string,
+    pdmPlm?: string,
+    specialization?: string
   ) => {
     try {
       const { data, error } = await supabase.rpc('engineers_create', {
@@ -81,6 +90,9 @@ export function useEngineers() {
         p_hourly_rate: hourlyRate,
         p_currency: currency,
         p_location: location || 'PRG',
+        p_software: software,
+        p_pdm_plm: pdmPlm,
+        p_specialization: specialization,
       });
       if (error) throw error;
 
@@ -106,6 +118,9 @@ export function useEngineers() {
         p_hourly_rate: updates.hourly_rate,
         p_currency: updates.currency,
         p_location: (updates as any).location,
+        p_software: (updates as any).software,
+        p_pdm_plm: (updates as any).pdm_plm,
+        p_specialization: (updates as any).specialization,
       });
       if (error) throw error;
 
