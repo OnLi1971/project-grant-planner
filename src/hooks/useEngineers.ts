@@ -59,6 +59,9 @@ export function useEngineers() {
           hourlyRate: engineer.hourly_rate,
           currency: engineer.currency,
           location: engineer.location,
+          software: engineer.software,
+          pdmPlm: engineer.pdm_plm,
+          specialization: engineer.specialization,
         };
       });
     },
@@ -72,7 +75,10 @@ export function useEngineers() {
     company?: string,
     hourlyRate?: number,
     currency?: 'EUR' | 'CZK',
-    location?: 'PRG' | 'PLZ' | 'SK'
+    location?: 'PRG' | 'PLZ' | 'SK',
+    software?: string,
+    pdmPlm?: string,
+    specialization?: string
   ) => {
     try {
       const { data, error } = await supabase.rpc('engineers_create', {
