@@ -221,6 +221,18 @@ export function EngineerManagement() {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div>
+                    <Label htmlFor="location">Location</Label>
+                    <Select value={formData.location} onValueChange={(value: 'PRG' | 'PLZ' | 'SK') => setFormData(prev => ({ ...prev, location: value }))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="PRG">PRG</SelectItem>
+                        <SelectItem value="PLZ">PLZ</SelectItem>
+                        <SelectItem value="SK">SK</SelectItem>
+                      </SelectContent>
+                    </Select>
                   {formData.status === 'contractor' && (
                     <>
                       <div>
@@ -290,6 +302,7 @@ export function EngineerManagement() {
                   <TableHead>Slug</TableHead>
                   <TableHead>Company</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Location</TableHead>
                   <TableHead>Rate</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -301,6 +314,7 @@ export function EngineerManagement() {
                     <TableCell className="font-mono text-sm">{engineer.slug}</TableCell>
                     <TableCell>{engineer.spolecnost}</TableCell>
                     <TableCell>{getStatusBadge(engineer.status)}</TableCell>
+                    <TableCell>{engineer.location || 'PRG'}</TableCell>
                     <TableCell>
                       {engineer.status === 'contractor' && engineer.hourlyRate 
                         ? `${engineer.hourlyRate} ${engineer.currency}` 
@@ -370,6 +384,19 @@ export function EngineerManagement() {
                   <SelectItem value="inactive">Inactive</SelectItem>
                   <SelectItem value="contractor">Contractor</SelectItem>
                   <SelectItem value="on_leave">On Leave</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="editLocation">Location</Label>
+              <Select value={formData.location} onValueChange={(value: 'PRG' | 'PLZ' | 'SK') => setFormData(prev => ({ ...prev, location: value }))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PRG">PRG</SelectItem>
+                  <SelectItem value="PLZ">PLZ</SelectItem>
+                  <SelectItem value="SK">SK</SelectItem>
                 </SelectContent>
               </Select>
             </div>
