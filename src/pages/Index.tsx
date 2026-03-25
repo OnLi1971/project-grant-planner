@@ -202,6 +202,14 @@ const Index = () => {
                     <Database className="h-4 w-4" />
                     Migrace dat
                   </Button>
+                  <Button
+                    variant={managementView === 'knowledge' ? 'default' : 'outline'}
+                    onClick={() => setManagementView('knowledge')}
+                    className="flex items-center gap-2"
+                  >
+                    <BookOpen className="h-4 w-4" />
+                    Správa znalostí
+                  </Button>
                 </div>
               </Card>
               
@@ -215,6 +223,8 @@ const Index = () => {
                 <UserManagement />
               ) : managementView === 'engineers' ? (
                 <EngineerManagement />
+              ) : managementView === 'knowledge' ? (
+                <KnowledgeManagement />
               ) : (
                 <EngineerMigration />
               )}
