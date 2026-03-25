@@ -919,344 +919,97 @@ export type Database = {
         Returns: string
       }
       cleanup_expired_idempotency_keys: { Args: never; Returns: undefined }
-      engineers_create:
-        | {
-            Args: {
-              p_department?: string
-              p_display_name: string
-              p_email?: string
-              p_fte?: number
-              p_manager?: string
-              p_status?: Database["public"]["Enums"]["engineer_status"]
-            }
-            Returns: {
-              company: string
-              created_at: string
-              currency: string | null
-              department_id: string | null
-              display_name: string
-              email: string | null
-              end_date: string | null
-              fte_percent: number
-              handle: string | null
-              hourly_rate: number | null
-              id: string
-              location: string | null
-              manager_id: string | null
-              pdm_plm: string | null
-              slug: string
-              software: string | null
-              specialization: string | null
-              start_date: string | null
-              status: Database["public"]["Enums"]["engineer_status"]
-              updated_at: string
-            }
-            SetofOptions: {
-              from: "*"
-              to: "engineers"
-              isOneToOne: true
-              isSetofReturn: false
-            }
-          }
-        | {
-            Args: {
-              p_company?: string
-              p_currency?: string
-              p_department?: string
-              p_display_name: string
-              p_email?: string
-              p_fte?: number
-              p_hourly_rate?: number
-              p_manager?: string
-              p_status?: Database["public"]["Enums"]["engineer_status"]
-            }
-            Returns: {
-              company: string
-              created_at: string
-              currency: string | null
-              department_id: string | null
-              display_name: string
-              email: string | null
-              end_date: string | null
-              fte_percent: number
-              handle: string | null
-              hourly_rate: number | null
-              id: string
-              location: string | null
-              manager_id: string | null
-              pdm_plm: string | null
-              slug: string
-              software: string | null
-              specialization: string | null
-              start_date: string | null
-              status: Database["public"]["Enums"]["engineer_status"]
-              updated_at: string
-            }
-            SetofOptions: {
-              from: "*"
-              to: "engineers"
-              isOneToOne: true
-              isSetofReturn: false
-            }
-          }
-        | {
-            Args: {
-              p_company?: string
-              p_currency?: string
-              p_department?: string
-              p_display_name: string
-              p_email?: string
-              p_fte?: number
-              p_hourly_rate?: number
-              p_location?: string
-              p_manager?: string
-              p_status?: Database["public"]["Enums"]["engineer_status"]
-            }
-            Returns: {
-              company: string
-              created_at: string
-              currency: string | null
-              department_id: string | null
-              display_name: string
-              email: string | null
-              end_date: string | null
-              fte_percent: number
-              handle: string | null
-              hourly_rate: number | null
-              id: string
-              location: string | null
-              manager_id: string | null
-              pdm_plm: string | null
-              slug: string
-              software: string | null
-              specialization: string | null
-              start_date: string | null
-              status: Database["public"]["Enums"]["engineer_status"]
-              updated_at: string
-            }
-            SetofOptions: {
-              from: "*"
-              to: "engineers"
-              isOneToOne: true
-              isSetofReturn: false
-            }
-          }
-        | {
-            Args: {
-              p_company?: string
-              p_currency?: string
-              p_department?: string
-              p_display_name: string
-              p_email?: string
-              p_fte?: number
-              p_hourly_rate?: number
-              p_location?: string
-              p_manager?: string
-              p_pdm_plm?: string
-              p_software?: string
-              p_specialization?: string
-              p_status?: Database["public"]["Enums"]["engineer_status"]
-            }
-            Returns: {
-              company: string
-              created_at: string
-              currency: string | null
-              department_id: string | null
-              display_name: string
-              email: string | null
-              end_date: string | null
-              fte_percent: number
-              handle: string | null
-              hourly_rate: number | null
-              id: string
-              location: string | null
-              manager_id: string | null
-              pdm_plm: string | null
-              slug: string
-              software: string | null
-              specialization: string | null
-              start_date: string | null
-              status: Database["public"]["Enums"]["engineer_status"]
-              updated_at: string
-            }
-            SetofOptions: {
-              from: "*"
-              to: "engineers"
-              isOneToOne: true
-              isSetofReturn: false
-            }
-          }
-      engineers_update:
-        | {
-            Args: {
-              p_department?: string
-              p_display_name?: string
-              p_email?: string
-              p_fte?: number
-              p_id: string
-              p_manager?: string
-              p_status?: Database["public"]["Enums"]["engineer_status"]
-            }
-            Returns: {
-              company: string
-              created_at: string
-              currency: string | null
-              department_id: string | null
-              display_name: string
-              email: string | null
-              end_date: string | null
-              fte_percent: number
-              handle: string | null
-              hourly_rate: number | null
-              id: string
-              location: string | null
-              manager_id: string | null
-              pdm_plm: string | null
-              slug: string
-              software: string | null
-              specialization: string | null
-              start_date: string | null
-              status: Database["public"]["Enums"]["engineer_status"]
-              updated_at: string
-            }
-            SetofOptions: {
-              from: "*"
-              to: "engineers"
-              isOneToOne: true
-              isSetofReturn: false
-            }
-          }
-        | {
-            Args: {
-              p_company?: string
-              p_currency?: string
-              p_department?: string
-              p_display_name?: string
-              p_email?: string
-              p_fte?: number
-              p_hourly_rate?: number
-              p_id: string
-              p_manager?: string
-              p_status?: Database["public"]["Enums"]["engineer_status"]
-            }
-            Returns: {
-              company: string
-              created_at: string
-              currency: string | null
-              department_id: string | null
-              display_name: string
-              email: string | null
-              end_date: string | null
-              fte_percent: number
-              handle: string | null
-              hourly_rate: number | null
-              id: string
-              location: string | null
-              manager_id: string | null
-              pdm_plm: string | null
-              slug: string
-              software: string | null
-              specialization: string | null
-              start_date: string | null
-              status: Database["public"]["Enums"]["engineer_status"]
-              updated_at: string
-            }
-            SetofOptions: {
-              from: "*"
-              to: "engineers"
-              isOneToOne: true
-              isSetofReturn: false
-            }
-          }
-        | {
-            Args: {
-              p_company?: string
-              p_currency?: string
-              p_department?: string
-              p_display_name?: string
-              p_email?: string
-              p_fte?: number
-              p_hourly_rate?: number
-              p_id: string
-              p_location?: string
-              p_manager?: string
-              p_status?: Database["public"]["Enums"]["engineer_status"]
-            }
-            Returns: {
-              company: string
-              created_at: string
-              currency: string | null
-              department_id: string | null
-              display_name: string
-              email: string | null
-              end_date: string | null
-              fte_percent: number
-              handle: string | null
-              hourly_rate: number | null
-              id: string
-              location: string | null
-              manager_id: string | null
-              pdm_plm: string | null
-              slug: string
-              software: string | null
-              specialization: string | null
-              start_date: string | null
-              status: Database["public"]["Enums"]["engineer_status"]
-              updated_at: string
-            }
-            SetofOptions: {
-              from: "*"
-              to: "engineers"
-              isOneToOne: true
-              isSetofReturn: false
-            }
-          }
-        | {
-            Args: {
-              p_company?: string
-              p_currency?: string
-              p_department?: string
-              p_display_name?: string
-              p_email?: string
-              p_fte?: number
-              p_hourly_rate?: number
-              p_id: string
-              p_location?: string
-              p_manager?: string
-              p_pdm_plm?: string
-              p_software?: string
-              p_specialization?: string
-              p_status?: Database["public"]["Enums"]["engineer_status"]
-            }
-            Returns: {
-              company: string
-              created_at: string
-              currency: string | null
-              department_id: string | null
-              display_name: string
-              email: string | null
-              end_date: string | null
-              fte_percent: number
-              handle: string | null
-              hourly_rate: number | null
-              id: string
-              location: string | null
-              manager_id: string | null
-              pdm_plm: string | null
-              slug: string
-              software: string | null
-              specialization: string | null
-              start_date: string | null
-              status: Database["public"]["Enums"]["engineer_status"]
-              updated_at: string
-            }
-            SetofOptions: {
-              from: "*"
-              to: "engineers"
-              isOneToOne: true
-              isSetofReturn: false
-            }
-          }
+      engineers_create: {
+        Args: {
+          p_company?: string
+          p_currency?: string
+          p_department?: string
+          p_display_name: string
+          p_email?: string
+          p_fte?: number
+          p_hourly_rate?: number
+          p_location?: string
+          p_manager?: string
+          p_pdm_plm?: string
+          p_software?: string
+          p_specialization?: string
+          p_status?: Database["public"]["Enums"]["engineer_status"]
+        }
+        Returns: {
+          company: string
+          created_at: string
+          currency: string | null
+          department_id: string | null
+          display_name: string
+          email: string | null
+          end_date: string | null
+          fte_percent: number
+          handle: string | null
+          hourly_rate: number | null
+          id: string
+          location: string | null
+          manager_id: string | null
+          pdm_plm: string | null
+          slug: string
+          software: string | null
+          specialization: string | null
+          start_date: string | null
+          status: Database["public"]["Enums"]["engineer_status"]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "engineers"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      engineers_update: {
+        Args: {
+          p_company?: string
+          p_currency?: string
+          p_department?: string
+          p_display_name?: string
+          p_email?: string
+          p_fte?: number
+          p_hourly_rate?: number
+          p_id: string
+          p_location?: string
+          p_manager?: string
+          p_pdm_plm?: string
+          p_software?: string
+          p_specialization?: string
+          p_status?: Database["public"]["Enums"]["engineer_status"]
+        }
+        Returns: {
+          company: string
+          created_at: string
+          currency: string | null
+          department_id: string | null
+          display_name: string
+          email: string | null
+          end_date: string | null
+          fte_percent: number
+          handle: string | null
+          hourly_rate: number | null
+          id: string
+          location: string | null
+          manager_id: string | null
+          pdm_plm: string | null
+          slug: string
+          software: string | null
+          specialization: string | null
+          start_date: string | null
+          status: Database["public"]["Enums"]["engineer_status"]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "engineers"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       is_admin: { Args: never; Returns: boolean }
       normalize_name: { Args: { name: string }; Returns: string }
       normalize_slug: { Args: { p_name: string }; Returns: string }
