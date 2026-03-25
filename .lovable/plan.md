@@ -1,32 +1,33 @@
 
 
-## Plan: Add Location field to Engineer card
+## Plan: Add "Správa znalostí" section to Engineer card
 
-The `engineers` table currently has no `location` column. We need to add it at the database level and then wire it through the full stack.
+Add three new text fields (Software, PDM/PLM, Odborná specializace) to the engineer profile, grouped under a "Správa znalostí" heading in the Create/Edit dialogs.
 
 ### 1. Database migration
 
-Add a `location` column to the `engineers` table with a check constraint limiting values to `'PRG'`, `'PLZ'`, `'SK'`:
+Add three text columns to `engineers` table:
 
 ```sql
-ALTER TABLE public.engineers 
-  ADD COLUMN location text DEFAULT 'PRG' 
-  CHECK (location IN ('PRG', 'PLZ', 'SK'));
+ALTER TABLE public.engineers
+  ADD COLUMN software text DEFAULT NULL,
+  ADD COLUMN pdm_plm text DEFAULT NULL,
+  ADD COLUMN specialization text DEFAULT NULL;
 ```
 
-Update both RPC functions (`engineers_create` and `engineers_update`) to accept a `p_location` parameter and set/update the column accordingly.
+Update `engineers_create` and `engineers_update` RPCs to accept `p_software`, `p_pdm_plm`, `p_specialization` parameters.
 
-### 2. Update types and API layer
+### 2. Types and API layer
 
-- **`src/services/engineersApi.ts`** — add `location?: 'PRG' | 'PLZ' | 'SK'` to `DatabaseEngineer`
-- **`src/hooks/useEngineers.ts`** — add `location` to `UIEngineer`, pass it through in `select`, and accept it in `createEngineer` / `updateEngineer` (pass as `p_location` to RPC)
+- **`src/services/engineersApi.ts`** — add `software`, `pdm_plm`, `specialization` to `DatabaseEngineer`
+- **`src/hooks/useEngineers.ts`** — add fields to `UIEngineer`, pass through in `select`, `createEngineer`, `updateEngineer`
 
-### 3. Update UI — `src/components/EngineerManagement.tsx`
+### 3. UI — `src/components/EngineerManagement.tsx`
 
-- Add `location: 'PRG'` to `formData` state
-- Add a `Location` Select field (options: PRG, PLZ, SK) in both Create and Edit dialogs — visible for all engineers (not just contractors)
-- Show location in the table as a new column
-- Pass location through `createEngineer` and `updateEngineer` calls
+- Add `software`, `pdmPlm`, `specialization` to `formData` state
+- Add a "Správa znalostí" section with a heading/separator in Create and Edit dialogs containing three Input fields
+- Show these fields as columns in the engineers table (or as expandable detail)
+- Pass values through create/update calls
 
 ### Files changed
 - New migration SQL file
