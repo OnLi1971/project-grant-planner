@@ -10,12 +10,13 @@ import { ProjectManagement } from '@/components/ProjectManagement';
 import UserManagement from '@/components/UserManagement';
 import { EngineerManagement } from '@/components/EngineerManagement';
 import { EngineerMigration } from '@/components/EngineerMigration';
+import { KnowledgeManagement } from '@/components/KnowledgeManagement';
 import { PlanningProvider } from '@/contexts/PlanningContext';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Grid3x3, Database, TrendingUp, Settings, Shield, UserPlus, DollarSign, LogOut, BarChart3, ChevronDown } from 'lucide-react';
+import { Users, Grid3x3, Database, TrendingUp, Settings, Shield, UserPlus, DollarSign, LogOut, BarChart3, ChevronDown, BookOpen } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,7 +29,7 @@ const Index = () => {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const [outputView, setOutputView] = useState<'matrix' | 'revenue'>('matrix');
-  const [managementView, setManagementView] = useState<'projects' | 'resources' | 'licenses' | 'users' | 'engineers' | 'migration'>('projects');
+  const [managementView, setManagementView] = useState<'projects' | 'resources' | 'licenses' | 'users' | 'engineers' | 'migration' | 'knowledge'>('projects');
 
   // Show loading while checking auth
   if (loading) {
@@ -201,6 +202,14 @@ const Index = () => {
                     <Database className="h-4 w-4" />
                     Migrace dat
                   </Button>
+                  <Button
+                    variant={managementView === 'knowledge' ? 'default' : 'outline'}
+                    onClick={() => setManagementView('knowledge')}
+                    className="flex items-center gap-2"
+                  >
+                    <BookOpen className="h-4 w-4" />
+                    Správa znalostí
+                  </Button>
                 </div>
               </Card>
               
@@ -214,6 +223,8 @@ const Index = () => {
                 <UserManagement />
               ) : managementView === 'engineers' ? (
                 <EngineerManagement />
+              ) : managementView === 'knowledge' ? (
+                <KnowledgeManagement />
               ) : (
                 <EngineerMigration />
               )}
