@@ -485,18 +485,29 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          oblast_id: string | null
         }
         Insert: {
           created_at?: string
           id?: string
           name: string
+          oblast_id?: string | null
         }
         Update: {
           created_at?: string
           id?: string
           name?: string
+          oblast_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_specialization_oblast_id_fkey"
+            columns: ["oblast_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_oblast"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       licenses: {
         Row: {
