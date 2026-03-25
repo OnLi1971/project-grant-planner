@@ -11,11 +11,105 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Users, Edit, Loader2, Trash2 } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Plus, Users, Edit, Loader2, Trash2, CalendarIcon } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { format, parse, isValid, getYear } from 'date-fns';
+import { cs } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
+
+/** Convert ISO date string (yyyy-MM-dd) to dd.MM.yyyy for display */
+function isoToDisplay(iso: string | null): string {
+  if (!iso) return '';
+  const d = parse(iso, 'yyyy-MM-dd', new Date());
+  return isValid(d) ? format(d, 'dd.MM.yyyy') : iso;
+}
+
+/** Convert dd.MM.yyyy to ISO yyyy-MM-dd, returns null if empty/invalid */
+function displayToIso(text: string): string | null {
+  const trimmed = text.trim();
+  if (!trimmed) return null;
+  const d = parse(trimmed, 'dd.MM.yyyy', new Date());
+  if (!isValid(d)) return null;
+  const y = getYear(d);
+  if (y < 1900 || y > 2100) return null;
+  return format(d, 'yyyy-MM-dd');
+}
+
+function validateSpecDates(rows: SpecializationAssignment[]): string | null {
+  for (let i = 0; i < rows.length; i++) {
+    const gd = rows[i].granted_date;
+    if (!gd) continue;
+    const d = parse(gd, 'yyyy-MM-dd', new Date());
+    if (!isValid(d) || getYear(d) < 1900 || getYear(d) > 2100) {
+      return `Řádek ${i + 1}: neplatné datum "${gd}". Použijte formát dd.MM.yyyy s rokem 1900–2100.`;
+    }
+  }
+  return null;
+}
 
 const LEVELS = ['A', 'B', 'C', 'D', 'E', 'F'] as const;
+
+/** Inline date picker: text input (dd.MM.yyyy) + calendar popover */
+function DatePickerCell({ value, onChange }: { value: string | null; onChange: (v: string | null) => void }) {
+  const [text, setText] = useState(isoToDisplay(value));
+
+  useEffect(() => {
+    setText(isoToDisplay(value));
+  }, [value]);
+
+  const handleBlur = () => {
+    if (!text.trim()) {
+      onChange(null);
+      return;
+    }
+    const iso = displayToIso(text);
+    if (iso) {
+      onChange(iso);
+    }
+  };
+
+  const handleCalendarSelect = (date: Date | undefined) => {
+    if (date) {
+      const iso = format(date, 'yyyy-MM-dd');
+      onChange(iso);
+      setText(format(date, 'dd.MM.yyyy'));
+    }
+  };
+
+  const selectedDate = value ? parse(value, 'yyyy-MM-dd', new Date()) : undefined;
+
+  return (
+    <div className="flex gap-1 items-center">
+      <Input
+        className="h-8 text-xs w-24"
+        placeholder="dd.MM.yyyy"
+        value={text}
+        onChange={e => setText(e.target.value)}
+        onBlur={handleBlur}
+      />
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+            <CalendarIcon className="h-3 w-3" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar
+            mode="single"
+            selected={isValid(selectedDate) ? selectedDate : undefined}
+            onSelect={handleCalendarSelect}
+            initialFocus
+            className={cn("p-3 pointer-events-auto")}
+            locale={cs}
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
 
 export function EngineerManagement() {
   const { engineers, isLoading, createEngineer, updateEngineer, deleteEngineer, refetch } = useEngineers();
@@ -123,6 +217,11 @@ export function EngineerManagement() {
       toast({ title: "Validation error", description: "Hourly rate is required for contractors", variant: "destructive" });
       return;
     }
+    const dateErr = validateSpecDates(specRows);
+    if (dateErr) {
+      toast({ title: "Chyba v datu", description: dateErr, variant: "destructive" });
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -222,11 +321,9 @@ export function EngineerManagement() {
                     </Select>
                   </TableCell>
                   <TableCell className="p-1">
-                    <Input
-                      type="date"
-                      className="h-8 text-xs"
-                      value={row.granted_date || ''}
-                      onChange={e => updateSpecRow(idx, 'granted_date', e.target.value || null)}
+                    <DatePickerCell
+                      value={row.granted_date}
+                      onChange={(v) => updateSpecRow(idx, 'granted_date', v)}
                     />
                   </TableCell>
                   <TableCell className="p-1">
