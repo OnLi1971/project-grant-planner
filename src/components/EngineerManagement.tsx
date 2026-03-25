@@ -70,7 +70,18 @@ export function EngineerManagement() {
   };
 
   const updateSpecRow = (index: number, field: keyof SpecializationAssignment, value: string | null) => {
-    setSpecRows(prev => prev.map((r, i) => i === index ? { ...r, [field]: value } : r));
+    setSpecRows(prev => prev.map((r, i) => {
+      if (i !== index) return r;
+      const updated = { ...r, [field]: value };
+      // Reset specialization when oblast changes
+      if (field === 'oblast_id') {
+        const filtered = specList.items.filter(s => s.oblast_id === value);
+        if (!filtered.find(s => s.id === r.specialization_id)) {
+          updated.specialization_id = filtered[0]?.id || '';
+        }
+      }
+      return updated;
+    }));
   };
 
   const removeSpecRow = (index: number) => {
@@ -196,7 +207,7 @@ export function EngineerManagement() {
                     <Select value={row.specialization_id} onValueChange={v => updateSpecRow(idx, 'specialization_id', v)}>
                       <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Specializace..." /></SelectTrigger>
                       <SelectContent>
-                        {specList.items.map(s => (
+                        {specList.items.filter(s => s.oblast_id === row.oblast_id).map(s => (
                           <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                         ))}
                       </SelectContent>

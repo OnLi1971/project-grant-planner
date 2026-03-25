@@ -2,7 +2,7 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-export type KnowledgeItem = { id: string; name: string; created_at: string };
+export type KnowledgeItem = { id: string; name: string; created_at: string; oblast_id?: string | null };
 type KnowledgeTable = 'knowledge_software' | 'knowledge_pdm_plm' | 'knowledge_specialization' | 'knowledge_oblast';
 type JunctionTable = 'engineer_software' | 'engineer_pdm_plm' | 'engineer_specialization';
 type JunctionFkColumn = 'software_id' | 'pdm_plm_id' | 'specialization_id';
@@ -28,8 +28,9 @@ export function useKnowledgeList(table: KnowledgeTable) {
   });
 
   const addItem = useMutation({
-    mutationFn: async (name: string) => {
-      const { error } = await (supabase.from(table as any).insert({ name: name.trim() }) as any);
+    mutationFn: async (payload: string | { name: string; oblast_id?: string }) => {
+      const insertData = typeof payload === 'string' ? { name: payload.trim() } : { name: payload.name.trim(), ...(payload.oblast_id ? { oblast_id: payload.oblast_id } : {}) };
+      const { error } = await (supabase.from(table as any).insert(insertData) as any);
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: qk }); toast({ title: 'Přidáno' }); },
@@ -37,8 +38,10 @@ export function useKnowledgeList(table: KnowledgeTable) {
   });
 
   const updateItem = useMutation({
-    mutationFn: async ({ id, name }: { id: string; name: string }) => {
-      const { error } = await (supabase.from(table as any).update({ name: name.trim() }).eq('id', id) as any);
+    mutationFn: async ({ id, name, oblast_id }: { id: string; name: string; oblast_id?: string }) => {
+      const updateData: any = { name: name.trim() };
+      if (oblast_id !== undefined) updateData.oblast_id = oblast_id;
+      const { error } = await (supabase.from(table as any).update(updateData).eq('id', id) as any);
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: qk }); toast({ title: 'Upraveno' }); },

@@ -4,10 +4,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Edit, Trash2, BookOpen, Loader2 } from 'lucide-react';
 
 type TableKey = 'knowledge_software' | 'knowledge_pdm_plm' | 'knowledge_specialization' | 'knowledge_oblast';
@@ -127,6 +129,141 @@ function KnowledgeTab({ table, label }: { table: TableKey; label: string }) {
   );
 }
 
+function SpecializationTab() {
+  const { items, isLoading, addItem, updateItem, deleteItem } = useKnowledgeList('knowledge_specialization');
+  const oblastList = useKnowledgeList('knowledge_oblast');
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [editItem, setEditItem] = useState<KnowledgeItem | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [name, setName] = useState('');
+  const [oblastId, setOblastId] = useState('');
+
+  const handleAdd = async () => {
+    if (!name.trim() || !oblastId) return;
+    await addItem.mutateAsync({ name, oblast_id: oblastId });
+    setName(''); setOblastId(''); setIsAddOpen(false);
+  };
+
+  const handleUpdate = async () => {
+    if (!editItem || !name.trim() || !oblastId) return;
+    await updateItem.mutateAsync({ id: editItem.id, name, oblast_id: oblastId });
+    setEditItem(null); setName(''); setOblastId('');
+  };
+
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    await deleteItem.mutateAsync(deleteId);
+    setDeleteId(null);
+  };
+
+  const getOblastName = (id?: string | null) => oblastList.items.find(o => o.id === id)?.name || '—';
+
+  if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <p className="text-sm text-muted-foreground">{items.length} položek</p>
+        <Button size="sm" onClick={() => { setName(''); setOblastId(oblastList.items[0]?.id || ''); setIsAddOpen(true); }}>
+          <Plus className="mr-2 h-4 w-4" />Přidat Specializaci
+        </Button>
+      </div>
+
+      <div className="border rounded-lg">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Název</TableHead>
+              <TableHead>Oblast</TableHead>
+              <TableHead className="w-24">Akce</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {items.map(item => (
+              <TableRow key={item.id}>
+                <TableCell>{item.name}</TableCell>
+                <TableCell><Badge variant="outline">{getOblastName(item.oblast_id)}</Badge></TableCell>
+                <TableCell>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => { setEditItem(item); setName(item.name); setOblastId(item.oblast_id || ''); }}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => setDeleteId(item.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+            {items.length === 0 && (
+              <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-8">Žádné položky</TableCell></TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Přidat Specializaci</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div><Label>Oblast</Label>
+              <Select value={oblastId} onValueChange={setOblastId}>
+                <SelectTrigger><SelectValue placeholder="Vyberte oblast..." /></SelectTrigger>
+                <SelectContent>
+                  {oblastList.items.map(o => <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div><Label>Název</Label><Input value={name} onChange={e => setName(e.target.value)} placeholder="Název specializace" /></div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsAddOpen(false)}>Zrušit</Button>
+              <Button onClick={handleAdd} disabled={addItem.isPending || !name.trim() || !oblastId}>
+                {addItem.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}Přidat
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editItem} onOpenChange={(open) => { if (!open) setEditItem(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Upravit Specializaci</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div><Label>Oblast</Label>
+              <Select value={oblastId} onValueChange={setOblastId}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {oblastList.items.map(o => <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div><Label>Název</Label><Input value={name} onChange={e => setName(e.target.value)} /></div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setEditItem(null)}>Zrušit</Button>
+              <Button onClick={handleUpdate} disabled={updateItem.isPending || !name.trim() || !oblastId}>
+                {updateItem.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}Uložit
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Smazat položku?</AlertDialogTitle>
+            <AlertDialogDescription>Tato akce odstraní specializaci ze všech přiřazených konstruktérů.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Zrušit</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Smazat</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+
 export function KnowledgeManagement() {
   return (
     <Card className="mt-4">
@@ -145,7 +282,7 @@ export function KnowledgeManagement() {
           <TabsContent value="software" className="mt-4"><KnowledgeTab table="knowledge_software" label="Software" /></TabsContent>
           <TabsContent value="pdm_plm" className="mt-4"><KnowledgeTab table="knowledge_pdm_plm" label="PDM/PLM" /></TabsContent>
           <TabsContent value="oblast" className="mt-4"><KnowledgeTab table="knowledge_oblast" label="Oblast" /></TabsContent>
-          <TabsContent value="specialization" className="mt-4"><KnowledgeTab table="knowledge_specialization" label="Specializaci" /></TabsContent>
+          <TabsContent value="specialization" className="mt-4"><SpecializationTab /></TabsContent>
         </Tabs>
       </CardContent>
     </Card>
