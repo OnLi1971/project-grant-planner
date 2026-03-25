@@ -196,7 +196,7 @@ export function EngineerManagement() {
                     <Select value={row.specialization_id} onValueChange={v => updateSpecRow(idx, 'specialization_id', v)}>
                       <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Specializace..." /></SelectTrigger>
                       <SelectContent>
-                        {specList.items.map(s => (
+                        {specList.items.filter(s => s.oblast_id === row.oblast_id).map(s => (
                           <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                         ))}
                       </SelectContent>
