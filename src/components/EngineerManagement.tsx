@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useEngineers } from '@/hooks/useEngineers';
-import { useKnowledgeList, useEngineerKnowledge } from '@/hooks/useKnowledgeData';
+import { useKnowledgeList, useEngineerKnowledge, SpecializationAssignment } from '@/hooks/useKnowledgeData';
 import { KnowledgeMultiSelect } from '@/components/KnowledgeMultiSelect';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,11 +15,14 @@ import { Plus, Users, Edit, Loader2, Trash2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 
+const LEVELS = ['A', 'B', 'C', 'D', 'E', 'F'] as const;
+
 export function EngineerManagement() {
   const { engineers, isLoading, createEngineer, updateEngineer, deleteEngineer, refetch } = useEngineers();
   const swList = useKnowledgeList('knowledge_software');
   const pdmList = useKnowledgeList('knowledge_pdm_plm');
   const specList = useKnowledgeList('knowledge_specialization');
+  const oblastList = useKnowledgeList('knowledge_oblast');
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -36,18 +39,17 @@ export function EngineerManagement() {
   });
   const [selectedSoftware, setSelectedSoftware] = useState<string[]>([]);
   const [selectedPdmPlm, setSelectedPdmPlm] = useState<string[]>([]);
-  const [selectedSpecialization, setSelectedSpecialization] = useState<string[]>([]);
+  const [specRows, setSpecRows] = useState<SpecializationAssignment[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
   const { assignments, saveAssignments } = useEngineerKnowledge(editingEngineer?.id || null);
 
-  // Load assignments when editing
   useEffect(() => {
     if (editingEngineer && assignments) {
       setSelectedSoftware(assignments.software);
       setSelectedPdmPlm(assignments.pdmPlm);
-      setSelectedSpecialization(assignments.specialization);
+      setSpecRows(assignments.specializations.length > 0 ? assignments.specializations : []);
     }
   }, [editingEngineer, assignments]);
 
@@ -55,7 +57,24 @@ export function EngineerManagement() {
     setFormData({ displayName: '', status: 'active', company: 'TM CZ', hourlyRate: '', currency: 'CZK', location: 'PRG' });
     setSelectedSoftware([]);
     setSelectedPdmPlm([]);
-    setSelectedSpecialization([]);
+    setSpecRows([]);
+  };
+
+  const addSpecRow = () => {
+    setSpecRows(prev => [...prev, {
+      oblast_id: oblastList.items[0]?.id || '',
+      specialization_id: specList.items[0]?.id || '',
+      level: 'A',
+      granted_date: null,
+    }]);
+  };
+
+  const updateSpecRow = (index: number, field: keyof SpecializationAssignment, value: string | null) => {
+    setSpecRows(prev => prev.map((r, i) => i === index ? { ...r, [field]: value } : r));
+  };
+
+  const removeSpecRow = (index: number) => {
+    setSpecRows(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleCreate = async () => {
@@ -75,15 +94,13 @@ export function EngineerManagement() {
       
       const result = await createEngineer(formData.displayName, undefined, formData.status, formData.company, hourlyRate, currency, formData.location);
       
-      // Save knowledge assignments if any selected
-      if (result && (selectedSoftware.length || selectedPdmPlm.length || selectedSpecialization.length)) {
-        await saveAssignments(result.id, selectedSoftware, selectedPdmPlm, selectedSpecialization);
+      if (result && (selectedSoftware.length || selectedPdmPlm.length || specRows.length)) {
+        await saveAssignments(result.id, selectedSoftware, selectedPdmPlm, specRows);
       }
       
       setIsCreateDialogOpen(false);
       resetForm();
     } catch (error) {
-      // Error already handled by the hook
     } finally {
       setIsSubmitting(false);
     }
@@ -111,13 +128,12 @@ export function EngineerManagement() {
         location: formData.location,
       } as any);
 
-      await saveAssignments(editingEngineer.id, selectedSoftware, selectedPdmPlm, selectedSpecialization);
+      await saveAssignments(editingEngineer.id, selectedSoftware, selectedPdmPlm, specRows);
       
       setIsEditDialogOpen(false);
       setEditingEngineer(null);
       resetForm();
     } catch (error) {
-      // Error already handled by the hook
     } finally {
       setIsSubmitting(false);
     }
@@ -136,18 +152,88 @@ export function EngineerManagement() {
     setIsEditDialogOpen(true);
   };
 
-  // Helper to get names from IDs
-  const getKnowledgeNames = (engineerId: string, _type: 'sw' | 'pdm' | 'spec') => {
-    // For table display we'd need per-engineer queries; show from text fields for now
-    return '-';
-  };
-
   const getStatusBadge = (status: string) => {
     const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
       active: "default", inactive: "secondary", contractor: "outline", on_leave: "destructive"
     };
     return <Badge variant={variants[status] || "secondary"}>{status}</Badge>;
   };
+
+  const SpecializationEditor = () => (
+    <div className="space-y-2">
+      <div className="flex justify-between items-center">
+        <Label className="text-sm font-semibold">Odborná specializace</Label>
+        <Button type="button" variant="outline" size="sm" onClick={addSpecRow}>
+          <Plus className="mr-1 h-3 w-3" />Přidat řádek
+        </Button>
+      </div>
+      {specRows.length > 0 && (
+        <div className="border rounded-lg overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="text-xs">Oblast</TableHead>
+                <TableHead className="text-xs">Specializace</TableHead>
+                <TableHead className="text-xs w-20">Úroveň</TableHead>
+                <TableHead className="text-xs w-32">Datum udělení</TableHead>
+                <TableHead className="w-10"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {specRows.map((row, idx) => (
+                <TableRow key={idx}>
+                  <TableCell className="p-1">
+                    <Select value={row.oblast_id} onValueChange={v => updateSpecRow(idx, 'oblast_id', v)}>
+                      <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Oblast..." /></SelectTrigger>
+                      <SelectContent>
+                        {oblastList.items.map(o => (
+                          <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell className="p-1">
+                    <Select value={row.specialization_id} onValueChange={v => updateSpecRow(idx, 'specialization_id', v)}>
+                      <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Specializace..." /></SelectTrigger>
+                      <SelectContent>
+                        {specList.items.map(s => (
+                          <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell className="p-1">
+                    <Select value={row.level} onValueChange={v => updateSpecRow(idx, 'level', v)}>
+                      <SelectTrigger className="h-8 text-xs w-16"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {LEVELS.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell className="p-1">
+                    <Input
+                      type="date"
+                      className="h-8 text-xs"
+                      value={row.granted_date || ''}
+                      onChange={e => updateSpecRow(idx, 'granted_date', e.target.value || null)}
+                    />
+                  </TableCell>
+                  <TableCell className="p-1">
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive" onClick={() => removeSpecRow(idx)}>
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+      {specRows.length === 0 && (
+        <p className="text-xs text-muted-foreground text-center py-2">Žádné specializace. Klikněte "Přidat řádek".</p>
+      )}
+    </div>
+  );
 
   const KnowledgeFields = () => (
     <>
@@ -161,10 +247,7 @@ export function EngineerManagement() {
         <Label>PDM/PLM</Label>
         <KnowledgeMultiSelect items={pdmList.items} selectedIds={selectedPdmPlm} onChange={setSelectedPdmPlm} placeholder="Vyberte PDM/PLM..." isLoading={pdmList.isLoading} />
       </div>
-      <div>
-        <Label>Odborná specializace</Label>
-        <KnowledgeMultiSelect items={specList.items} selectedIds={selectedSpecialization} onChange={setSelectedSpecialization} placeholder="Vyberte specializaci..." isLoading={specList.isLoading} />
-      </div>
+      <SpecializationEditor />
     </>
   );
 
@@ -189,7 +272,7 @@ export function EngineerManagement() {
               <DialogTrigger asChild>
                 <Button><Plus className="mr-2 h-4 w-4" />Add Engineer</Button>
               </DialogTrigger>
-              <DialogContent className="max-h-[90vh] overflow-y-auto">
+              <DialogContent className="max-h-[90vh] overflow-y-auto max-w-2xl">
                 <DialogHeader>
                   <DialogTitle>Add New Engineer</DialogTitle>
                   <DialogDescription>Create a new engineer record. The system will automatically generate a unique slug.</DialogDescription>
@@ -311,7 +394,7 @@ export function EngineerManagement() {
 
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={(open) => { setIsEditDialogOpen(open); if (!open) { setEditingEngineer(null); resetForm(); } }}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[90vh] overflow-y-auto max-w-2xl">
           <DialogHeader>
             <DialogTitle>Edit Engineer</DialogTitle>
             <DialogDescription>Update engineer information</DialogDescription>
@@ -409,7 +492,6 @@ export function EngineerManagement() {
                     setIsDeleteDialogOpen(false);
                     setEngineerToDelete(null);
                   } catch (error) {
-                    // Error handled by hook
                   } finally {
                     setIsSubmitting(false);
                   }

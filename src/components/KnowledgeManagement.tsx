@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Plus, Edit, Trash2, BookOpen, Loader2 } from 'lucide-react';
 
-type TableKey = 'knowledge_software' | 'knowledge_pdm_plm' | 'knowledge_specialization';
+type TableKey = 'knowledge_software' | 'knowledge_pdm_plm' | 'knowledge_specialization' | 'knowledge_oblast';
 
 function KnowledgeTab({ table, label }: { table: TableKey; label: string }) {
   const { items, isLoading, addItem, updateItem, deleteItem } = useKnowledgeList(table);
@@ -81,7 +81,6 @@ function KnowledgeTab({ table, label }: { table: TableKey; label: string }) {
         </Table>
       </div>
 
-      {/* Add Dialog */}
       <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Přidat {label}</DialogTitle></DialogHeader>
@@ -97,7 +96,6 @@ function KnowledgeTab({ table, label }: { table: TableKey; label: string }) {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Dialog */}
       <Dialog open={!!editItem} onOpenChange={(open) => { if (!open) setEditItem(null); }}>
         <DialogContent>
           <DialogHeader><DialogTitle>Upravit {label}</DialogTitle></DialogHeader>
@@ -113,7 +111,6 @@ function KnowledgeTab({ table, label }: { table: TableKey; label: string }) {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Dialog */}
       <AlertDialog open={!!deleteId} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -135,17 +132,19 @@ export function KnowledgeManagement() {
     <Card className="mt-4">
       <CardHeader>
         <CardTitle className="flex items-center gap-2"><BookOpen className="h-5 w-5" />Správa znalostí</CardTitle>
-        <CardDescription>Spravujte číselníky pro Software, PDM/PLM a Odbornou specializaci</CardDescription>
+        <CardDescription>Spravujte číselníky pro Software, PDM/PLM, Oblast a Odbornou specializaci</CardDescription>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="software">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="software">Software</TabsTrigger>
             <TabsTrigger value="pdm_plm">PDM/PLM</TabsTrigger>
+            <TabsTrigger value="oblast">Oblast</TabsTrigger>
             <TabsTrigger value="specialization">Specializace</TabsTrigger>
           </TabsList>
           <TabsContent value="software" className="mt-4"><KnowledgeTab table="knowledge_software" label="Software" /></TabsContent>
           <TabsContent value="pdm_plm" className="mt-4"><KnowledgeTab table="knowledge_pdm_plm" label="PDM/PLM" /></TabsContent>
+          <TabsContent value="oblast" className="mt-4"><KnowledgeTab table="knowledge_oblast" label="Oblast" /></TabsContent>
           <TabsContent value="specialization" className="mt-4"><KnowledgeTab table="knowledge_specialization" label="Specializaci" /></TabsContent>
         </Tabs>
       </CardContent>
