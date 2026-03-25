@@ -24,7 +24,8 @@ export function EngineerManagement() {
     status: 'active' as 'active' | 'inactive' | 'contractor' | 'on_leave',
     company: 'TM CZ' as string,
     hourlyRate: '' as string,
-    currency: 'CZK' as 'EUR' | 'CZK'
+    currency: 'CZK' as 'EUR' | 'CZK',
+    location: 'PRG' as 'PRG' | 'PLZ' | 'SK'
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -62,7 +63,8 @@ export function EngineerManagement() {
         formData.status, // status
         formData.company,
         hourlyRate,
-        currency
+        currency,
+        formData.location
       );
       setIsCreateDialogOpen(false);
       setFormData({ 
@@ -70,7 +72,8 @@ export function EngineerManagement() {
         status: 'active', 
         company: 'TM CZ', 
         hourlyRate: '', 
-        currency: 'CZK' 
+        currency: 'CZK',
+        location: 'PRG'
       });
     } catch (error) {
       // Error already handled by the hook
@@ -105,8 +108,9 @@ export function EngineerManagement() {
         fte_percent: 100,
         company: formData.company,
         hourly_rate: hourlyRate,
-        currency: currency
-      });
+        currency: currency,
+        location: formData.location
+      } as any);
       setIsEditDialogOpen(false);
       setEditingEngineer(null);
       setFormData({ 
@@ -114,7 +118,8 @@ export function EngineerManagement() {
         status: 'active', 
         company: 'TM CZ', 
         hourlyRate: '', 
-        currency: 'CZK' 
+        currency: 'CZK',
+        location: 'PRG'
       });
     } catch (error) {
       // Error already handled by the hook
@@ -130,7 +135,8 @@ export function EngineerManagement() {
       status: engineer.status,
       company: engineer.spolecnost || 'TM CZ',
       hourlyRate: engineer.hourlyRate ? engineer.hourlyRate.toString() : '',
-      currency: engineer.currency || 'CZK'
+      currency: engineer.currency || 'CZK',
+      location: engineer.location || 'PRG'
     });
     setIsEditDialogOpen(true);
   };
@@ -215,6 +221,19 @@ export function EngineerManagement() {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div>
+                    <Label htmlFor="location">Location</Label>
+                    <Select value={formData.location} onValueChange={(value: 'PRG' | 'PLZ' | 'SK') => setFormData(prev => ({ ...prev, location: value }))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="PRG">PRG</SelectItem>
+                        <SelectItem value="PLZ">PLZ</SelectItem>
+                        <SelectItem value="SK">SK</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   {formData.status === 'contractor' && (
                     <>
                       <div>
@@ -284,6 +303,7 @@ export function EngineerManagement() {
                   <TableHead>Slug</TableHead>
                   <TableHead>Company</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Location</TableHead>
                   <TableHead>Rate</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -295,6 +315,7 @@ export function EngineerManagement() {
                     <TableCell className="font-mono text-sm">{engineer.slug}</TableCell>
                     <TableCell>{engineer.spolecnost}</TableCell>
                     <TableCell>{getStatusBadge(engineer.status)}</TableCell>
+                    <TableCell>{engineer.location || 'PRG'}</TableCell>
                     <TableCell>
                       {engineer.status === 'contractor' && engineer.hourlyRate 
                         ? `${engineer.hourlyRate} ${engineer.currency}` 
@@ -364,6 +385,19 @@ export function EngineerManagement() {
                   <SelectItem value="inactive">Inactive</SelectItem>
                   <SelectItem value="contractor">Contractor</SelectItem>
                   <SelectItem value="on_leave">On Leave</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="editLocation">Location</Label>
+              <Select value={formData.location} onValueChange={(value: 'PRG' | 'PLZ' | 'SK') => setFormData(prev => ({ ...prev, location: value }))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PRG">PRG</SelectItem>
+                  <SelectItem value="PLZ">PLZ</SelectItem>
+                  <SelectItem value="SK">SK</SelectItem>
                 </SelectContent>
               </Select>
             </div>

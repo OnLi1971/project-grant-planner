@@ -216,6 +216,7 @@ export type Database = {
           handle: string | null
           hourly_rate: number | null
           id: string
+          location: string | null
           manager_id: string | null
           slug: string
           start_date: string | null
@@ -234,6 +235,7 @@ export type Database = {
           handle?: string | null
           hourly_rate?: number | null
           id?: string
+          location?: string | null
           manager_id?: string | null
           slug: string
           start_date?: string | null
@@ -252,6 +254,7 @@ export type Database = {
           handle?: string | null
           hourly_rate?: number | null
           id?: string
+          location?: string | null
           manager_id?: string | null
           slug?: string
           start_date?: string | null
@@ -713,6 +716,7 @@ export type Database = {
               handle: string | null
               hourly_rate: number | null
               id: string
+              location: string | null
               manager_id: string | null
               slug: string
               start_date: string | null
@@ -750,6 +754,46 @@ export type Database = {
               handle: string | null
               hourly_rate: number | null
               id: string
+              location: string | null
+              manager_id: string | null
+              slug: string
+              start_date: string | null
+              status: Database["public"]["Enums"]["engineer_status"]
+              updated_at: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "engineers"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: {
+              p_company?: string
+              p_currency?: string
+              p_department?: string
+              p_display_name: string
+              p_email?: string
+              p_fte?: number
+              p_hourly_rate?: number
+              p_location?: string
+              p_manager?: string
+              p_status?: Database["public"]["Enums"]["engineer_status"]
+            }
+            Returns: {
+              company: string
+              created_at: string
+              currency: string | null
+              department_id: string | null
+              display_name: string
+              email: string | null
+              end_date: string | null
+              fte_percent: number
+              handle: string | null
+              hourly_rate: number | null
+              id: string
+              location: string | null
               manager_id: string | null
               slug: string
               start_date: string | null
@@ -786,6 +830,7 @@ export type Database = {
               handle: string | null
               hourly_rate: number | null
               id: string
+              location: string | null
               manager_id: string | null
               slug: string
               start_date: string | null
@@ -824,6 +869,47 @@ export type Database = {
               handle: string | null
               hourly_rate: number | null
               id: string
+              location: string | null
+              manager_id: string | null
+              slug: string
+              start_date: string | null
+              status: Database["public"]["Enums"]["engineer_status"]
+              updated_at: string
+            }
+            SetofOptions: {
+              from: "*"
+              to: "engineers"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: {
+              p_company?: string
+              p_currency?: string
+              p_department?: string
+              p_display_name?: string
+              p_email?: string
+              p_fte?: number
+              p_hourly_rate?: number
+              p_id: string
+              p_location?: string
+              p_manager?: string
+              p_status?: Database["public"]["Enums"]["engineer_status"]
+            }
+            Returns: {
+              company: string
+              created_at: string
+              currency: string | null
+              department_id: string | null
+              display_name: string
+              email: string | null
+              end_date: string | null
+              fte_percent: number
+              handle: string | null
+              hourly_rate: number | null
+              id: string
+              location: string | null
               manager_id: string | null
               slug: string
               start_date: string | null

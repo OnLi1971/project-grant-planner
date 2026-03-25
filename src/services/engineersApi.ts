@@ -13,6 +13,7 @@ export type DatabaseEngineer = {
   company: string;
   hourly_rate?: number;
   currency?: 'EUR' | 'CZK';
+  location?: 'PRG' | 'PLZ' | 'SK';
   created_at: string;
   updated_at: string;
 };

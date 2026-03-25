@@ -17,6 +17,7 @@ export type UIEngineer = {
   orgVedouci?: string; // will be derived from org structure
   hourlyRate?: number;
   currency?: 'EUR' | 'CZK';
+  location?: 'PRG' | 'PLZ' | 'SK';
 };
 
 // Organizational mapping for compatibility (temporary)
@@ -54,6 +55,7 @@ export function useEngineers() {
           orgVedouci: orgInfo.leader,
           hourlyRate: engineer.hourly_rate,
           currency: engineer.currency,
+          location: engineer.location,
         };
       });
     },
@@ -66,7 +68,8 @@ export function useEngineers() {
     status?: DatabaseEngineer['status'],
     company?: string,
     hourlyRate?: number,
-    currency?: 'EUR' | 'CZK'
+    currency?: 'EUR' | 'CZK',
+    location?: 'PRG' | 'PLZ' | 'SK'
   ) => {
     try {
       const { data, error } = await supabase.rpc('engineers_create', {
@@ -77,6 +80,7 @@ export function useEngineers() {
         p_company: company || 'TM CZ',
         p_hourly_rate: hourlyRate,
         p_currency: currency,
+        p_location: location || 'PRG',
       });
       if (error) throw error;
 
@@ -101,6 +105,7 @@ export function useEngineers() {
         p_company: updates.company,
         p_hourly_rate: updates.hourly_rate,
         p_currency: updates.currency,
+        p_location: (updates as any).location,
       });
       if (error) throw error;
 
