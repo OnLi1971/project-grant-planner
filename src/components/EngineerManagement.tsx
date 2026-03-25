@@ -233,6 +233,7 @@ export function EngineerManagement() {
                         <SelectItem value="SK">SK</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
                   {formData.status === 'contractor' && (
                     <>
                       <div>
