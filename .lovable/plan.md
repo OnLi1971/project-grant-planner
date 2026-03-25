@@ -1,37 +1,52 @@
 
 
-## Plan: Add "Správa znalostí" section to Engineer card
+## Plan: Správa znalostí jako master-data s výběrem
 
-Add three new text fields (Software, PDM/PLM, Odborná specializace) to the engineer profile, grouped under a "Správa znalostí" heading in the Create/Edit dialogs.
+Místo volného textu na kartě konstruktéra vytvoříme **číselníky** (master tabulky) pro Software, PDM/PLM a Specializace. V "Správa znalostí" sekci se budou spravovat tyto seznamy, a na kartě konstruktéra se budou hodnoty vybírat ze Select dropdownu.
 
-### 1. Database migration
+### 1. Database — 3 nové tabulky + vazební tabulky
 
-Add three text columns to `engineers` table:
+Vytvoříme tři master tabulky:
+- `knowledge_software` (id, name, created_at)
+- `knowledge_pdm_plm` (id, name, created_at)
+- `knowledge_specialization` (id, name, created_at)
 
-```sql
-ALTER TABLE public.engineers
-  ADD COLUMN software text DEFAULT NULL,
-  ADD COLUMN pdm_plm text DEFAULT NULL,
-  ADD COLUMN specialization text DEFAULT NULL;
-```
+A tři vazební (many-to-many) tabulky pro přiřazení ke konstruktérům:
+- `engineer_software` (engineer_id, software_id)
+- `engineer_pdm_plm` (engineer_id, pdm_plm_id)
+- `engineer_specialization` (engineer_id, specialization_id)
 
-Update `engineers_create` and `engineers_update` RPCs to accept `p_software`, `p_pdm_plm`, `p_specialization` parameters.
+RLS: authenticated SELECT, admin/editor INSERT/UPDATE/DELETE.
 
-### 2. Types and API layer
+Stávající textové sloupce `software`, `pdm_plm`, `specialization` na tabulce `engineers` ponecháme (zpětná kompatibilita), ale nebudou se dále používat v UI.
 
-- **`src/services/engineersApi.ts`** — add `software`, `pdm_plm`, `specialization` to `DatabaseEngineer`
-- **`src/hooks/useEngineers.ts`** — add fields to `UIEngineer`, pass through in `select`, `createEngineer`, `updateEngineer`
+### 2. Nová komponenta — `KnowledgeManagement.tsx`
 
-### 3. UI — `src/components/EngineerManagement.tsx`
+CRUD rozhraní se třemi záložkami (Software, PDM/PLM, Specializace):
+- Tabulka se seznamem položek
+- Přidat / Editovat / Smazat položku
+- Jednoduchý formulář s polem "Název"
 
-- Add `software`, `pdmPlm`, `specialization` to `formData` state
-- Add a "Správa znalostí" section with a heading/separator in Create and Edit dialogs containing three Input fields
-- Show these fields as columns in the engineers table (or as expandable detail)
-- Pass values through create/update calls
+### 3. Index.tsx — nový tab "Správa znalostí"
 
-### Files changed
-- New migration SQL file
-- `src/services/engineersApi.ts`
-- `src/hooks/useEngineers.ts`
-- `src/components/EngineerManagement.tsx`
+Přidáme tlačítko `Správa znalostí` do management view (vedle Správa konstruktérů) a renderujeme `KnowledgeManagement`.
+
+Aktualizujeme `managementView` state typ o `'knowledge'`.
+
+### 4. EngineerManagement.tsx — změna textových polí na multi-select
+
+V sekci "Správa znalostí" dialogu nahradíme tři Input pole za Select komponenty, které načítají data z master tabulek. Každé pole umožní výběr více hodnot (multi-select pomocí checkboxů v Popover+Command pattern).
+
+Při uložení konstruktéra se zapíší vazby do vazebních tabulek (upsert pattern — smazat staré, vložit nové).
+
+### 5. Hooks — `useKnowledgeData.ts`
+
+Nový hook pro CRUD operace nad master tabulkami + hook pro načtení přiřazených znalostí ke konstruktérovi.
+
+### Soubory ke změně/vytvoření
+- Nová migrace SQL (tabulky + RLS)
+- `src/hooks/useKnowledgeData.ts` (nový)
+- `src/components/KnowledgeManagement.tsx` (nový)
+- `src/components/EngineerManagement.tsx` (změna Input → multi-select)
+- `src/pages/Index.tsx` (přidání tabu)
 
