@@ -62,12 +62,15 @@ export function EngineerManagement() {
       
       await createEngineer(
         formData.displayName, 
-        undefined, // no email 
-        formData.status, // status
+        undefined,
+        formData.status,
         formData.company,
         hourlyRate,
         currency,
-        formData.location
+        formData.location,
+        formData.software || undefined,
+        formData.pdmPlm || undefined,
+        formData.specialization || undefined
       );
       setIsCreateDialogOpen(false);
       setFormData({ 
@@ -76,7 +79,10 @@ export function EngineerManagement() {
         company: 'TM CZ', 
         hourlyRate: '', 
         currency: 'CZK',
-        location: 'PRG'
+        location: 'PRG',
+        software: '',
+        pdmPlm: '',
+        specialization: ''
       });
     } catch (error) {
       // Error already handled by the hook
@@ -112,7 +118,10 @@ export function EngineerManagement() {
         company: formData.company,
         hourly_rate: hourlyRate,
         currency: currency,
-        location: formData.location
+        location: formData.location,
+        software: formData.software || undefined,
+        pdm_plm: formData.pdmPlm || undefined,
+        specialization: formData.specialization || undefined
       } as any);
       setIsEditDialogOpen(false);
       setEditingEngineer(null);
@@ -122,7 +131,10 @@ export function EngineerManagement() {
         company: 'TM CZ', 
         hourlyRate: '', 
         currency: 'CZK',
-        location: 'PRG'
+        location: 'PRG',
+        software: '',
+        pdmPlm: '',
+        specialization: ''
       });
     } catch (error) {
       // Error already handled by the hook
@@ -139,7 +151,10 @@ export function EngineerManagement() {
       company: engineer.spolecnost || 'TM CZ',
       hourlyRate: engineer.hourlyRate ? engineer.hourlyRate.toString() : '',
       currency: engineer.currency || 'CZK',
-      location: engineer.location || 'PRG'
+      location: engineer.location || 'PRG',
+      software: engineer.software || '',
+      pdmPlm: engineer.pdmPlm || '',
+      specialization: engineer.specialization || ''
     });
     setIsEditDialogOpen(true);
   };
