@@ -98,6 +98,7 @@ export const ProjectManagement = () => {
     projectType: 'WP' as 'WP' | 'Hodinovka',
     budget: 0,
     averageHourlyRate: 0,
+    hourlyRate: 0,
     assignedLicenses: [] as ProjectLicense[],
     projectStatus: 'Realizace' as 'Pre sales' | 'Realizace' | 'Dead',
     probability: 0,
@@ -409,8 +410,9 @@ export const ProjectManagement = () => {
             project_manager_id: defaultPmId,
             program_id: formData.programId,
             project_type: formData.projectType,
-            budget: formData.budget || null,
-            average_hourly_rate: formData.averageHourlyRate || null,
+            budget: formData.projectType === 'WP' ? (formData.budget || null) : null,
+            average_hourly_rate: formData.projectType === 'WP' ? (formData.averageHourlyRate || null) : null,
+            hourly_rate: formData.projectType === 'Hodinovka' ? (formData.hourlyRate || null) : null,
             project_status: formData.projectStatus,
             probability: formData.projectStatus === 'Pre sales' ? formData.probability : null,
             presales_phase: formData.projectStatus === 'Pre sales' ? formData.presalesPhase : null,
@@ -449,8 +451,9 @@ export const ProjectManagement = () => {
             project_manager_id: defaultPmId,
             program_id: formData.programId,
             project_type: formData.projectType,
-            budget: formData.budget || null,
-            average_hourly_rate: formData.averageHourlyRate || null,
+            budget: formData.projectType === 'WP' ? (formData.budget || null) : null,
+            average_hourly_rate: formData.projectType === 'WP' ? (formData.averageHourlyRate || null) : null,
+            hourly_rate: formData.projectType === 'Hodinovka' ? (formData.hourlyRate || null) : null,
             project_status: formData.projectStatus,
             probability: formData.projectStatus === 'Pre sales' ? formData.probability : null,
             presales_phase: formData.projectStatus === 'Pre sales' ? formData.presalesPhase : null,
@@ -640,6 +643,7 @@ export const ProjectManagement = () => {
         projectType: project.project_type as 'WP' | 'Hodinovka',
         budget: project.budget || 0,
         averageHourlyRate: project.average_hourly_rate || 0,
+        hourlyRate: project.hourly_rate || 0,
         assignedLicenses: projectLicenses?.map(pl => ({
           license_id: pl.license_id,
           percentage: pl.percentage
@@ -952,18 +956,29 @@ export const ProjectManagement = () => {
                 )}
                 
                 <div className="grid grid-cols-1 gap-4">
-                  <div>
-                    <Label htmlFor="budget">
-                      {formData.projectType === 'WP' ? 'Budget (hodiny)' : 'Hodinová cena (Kč)'}
-                    </Label>
-                    <Input
-                      id="budget"
-                      type="number"
-                      value={formData.budget || ''}
-                      onChange={(e) => setFormData({ ...formData, budget: parseInt(e.target.value) || 0 })}
-                      placeholder={formData.projectType === 'WP' ? '200' : '1500'}
-                    />
-                  </div>
+                  {formData.projectType === 'WP' ? (
+                    <div>
+                      <Label htmlFor="budget">Budget (hodiny)</Label>
+                      <Input
+                        id="budget"
+                        type="number"
+                        value={formData.budget || ''}
+                        onChange={(e) => setFormData({ ...formData, budget: parseInt(e.target.value) || 0 })}
+                        placeholder="200"
+                      />
+                    </div>
+                  ) : (
+                    <div>
+                      <Label htmlFor="hourlyRate">Hodinová cena (Kč)</Label>
+                      <Input
+                        id="hourlyRate"
+                        type="number"
+                        value={formData.hourlyRate || ''}
+                        onChange={(e) => setFormData({ ...formData, hourlyRate: parseInt(e.target.value) || 0 })}
+                        placeholder="1500"
+                      />
+                    </div>
+                  )}
                 </div>
                 {formData.projectType === 'WP' && (
                   <div>
@@ -1104,11 +1119,9 @@ export const ProjectManagement = () => {
                     )}
                   </TableCell>
                   <TableCell>
-                    {/* Pro WP projekty: budget v hodinách NEBO průměrná hodinová sazba */}
-                    {/* Pro Hodinovka projekty: budget jako hodinová sazba */}
                     {item.project && (
                       (item.project.project_type === 'WP' && (item.project.budget || item.project.average_hourly_rate)) ||
-                      (item.project.project_type === 'Hodinovka' && item.project.budget)
+                      (item.project.project_type === 'Hodinovka' && item.project.hourly_rate)
                     ) ? (
                       <div className="flex flex-col gap-1">
                         <span>
@@ -1117,7 +1130,7 @@ export const ProjectManagement = () => {
                               ? `${item.project.budget} hod`
                               : `Ø ${item.project.average_hourly_rate?.toLocaleString('cs-CZ')} Kč/hod`
                           ) : (
-                            `${item.project.budget?.toLocaleString('cs-CZ')} Kč/hod`
+                            `${item.project.hourly_rate?.toLocaleString('cs-CZ')} Kč/hod`
                           )}
                         </span>
                         {item.project.project_type === 'WP' && item.project.budget && item.project.average_hourly_rate && (
