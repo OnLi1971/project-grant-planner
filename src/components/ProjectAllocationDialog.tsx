@@ -255,16 +255,19 @@ export const ProjectAllocationDialog = ({
     };
   }, [allocations, engineers]);
 
-  // Calculate row totals (per engineer)
+  // Calculate row totals with holiday adjustment (per engineer)
   const rowTotals = useMemo(() => {
     const totals: Record<string, number> = {};
     engineers.forEach(eng => {
       totals[eng] = displayColumns.reduce((sum, col) => {
-        return sum + (allocationMatrix[eng]?.[col]?.hours || 0);
+        const hours = allocationMatrix[eng]?.[col]?.hours || 0;
+        const wd = holidayWeeks.get(col);
+        const adjusted = wd !== undefined ? Math.round(hours * wd / 5) : hours;
+        return sum + adjusted;
       }, 0);
     });
     return totals;
-  }, [engineers, displayColumns, allocationMatrix]);
+  }, [engineers, displayColumns, allocationMatrix, holidayWeeks]);
 
   // Calculate column totals with holiday adjustment (per column - week or month)
   const columnTotals = useMemo(() => {
