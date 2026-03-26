@@ -452,7 +452,7 @@ export const ProjectAllocationDialog = ({
                         </TableCell>
                       ))}
                       <TableCell className="text-center font-bold bg-primary/10 text-primary text-xs py-1 px-1">
-                        {stats.totalHours}h
+                        {Object.values(columnTotals).reduce((a, b) => a + b, 0)}h
                       </TableCell>
                     </TableRow>
                     <TableRow className="bg-secondary/10">
