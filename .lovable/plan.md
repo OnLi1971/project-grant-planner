@@ -1,14 +1,28 @@
 
 
-## Plan: Oprava logiky hodinové sazby pro revenue
+## Plan: Revenue se neaktualizuje po změně hodinové ceny projektu
 
-Problém: Pro projekty typu "Hodinovka" se v revenue výpočtu používá `average_hourly_rate` nebo `budget`, ale správně se má brát pole `hourly_rate` (= "Hodinová cena" na kartě projektu). Pro "WP" projekty zůstává `average_hourly_rate` ("Průměrná hodinová cena").
+### Problém
+`RevenueOverview` a `ExecutiveDashboard` načtou data z tabulky `projects` pouze jednou při prvním renderování (`useEffect([], ...)`). Když uživatel změní hodinovou cenu v kartě projektu, revenue přehled stále pracuje se starými daty.
 
-### Změny v `src/components/RevenueOverview.tsx`
+### Řešení
+Přidat mechanismus pro znovunačtení dat po změně — buď automaticky, nebo manuálně.
 
-1. Přidat `hourly_rate` do `DatabaseProject` interface a do Supabase select query
-2. Upravit logiku určení sazby:
-   - **WP**: `average_hourly_rate` (beze změny)
-   - **Hodinovka**: `hourly_rate` (nově), bez fallbacku na budget/default
-3. Aktualizovat stejnou logiku i v pre-sales sekci
-4. Uprav
+### Změny
+
+**1. `src/components/RevenueOverview.tsx`**
+- Přidat tlačítko "Obnovit data" (refresh) vedle filtrů, které zavolá `loadData()` znovu
+- Alternativně: přidat `projects` do Supabase realtime subscription — ale refresh tlačítko je jednodušší a spolehlivější
+
+**2. `src/components/ExecutiveDashboard.tsx`**
+- Stejná změna — přidat refresh tlačítko
+
+### Technický detail
+- Přidám `RefreshCw` ikonu z lucide-react vedle existujících filtrů
+- Klik zavolá existující `loadData()` funkci
+- Během načítání se ikona bude animovat (spin)
+
+Dotčené soubory:
+- `src/components/RevenueOverview.tsx`
+- `src/components/ExecutiveDashboard.tsx`
+
