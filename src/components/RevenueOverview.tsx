@@ -1100,6 +1100,10 @@ export const RevenueOverview = ({
                 />
                 <YAxis 
                   tickFormatter={(value) => {
+                    if (displayUnit === 'hodiny') {
+                      if (value >= 1_000) return `${(value / 1_000).toFixed(0)}k h`;
+                      return `${Math.round(value)} h`;
+                    }
                     if (currency === 'USD') {
                       return `$${(value / exchangeRate / 1000).toFixed(0)}k`;
                     }
