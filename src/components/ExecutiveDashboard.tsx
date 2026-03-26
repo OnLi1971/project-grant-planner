@@ -201,8 +201,8 @@ export const ExecutiveDashboard = () => {
 
           if (project.project_type === 'WP' && project.average_hourly_rate) {
             revenue = hoursForMonth * project.average_hourly_rate;
-          } else if (project.project_type === 'Hodinovka' && project.budget) {
-            revenue = hoursForMonth * project.budget;
+          } else if (project.project_type === 'Hodinovka' && project.hourly_rate) {
+            revenue = hoursForMonth * project.hourly_rate;
           }
 
           if (project.project_status === 'Pre sales' && project.probability) {

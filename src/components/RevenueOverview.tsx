@@ -18,6 +18,7 @@ interface DatabaseProject {
   program_id: string;
   project_type: string;
   budget?: number;
+  hourly_rate?: number;
   average_hourly_rate?: number;
   project_status?: string;
   probability?: number;
@@ -411,9 +412,8 @@ export const RevenueOverview = ({
       // Pro Hodinovka projekty používáme primárně average_hourly_rate, jinak budget, jinak default
       if (project.project_type === 'WP' && project.average_hourly_rate) {
         hourlyRate = project.average_hourly_rate;
-      } else if (project.project_type === 'Hodinovka') {
-        // Pro Hodinovka projekty: priorita average_hourly_rate > budget > default 1000
-        hourlyRate = project.average_hourly_rate || project.budget || 1000;
+      } else if (project.project_type === 'Hodinovka' && project.hourly_rate) {
+        hourlyRate = project.hourly_rate;
       }
 
       // Debug výpis pro realizace projekty
@@ -464,7 +464,7 @@ export const RevenueOverview = ({
           project.presales_start_date && 
           project.presales_end_date &&
           project.budget &&
-          (project.project_type === 'Hodinovka' || project.average_hourly_rate)) {
+          (project.project_type === 'WP' ? project.average_hourly_rate : project.hourly_rate)) {
         
         // Zkontrolujeme, zda projekt už není zahrnut v plánovaných datech
         const hasPlannedData = data.some(entry => entry.projekt === project.code);
@@ -477,8 +477,8 @@ export const RevenueOverview = ({
         let hourlyRate = 0;
         if (project.project_type === 'WP' && project.average_hourly_rate) {
           hourlyRate = project.average_hourly_rate;
-        } else if (project.project_type === 'Hodinovka') {
-          hourlyRate = 1000; // Default hourly rate for Hodinovka presales
+        } else if (project.project_type === 'Hodinovka' && project.hourly_rate) {
+          hourlyRate = project.hourly_rate;
         }
 
         // Celkový objem v hodinách (budget pro WP projekty, nebo odhad pro Hodinovka)
@@ -675,7 +675,7 @@ export const RevenueOverview = ({
       case 'program':
         return programs.map(p => ({ value: p.id, label: p.name }));
       case 'project':
-        return projects.filter(p => (p.project_type === 'WP' && p.average_hourly_rate) || (p.project_type === 'Hodinovka' && p.budget)).map(p => ({ value: p.id, label: p.name }));
+        return projects.filter(p => (p.project_type === 'WP' && p.average_hourly_rate) || (p.project_type === 'Hodinovka' && p.hourly_rate)).map(p => ({ value: p.id, label: p.name }));
       default:
         return [];
     }
