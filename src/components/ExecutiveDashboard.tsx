@@ -17,6 +17,7 @@ interface DatabaseProject {
   program_id: string;
   project_type: string;
   budget?: number;
+  hourly_rate?: number;
   average_hourly_rate?: number;
   project_status?: string;
   probability?: number;
