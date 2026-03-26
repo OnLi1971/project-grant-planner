@@ -86,6 +86,10 @@ export const RevenueOverview = ({
 
   // Short currency formatter for bar labels
   const formatShort = (value: number): string => {
+    if (displayUnit === 'hodiny') {
+      if (value >= 1_000) return `${(value / 1_000).toFixed(1)}k h`;
+      return `${Math.round(value)} h`;
+    }
     if (currency === 'USD') {
       const usdValue = value / exchangeRate;
       if (usdValue >= 1_000_000) return `$${(usdValue / 1_000_000).toFixed(1)}M`;
@@ -95,6 +99,16 @@ export const RevenueOverview = ({
     if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
     if (value >= 1_000) return `${Math.round(value / 1_000)}k`;
     return `${Math.round(value)}`;
+  };
+
+  // Format hours
+  const formatHours = (value: number): string => {
+    return `${value.toLocaleString('cs-CZ', { minimumFractionDigits: 0, maximumFractionDigits: 1 })} h`;
+  };
+
+  // Active value formatter based on displayUnit
+  const formatValue = (value: number): string => {
+    return displayUnit === 'kc' ? formatCurrency(value) : formatHours(value);
   };
 
   // Custom renderer to place total label centered just above the bar
