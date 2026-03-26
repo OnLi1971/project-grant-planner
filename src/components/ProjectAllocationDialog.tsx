@@ -404,18 +404,22 @@ export const ProjectAllocationDialog = ({
                                         ? 'text-green-600' 
                                         : 'text-orange-600'
                                 }`}>
-                              {(() => {
-                                const wd = holidayWeeks.get(col);
-                                const adjustedHours = wd !== undefined ? Math.round(allocation.hours * wd / 5) : allocation.hours;
-                                return (
-                                  <>
-                                    {adjustedHours}h
-                                    {allocation.isTentative && <span className="text-[9px] ml-0.5">?</span>}
-                                    {allocation.isPartialFree && <span className="text-[9px] ml-0.5">~</span>}
-                                    {wd !== undefined && <span className="text-[9px] ml-0.5">*</span>}
-                                  </>
-                                );
-                              })()}
+                                  {(() => {
+                                    const wd = holidayWeeks.get(col);
+                                    const adjustedHours = wd !== undefined ? Math.round(allocation.hours * wd / 5) : allocation.hours;
+                                    return (
+                                      <>
+                                        {adjustedHours}h
+                                        {allocation.isTentative && <span className="text-[9px] ml-0.5">?</span>}
+                                        {allocation.isPartialFree && <span className="text-[9px] ml-0.5">~</span>}
+                                        {wd !== undefined && <span className="text-[9px] ml-0.5">*</span>}
+                                      </>
+                                    );
+                                  })()}
+                                </span>
+                              ) : allocation?.alternativeActivity ? (
+                                <Badge 
+                                  variant="outline" 
                                   className={`text-[9px] px-1 py-0 ${getActivityStyle(allocation.alternativeActivity)}`}
                                 >
                                   {getActivityLabel(allocation.alternativeActivity)}
