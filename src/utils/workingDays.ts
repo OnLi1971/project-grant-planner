@@ -128,6 +128,36 @@ export const getMonthlyCapacity = (workingDays: number, hoursPerDay: number = 8)
 };
 
 /**
+ * Vrátí pondělí daného ISO týdne
+ */
+export const getISOWeekMonday = (cwNumber: number, year: number): Date => {
+  // Jan 4 is always in ISO week 1
+  const jan4 = new Date(year, 0, 4);
+  const dayOfWeek = jan4.getDay() || 7; // 1=Mon..7=Sun
+  const week1Monday = new Date(jan4);
+  week1Monday.setDate(jan4.getDate() - (dayOfWeek - 1));
+  const monday = new Date(week1Monday);
+  monday.setDate(week1Monday.getDate() + (cwNumber - 1) * 7);
+  return monday;
+};
+
+/**
+ * Spočítá počet pracovních dnů (pondělí–pátek minus svátky) v daném ISO kalendářním týdnu
+ */
+export const getWorkingDaysInCW = (cwNumber: number, year: number, isSlovak: boolean = false): number => {
+  const monday = getISOWeekMonday(cwNumber, year);
+  let count = 0;
+  for (let i = 0; i < 5; i++) {
+    const day = new Date(monday);
+    day.setDate(monday.getDate() + i);
+    if (!isHoliday(day, isSlovak)) {
+      count++;
+    }
+  }
+  return count;
+};
+
+/**
  * Spočítá, kolik pracovních dnů z daného týdne (Monday-Friday) spadá do daného měsíce
  * @param weekMonday Pondělí daného týdne
  * @param year Rok měsíce
