@@ -383,7 +383,7 @@ export const PlanningEditor: React.FC = () => {
   };
 
   const getProjectBadge = (projekt: string, isTentative?: boolean) => {
-    const baseClassName = isTentative ? 'border-[3px] border-dashed !border-yellow-400' : '';
+    const baseClassName = '';
     
     if (!projekt || projekt === 'FREE') return <Badge variant="secondary" className={baseClassName}>Volný</Badge>;
     if (projekt === 'DOVOLENÁ') return <Badge variant="outline" className={`border-accent ${baseClassName}`}>Dovolená</Badge>;
@@ -673,10 +673,6 @@ export const PlanningEditor: React.FC = () => {
         {/* Legenda */}
         <div className="flex items-center gap-6 text-sm text-muted-foreground p-3 border-b bg-muted/30">
           <div className="flex items-center gap-2">
-            <div className="w-5 h-5 border-2 border-dashed border-yellow-400 bg-yellow-50 dark:bg-yellow-900/30 rounded"></div>
-            <span>Předběžná rezervace</span>
-          </div>
-          <div className="flex items-center gap-2">
             <div className="w-5 h-5 bg-yellow-100 dark:bg-yellow-900/50 border-l-4 border-yellow-500 rounded"></div>
             <span>Aktuální týden</span>
           </div>
@@ -719,7 +715,6 @@ export const PlanningEditor: React.FC = () => {
                   className={`
                     border-b transition-colors
                     ${isCurrentWeek ? 'bg-yellow-100 dark:bg-yellow-900/30 border-yellow-500 border-l-8 border-l-yellow-500 !font-bold shadow-lg ring-2 ring-yellow-500/50' :
-                      week.is_tentative ? 'border-l-4 border-l-yellow-400 border-dashed bg-yellow-50/50 dark:bg-yellow-900/20' :
                       isSelected ? 'bg-primary/10 border-primary cursor-pointer' : 
                       index % 2 === 0 ? 'bg-planning-cell hover:bg-planning-cell-hover cursor-pointer' : 
                       'bg-planning-stripe hover:bg-planning-cell-hover cursor-pointer'}
@@ -827,7 +822,7 @@ export const PlanningEditor: React.FC = () => {
                         <div 
                           className={`cursor-pointer hover:bg-muted p-1 rounded flex items-center gap-2 ${
                             isMultiSelectMode ? 'pointer-events-none' : ''
-                          } ${week.is_tentative ? 'border-2 border-dashed border-yellow-400 bg-yellow-50/50 dark:bg-yellow-900/30' : ''}`}
+                          }`}
                           onClick={(e) => {
                             e.stopPropagation();
                             if (!isMultiSelectMode) {
@@ -835,10 +830,7 @@ export const PlanningEditor: React.FC = () => {
                             }
                           }}
                         >
-                          {week.is_tentative && (
-                            <span className="text-yellow-600 dark:text-yellow-400 text-xs font-bold">[?]</span>
-                          )}
-                          <span className={`font-medium ${week.is_tentative ? 'text-yellow-700 dark:text-yellow-300' : ''}`}>
+                          <span className="font-medium">
                             {week.projekt || 'FREE'}
                           </span>
                           {!isMultiSelectMode && <Edit className="h-3 w-3 opacity-50" />}
