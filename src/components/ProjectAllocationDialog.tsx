@@ -349,11 +349,15 @@ export const ProjectAllocationDialog = ({
                       <TableHead className="sticky left-0 bg-background z-20 min-w-[90px] font-semibold text-xs py-1.5 px-2">
                         Konstruktér
                       </TableHead>
-                      {displayColumns.map(col => (
-                        <TableHead key={col} className={`text-center ${viewMode === 'months' ? 'min-w-[80px]' : 'min-w-[50px]'} text-[10px] py-1.5 px-1`}>
-                          {col.replace(/-\d{4}$/, '')}
+                      {displayColumns.map(col => {
+                        const isHolidayWeek = viewMode === 'weeks' && holidayWeeks.has(col);
+                        const cwLabel = col.replace(/-\d{4}$/, '');
+                        return (
+                        <TableHead key={col} className={`text-center ${viewMode === 'months' ? 'min-w-[80px]' : 'min-w-[50px]'} text-[10px] py-1.5 px-1 ${isHolidayWeek ? 'text-destructive font-bold' : ''}`}>
+                          {isHolidayWeek ? `${cwLabel}*` : cwLabel}
                         </TableHead>
-                      ))}
+                        );
+                      })}
                       <TableHead className="text-center min-w-[50px] font-semibold bg-muted/30 text-xs py-1.5 px-1">
                         Celkem
                       </TableHead>
@@ -400,13 +404,18 @@ export const ProjectAllocationDialog = ({
                                         ? 'text-green-600' 
                                         : 'text-orange-600'
                                 }`}>
-                                  {allocation.hours}h
-                                  {allocation.isTentative && <span className="text-[9px] ml-0.5">?</span>}
-                                  {allocation.isPartialFree && <span className="text-[9px] ml-0.5">~</span>}
-                                </span>
-                              ) : allocation?.alternativeActivity ? (
-                                <Badge 
-                                  variant="outline" 
+                              {(() => {
+                                const wd = holidayWeeks.get(col);
+                                const adjustedHours = wd !== undefined ? Math.round(allocation.hours * wd / 5) : allocation.hours;
+                                return (
+                                  <>
+                                    {adjustedHours}h
+                                    {allocation.isTentative && <span className="text-[9px] ml-0.5">?</span>}
+                                    {allocation.isPartialFree && <span className="text-[9px] ml-0.5">~</span>}
+                                    {wd !== undefined && <span className="text-[9px] ml-0.5">*</span>}
+                                  </>
+                                );
+                              })()}
                                   className={`text-[9px] px-1 py-0 ${getActivityStyle(allocation.alternativeActivity)}`}
                                 >
                                   {getActivityLabel(allocation.alternativeActivity)}
@@ -490,8 +499,14 @@ export const ProjectAllocationDialog = ({
             <span>Nemoc</span>
           </div>
           <div className="flex items-center gap-1">
-            <Badge variant="outline" className="text-[9px] px-1 py-0 bg-purple-100 text-purple-700 border-purple-300">OVR</Badge>
+           <Badge variant="outline" className="text-[9px] px-1 py-0 bg-purple-100 text-purple-700 border-purple-300">OVR</Badge>
             <span>Režie/Overtime</span>
+          </div>
+          <Separator orientation="vertical" className="h-4" />
+          <div className="flex items-center gap-1">
+            <span className="text-destructive font-bold text-[11px]">*</span>
+            <span>Týden se svátkem (snížená kapacita)</span>
+          </div>
           </div>
         </div>
       </DialogContent>
