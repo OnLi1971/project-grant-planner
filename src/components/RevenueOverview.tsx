@@ -547,7 +547,93 @@ export const RevenueOverview = ({
     return monthlyData;
   };
 
+  // Výpočet hodin po měsících (bez násobení sazbou)
+  const calculateMonthlyHoursByProject = (data = filteredData) => {
+    const monthlyData: { [month: string]: { [projectCode: string]: number } } = {};
+    const months = [
+      'říjen_2025', 'listopad_2025', 'prosinec_2025',
+      'leden_2026', 'únor_2026', 'březen_2026', 'duben_2026', 'květen_2026', 'červen_2026',
+      'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026'
+    ];
+    months.forEach(month => { monthlyData[month] = {}; });
+
+    const nonRevenueActivities = ['FREE', 'Dovolena', 'DOVOLENÁ', 'Nemoc', 'NEMOC', 'Školení', 'ŠKOLENÍ', 'Interní', 'INTERNÍ'];
+
+    data.forEach(entry => {
+      const cwKey = entry.cw.includes('-2026') ? entry.cw.replace('-', '_') : entry.cw.split('-')[0];
+      const weekMapping = weekToMonthMapping[cwKey];
+      if (!weekMapping || entry.mhTyden === 0) return;
+      if (entry.is_tentative === true) return;
+      const projektTrimmed = entry.projekt?.trim();
+      if (nonRevenueActivities.some(activity => activity.toLowerCase() === projektTrimmed?.toLowerCase())) return;
+      const project = projects.find(p => p.code === entry.projekt);
+      if (!project) return;
+
+      // Pro hodiny stále potřebujeme, aby projekt měl sazbu (aby se zobrazoval ve výpočtu)
+      let hourlyRate = 0;
+      if (project.project_type === 'WP' && project.average_hourly_rate) hourlyRate = project.average_hourly_rate;
+      else if (project.project_type === 'Hodinovka' && project.hourly_rate) hourlyRate = project.hourly_rate;
+      if (hourlyRate === 0) return;
+
+      Object.entries(weekMapping).forEach(([month, ratio]) => {
+        if (!monthlyData[month][entry.projekt]) monthlyData[month][entry.projekt] = 0;
+        const baseWorkingDays: { [key: string]: number } = {
+          'říjen_2025': 23, 'listopad_2025': 20, 'prosinec_2025': 22,
+          'leden_2026': 22, 'únor_2026': 20, 'březen_2026': 21, 'duben_2026': 22, 'květen_2026': 21, 'červen_2026': 21,
+          'červenec_2026': 23, 'srpen_2026': 21, 'září_2026': 22, 'říjen_2026': 23, 'listopad_2026': 20, 'prosinec_2026': 23
+        };
+        const workingDaysWithoutHolidays = getWorkingDaysInMonth(month);
+        const totalWorkingDays = baseWorkingDays[month] || 22;
+        const holidayCoefficient = workingDaysWithoutHolidays / totalWorkingDays;
+        let probabilityCoefficient = 1;
+        if (project.project_status === 'Pre sales' && project.probability) probabilityCoefficient = project.probability / 100;
+        monthlyData[month][entry.projekt] += entry.mhTyden * ratio * holidayCoefficient * probabilityCoefficient;
+      });
+    });
+
+    // Presales projekty bez plánovaných dat
+    projects.forEach(project => {
+      if (project.project_status === 'Pre sales' && project.presales_start_date && project.presales_end_date && project.budget &&
+          (project.project_type === 'WP' ? project.average_hourly_rate : project.hourly_rate)) {
+        const hasPlannedData = data.some(entry => entry.projekt === project.code);
+        if (hasPlannedData) return;
+        const startDate = new Date(project.presales_start_date);
+        const endDate = new Date(project.presales_end_date);
+        const totalHours = project.project_type === 'WP' ? project.budget : 100;
+        const probabilityCoefficient = project.probability ? project.probability / 100 : 0.5;
+        const numberToMonth: { [key: string]: string } = {
+          '10_2025': 'říjen_2025', '11_2025': 'listopad_2025', '12_2025': 'prosinec_2025',
+          '1_2026': 'leden_2026', '2_2026': 'únor_2026', '3_2026': 'březen_2026', '4_2026': 'duben_2026', '5_2026': 'květen_2026', '6_2026': 'červen_2026',
+          '7_2026': 'červenec_2026', '8_2026': 'srpen_2026', '9_2026': 'září_2026', '10_2026': 'říjen_2026', '11_2026': 'listopad_2026', '12_2026': 'prosinec_2026'
+        };
+        let totalWD = 0;
+        const monthsInPeriod: string[] = [];
+        const current = new Date(startDate);
+        while (current <= endDate) {
+          const monthKey = `${current.getMonth() + 1}_${current.getFullYear()}`;
+          const monthName = numberToMonth[monthKey];
+          if (monthName && !monthsInPeriod.includes(monthName)) {
+            monthsInPeriod.push(monthName);
+            totalWD += getWorkingDaysInMonth(monthName);
+          }
+          current.setMonth(current.getMonth() + 1);
+        }
+        if (totalWD === 0) return;
+        monthsInPeriod.forEach(monthName => {
+          const wd = getWorkingDaysInMonth(monthName);
+          const monthHours = totalHours * (wd / totalWD) * probabilityCoefficient;
+          if (!monthlyData[monthName][project.code]) monthlyData[monthName][project.code] = 0;
+          monthlyData[monthName][project.code] += monthHours;
+        });
+      }
+    });
+
+    return monthlyData;
+  };
+
   const monthlyRevenueByProject = calculateMonthlyRevenueByProject();
+  const monthlyHoursByProject = calculateMonthlyHoursByProject();
+  const activeData = displayUnit === 'kc' ? monthlyRevenueByProject : monthlyHoursByProject;
   const months = viewType === 'mesic' ? 
     [
       'říjen_2025', 'listopad_2025', 'prosinec_2025',
