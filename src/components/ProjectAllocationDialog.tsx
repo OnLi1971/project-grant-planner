@@ -98,6 +98,23 @@ export const ProjectAllocationDialog = ({
     });
   }, [allocations]);
 
+  // Identify holiday weeks (fewer than 5 working days)
+  const holidayWeeks = useMemo(() => {
+    const map = new Map<string, number>();
+    weeks.forEach(week => {
+      const match = week.match(/CW(\d+)-(\d+)/);
+      if (match) {
+        const cw = parseInt(match[1]);
+        const year = parseInt(match[2]);
+        const wd = getWorkingDaysInCW(cw, year);
+        if (wd < 5) {
+          map.set(week, wd);
+        }
+      }
+    });
+    return map;
+  }, [weeks]);
+
   // Get unique months sorted chronologically (for monthly view)
   const monthsData = useMemo(() => {
     if (viewMode !== 'months') return { columns: [], weekToMonth: {} as Record<string, string> };
