@@ -539,6 +539,7 @@ export const ProjectManagement = () => {
       projectType: 'WP',
       budget: 0,
       averageHourlyRate: 0,
+      hourlyRate: 0,
       assignedLicenses: [],
       projectStatus: 'Realizace',
       probability: 0,
