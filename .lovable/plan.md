@@ -1,30 +1,24 @@
 
 
-## Plan: Oprava dat ST_EMU_INT v databázi
+## Plan: Změna defaultního pohledu Revenue na Měsíční 2026
 
-### Problém
-Uživatel změnil hodinovou cenu z 1200 na 1100, ale změna šla do sloupce `budget` (starý kód), zatímco revenue čte z `hourly_rate` (stále 1200).
+### Změny
 
-Kód formuláře je nyní správný (ukládá do `hourly_rate` pro Hodinovka). Problém je pouze v datech.
+**`src/components/RevenueOverview.tsx`**
 
-### Řešení
+1. Změnit `defaultViewType` z `'kvartal'` na `'mesic'` (řádek 53)
+2. Změnit `selectedMonths` default — pouze měsíce 2026 (řádky 62-66):
+   ```
+   'leden_2026', 'únor_2026', 'březen_2026', 'duben_2026', 'květen_2026', 'červen_2026',
+   'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026'
+   ```
+   (odebrat říjen–prosinec 2025)
 
-**1. SQL migrace** — opravit aktuální stav dat:
-```sql
-UPDATE projects 
-SET hourly_rate = 1100 
-WHERE code = 'ST_EMU_INT';
-```
+**`src/pages/ManagerRevenueView.tsx`**
 
-**2. Bezpečnostní sync** — pro všechny Hodinovka projekty, kde uživatel mohl mezitím změnit `budget`:
-```sql
-UPDATE projects 
-SET hourly_rate = budget 
-WHERE project_type = 'Hodinovka' 
-  AND budget IS NOT NULL 
-  AND hourly_rate IS NOT NULL 
-  AND budget <> hourly_rate;
-```
+3. Změnit `defaultViewType="kvartal"` na `"mesic"` (řádek 41)
 
 ### Dotčené soubory
-- Nová SQL migrace (jeden
+- `src/components/RevenueOverview.tsx` — default view type + default months
+- `src/pages/ManagerRevenueView.tsx` — prop pro default view type
+
