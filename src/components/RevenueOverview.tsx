@@ -940,17 +940,32 @@ export const RevenueOverview = ({
               )}
 
               <div className="min-w-[100px]">
-                <Label htmlFor="currency" className="text-xs text-muted-foreground">Měna</Label>
-                <Select value={currency} onValueChange={(value: 'CZK' | 'USD') => setCurrency(value)}>
+                <Label htmlFor="displayUnit" className="text-xs text-muted-foreground">Jednotky</Label>
+                <Select value={displayUnit} onValueChange={(value: 'kc' | 'hodiny') => setDisplayUnit(value)}>
                   <SelectTrigger className="h-8 text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-background border z-50">
-                    <SelectItem value="CZK">CZK</SelectItem>
-                    <SelectItem value="USD">USD</SelectItem>
+                    <SelectItem value="kc">Kč</SelectItem>
+                    <SelectItem value="hodiny">Hodiny</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+
+              {displayUnit === 'kc' && (
+                <div className="min-w-[100px]">
+                  <Label htmlFor="currency" className="text-xs text-muted-foreground">Měna</Label>
+                  <Select value={currency} onValueChange={(value: 'CZK' | 'USD') => setCurrency(value)}>
+                    <SelectTrigger className="h-8 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background border z-50">
+                      <SelectItem value="CZK">CZK</SelectItem>
+                      <SelectItem value="USD">USD</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               <div className="min-w-[130px]">
                 <Label htmlFor="projectStatus" className="text-xs text-muted-foreground">Status projektu</Label>
