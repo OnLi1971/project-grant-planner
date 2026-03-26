@@ -266,16 +266,19 @@ export const ProjectAllocationDialog = ({
     return totals;
   }, [engineers, displayColumns, allocationMatrix]);
 
-  // Calculate column totals (per column - week or month)
+  // Calculate column totals with holiday adjustment (per column - week or month)
   const columnTotals = useMemo(() => {
     const totals: Record<string, number> = {};
     displayColumns.forEach(col => {
+      const wd = holidayWeeks.get(col);
       totals[col] = engineers.reduce((sum, eng) => {
-        return sum + (allocationMatrix[eng]?.[col]?.hours || 0);
+        const hours = allocationMatrix[eng]?.[col]?.hours || 0;
+        const adjusted = wd !== undefined ? Math.round(hours * wd / 5) : hours;
+        return sum + adjusted;
       }, 0);
     });
     return totals;
-  }, [engineers, displayColumns, allocationMatrix]);
+  }, [engineers, displayColumns, allocationMatrix, holidayWeeks]);
 
   // Get project metadata
   const customer = customers?.find(c => c.id === projectInfo?.customerId);
