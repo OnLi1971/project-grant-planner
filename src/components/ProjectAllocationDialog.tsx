@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { getWorkingDaysInCW } from '@/utils/workingDays';
 import {
   Dialog,
   DialogContent,
@@ -96,6 +97,23 @@ export const ProjectAllocationDialog = ({
       return parseInt(cwA) - parseInt(cwB);
     });
   }, [allocations]);
+
+  // Identify holiday weeks (fewer than 5 working days)
+  const holidayWeeks = useMemo(() => {
+    const map = new Map<string, number>();
+    weeks.forEach(week => {
+      const match = week.match(/CW(\d+)-(\d+)/);
+      if (match) {
+        const cw = parseInt(match[1]);
+        const year = parseInt(match[2]);
+        const wd = getWorkingDaysInCW(cw, year);
+        if (wd < 5) {
+          map.set(week, wd);
+        }
+      }
+    });
+    return map;
+  }, [weeks]);
 
   // Get unique months sorted chronologically (for monthly view)
   const monthsData = useMemo(() => {
@@ -237,27 +255,33 @@ export const ProjectAllocationDialog = ({
     };
   }, [allocations, engineers]);
 
-  // Calculate row totals (per engineer)
+  // Calculate row totals with holiday adjustment (per engineer)
   const rowTotals = useMemo(() => {
     const totals: Record<string, number> = {};
     engineers.forEach(eng => {
       totals[eng] = displayColumns.reduce((sum, col) => {
-        return sum + (allocationMatrix[eng]?.[col]?.hours || 0);
+        const hours = allocationMatrix[eng]?.[col]?.hours || 0;
+        const wd = holidayWeeks.get(col);
+        const adjusted = wd !== undefined ? Math.round(hours * wd / 5) : hours;
+        return sum + adjusted;
       }, 0);
     });
     return totals;
-  }, [engineers, displayColumns, allocationMatrix]);
+  }, [engineers, displayColumns, allocationMatrix, holidayWeeks]);
 
-  // Calculate column totals (per column - week or month)
+  // Calculate column totals with holiday adjustment (per column - week or month)
   const columnTotals = useMemo(() => {
     const totals: Record<string, number> = {};
     displayColumns.forEach(col => {
+      const wd = holidayWeeks.get(col);
       totals[col] = engineers.reduce((sum, eng) => {
-        return sum + (allocationMatrix[eng]?.[col]?.hours || 0);
+        const hours = allocationMatrix[eng]?.[col]?.hours || 0;
+        const adjusted = wd !== undefined ? Math.round(hours * wd / 5) : hours;
+        return sum + adjusted;
       }, 0);
     });
     return totals;
-  }, [engineers, displayColumns, allocationMatrix]);
+  }, [engineers, displayColumns, allocationMatrix, holidayWeeks]);
 
   // Get project metadata
   const customer = customers?.find(c => c.id === projectInfo?.customerId);
@@ -331,11 +355,15 @@ export const ProjectAllocationDialog = ({
                       <TableHead className="sticky left-0 bg-background z-20 min-w-[90px] font-semibold text-xs py-1.5 px-2">
                         Konstruktér
                       </TableHead>
-                      {displayColumns.map(col => (
-                        <TableHead key={col} className={`text-center ${viewMode === 'months' ? 'min-w-[80px]' : 'min-w-[50px]'} text-[10px] py-1.5 px-1`}>
-                          {col.replace(/-\d{4}$/, '')}
+                      {displayColumns.map(col => {
+                        const isHolidayWeek = viewMode === 'weeks' && holidayWeeks.has(col);
+                        const cwLabel = col.replace(/-\d{4}$/, '');
+                        return (
+                        <TableHead key={col} className={`text-center ${viewMode === 'months' ? 'min-w-[80px]' : 'min-w-[50px]'} text-[10px] py-1.5 px-1 ${isHolidayWeek ? 'text-destructive font-bold' : ''}`}>
+                          {isHolidayWeek ? `${cwLabel}*` : cwLabel}
                         </TableHead>
-                      ))}
+                        );
+                      })}
                       <TableHead className="text-center min-w-[50px] font-semibold bg-muted/30 text-xs py-1.5 px-1">
                         Celkem
                       </TableHead>
@@ -382,9 +410,18 @@ export const ProjectAllocationDialog = ({
                                         ? 'text-green-600' 
                                         : 'text-orange-600'
                                 }`}>
-                                  {allocation.hours}h
-                                  {allocation.isTentative && <span className="text-[9px] ml-0.5">?</span>}
-                                  {allocation.isPartialFree && <span className="text-[9px] ml-0.5">~</span>}
+                                  {(() => {
+                                    const wd = holidayWeeks.get(col);
+                                    const adjustedHours = wd !== undefined ? Math.round(allocation.hours * wd / 5) : allocation.hours;
+                                    return (
+                                      <>
+                                        {adjustedHours}h
+                                        {allocation.isTentative && <span className="text-[9px] ml-0.5">?</span>}
+                                        {allocation.isPartialFree && <span className="text-[9px] ml-0.5">~</span>}
+                                        {wd !== undefined && <span className="text-[9px] ml-0.5">*</span>}
+                                      </>
+                                    );
+                                  })()}
                                 </span>
                               ) : allocation?.alternativeActivity ? (
                                 <Badge 
@@ -415,7 +452,7 @@ export const ProjectAllocationDialog = ({
                         </TableCell>
                       ))}
                       <TableCell className="text-center font-bold bg-primary/10 text-primary text-xs py-1 px-1">
-                        {stats.totalHours}h
+                        {Object.values(columnTotals).reduce((a, b) => a + b, 0)}h
                       </TableCell>
                     </TableRow>
                     <TableRow className="bg-secondary/10">
@@ -472,8 +509,13 @@ export const ProjectAllocationDialog = ({
             <span>Nemoc</span>
           </div>
           <div className="flex items-center gap-1">
-            <Badge variant="outline" className="text-[9px] px-1 py-0 bg-purple-100 text-purple-700 border-purple-300">OVR</Badge>
+           <Badge variant="outline" className="text-[9px] px-1 py-0 bg-purple-100 text-purple-700 border-purple-300">OVR</Badge>
             <span>Režie/Overtime</span>
+          </div>
+          <Separator orientation="vertical" className="h-4" />
+          <div className="flex items-center gap-1">
+            <span className="text-destructive font-bold text-[11px]">*</span>
+            <span>Týden se svátkem (snížená kapacita)</span>
           </div>
         </div>
       </DialogContent>
