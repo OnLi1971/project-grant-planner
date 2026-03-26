@@ -1,24 +1,34 @@
 
 
-## Plan: Změna defaultního pohledu Revenue na Měsíční 2026
+## Plan: Přepínač Hodiny / Kč v Revenue přehledu
 
-### Změny
+### Co se změní
 
-**`src/components/RevenueOverview.tsx`**
+Přidání přepínače (toggle) do filtrovací oblasti, který přepne celý Revenue přehled mezi zobrazením v **Kč** (revenue) a **hodinách** (man-hours).
 
-1. Změnit `defaultViewType` z `'kvartal'` na `'mesic'` (řádek 53)
-2. Změnit `selectedMonths` default — pouze měsíce 2026 (řádky 62-66):
-   ```
-   'leden_2026', 'únor_2026', 'březen_2026', 'duben_2026', 'květen_2026', 'červen_2026',
-   'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026'
-   ```
-   (odebrat říjen–prosinec 2025)
+### Změny v `src/components/RevenueOverview.tsx`
 
-**`src/pages/ManagerRevenueView.tsx`**
+**1. Nový stav**
+- `displayUnit: 'kc' | 'hodiny'` (default `'kc'`)
 
-3. Změnit `defaultViewType="kvartal"` na `"mesic"` (řádek 41)
+**2. UI — přepínač ve filtrech (řádek ~870, vedle selektoru Měna)**
+- Nový blok s labelem "Jednotky" a dvěma tlačítky nebo Select: "Kč" / "Hodiny"
+- Když je vybrán "Hodiny", skrýt selektor Měny (CZK/USD je irelevantní)
+
+**3. Paralelní výpočet hodin**
+- Nová funkce `calculateMonthlyHoursByProject()` — stejná logika jako `calculateMonthlyRevenueByProject()`, ale místo `entry.mhTyden * hourlyRate * ratio * ...` vrací `entry.mhTyden * ratio * holidayCoefficient * probabilityCoefficient` (bez násobení sazbou)
+- Memoizovaná proměnná `monthlyHoursByProject`
+- Výběrová proměnná `activeData = displayUnit === 'kc' ? monthlyRevenueByProject : monthlyHoursByProject`
+
+**4. Formátování**
+- Nový formátovač `formatHours(value)` → např. `"125 h"`, pro zkrácený `"1.2k h"`
+- Podmíněné použití: `displayUnit === 'kc' ? formatCurrency(value) : formatHours(value)`
+
+**5. Ovlivněné části UI**
+- **Celkový obrat** (řádek 957): text a hodnota
+- **Graf** — YAxis tickFormatter, tooltip hodnoty, bar label (renderTotalLabel)
+- **Detailní tabulka** — všechny buňky + celkový řádek
 
 ### Dotčené soubory
-- `src/components/RevenueOverview.tsx` — default view type + default months
-- `src/pages/ManagerRevenueView.tsx` — prop pro default view type
+- `src/components/RevenueOverview.tsx` — jediný soubor
 
