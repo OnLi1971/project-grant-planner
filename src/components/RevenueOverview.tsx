@@ -6,7 +6,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList } from 'recharts';
-import { TrendingUp, Filter } from 'lucide-react';
+import { TrendingUp, Filter, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { getProjectColorWithIndex } from '@/utils/colorSystem';
 
 interface DatabaseProject {
@@ -778,9 +779,15 @@ export const RevenueOverview = ({
         <CardContent>
           {/* Filtry */}
           <div className="space-y-4 mb-6 p-4 bg-muted/50 rounded-lg border">
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-primary" />
-              <Label className="font-medium text-sm">Filtrovat podle:</Label>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-primary" />
+                <Label className="font-medium text-sm">Filtrovat podle:</Label>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => loadData()} disabled={loading}>
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                Obnovit data
+              </Button>
             </div>
             
             {/* Kompaktní řádek s hlavními filtry */}
