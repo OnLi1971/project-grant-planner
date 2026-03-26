@@ -831,6 +831,9 @@ export const PlanningEditor: React.FC = () => {
                           }}
                         >
                           <span className="font-medium">
+                            {week.is_tentative && (
+                              <span className="text-yellow-600 dark:text-yellow-400 mr-1 font-bold">[?]</span>
+                            )}
                             {week.projekt || 'FREE'}
                           </span>
                           {!isMultiSelectMode && <Edit className="h-3 w-3 opacity-50" />}
