@@ -359,7 +359,7 @@ export const ProjectAllocationDialog = ({
                         const isHolidayWeek = viewMode === 'weeks' && holidayWeeks.has(col);
                         const cwLabel = col.replace(/-\d{4}$/, '');
                         return (
-                        <TableHead key={col} className={`text-center ${viewMode === 'months' ? 'min-w-[80px]' : 'min-w-[50px]'} text-[10px] py-1.5 px-1 ${isHolidayWeek ? 'text-destructive font-bold' : ''}`}>
+                        <TableHead key={col} className={`text-center ${viewMode === 'months' ? 'min-w-[80px]' : 'min-w-[50px]'} text-[10px] py-1.5 px-1`}>
                           {isHolidayWeek ? `${cwLabel}*` : cwLabel}
                         </TableHead>
                         );
