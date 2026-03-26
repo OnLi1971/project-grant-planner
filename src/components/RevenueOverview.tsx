@@ -50,7 +50,7 @@ interface RevenueOverviewProps {
 export const RevenueOverview = ({ 
   defaultCurrency = 'CZK',
   defaultStatusFilter = 'realizace',
-  defaultViewType = 'kvartal',
+  defaultViewType = 'mesic',
   defaultProgramCodes = ['MACH', 'RAIL']
 }: RevenueOverviewProps) => {
   const { planningData } = usePlanning();
@@ -60,7 +60,6 @@ export const RevenueOverview = ({
   const [viewType, setViewType] = useState<'mesic' | 'kvartal'>(defaultViewType);
   const [selectedQuarters, setSelectedQuarters] = useState<string[]>(['Q4-2025', 'Q1-2026', 'Q2-2026', 'Q3-2026', 'Q4-2026']);
   const [selectedMonths, setSelectedMonths] = useState<string[]>([
-    'říjen_2025', 'listopad_2025', 'prosinec_2025',
     'leden_2026', 'únor_2026', 'březen_2026', 'duben_2026', 'květen_2026', 'červen_2026',
     'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026'
   ]);

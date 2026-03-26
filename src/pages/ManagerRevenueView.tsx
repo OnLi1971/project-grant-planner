@@ -37,7 +37,7 @@ const ManagerRevenueView = () => {
           <RevenueOverview 
             defaultCurrency="USD" 
             defaultStatusFilter="realizace" 
-            defaultViewType="kvartal" 
+            defaultViewType="mesic" 
             defaultProgramCodes={['MACH', 'RAIL']}
           />
         </div>
