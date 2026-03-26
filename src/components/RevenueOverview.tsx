@@ -64,6 +64,7 @@ export const RevenueOverview = ({
     'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026'
   ]);
   const [currency, setCurrency] = useState<'CZK' | 'USD'>(defaultCurrency);
+  const [displayUnit, setDisplayUnit] = useState<'kc' | 'hodiny'>('kc');
   const [projectStatusFilter, setProjectStatusFilter] = useState<'all' | 'realizace' | 'presales' | 'P0' | 'P1' | 'P2' | 'P3'>(defaultStatusFilter);
   const [projects, setProjects] = useState<DatabaseProject[]>([]);
   const [customers, setCustomers] = useState<DatabaseCustomer[]>([]);
