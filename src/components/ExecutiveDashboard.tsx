@@ -6,7 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
-import { TrendingUp, TrendingDown, DollarSign, Target, Calendar, Award } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Target, Calendar, Award, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface DatabaseProject {
   id: string;
@@ -324,7 +325,7 @@ export const ExecutiveDashboard = () => {
   return (
     <div className="space-y-6">
       {/* Filtry */}
-      <div className="flex gap-4 mb-6">
+      <div className="flex gap-4 mb-6 items-end">
         <div className="space-y-2">
           <Label htmlFor="currency">Měna</Label>
           <Select value={currency} onValueChange={(value: 'CZK' | 'USD') => setCurrency(value)}>
