@@ -1070,8 +1070,8 @@ export const RevenueOverview = ({
 
            {/* Celkový obrat */}
            <div className="mb-6">
-             <div className="text-2xl font-bold text-primary">
-               Celkový obrat: {formatValue(totalRevenue)}
+              <div className="text-2xl font-bold text-primary">
+                {displayUnit === 'kc' ? 'Celkový obrat' : 'Celkové hodiny'}: {formatValue(totalRevenue)}
              </div>
              <p className="text-sm text-muted-foreground mt-1">
                {filterType === 'program' && selectedPrograms.length > 0
