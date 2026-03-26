@@ -648,7 +648,7 @@ export const RevenueOverview = ({
   
   // Získání všech unikátních projektů s revenue - rozdělení podle statusu
   const allProjects = new Set<string>();
-  Object.values(monthlyRevenueByProject).forEach(monthData => {
+  Object.values(activeData).forEach(monthData => {
     Object.keys(monthData).forEach(projectCode => allProjects.add(projectCode));
   });
   const projectList = Array.from(allProjects);
@@ -683,10 +683,10 @@ export const RevenueOverview = ({
   // Výpočet celkového revenue pouze pro vybrané měsíce a filtrované projekty
   const totalRevenue = useMemo(() => {
     return months.reduce((sum, month) => {
-      const monthData = monthlyRevenueByProject[month] || {};
+      const monthData = activeData[month] || {};
       return sum + filteredProjectList.reduce((monthSum, projectCode) => monthSum + (monthData[projectCode] || 0), 0);
     }, 0);
-  }, [months, monthlyRevenueByProject, filteredProjectList]);
+  }, [months, activeData, filteredProjectList]);
 
   // Data pro stackovaný graf
   const chartData = useMemo(() => {
@@ -728,7 +728,7 @@ export const RevenueOverview = ({
         
         // Sečteme data za všechny měsíce v kvartálu (pouze filtrované projekty)
         months.forEach(month => {
-          const monthData = monthlyRevenueByProject[month] || {};
+          const monthData = activeData[month] || {};
           data.total += filteredProjectList.reduce((sum: number, projectCode) => sum + (monthData[projectCode] || 0), 0);
           
           // Přidáme data pouze pro filtrované projekty
@@ -743,7 +743,7 @@ export const RevenueOverview = ({
     } else {
       // Měsíční data
       return months.map(month => {
-        const monthData = monthlyRevenueByProject[month] || {};
+        const monthData = activeData[month] || {};
         // Lepší zkracování názvu měsíce pro graf
         const monthLabels: { [key: string]: string } = {
           'říjen_2025': 'říj 25', 'listopad_2025': 'lis 25', 'prosinec_2025': 'pro 25',
@@ -766,7 +766,7 @@ export const RevenueOverview = ({
         return data;
       });
     }
-  }, [monthlyRevenueByProject, filteredProjectList, viewType, months]);
+  }, [activeData, filteredProjectList, viewType, months]);
 
   // Možnosti pro filtrování
   const getFilterOptions = () => {
@@ -1056,7 +1056,7 @@ export const RevenueOverview = ({
            {/* Celkový obrat */}
            <div className="mb-6">
              <div className="text-2xl font-bold text-primary">
-               Celkový obrat: {formatCurrency(totalRevenue)}
+               Celkový obrat: {formatValue(totalRevenue)}
              </div>
              <p className="text-sm text-muted-foreground mt-1">
                {filterType === 'program' && selectedPrograms.length > 0
@@ -1134,7 +1134,7 @@ export const RevenueOverview = ({
                         {realizaceItems.length > 0 && (
                           <div className="mb-3">
                             <p className="text-xs font-semibold text-muted-foreground mb-1">
-                              REALIZACE ({formatCurrency(realizaceSum)})
+                              REALIZACE ({formatValue(realizaceSum)})
                             </p>
                             <div className="space-y-0.5 pl-2">
                               {realizaceItems.map(item => {
@@ -1149,7 +1149,7 @@ export const RevenueOverview = ({
                                       />
                                       <span className="truncate">{item.code}</span>
                                     </div>
-                                    <span className="font-mono text-right flex-shrink-0">{formatCurrency(item.value)}</span>
+                                    <span className="font-mono text-right flex-shrink-0">{formatValue(item.value)}</span>
                                   </div>
                                 );
                               })}
@@ -1161,7 +1161,7 @@ export const RevenueOverview = ({
                         {presalesItems.length > 0 && (
                           <div className="mb-3">
                             <p className="text-xs font-semibold text-muted-foreground mb-1">
-                              PRESALES ({formatCurrency(presalesSum)})
+                              PRESALES ({formatValue(presalesSum)})
                             </p>
                             <div className="space-y-0.5 pl-2">
                               {presalesItems.map(item => {
@@ -1183,7 +1183,7 @@ export const RevenueOverview = ({
                                         )}
                                       </span>
                                     </div>
-                                    <span className="font-mono text-right flex-shrink-0">{formatCurrency(item.value)}</span>
+                                    <span className="font-mono text-right flex-shrink-0">{formatValue(item.value)}</span>
                                   </div>
                                 );
                               })}
@@ -1195,7 +1195,7 @@ export const RevenueOverview = ({
                         <div className="border-t pt-2 mt-2">
                           <div className="flex justify-between font-semibold">
                             <span>Celkem:</span>
-                            <span>{formatCurrency(total)}</span>
+                            <span>{formatValue(total)}</span>
                           </div>
                         </div>
                       </div>
@@ -1276,16 +1276,16 @@ export const RevenueOverview = ({
                     }
                     
                     // V rámci stejného statusu třídíme podle celkové revenue (sestupně)
-                    const totalA = Object.values(monthlyRevenueByProject).reduce((sum, monthData) => 
+                    const totalA = Object.values(activeData).reduce((sum, monthData) => 
                       sum + (monthData[a] || 0), 0);
-                    const totalB = Object.values(monthlyRevenueByProject).reduce((sum, monthData) => 
+                    const totalB = Object.values(activeData).reduce((sum, monthData) => 
                       sum + (monthData[b] || 0), 0);
                     return totalB - totalA;
                   })
                   .map((projectCode, index) => {
                     const project = projects.find(p => p.code === projectCode);
                     const isPresales = project?.project_status === 'Pre sales';
-                    const projectTotal = Object.values(monthlyRevenueByProject).reduce((sum, monthData) => 
+                    const projectTotal = Object.values(activeData).reduce((sum, monthData) => 
                       sum + (monthData[projectCode] || 0), 0);
                     
                     if (projectTotal === 0) return null;
@@ -1316,15 +1316,15 @@ export const RevenueOverview = ({
                           </div>
                         </TableCell>
                          {months.map(month => {
-                           const revenue = monthlyRevenueByProject[month]?.[projectCode] || 0;
+                           const revenue = activeData[month]?.[projectCode] || 0;
                            return (
                              <TableCell key={month} className={`text-right font-mono ${isPresales ? 'text-muted-foreground' : ''}`}>
-                               {revenue > 0 ? formatCurrency(revenue) : '-'}
+                               {revenue > 0 ? formatValue(revenue) : '-'}
                              </TableCell>
                            );
                          })}
                          <TableCell className={`text-right font-mono font-bold ${isPresales ? 'text-muted-foreground' : ''}`}>
-                           {formatCurrency(projectTotal)}
+                           {formatValue(projectTotal)}
                          </TableCell>
                       </TableRow>
                     );
@@ -1335,16 +1335,16 @@ export const RevenueOverview = ({
                 <TableRow className="font-bold border-t-2">
                   <TableCell className="font-bold">CELKEM</TableCell>
                    {months.map(month => {
-                     const monthData = monthlyRevenueByProject[month] || {};
+                     const monthData = activeData[month] || {};
                      const monthTotal = filteredProjectList.reduce((sum: number, projectCode) => sum + (monthData[projectCode] || 0), 0);
                      return (
                        <TableCell key={month} className="text-right font-mono font-bold">
-                         {formatCurrency(monthTotal)}
+                         {formatValue(monthTotal)}
                        </TableCell>
                      );
                    })}
                    <TableCell className="text-right font-mono font-bold text-primary">
-                     {formatCurrency(totalRevenue)}
+                     {formatValue(totalRevenue)}
                    </TableCell>
                 </TableRow>
               </TableBody>
