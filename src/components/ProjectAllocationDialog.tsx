@@ -418,7 +418,6 @@ export const ProjectAllocationDialog = ({
                                         {adjustedHours}h
                                         {allocation.isTentative && <span className="text-[9px] ml-0.5">?</span>}
                                         {allocation.isPartialFree && <span className="text-[9px] ml-0.5">~</span>}
-                                        {wd !== undefined && <span className="text-[9px] ml-0.5">*</span>}
                                       </>
                                     );
                                   })()}
