@@ -511,7 +511,6 @@ export const ProjectAllocationDialog = ({
             <span className="text-destructive font-bold text-[11px]">*</span>
             <span>Týden se svátkem (snížená kapacita)</span>
           </div>
-          </div>
         </div>
       </DialogContent>
     </Dialog>
