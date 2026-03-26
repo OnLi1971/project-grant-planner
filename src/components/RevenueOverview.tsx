@@ -64,6 +64,7 @@ export const RevenueOverview = ({
     'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026'
   ]);
   const [currency, setCurrency] = useState<'CZK' | 'USD'>(defaultCurrency);
+  const [displayUnit, setDisplayUnit] = useState<'kc' | 'hodiny'>('kc');
   const [projectStatusFilter, setProjectStatusFilter] = useState<'all' | 'realizace' | 'presales' | 'P0' | 'P1' | 'P2' | 'P3'>(defaultStatusFilter);
   const [projects, setProjects] = useState<DatabaseProject[]>([]);
   const [customers, setCustomers] = useState<DatabaseCustomer[]>([]);
@@ -85,6 +86,10 @@ export const RevenueOverview = ({
 
   // Short currency formatter for bar labels
   const formatShort = (value: number): string => {
+    if (displayUnit === 'hodiny') {
+      if (value >= 1_000) return `${(value / 1_000).toFixed(1)}k h`;
+      return `${Math.round(value)} h`;
+    }
     if (currency === 'USD') {
       const usdValue = value / exchangeRate;
       if (usdValue >= 1_000_000) return `$${(usdValue / 1_000_000).toFixed(1)}M`;
@@ -94,6 +99,16 @@ export const RevenueOverview = ({
     if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
     if (value >= 1_000) return `${Math.round(value / 1_000)}k`;
     return `${Math.round(value)}`;
+  };
+
+  // Format hours
+  const formatHours = (value: number): string => {
+    return `${value.toLocaleString('cs-CZ', { minimumFractionDigits: 0, maximumFractionDigits: 1 })} h`;
+  };
+
+  // Active value formatter based on displayUnit
+  const formatValue = (value: number): string => {
+    return displayUnit === 'kc' ? formatCurrency(value) : formatHours(value);
   };
 
   // Custom renderer to place total label centered just above the bar
@@ -532,7 +547,93 @@ export const RevenueOverview = ({
     return monthlyData;
   };
 
+  // Výpočet hodin po měsících (bez násobení sazbou)
+  const calculateMonthlyHoursByProject = (data = filteredData) => {
+    const monthlyData: { [month: string]: { [projectCode: string]: number } } = {};
+    const months = [
+      'říjen_2025', 'listopad_2025', 'prosinec_2025',
+      'leden_2026', 'únor_2026', 'březen_2026', 'duben_2026', 'květen_2026', 'červen_2026',
+      'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026'
+    ];
+    months.forEach(month => { monthlyData[month] = {}; });
+
+    const nonRevenueActivities = ['FREE', 'Dovolena', 'DOVOLENÁ', 'Nemoc', 'NEMOC', 'Školení', 'ŠKOLENÍ', 'Interní', 'INTERNÍ'];
+
+    data.forEach(entry => {
+      const cwKey = entry.cw.includes('-2026') ? entry.cw.replace('-', '_') : entry.cw.split('-')[0];
+      const weekMapping = weekToMonthMapping[cwKey];
+      if (!weekMapping || entry.mhTyden === 0) return;
+      if (entry.is_tentative === true) return;
+      const projektTrimmed = entry.projekt?.trim();
+      if (nonRevenueActivities.some(activity => activity.toLowerCase() === projektTrimmed?.toLowerCase())) return;
+      const project = projects.find(p => p.code === entry.projekt);
+      if (!project) return;
+
+      // Pro hodiny stále potřebujeme, aby projekt měl sazbu (aby se zobrazoval ve výpočtu)
+      let hourlyRate = 0;
+      if (project.project_type === 'WP' && project.average_hourly_rate) hourlyRate = project.average_hourly_rate;
+      else if (project.project_type === 'Hodinovka' && project.hourly_rate) hourlyRate = project.hourly_rate;
+      if (hourlyRate === 0) return;
+
+      Object.entries(weekMapping).forEach(([month, ratio]) => {
+        if (!monthlyData[month][entry.projekt]) monthlyData[month][entry.projekt] = 0;
+        const baseWorkingDays: { [key: string]: number } = {
+          'říjen_2025': 23, 'listopad_2025': 20, 'prosinec_2025': 22,
+          'leden_2026': 22, 'únor_2026': 20, 'březen_2026': 21, 'duben_2026': 22, 'květen_2026': 21, 'červen_2026': 21,
+          'červenec_2026': 23, 'srpen_2026': 21, 'září_2026': 22, 'říjen_2026': 23, 'listopad_2026': 20, 'prosinec_2026': 23
+        };
+        const workingDaysWithoutHolidays = getWorkingDaysInMonth(month);
+        const totalWorkingDays = baseWorkingDays[month] || 22;
+        const holidayCoefficient = workingDaysWithoutHolidays / totalWorkingDays;
+        let probabilityCoefficient = 1;
+        if (project.project_status === 'Pre sales' && project.probability) probabilityCoefficient = project.probability / 100;
+        monthlyData[month][entry.projekt] += entry.mhTyden * ratio * holidayCoefficient * probabilityCoefficient;
+      });
+    });
+
+    // Presales projekty bez plánovaných dat
+    projects.forEach(project => {
+      if (project.project_status === 'Pre sales' && project.presales_start_date && project.presales_end_date && project.budget &&
+          (project.project_type === 'WP' ? project.average_hourly_rate : project.hourly_rate)) {
+        const hasPlannedData = data.some(entry => entry.projekt === project.code);
+        if (hasPlannedData) return;
+        const startDate = new Date(project.presales_start_date);
+        const endDate = new Date(project.presales_end_date);
+        const totalHours = project.project_type === 'WP' ? project.budget : 100;
+        const probabilityCoefficient = project.probability ? project.probability / 100 : 0.5;
+        const numberToMonth: { [key: string]: string } = {
+          '10_2025': 'říjen_2025', '11_2025': 'listopad_2025', '12_2025': 'prosinec_2025',
+          '1_2026': 'leden_2026', '2_2026': 'únor_2026', '3_2026': 'březen_2026', '4_2026': 'duben_2026', '5_2026': 'květen_2026', '6_2026': 'červen_2026',
+          '7_2026': 'červenec_2026', '8_2026': 'srpen_2026', '9_2026': 'září_2026', '10_2026': 'říjen_2026', '11_2026': 'listopad_2026', '12_2026': 'prosinec_2026'
+        };
+        let totalWD = 0;
+        const monthsInPeriod: string[] = [];
+        const current = new Date(startDate);
+        while (current <= endDate) {
+          const monthKey = `${current.getMonth() + 1}_${current.getFullYear()}`;
+          const monthName = numberToMonth[monthKey];
+          if (monthName && !monthsInPeriod.includes(monthName)) {
+            monthsInPeriod.push(monthName);
+            totalWD += getWorkingDaysInMonth(monthName);
+          }
+          current.setMonth(current.getMonth() + 1);
+        }
+        if (totalWD === 0) return;
+        monthsInPeriod.forEach(monthName => {
+          const wd = getWorkingDaysInMonth(monthName);
+          const monthHours = totalHours * (wd / totalWD) * probabilityCoefficient;
+          if (!monthlyData[monthName][project.code]) monthlyData[monthName][project.code] = 0;
+          monthlyData[monthName][project.code] += monthHours;
+        });
+      }
+    });
+
+    return monthlyData;
+  };
+
   const monthlyRevenueByProject = calculateMonthlyRevenueByProject();
+  const monthlyHoursByProject = calculateMonthlyHoursByProject();
+  const activeData = displayUnit === 'kc' ? monthlyRevenueByProject : monthlyHoursByProject;
   const months = viewType === 'mesic' ? 
     [
       'říjen_2025', 'listopad_2025', 'prosinec_2025',
@@ -547,7 +648,7 @@ export const RevenueOverview = ({
   
   // Získání všech unikátních projektů s revenue - rozdělení podle statusu
   const allProjects = new Set<string>();
-  Object.values(monthlyRevenueByProject).forEach(monthData => {
+  Object.values(activeData).forEach(monthData => {
     Object.keys(monthData).forEach(projectCode => allProjects.add(projectCode));
   });
   const projectList = Array.from(allProjects);
@@ -582,10 +683,10 @@ export const RevenueOverview = ({
   // Výpočet celkového revenue pouze pro vybrané měsíce a filtrované projekty
   const totalRevenue = useMemo(() => {
     return months.reduce((sum, month) => {
-      const monthData = monthlyRevenueByProject[month] || {};
+      const monthData = activeData[month] || {};
       return sum + filteredProjectList.reduce((monthSum, projectCode) => monthSum + (monthData[projectCode] || 0), 0);
     }, 0);
-  }, [months, monthlyRevenueByProject, filteredProjectList]);
+  }, [months, activeData, filteredProjectList]);
 
   // Data pro stackovaný graf
   const chartData = useMemo(() => {
@@ -627,7 +728,7 @@ export const RevenueOverview = ({
         
         // Sečteme data za všechny měsíce v kvartálu (pouze filtrované projekty)
         months.forEach(month => {
-          const monthData = monthlyRevenueByProject[month] || {};
+          const monthData = activeData[month] || {};
           data.total += filteredProjectList.reduce((sum: number, projectCode) => sum + (monthData[projectCode] || 0), 0);
           
           // Přidáme data pouze pro filtrované projekty
@@ -642,7 +743,7 @@ export const RevenueOverview = ({
     } else {
       // Měsíční data
       return months.map(month => {
-        const monthData = monthlyRevenueByProject[month] || {};
+        const monthData = activeData[month] || {};
         // Lepší zkracování názvu měsíce pro graf
         const monthLabels: { [key: string]: string } = {
           'říjen_2025': 'říj 25', 'listopad_2025': 'lis 25', 'prosinec_2025': 'pro 25',
@@ -665,7 +766,7 @@ export const RevenueOverview = ({
         return data;
       });
     }
-  }, [monthlyRevenueByProject, filteredProjectList, viewType, months]);
+  }, [activeData, filteredProjectList, viewType, months]);
 
   // Možnosti pro filtrování
   const getFilterOptions = () => {
@@ -839,17 +940,32 @@ export const RevenueOverview = ({
               )}
 
               <div className="min-w-[100px]">
-                <Label htmlFor="currency" className="text-xs text-muted-foreground">Měna</Label>
-                <Select value={currency} onValueChange={(value: 'CZK' | 'USD') => setCurrency(value)}>
+                <Label htmlFor="displayUnit" className="text-xs text-muted-foreground">Jednotky</Label>
+                <Select value={displayUnit} onValueChange={(value: 'kc' | 'hodiny') => setDisplayUnit(value)}>
                   <SelectTrigger className="h-8 text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-background border z-50">
-                    <SelectItem value="CZK">CZK</SelectItem>
-                    <SelectItem value="USD">USD</SelectItem>
+                    <SelectItem value="kc">Kč</SelectItem>
+                    <SelectItem value="hodiny">Hodiny</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+
+              {displayUnit === 'kc' && (
+                <div className="min-w-[100px]">
+                  <Label htmlFor="currency" className="text-xs text-muted-foreground">Měna</Label>
+                  <Select value={currency} onValueChange={(value: 'CZK' | 'USD') => setCurrency(value)}>
+                    <SelectTrigger className="h-8 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background border z-50">
+                      <SelectItem value="CZK">CZK</SelectItem>
+                      <SelectItem value="USD">USD</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               <div className="min-w-[130px]">
                 <Label htmlFor="projectStatus" className="text-xs text-muted-foreground">Status projektu</Label>
@@ -954,8 +1070,8 @@ export const RevenueOverview = ({
 
            {/* Celkový obrat */}
            <div className="mb-6">
-             <div className="text-2xl font-bold text-primary">
-               Celkový obrat: {formatCurrency(totalRevenue)}
+              <div className="text-2xl font-bold text-primary">
+                {displayUnit === 'kc' ? 'Celkový obrat' : 'Celkové hodiny'}: {formatValue(totalRevenue)}
              </div>
              <p className="text-sm text-muted-foreground mt-1">
                {filterType === 'program' && selectedPrograms.length > 0
@@ -984,6 +1100,10 @@ export const RevenueOverview = ({
                 />
                 <YAxis 
                   tickFormatter={(value) => {
+                    if (displayUnit === 'hodiny') {
+                      if (value >= 1_000) return `${(value / 1_000).toFixed(0)}k h`;
+                      return `${Math.round(value)} h`;
+                    }
                     if (currency === 'USD') {
                       return `$${(value / exchangeRate / 1000).toFixed(0)}k`;
                     }
@@ -1033,7 +1153,7 @@ export const RevenueOverview = ({
                         {realizaceItems.length > 0 && (
                           <div className="mb-3">
                             <p className="text-xs font-semibold text-muted-foreground mb-1">
-                              REALIZACE ({formatCurrency(realizaceSum)})
+                              REALIZACE ({formatValue(realizaceSum)})
                             </p>
                             <div className="space-y-0.5 pl-2">
                               {realizaceItems.map(item => {
@@ -1048,7 +1168,7 @@ export const RevenueOverview = ({
                                       />
                                       <span className="truncate">{item.code}</span>
                                     </div>
-                                    <span className="font-mono text-right flex-shrink-0">{formatCurrency(item.value)}</span>
+                                    <span className="font-mono text-right flex-shrink-0">{formatValue(item.value)}</span>
                                   </div>
                                 );
                               })}
@@ -1060,7 +1180,7 @@ export const RevenueOverview = ({
                         {presalesItems.length > 0 && (
                           <div className="mb-3">
                             <p className="text-xs font-semibold text-muted-foreground mb-1">
-                              PRESALES ({formatCurrency(presalesSum)})
+                              PRESALES ({formatValue(presalesSum)})
                             </p>
                             <div className="space-y-0.5 pl-2">
                               {presalesItems.map(item => {
@@ -1082,7 +1202,7 @@ export const RevenueOverview = ({
                                         )}
                                       </span>
                                     </div>
-                                    <span className="font-mono text-right flex-shrink-0">{formatCurrency(item.value)}</span>
+                                    <span className="font-mono text-right flex-shrink-0">{formatValue(item.value)}</span>
                                   </div>
                                 );
                               })}
@@ -1094,7 +1214,7 @@ export const RevenueOverview = ({
                         <div className="border-t pt-2 mt-2">
                           <div className="flex justify-between font-semibold">
                             <span>Celkem:</span>
-                            <span>{formatCurrency(total)}</span>
+                            <span>{formatValue(total)}</span>
                           </div>
                         </div>
                       </div>
@@ -1175,16 +1295,16 @@ export const RevenueOverview = ({
                     }
                     
                     // V rámci stejného statusu třídíme podle celkové revenue (sestupně)
-                    const totalA = Object.values(monthlyRevenueByProject).reduce((sum, monthData) => 
+                    const totalA = Object.values(activeData).reduce((sum, monthData) => 
                       sum + (monthData[a] || 0), 0);
-                    const totalB = Object.values(monthlyRevenueByProject).reduce((sum, monthData) => 
+                    const totalB = Object.values(activeData).reduce((sum, monthData) => 
                       sum + (monthData[b] || 0), 0);
                     return totalB - totalA;
                   })
                   .map((projectCode, index) => {
                     const project = projects.find(p => p.code === projectCode);
                     const isPresales = project?.project_status === 'Pre sales';
-                    const projectTotal = Object.values(monthlyRevenueByProject).reduce((sum, monthData) => 
+                    const projectTotal = Object.values(activeData).reduce((sum, monthData) => 
                       sum + (monthData[projectCode] || 0), 0);
                     
                     if (projectTotal === 0) return null;
@@ -1215,15 +1335,15 @@ export const RevenueOverview = ({
                           </div>
                         </TableCell>
                          {months.map(month => {
-                           const revenue = monthlyRevenueByProject[month]?.[projectCode] || 0;
+                           const revenue = activeData[month]?.[projectCode] || 0;
                            return (
                              <TableCell key={month} className={`text-right font-mono ${isPresales ? 'text-muted-foreground' : ''}`}>
-                               {revenue > 0 ? formatCurrency(revenue) : '-'}
+                               {revenue > 0 ? formatValue(revenue) : '-'}
                              </TableCell>
                            );
                          })}
                          <TableCell className={`text-right font-mono font-bold ${isPresales ? 'text-muted-foreground' : ''}`}>
-                           {formatCurrency(projectTotal)}
+                           {formatValue(projectTotal)}
                          </TableCell>
                       </TableRow>
                     );
@@ -1234,16 +1354,16 @@ export const RevenueOverview = ({
                 <TableRow className="font-bold border-t-2">
                   <TableCell className="font-bold">CELKEM</TableCell>
                    {months.map(month => {
-                     const monthData = monthlyRevenueByProject[month] || {};
+                     const monthData = activeData[month] || {};
                      const monthTotal = filteredProjectList.reduce((sum: number, projectCode) => sum + (monthData[projectCode] || 0), 0);
                      return (
                        <TableCell key={month} className="text-right font-mono font-bold">
-                         {formatCurrency(monthTotal)}
+                         {formatValue(monthTotal)}
                        </TableCell>
                      );
                    })}
                    <TableCell className="text-right font-mono font-bold text-primary">
-                     {formatCurrency(totalRevenue)}
+                     {formatValue(totalRevenue)}
                    </TableCell>
                 </TableRow>
               </TableBody>
