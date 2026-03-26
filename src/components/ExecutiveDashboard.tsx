@@ -351,6 +351,10 @@ export const ExecutiveDashboard = () => {
             </SelectContent>
           </Select>
         </div>
+        <Button variant="ghost" size="sm" onClick={() => loadData()} disabled={loading}>
+          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          Obnovit data
+        </Button>
       </div>
 
       {/* KPI Karty */}
