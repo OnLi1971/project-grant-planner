@@ -131,18 +131,16 @@ export const ExecutiveDashboard = () => {
       const project = projects.find(p => p.code?.trim() === projekt);
       if (!project) return;
 
-      const cw = parseInt(entry.cw.toString());
+      const cwMatch = entry.cw.toString().match(/CW(\d+)/);
+      const cw = cwMatch ? parseInt(cwMatch[1]) : parseInt(entry.cw.toString());
+      const yearMatch = entry.cw.toString().match(/(\d{4})/);
+      const year = yearMatch ? parseInt(yearMatch[1]) : 2025;
       const mhTyden = entry.mhTyden || 0;
-      let weekMapping = weekToMonthMapping[cw];
+      const weekMapping = getWeekMapping(cw, year);
       
-      // Pokud není v základním mappingu, zkus 2026 mapping
-      if (!weekMapping) {
-        weekMapping = getWeekToMonthMapping2026(cw);
-      }
-      
-      if (weekMapping && mhTyden > 0) {
+      if (Object.keys(weekMapping).length > 0 && mhTyden > 0) {
         Object.entries(weekMapping).forEach(([month, ratio]) => {
-          const hoursForMonth = mhTyden * ratio;
+          const hoursForMonth = mhTyden * (ratio as number);
           let revenue = 0;
 
           if (project.project_type === 'WP' && project.average_hourly_rate) {
