@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { getWorkingDaysInCW } from '@/utils/workingDays';
+import { getWorkingDaysInCW, getISOWeekMonday, getWorkingDaysInWeekForMonth } from '@/utils/workingDays';
 import {
   Dialog,
   DialogContent,
@@ -115,32 +115,52 @@ export const ProjectAllocationDialog = ({
     return map;
   }, [weeks]);
 
-  // Get unique months sorted chronologically (for monthly view)
+  // Czech month names for dynamic mapping
+  const monthNames = ['', 'leden', 'únor', 'březen', 'duben', 'květen', 'červen', 'červenec', 'srpen', 'září', 'říjen', 'listopad', 'prosinec'];
+
+  // Get unique months sorted chronologically (for monthly view) with proportional week splitting
   const monthsData = useMemo(() => {
-    if (viewMode !== 'months') return { columns: [], weekToMonth: {} as Record<string, string> };
+    if (viewMode !== 'months') return { columns: [], weekToMonths: {} as Record<string, { monthKey: string; fraction: number }[]> };
     
-    const weekToMonth: Record<string, string> = {};
-    const monthsMap = new Map<string, { name: string; weeks: string[]; order: number }>();
+    const weekToMonths: Record<string, { monthKey: string; fraction: number }[]> = {};
+    const monthsMap = new Map<string, { name: string; order: number }>();
     
     weeks.forEach(week => {
       const match = week.match(/CW(\d+)-(\d+)/);
       if (match) {
-        const cwNum = match[1];
-        const year = match[2];
-        const monthInfo = monthWeekMapping[cwNum];
-        if (monthInfo) {
-          const monthKey = `${monthInfo.name} ${year}`;
-          weekToMonth[week] = monthKey;
+        const cwNum = parseInt(match[1]);
+        const yearNum = parseInt(match[2]);
+        const monday = getISOWeekMonday(cwNum, yearNum);
+        
+        // Check which months this week spans (Mon-Fri)
+        const monthDistribution: { month: number; year: number; days: number }[] = [];
+        
+        for (let i = 0; i < 5; i++) {
+          const day = new Date(monday);
+          day.setDate(monday.getDate() + i);
+          const m = day.getMonth() + 1;
+          const y = day.getFullYear();
+          const existing = monthDistribution.find(d => d.month === m && d.year === y);
+          if (existing) {
+            existing.days++;
+          } else {
+            monthDistribution.push({ month: m, year: y, days: 1 });
+          }
+        }
+        
+        const totalDays = monthDistribution.reduce((sum, d) => sum + d.days, 0);
+        const distributions: { monthKey: string; fraction: number }[] = [];
+        
+        monthDistribution.forEach(d => {
+          const monthKey = `${monthNames[d.month]} ${d.year}`;
+          distributions.push({ monthKey, fraction: d.days / totalDays });
           
           if (!monthsMap.has(monthKey)) {
-            monthsMap.set(monthKey, { 
-              name: monthKey, 
-              weeks: [], 
-              order: parseInt(year) * 100 + monthInfo.month 
-            });
+            monthsMap.set(monthKey, { name: monthKey, order: d.year * 100 + d.month });
           }
-          monthsMap.get(monthKey)!.weeks.push(week);
-        }
+        });
+        
+        weekToMonths[week] = distributions;
       }
     });
     
@@ -148,7 +168,7 @@ export const ProjectAllocationDialog = ({
       .sort((a, b) => a.order - b.order)
       .map(m => m.name);
     
-    return { columns, weekToMonth };
+    return { columns, weekToMonths };
   }, [weeks, viewMode]);
 
   // Display columns based on view mode
@@ -195,19 +215,23 @@ export const ProjectAllocationDialog = ({
     });
     
     allocations.forEach(a => {
-      const month = monthsData.weekToMonth[a.week];
-      if (month && matrix[a.engineer]?.[month]) {
-        matrix[a.engineer][month].hours += a.hours;
-        matrix[a.engineer][month].weekCount += 1;
-        if (a.isTentative) {
-          matrix[a.engineer][month].isTentative = true;
-        }
-        if (a.alternativeActivity) {
-          matrix[a.engineer][month].alternativeActivity = a.alternativeActivity;
-        }
-        if (a.isPartialFree) {
-          matrix[a.engineer][month].isPartialFree = true;
-        }
+      const months = monthsData.weekToMonths[a.week];
+      if (months) {
+        months.forEach(({ monthKey, fraction }) => {
+          if (matrix[a.engineer]?.[monthKey]) {
+            matrix[a.engineer][monthKey].hours += a.hours * fraction;
+            matrix[a.engineer][monthKey].weekCount += fraction;
+            if (a.isTentative) {
+              matrix[a.engineer][monthKey].isTentative = true;
+            }
+            if (a.alternativeActivity) {
+              matrix[a.engineer][monthKey].alternativeActivity = a.alternativeActivity;
+            }
+            if (a.isPartialFree) {
+              matrix[a.engineer][monthKey].isPartialFree = true;
+            }
+          }
+        });
       }
     });
     
