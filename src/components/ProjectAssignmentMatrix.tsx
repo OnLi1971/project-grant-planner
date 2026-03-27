@@ -12,7 +12,7 @@ import { usePlanning } from '@/contexts/PlanningContext';
 import { customers, projectManagers, programs, projects } from '@/data/projectsData';
 import { getWeek } from 'date-fns';
 import { normalizeName, createNameMapping } from '@/utils/nameNormalization';
-import { getWorkingDaysFromMonthName, getWorkingDaysInWeekForMonth } from '@/utils/workingDays';
+import { getWorkingDaysFromMonthName, getWorkingDaysInWeekForMonth, getWorkingDaysInCW } from '@/utils/workingDays';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useCustomEngineerViews } from '@/hooks/useCustomEngineerViews';
@@ -1516,7 +1516,11 @@ export const ProjectAssignmentMatrix = ({
                           }
                           return sum + hours;
                         }, 0);
-                        const fte = (totalHours / 40).toFixed(1);
+                        const cwMatch = week.match(/CW(\d+)/);
+                        const cwNum = cwMatch ? parseInt(cwMatch[1]) : 0;
+                        const weekYear = parseInt(week.split('-').pop() || String(new Date().getFullYear()));
+                        const workingDays = cwNum > 0 ? getWorkingDaysInCW(cwNum, weekYear) : 5;
+                        const fte = (totalHours / (workingDays * 8)).toFixed(1);
                         return (
                           <td 
                             key={week} 

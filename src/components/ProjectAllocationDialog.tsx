@@ -460,7 +460,7 @@ export const ProjectAllocationDialog = ({
                       </TableCell>
                       {displayColumns.map(col => (
                         <TableCell key={col} className="text-center font-bold text-xs py-1 px-1">
-                          {(columnTotals[col] / (viewMode === 'months' ? 168 : 40)).toFixed(1)}
+                          {(columnTotals[col] / (viewMode === 'months' ? 168 : ((holidayWeeks.get(col) || 5) * 8))).toFixed(1)}
                         </TableCell>
                       ))}
                       <TableCell className="text-center font-bold bg-primary/10 text-primary text-xs py-1 px-1">
