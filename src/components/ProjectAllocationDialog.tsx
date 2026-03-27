@@ -286,7 +286,7 @@ export const ProjectAllocationDialog = ({
       totals[eng] = displayColumns.reduce((sum, col) => {
         const hours = allocationMatrix[eng]?.[col]?.hours || 0;
         const wd = holidayWeeks.get(col);
-        const adjusted = wd !== undefined ? Math.round(hours * wd / 5) : hours;
+        const adjusted = wd !== undefined ? Math.round(hours * wd / 5) : Math.round(hours);
         return sum + adjusted;
       }, 0);
     });
@@ -300,7 +300,7 @@ export const ProjectAllocationDialog = ({
       const wd = holidayWeeks.get(col);
       totals[col] = engineers.reduce((sum, eng) => {
         const hours = allocationMatrix[eng]?.[col]?.hours || 0;
-        const adjusted = wd !== undefined ? Math.round(hours * wd / 5) : hours;
+        const adjusted = wd !== undefined ? Math.round(hours * wd / 5) : Math.round(hours);
         return sum + adjusted;
       }, 0);
     });
@@ -436,7 +436,7 @@ export const ProjectAllocationDialog = ({
                                 }`}>
                                   {(() => {
                                     const wd = holidayWeeks.get(col);
-                                    const adjustedHours = wd !== undefined ? Math.round(allocation.hours * wd / 5) : allocation.hours;
+                                    const adjustedHours = wd !== undefined ? Math.round(allocation.hours * wd / 5) : Math.round(allocation.hours);
                                     return (
                                       <>
                                         {adjustedHours}h
@@ -475,7 +475,7 @@ export const ProjectAllocationDialog = ({
                         </TableCell>
                       ))}
                       <TableCell className="text-center font-bold bg-primary/10 text-primary text-xs py-1 px-1">
-                        {Object.values(columnTotals).reduce((a, b) => a + b, 0)}h
+                        {Math.round(Object.values(columnTotals).reduce((a, b) => a + b, 0))}h
                       </TableCell>
                     </TableRow>
                     <TableRow className="bg-secondary/10">
