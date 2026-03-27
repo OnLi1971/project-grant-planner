@@ -1516,7 +1516,11 @@ export const ProjectAssignmentMatrix = ({
                           }
                           return sum + hours;
                         }, 0);
-                        const fte = (totalHours / 40).toFixed(1);
+                        const cwMatch = week.match(/CW(\d+)/);
+                        const cwNum = cwMatch ? parseInt(cwMatch[1]) : 0;
+                        const weekYear = parseInt(week.split('-').pop() || String(selectedYear));
+                        const workingDays = cwNum > 0 ? getWorkingDaysInCW(cwNum, weekYear) : 5;
+                        const fte = (totalHours / (workingDays * 8)).toFixed(1);
                         return (
                           <td 
                             key={week} 
