@@ -9,6 +9,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { TrendingUp, Filter, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getProjectColorWithIndex } from '@/utils/colorSystem';
+import { getWeekToMonthFractions, getWorkingDaysInMonth as getWorkingDaysInMonthFromUtils } from '@/utils/workingDays';
 
 interface DatabaseProject {
   id: string;
@@ -161,150 +162,29 @@ export const RevenueOverview = ({
     }
   }, [programs, defaultProgramCodes, defaultProgramsApplied]);
 
-  const getDaysInMonth = (month: string, year: number = 2025): number => {
-    const monthMapping: { [key: string]: number } = {
-      'srpen': 8, 'září': 9, 'říjen': 10, 'listopad': 11, 'prosinec': 12,
-      'leden': 1, 'únor': 2, 'březen': 3, 'duben': 4, 'květen': 5, 'červen': 6
-    };
-    
-    const monthNum = monthMapping[month];
-    // Pro 2026 měsíce použij rok 2026
-    const actualYear = ['leden', 'únor', 'březen', 'duben', 'květen', 'červen'].includes(month) ? 2026 : year;
-    return new Date(actualYear, monthNum, 0).getDate();
+  // Month name to number mapping for working days calculation
+  const monthNameToNumber: { [key: string]: number } = {
+    'leden': 1, 'únor': 2, 'březen': 3, 'duben': 4, 'květen': 5, 'červen': 6,
+    'červenec': 7, 'srpen': 8, 'září': 9, 'říjen': 10, 'listopad': 11, 'prosinec': 12
   };
 
-  // Seznam státních svátků v ČR pro roky 2025-2026
-  const publicHolidays = {
-    '2025-09-28': 'Den české státnosti',
-    '2025-10-28': 'Den vzniku samostatného československého státu', 
-    '2025-11-17': 'Den boje za svobodu a demokracii',
-    '2025-12-24': 'Štědrý den',
-    '2025-12-25': '1. svátek vánoční',
-    '2025-12-26': '2. svátek vánoční',
-    '2026-01-01': 'Nový rok',
-    '2026-04-21': 'Velikonoční pondělí',
-    '2026-05-01': 'Svátek práce',
-    '2026-05-08': 'Den vítězství',
-    '2026-07-05': 'Den slovanských věrozvěstů Cyrila a Metoděje',
-    '2026-07-06': 'Den upálení mistra Jana Husa'
+  // Shared helper: get working days for a monthKey like "červen_2026"
+  const getWorkingDaysForMonthKey = (monthKey: string): number => {
+    const parts = monthKey.split('_');
+    if (parts.length !== 2) return 22;
+    const monthNum = monthNameToNumber[parts[0]];
+    const year = parseInt(parts[1]);
+    if (!monthNum || !year) return 22;
+    return getWorkingDaysInMonthFromUtils(year, monthNum);
   };
 
-  // Funkce pro počítání svátků připadajících na pracovní dny v daném měsíci
-  const getHolidaysInMonth = (month: string): number => {
-    const monthToNumber: { [key: string]: number } = {
-      'srpen': 8, 'září': 9, 'říjen': 10, 'listopad': 11, 'prosinec': 12,
-      'leden': 1, 'únor': 2, 'březen': 3, 'duben': 4, 'květen': 5, 'červen': 6, 'červenec': 7
-    };
-    
-    const monthNum = monthToNumber[month];
-    if (!monthNum) return 0;
-    
-    const year = ['leden', 'únor', 'březen', 'duben', 'květen', 'červen', 'červenec'].includes(month) ? 2026 : 2025;
-    
-    let holidayCount = 0;
-    
-    Object.keys(publicHolidays).forEach(dateStr => {
-      const date = new Date(dateStr);
-      if (date.getFullYear() === year && date.getMonth() + 1 === monthNum) {
-        // Kontrola, zda svátek připadá na pracovní den (pondělí = 1, pátek = 5)
-        const dayOfWeek = date.getDay();
-        if (dayOfWeek >= 1 && dayOfWeek <= 5) {
-          holidayCount++;
-        }
-      }
-    });
-    
-    return holidayCount;
-  };
-
-  // Funkce pro výpočet pracovních dnů v měsíci (5 dnů v týdnu) minus státní svátky
-  const getWorkingDaysInMonth = (month: string): number => {
-    // Základní počet pracovních dnů pro roky 2025-2026 s rokem v názvu
-    const baseWorkingDays: { [key: string]: number } = {
-      'říjen_2025': 23, 'listopad_2025': 20, 'prosinec_2025': 22,
-      'leden_2026': 22, 'únor_2026': 20, 'březen_2026': 21, 'duben_2026': 22, 'květen_2026': 21, 'červen_2026': 21,
-      'červenec_2026': 23, 'srpen_2026': 21, 'září_2026': 22, 'říjen_2026': 23, 'listopad_2026': 20, 'prosinec_2026': 23
-    };
-    
-    const baseCount = baseWorkingDays[month] || 22;
-    
-    // Extrahovat název měsíce bez roku pro státní svátky
-    const monthName = month.split('_')[0];
-    const holidays = getHolidaysInMonth(monthName);
-    
-    return Math.max(0, baseCount - holidays);
-  };
-
-
-  // Přesnější mapování týdnů na měsíce s poměrným rozdělením pro roky 2025-2026
-  const weekToMonthMapping: { [key: string]: { [month: string]: number } } = {
-    // Rok 2025 (CW40-52) - CW32-39 vynechány (srpen-září historie)
-    'CW40': { 'říjen_2025': 1.0 },   // 29 září - 5 října 2025 (celý týden započítán do října)
-    'CW41': { 'říjen_2025': 1.0 },          // 6-12 října 2025 (celý týden)
-    'CW42': { 'říjen_2025': 1.0 },          // 13-19 října 2025 (celý týden)
-    'CW43': { 'říjen_2025': 1.0 },          // 20-26 října 2025 (celý týden)
-    'CW44': { 'říjen_2025': 0.8, 'listopad_2025': 0.2 },    // 27 října - 2 listopadu 2025 (4:1 dny)
-    'CW45': { 'listopad_2025': 1.0 },         // 3-9 listopadu 2025 (celý týden)
-    'CW46': { 'listopad_2025': 1.0 },         // 10-16 listopadu 2025 (celý týden)
-    'CW47': { 'listopad_2025': 1.0 },         // 17-23 listopadu 2025 (celý týden)
-    'CW48': { 'listopad_2025': 0.6, 'prosinec_2025': 0.4 },   // 24-30 listopadu 2025 (3:2 dny)
-    'CW49': { 'prosinec_2025': 1.0 },         // 1-7 prosince 2025 (celý týden)
-    'CW50': { 'prosinec_2025': 1.0 },         // 8-14 prosince 2025 (celý týden)
-    'CW51': { 'prosinec_2025': 1.0 },         // 15-21 prosince 2025 (celý týden)
-    'CW52': { 'prosinec_2025': 1.0 },         // 22-28 prosince 2025 (celý týden)
-    // Rok 2026 (CW01-52) - všechny s příponou _2026
-    'CW01_2026': { 'leden_2026': 1.0 },            // 29 prosince 2025 - 4 ledna 2026 (celý týden)
-    'CW02_2026': { 'leden_2026': 1.0 },            // 5-11 ledna 2026 (celý týden)
-    'CW03_2026': { 'leden_2026': 1.0 },            // 12-18 ledna 2026 (celý týden)
-    'CW04_2026': { 'leden_2026': 1.0 },            // 19-25 ledna 2026 (celý týden)
-    'CW05_2026': { 'leden_2026': 0.8, 'únor_2026': 0.2 },   // 26 ledna - 1 února 2026 (4:1 dny)
-    'CW06_2026': { 'únor_2026': 1.0 },             // 2-8 února 2026 (celý týden)
-    'CW07_2026': { 'únor_2026': 1.0 },             // 9-15 února 2026 (celý týden)
-    'CW08_2026': { 'únor_2026': 1.0 },             // 16-22 února 2026 (celý týden)
-    'CW09_2026': { 'únor_2026': 0.6, 'březen_2026': 0.4 },  // 23 února - 1 března 2026 (3:2 dny)
-    'CW10_2026': { 'březen_2026': 1.0 },           // 2-8 března 2026 (celý týden)
-    'CW11_2026': { 'březen_2026': 1.0 },           // 9-15 března 2026 (celý týden)
-    'CW12_2026': { 'březen_2026': 1.0 },           // 16-22 března 2026 (celý týden)
-    'CW13_2026': { 'březen_2026': 1.0 },           // 23-29 března 2026 (celý týden)
-    'CW14_2026': { 'březen_2026': 0.4, 'duben_2026': 0.6 },     // 30 března - 5 dubna 2026 (2:3 dny)
-    'CW15_2026': { 'duben_2026': 1.0 },            // 6-12 dubna 2026 (celý týden)
-    'CW16_2026': { 'duben_2026': 1.0 },            // 13-19 dubna 2026 (celý týden)
-    'CW17_2026': { 'duben_2026': 1.0 },            // 20-26 dubna 2026 (celý týden)
-    'CW18_2026': { 'duben_2026': 0.6, 'květen_2026': 0.4 },     // 27 dubna - 3 května 2026 (3:2 dny)
-    'CW19_2026': { 'květen_2026': 1.0 },           // 4-10 května 2026 (celý týden)
-    'CW20_2026': { 'květen_2026': 1.0 },           // 11-17 května 2026 (celý týden)
-    'CW21_2026': { 'květen_2026': 1.0 },           // 18-24 května 2026 (celý týden)
-    'CW22_2026': { 'květen_2026': 1.0 },           // 25-31 května 2026 (celý týden)
-    'CW23_2026': { 'květen_2026': 0.2, 'červen_2026': 0.8 },    // 1-7 června 2026 (1:4 dny)
-    'CW24_2026': { 'červen_2026': 1.0 },           // 8-14 června 2026 (celý týden)
-    'CW25_2026': { 'červen_2026': 1.0 },           // 15-21 června 2026 (celý týden)
-    'CW26_2026': { 'červen_2026': 1.0 },            // 22-28 června 2026 (celý týden)
-    'CW27_2026': { 'červenec_2026': 1.0 },
-    'CW28_2026': { 'červenec_2026': 1.0 },
-    'CW29_2026': { 'červenec_2026': 1.0 },
-    'CW30_2026': { 'červenec_2026': 1.0 },
-    'CW31_2026': { 'červenec_2026': 0.6, 'srpen_2026': 0.4 },
-    'CW32_2026': { 'srpen_2026': 1.0 },
-    'CW33_2026': { 'srpen_2026': 1.0 },
-    'CW34_2026': { 'srpen_2026': 1.0 },
-    'CW35_2026': { 'srpen_2026': 0.6, 'září_2026': 0.4 },
-    'CW36_2026': { 'září_2026': 1.0 },
-    'CW37_2026': { 'září_2026': 1.0 },
-    'CW38_2026': { 'září_2026': 1.0 },
-    'CW39_2026': { 'září_2026': 1.0 },
-    'CW40_2026': { 'září_2026': 0.4, 'říjen_2026': 0.6 },
-    'CW41_2026': { 'říjen_2026': 1.0 },
-    'CW42_2026': { 'říjen_2026': 1.0 },
-    'CW43_2026': { 'říjen_2026': 1.0 },
-    'CW44_2026': { 'říjen_2026': 0.8, 'listopad_2026': 0.2 },
-    'CW45_2026': { 'listopad_2026': 1.0 },
-    'CW46_2026': { 'listopad_2026': 1.0 },
-    'CW47_2026': { 'listopad_2026': 1.0 },
-    'CW48_2026': { 'listopad_2026': 0.6, 'prosinec_2026': 0.4 },
-    'CW49_2026': { 'prosinec_2026': 1.0 },
-    'CW50_2026': { 'prosinec_2026': 1.0 },
-    'CW51_2026': { 'prosinec_2026': 1.0 },
-    'CW52_2026': { 'prosinec_2026': 1.0 }
+  // Dynamic week-to-month mapping using shared utility
+  const getWeekMapping = (cwKey: string): { [month: string]: number } | null => {
+    const fractions = getWeekToMonthFractions(cwKey);
+    if (fractions.length === 0) return null;
+    const result: { [month: string]: number } = {};
+    fractions.forEach(f => { result[f.monthKey] = f.fraction; });
+    return result;
   };
 
   // Filtrovaná data podle vybraného filtru
