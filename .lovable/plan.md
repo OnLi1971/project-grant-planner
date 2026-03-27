@@ -1,22 +1,36 @@
 
 
-## Plan: Žlutý otazník u předběžných rezervací
+## Plan: Přidat řádek "Celkem konstruktérů" do ProjectAllocationDialog
 
-Přidat zpět žlutý `[?]` indikátor vedle názvu projektu u tentative řádků — bez dalšího stylování (žádné žluté pozadí, okraje ani text).
+Přidat nový souhrnný řádek pod "Celkem FTE", který zobrazí počet konstruktérů s nenulovou alokací v každém sloupci (týdnu/měsíci).
 
-### Změna v `src/components/PlanningEditor.tsx`
+### Změna v `src/components/ProjectAllocationDialog.tsx`
 
-**Řádek ~833-835** — přidat `[?]` před název projektu:
+**Za řádek Celkem FTE (ř. 469)** — vložit nový `<TableRow>`:
+
+- Pro každý sloupec spočítat počet inženýrů, kteří mají `allocation.hours > 0`
+- V posledním sloupci zobrazit celkový počet unikátních inženýrů (`engineers.length`)
+- Styling: `bg-secondary/5` pro odlišení od FTE řádku
 
 ```tsx
-<span className="font-medium">
-  {week.is_tentative && (
-    <span className="text-yellow-600 dark:text-yellow-400 mr-1 font-bold">[?]</span>
-  )}
-  {week.projekt || 'FREE'}
-</span>
+<TableRow className="bg-secondary/5">
+  <TableCell className="sticky left-0 bg-secondary/5 z-10 font-bold text-xs py-1 px-2">
+    Celkem konstruktérů
+  </TableCell>
+  {displayColumns.map(col => {
+    const count = engineers.filter(eng => allocationMatrix[eng]?.[col]?.hours > 0).length;
+    return (
+      <TableCell key={col} className="text-center font-bold text-xs py-1 px-1">
+        {count}
+      </TableCell>
+    );
+  })}
+  <TableCell className="text-center font-bold bg-primary/10 text-primary text-xs py-1 px-1">
+    {engineers.length}
+  </TableCell>
+</TableRow>
 ```
 
 ### Dotčený soubor
-- `src/components/PlanningEditor.tsx` — 1 místo, cca 3 řádky
+- `src/components/ProjectAllocationDialog.tsx` — 1 nový řádek (~15 řádků kódu)
 
