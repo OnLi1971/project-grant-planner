@@ -1,36 +1,23 @@
 
 
-## Plan: Přidat řádek "Celkem konstruktérů" do ProjectAllocationDialog
+## Plan: Opravit výpočet FTE pro zkrácené týdny (svátky)
 
-Přidat nový souhrnný řádek pod "Celkem FTE", který zobrazí počet konstruktérů s nenulovou alokací v každém sloupci (týdnu/měsíci).
+Aktuálně se FTE počítá vždy jako `hodiny / 40`, i když týden má méně pracovních dnů. Například CW14* má 4 pracovní dny (max 32h), takže 29h by mělo být FTE ~0.9, ne 0.7.
 
-### Změna v `src/components/ProjectAllocationDialog.tsx`
+### Princip opravy
+FTE = hodiny / (počet_pracovních_dnů × 8). Pro plný týden (5 dnů) = hodiny/40, pro sváteční týden (4 dny) = hodiny/32.
 
-**Za řádek Celkem FTE (ř. 469)** — vložit nový `<TableRow>`:
+### Změny
 
-- Pro každý sloupec spočítat počet inženýrů, kteří mají `allocation.hours > 0`
-- V posledním sloupci zobrazit celkový počet unikátních inženýrů (`engineers.length`)
-- Styling: `bg-secondary/5` pro odlišení od FTE řádku
+**1. `src/components/ProjectAllocationDialog.tsx` (ř. 461-464)**
+- V řádku "Celkem FTE" pro týdenní view: místo dělení 40 použít `(holidayWeeks.get(col) || 5) * 8`
+- Měsíční view zůstane beze změny (168 je průměr)
 
-```tsx
-<TableRow className="bg-secondary/5">
-  <TableCell className="sticky left-0 bg-secondary/5 z-10 font-bold text-xs py-1 px-2">
-    Celkem konstruktérů
-  </TableCell>
-  {displayColumns.map(col => {
-    const count = engineers.filter(eng => allocationMatrix[eng]?.[col]?.hours > 0).length;
-    return (
-      <TableCell key={col} className="text-center font-bold text-xs py-1 px-1">
-        {count}
-      </TableCell>
-    );
-  })}
-  <TableCell className="text-center font-bold bg-primary/10 text-primary text-xs py-1 px-1">
-    {engineers.length}
-  </TableCell>
-</TableRow>
-```
+**2. `src/components/ProjectAssignmentMatrix.tsx` (ř. 1507-1532)**
+- V "Celkem FTE" řádku pro weekly view: parsovat CW číslo a rok z názvu týdne, zavolat `getWorkingDaysInCW()`, dělit `workingDays * 8` místo 40
+- Import `getWorkingDaysInCW` z `@/utils/workingDays`
 
-### Dotčený soubor
-- `src/components/ProjectAllocationDialog.tsx` — 1 nový řádek (~15 řádků kódu)
+### Dotčené soubory
+- `src/components/ProjectAllocationDialog.tsx` — 1 řádek výpočtu
+- `src/components/ProjectAssignmentMatrix.tsx` — 1 řádek výpočtu + import
 
