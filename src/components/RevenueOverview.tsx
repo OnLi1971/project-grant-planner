@@ -388,7 +388,7 @@ export const RevenueOverview = ({
           
           if (monthName && !monthsInPeriod.includes(monthName)) {
             monthsInPeriod.push(monthName);
-            totalWorkingDays += getWorkingDaysInMonth(monthName);
+            totalWorkingDays += getWorkingDaysForMonthKey(monthName);
           }
           
           current.setMonth(current.getMonth() + 1);
@@ -398,7 +398,7 @@ export const RevenueOverview = ({
 
         // Rozdělíme revenue poměrně mezi měsíce
         monthsInPeriod.forEach(monthName => {
-          const workingDaysInMonth = getWorkingDaysInMonth(monthName);
+          const workingDaysInMonth = getWorkingDaysForMonthKey(monthName);
           const monthRatio = workingDaysInMonth / totalWorkingDays;
           const monthHours = totalHours * monthRatio;
           const monthRevenue = monthHours * hourlyRate * probabilityCoefficient;
@@ -428,7 +428,7 @@ export const RevenueOverview = ({
 
     data.forEach(entry => {
       const cwKey = entry.cw.includes('-2026') ? entry.cw.replace('-', '_') : entry.cw.split('-')[0];
-      const weekMapping = weekToMonthMapping[cwKey];
+      const weekMapping = getWeekMapping(cwKey);
       if (!weekMapping || entry.mhTyden === 0) return;
       if (entry.is_tentative === true) return;
       const projektTrimmed = entry.projekt?.trim();
@@ -444,17 +444,10 @@ export const RevenueOverview = ({
 
       Object.entries(weekMapping).forEach(([month, ratio]) => {
         if (!monthlyData[month][entry.projekt]) monthlyData[month][entry.projekt] = 0;
-        const baseWorkingDays: { [key: string]: number } = {
-          'říjen_2025': 23, 'listopad_2025': 20, 'prosinec_2025': 22,
-          'leden_2026': 22, 'únor_2026': 20, 'březen_2026': 21, 'duben_2026': 22, 'květen_2026': 21, 'červen_2026': 21,
-          'červenec_2026': 23, 'srpen_2026': 21, 'září_2026': 22, 'říjen_2026': 23, 'listopad_2026': 20, 'prosinec_2026': 23
-        };
-        const workingDaysWithoutHolidays = getWorkingDaysInMonth(month);
-        const totalWorkingDays = baseWorkingDays[month] || 22;
-        const holidayCoefficient = workingDaysWithoutHolidays / totalWorkingDays;
         let probabilityCoefficient = 1;
         if (project.project_status === 'Pre sales' && project.probability) probabilityCoefficient = project.probability / 100;
-        monthlyData[month][entry.projekt] += entry.mhTyden * ratio * holidayCoefficient * probabilityCoefficient;
+        // Hodiny = raw hodiny * poměr týdne * pravděpodobnost (BEZ holiday koeficientu — sjednoceno s maticí)
+        monthlyData[month][entry.projekt] += entry.mhTyden * (ratio as number) * probabilityCoefficient;
       });
     });
 
@@ -481,13 +474,13 @@ export const RevenueOverview = ({
           const monthName = numberToMonth[monthKey];
           if (monthName && !monthsInPeriod.includes(monthName)) {
             monthsInPeriod.push(monthName);
-            totalWD += getWorkingDaysInMonth(monthName);
+            totalWD += getWorkingDaysForMonthKey(monthName);
           }
           current.setMonth(current.getMonth() + 1);
         }
         if (totalWD === 0) return;
         monthsInPeriod.forEach(monthName => {
-          const wd = getWorkingDaysInMonth(monthName);
+          const wd = getWorkingDaysForMonthKey(monthName);
           const monthHours = totalHours * (wd / totalWD) * probabilityCoefficient;
           if (!monthlyData[monthName][project.code]) monthlyData[monthName][project.code] = 0;
           monthlyData[monthName][project.code] += monthHours;
