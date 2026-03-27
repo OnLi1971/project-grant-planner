@@ -228,26 +228,23 @@ export const RevenueOverview = ({
       
       const allSelectedMonths = selectedQuarters.flatMap(quarter => quarterMonths[quarter] || []);
       data = data.filter(entry => {
-        // Použijeme CW mapping k určení, do kterých měsíců entry přispívá
         const cwKey = entry.cw.includes('-2026')
           ? entry.cw.replace('-', '_')
           : entry.cw.split('-')[0];
-        const weekMapping = weekToMonthMapping[cwKey];
+        const weekMapping = getWeekMapping(cwKey);
         if (!weekMapping) return false;
+        return Object.keys(weekMapping).some(monthYear => allSelectedMonths.includes(monthYear));
         
         // Zkontrolujeme, zda některý z měsíců je v selectedMonths
         return Object.keys(weekMapping).some(monthYear => allSelectedMonths.includes(monthYear));
       });
     } else if (viewType === 'mesic' && selectedMonths.length > 0) {
       data = data.filter(entry => {
-        // Použijeme CW mapping k určení, do kterých měsíců entry přispívá
         const cwKey = entry.cw.includes('-2026')
           ? entry.cw.replace('-', '_')
           : entry.cw.split('-')[0];
-        const weekMapping = weekToMonthMapping[cwKey];
+        const weekMapping = getWeekMapping(cwKey);
         if (!weekMapping) return false;
-        
-        // Zkontrolujeme, zda některý z měsíců je v selectedMonths
         return Object.keys(weekMapping).some(monthYear => selectedMonths.includes(monthYear));
       });
     }
@@ -281,7 +278,7 @@ export const RevenueOverview = ({
       const cwKey = entry.cw.includes('-2026')
         ? entry.cw.replace('-', '_')
         : entry.cw.split('-')[0];
-      const weekMapping = weekToMonthMapping[cwKey];
+      const weekMapping = getWeekMapping(cwKey);
       if (!weekMapping || entry.mhTyden === 0) return;
 
       // Přeskočit tentative rezervace - nepočítají se do potvrzeného revenue
@@ -331,24 +328,14 @@ export const RevenueOverview = ({
           monthlyData[month][entry.projekt] = 0;
         }
 
-        // Koeficient pro snížení o státní svátky
-        const baseWorkingDays: { [key: string]: number } = {
-          'říjen_2025': 23, 'listopad_2025': 20, 'prosinec_2025': 22,
-          'leden_2026': 22, 'únor_2026': 20, 'březen_2026': 21, 'duben_2026': 22, 'květen_2026': 21, 'červen_2026': 21,
-          'červenec_2026': 23, 'srpen_2026': 21, 'září_2026': 22, 'říjen_2026': 23, 'listopad_2026': 20, 'prosinec_2026': 23
-        };
-        const workingDaysWithoutHolidays = getWorkingDaysInMonth(month);
-        const totalWorkingDays = baseWorkingDays[month] || 22;
-        const holidayCoefficient = workingDaysWithoutHolidays / totalWorkingDays;
-
         // Koeficient pravděpodobnosti pro presales projekty
         let probabilityCoefficient = 1;
         if (project.project_status === 'Pre sales' && project.probability) {
           probabilityCoefficient = project.probability / 100;
         }
 
-        // Přičteme poměrnou část týdenního revenue k měsíčnímu součtu (snížené o státní svátky a pravděpodobnost)
-        const monthlyRevenue = entry.mhTyden * hourlyRate * ratio * holidayCoefficient * probabilityCoefficient;
+        // Revenue = hodiny * sazba * poměr týdne * pravděpodobnost
+        const monthlyRevenue = entry.mhTyden * hourlyRate * (ratio as number) * probabilityCoefficient;
         monthlyData[month][entry.projekt] += monthlyRevenue;
       });
     });
