@@ -1,50 +1,75 @@
 
+## Plan: Opravit měsíční pohled v plánovací matici, aby čísla odpovídala realitě
 
-## Plan: Čisté řešení — sdílená utilita pro week-to-month mapování
+### Co je teď špatně
+V `ProjectAssignmentMatrix.tsx` jsou v měsíčním pohledu nekonzistentní výpočty:
 
-### Problém
-Aktuálně existují **3 nezávislé implementace** stejné logiky:
+1. **Počet hodin**
+- Teď jen sčítá celé týdenní hodiny do měsíce
+- Týdny na hraně měsíců se nerozdělují poměrově
+- Proto jsou měsíční součty jiné než v Revenue / dialogu projektu
 
-| Komponenta | Mapování | Svátky | Pracovní dny |
-|---|---|---|---|
-| `RevenueOverview.tsx` | Statická tabulka ~70 řádků (ř. 240-308) | Vlastní `publicHolidays` objekt (ř. 177-190) | Vlastní `getWorkingDaysInMonth` (ř. 221-236) |
-| `ProjectAllocationDialog.tsx` | Dynamický výpočet přes `getISOWeekMonday` | Používá `workingDays.ts` | Používá `workingDays.ts` |
-| `ExecutiveDashboard.tsx` | Další statická tabulka ~60 řádků (ř. 93-135) | Žádné | Žádné |
+2. **Celkem FTE**
+- V měsíčním pohledu se teď počítá jako `totalHours / 40`
+- To je špatně, protože měsíc nemá kapacitu 40h, ale `pracovní dny × 8`
+- Proto vycházejí nesmyslně vysoká nebo nízká čísla
 
-To je zdroj nekonzistencí — každá komponenta počítá jinak.
+3. **Vytížení**
+- Tady už je logika lepší, ale běží odděleně od „Počet hodin“
+- Výsledkem je, že jednotlivé summary řádky v měsíčním pohledu nejsou počítané ze stejného základu
 
-### Řešení: sdílená utilita
+4. **Rozdělení týdnů do měsíců**
+- Měsíce se pořád skládají přes statické `monthWeekMapping`
+- To není čisté a může to dělat chyby na přelomu měsíců/roků
 
-**1. Nová funkce v `src/utils/workingDays.ts`**
+### Navržené řešení
 
-Přidat `getWeekToMonthFractions(cwKey: string): { monthKey: string; fraction: number }[]`
-- Vstup: CW klíč z plánovacích dat (např. `"CW23-2026"`, `"CW44"`)  
-- Výstup: pole `[{ monthKey: "červen_2026", fraction: 0.8 }, { monthKey: "květen_2026", fraction: 0.2 }]`
-- Interně použije existující `getISOWeekMonday` a kalendářní dny (Po-Pá)
-- Formát `monthKey` = `"měsíc_rok"` (kompatibilní s oběma komponentami)
+#### 1. Sjednotit měsíční alokaci na jednu sdílenou logiku
+V `ProjectAssignmentMatrix.tsx` vytvořit jednu společnou měsíční agregaci, která:
+- vezme každý týden
+- podle skutečného ISO týdne spočítá, kolik pracovních dnů spadá do daného měsíce
+- rozdělí hodiny poměrově stejně jako jinde v aplikaci
 
-**2. Upravit `RevenueOverview.tsx`**
-- Smazat statickou `weekToMonthMapping` tabulku (~70 řádků)
-- Smazat duplicitní `publicHolidays`, `getHolidaysInMonth`, `getWorkingDaysInMonth` (~60 řádků)
-- Import `getWeekToMonthFractions` z `workingDays.ts`
-- V `calculateMonthlyRevenueByProject` a `calculateMonthlyHoursByProject`: zavolat `getWeekToMonthFractions(cwKey)` místo `weekToMonthMapping[cwKey]`
-- Holiday coefficient pro revenue (Kč): použít `getWorkingDaysInMonth` z `workingDays.ts` místo vlastní implementace
+Použít existující utility z `workingDays.ts` místo ručního/statického mapování.
 
-**3. Upravit `ExecutiveDashboard.tsx`**
-- Smazat statickou `weekToMonthMapping` tabulku (~60 řádků) a `getWeekToMonthMapping2026`
-- Import `getWeekToMonthFractions` z `workingDays.ts`
+#### 2. Opravit řádek „Počet hodin“
+Místo prostého součtu celých týdnů:
+- počítat **poměrné měsíční hodiny**
+- stejným způsobem jako v `ProjectAllocationDialog` a Revenue
 
-**4. `ProjectAllocationDialog.tsx` — beze změny**
-- Už používá dynamický výpočet, ponechat jak je (formát `monthKey` je tam `"měsíc rok"` místo `"měsíc_rok"`, ale to je jen pro UI zobrazení)
+Tím budou měsíční hodiny konzistentní napříč aplikací.
 
-### Výsledek
-- Jeden zdroj pravdy pro week-to-month mapování (`workingDays.ts`)
-- Jeden zdroj pravdy pro svátky a pracovní dny (`workingDays.ts`)
-- Smazáno ~190 řádků duplicitního kódu
-- Hodiny budou identické ve všech pohledech
+#### 3. Opravit řádek „Celkem FTE“
+V měsíčním pohledu počítat:
+- `FTE = měsíční produktivní hodiny / měsíční kapacita`
+- kapacita = součet `(pracovní dny v měsíci podle země konstruktéra × 8)`
+
+Tedy:
+- ne fixních 40h
+- ne fixních 168h bez vazby na vybrané lidi a konkrétní měsíc
+- ale skutečná kapacita filtrovanych konstruktérů
+
+#### 4. Opravit řádek „Vytížení“
+Nechat business význam stejný, ale přepočet napojit na stejná agregovaná měsíční data jako „Počet hodin“ a „Celkem FTE“, aby:
+- hodiny
+- FTE
+- utilization
+
+vyšly ze stejného základu a neodporovaly si.
+
+#### 5. Odstranit statické měsíční mapování
+Nahradit `monthWeekMapping` tam, kde ovlivňuje měsíční výpočty a generování měsíců, dynamickou logikou odvozenou z data týdne.
+
+To je čistější a odolnější i pro další roky.
 
 ### Dotčené soubory
-- `src/utils/workingDays.ts` — nová funkce `getWeekToMonthFractions`
-- `src/components/RevenueOverview.tsx` — refaktor, smazání duplikátů
-- `src/components/ExecutiveDashboard.tsx` — refaktor, smazání duplikátů
+- `src/components/ProjectAssignmentMatrix.tsx`
+- případně drobné rozšíření `src/utils/workingDays.ts`, pokud bude potřeba pomocná utilita pro month labels / dynamic grouping
 
+### Výsledek
+Po opravě bude měsíční pohled:
+- počítat hodiny správně
+- mít smysluplné FTE
+- mít konzistentní vytížení
+- odpovídat stejné logice jako Revenue a dialog projektu
+- nebýt závislý na křehké statické CW→month tabulce
