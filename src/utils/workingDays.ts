@@ -158,14 +158,6 @@ export const getWorkingDaysInCW = (cwNumber: number, year: number, isSlovak: boo
 };
 
 /**
- * Spočítá, kolik pracovních dnů z daného týdne (Monday-Friday) spadá do daného měsíce
- * @param weekMonday Pondělí daného týdne
- * @param year Rok měsíce
- * @param month Číslo měsíce (1-12)
- * @param isSlovak Počítat slovenské svátky
- * @returns Počet pracovních dnů z týdne, které spadají do měsíce
- */
-/**
  * Mapování čísla měsíce na český název
  */
 const monthNumberToName: { [key: number]: string } = {
