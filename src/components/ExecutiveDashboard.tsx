@@ -8,6 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { TrendingUp, TrendingDown, DollarSign, Target, Calendar, Award, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { getWeekToMonthFractions } from '@/utils/workingDays';
 
 interface DatabaseProject {
   id: string;
@@ -92,71 +93,14 @@ export const ExecutiveDashboard = () => {
     }
   };
 
-  // Stejná logika pro výpočet revenue jako v RevenueOverview
-  const weekToMonthMapping: { [key: number]: { [month: string]: number } } = {
-    // 2025
-    32: { srpen_2025: 1.0 },
-    33: { srpen_2025: 1.0 },
-    34: { srpen_2025: 1.0 },
-    35: { srpen_2025: 1.0 },
-    36: { září_2025: 1.0 },
-    37: { září_2025: 1.0 },
-    38: { září_2025: 1.0 },
-    39: { září_2025: 1.0 },
-    40: { říjen_2025: 1.0 },
-    41: { říjen_2025: 1.0 },
-    42: { říjen_2025: 1.0 },
-    43: { říjen_2025: 1.0 },
-    44: { listopad_2025: 1.0 },
-    45: { listopad_2025: 1.0 },
-    46: { listopad_2025: 1.0 },
-    47: { listopad_2025: 1.0 },
-    48: { prosinec_2025: 1.0 },
-    49: { prosinec_2025: 1.0 },
-    50: { prosinec_2025: 1.0 },
-    51: { prosinec_2025: 1.0 },
-    52: { prosinec_2025: 1.0 },
-    // 2026
-    1: { leden_2026: 1.0 },
-    2: { leden_2026: 1.0 },
-    3: { leden_2026: 1.0 },
-    4: { leden_2026: 1.0 },
-    5: { únor_2026: 1.0 },
-    6: { únor_2026: 1.0 },
-    7: { únor_2026: 1.0 },
-    8: { únor_2026: 1.0 },
-    9: { březen_2026: 1.0 },
-    10: { březen_2026: 1.0 },
-    11: { březen_2026: 1.0 },
-    12: { březen_2026: 1.0 },
-    13: { březen_2026: 1.0 },
-    14: { duben_2026: 1.0 },
-    15: { duben_2026: 1.0 },
-    16: { duben_2026: 1.0 },
-    17: { duben_2026: 1.0 },
-    18: { květen_2026: 1.0 },
-    19: { květen_2026: 1.0 },
-    20: { květen_2026: 1.0 },
-    21: { květen_2026: 1.0 },
-    22: { květen_2026: 1.0 },
-    23: { červen_2026: 1.0 },
-    24: { červen_2026: 1.0 },
-    25: { červen_2026: 1.0 },
-    26: { červen_2026: 1.0 },
-    27: { červenec_2026: 1.0 },
-    28: { červenec_2026: 1.0 },
-    29: { červenec_2026: 1.0 },
-    30: { červenec_2026: 1.0 }
-  };
-
-  // Mapping pro 2026 pokračování (týdny 31-52)
-  const getWeekToMonthMapping2026 = (cw: number) => {
-    if (cw >= 31 && cw <= 34) return { srpen_2026: 1.0 };
-    if (cw >= 35 && cw <= 38) return { září_2026: 1.0 };
-    if (cw >= 39 && cw <= 42) return { říjen_2026: 1.0 };
-    if (cw >= 43 && cw <= 46) return { listopad_2026: 1.0 };
-    if (cw >= 47 && cw <= 52) return { prosinec_2026: 1.0 };
-    return {};
+  // Dynamic week-to-month mapping using shared utility
+  const getWeekMapping = (cw: number, year: number): { [month: string]: number } => {
+    const cwKey = year === 2025 ? `CW${cw}` : `CW${String(cw).padStart(2, '0')}-${year}`;
+    const fractions = getWeekToMonthFractions(cwKey);
+    if (fractions.length === 0) return {};
+    const result: { [month: string]: number } = {};
+    fractions.forEach(f => { result[f.monthKey] = f.fraction; });
+    return result;
   };
 
   const calculateMonthlyRevenueByProject = () => {
@@ -187,18 +131,16 @@ export const ExecutiveDashboard = () => {
       const project = projects.find(p => p.code?.trim() === projekt);
       if (!project) return;
 
-      const cw = parseInt(entry.cw.toString());
+      const cwMatch = entry.cw.toString().match(/CW(\d+)/);
+      const cw = cwMatch ? parseInt(cwMatch[1]) : parseInt(entry.cw.toString());
+      const yearMatch = entry.cw.toString().match(/(\d{4})/);
+      const year = yearMatch ? parseInt(yearMatch[1]) : 2025;
       const mhTyden = entry.mhTyden || 0;
-      let weekMapping = weekToMonthMapping[cw];
+      const weekMapping = getWeekMapping(cw, year);
       
-      // Pokud není v základním mappingu, zkus 2026 mapping
-      if (!weekMapping) {
-        weekMapping = getWeekToMonthMapping2026(cw);
-      }
-      
-      if (weekMapping && mhTyden > 0) {
+      if (Object.keys(weekMapping).length > 0 && mhTyden > 0) {
         Object.entries(weekMapping).forEach(([month, ratio]) => {
-          const hoursForMonth = mhTyden * ratio;
+          const hoursForMonth = mhTyden * (ratio as number);
           let revenue = 0;
 
           if (project.project_type === 'WP' && project.average_hourly_rate) {

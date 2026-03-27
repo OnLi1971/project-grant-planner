@@ -158,6 +158,54 @@ export const getWorkingDaysInCW = (cwNumber: number, year: number, isSlovak: boo
 };
 
 /**
+ * Mapování čísla měsíce na český název
+ */
+const monthNumberToName: { [key: number]: string } = {
+  1: 'leden', 2: 'únor', 3: 'březen', 4: 'duben', 5: 'květen', 6: 'červen',
+  7: 'červenec', 8: 'srpen', 9: 'září', 10: 'říjen', 11: 'listopad', 12: 'prosinec'
+};
+
+/**
+ * Pro daný CW klíč (např. "CW23-2026", "CW44", "CW01_2026") vrátí pole
+ * s rozložením pracovních dnů do měsíců jako frakce (0-1).
+ * Formát monthKey: "měsíc_rok" (např. "červen_2026").
+ */
+export const getWeekToMonthFractions = (cwKey: string): { monthKey: string; fraction: number }[] => {
+  // Parse CW number and year from various formats: "CW23-2026", "CW44", "CW01_2026"
+  const match = cwKey.match(/^CW(\d+)(?:[-_](\d{4}))?$/);
+  if (!match) return [];
+
+  const cwNumber = parseInt(match[1]);
+  // Default year: if no year suffix, assume 2025 for CW >= 27, otherwise could be ambiguous
+  // In practice, CW without year are 2025 data
+  const year = match[2] ? parseInt(match[2]) : 2025;
+
+  const monday = getISOWeekMonday(cwNumber, year);
+
+  // Count weekdays (Mon-Fri) per month
+  const monthCounts: { [key: string]: number } = {};
+  let totalDays = 0;
+
+  for (let i = 0; i < 5; i++) {
+    const day = new Date(monday);
+    day.setDate(monday.getDate() + i);
+    const m = day.getMonth() + 1;
+    const y = day.getFullYear();
+    const monthName = monthNumberToName[m];
+    const key = `${monthName}_${y}`;
+    monthCounts[key] = (monthCounts[key] || 0) + 1;
+    totalDays++;
+  }
+
+  if (totalDays === 0) return [];
+
+  return Object.entries(monthCounts).map(([monthKey, count]) => ({
+    monthKey,
+    fraction: count / totalDays,
+  }));
+};
+
+/**
  * Spočítá, kolik pracovních dnů z daného týdne (Monday-Friday) spadá do daného měsíce
  * @param weekMonday Pondělí daného týdne
  * @param year Rok měsíce
