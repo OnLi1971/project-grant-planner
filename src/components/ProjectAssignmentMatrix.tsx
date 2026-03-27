@@ -12,7 +12,7 @@ import { usePlanning } from '@/contexts/PlanningContext';
 import { customers, projectManagers, programs, projects } from '@/data/projectsData';
 import { getWeek } from 'date-fns';
 import { normalizeName, createNameMapping } from '@/utils/nameNormalization';
-import { getWorkingDaysFromMonthName, getWorkingDaysInWeekForMonth, getWorkingDaysInCW } from '@/utils/workingDays';
+import { getWorkingDaysFromMonthName, getWorkingDaysInWeekForMonth, getWorkingDaysInCW, getISOWeekMonday, getWorkingDaysInMonth } from '@/utils/workingDays';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useCustomEngineerViews } from '@/hooks/useCustomEngineerViews';
@@ -81,20 +81,25 @@ const getAllWeeks = (): string[] => {
 
 const allWeeks = getAllWeeks();
 
-// Month week mapping - maps CW number to month info
-const monthWeekMapping: { [key: string]: { month: number; name: string } } = {
-  '01': { month: 1, name: 'leden' }, '02': { month: 1, name: 'leden' }, '03': { month: 1, name: 'leden' }, '04': { month: 1, name: 'leden' }, '05': { month: 2, name: 'únor' },
-  '06': { month: 2, name: 'únor' }, '07': { month: 2, name: 'únor' }, '08': { month: 2, name: 'únor' }, '09': { month: 3, name: 'březen' },
-  '10': { month: 3, name: 'březen' }, '11': { month: 3, name: 'březen' }, '12': { month: 3, name: 'březen' }, '13': { month: 3, name: 'březen' }, '14': { month: 4, name: 'duben' },
-  '15': { month: 4, name: 'duben' }, '16': { month: 4, name: 'duben' }, '17': { month: 4, name: 'duben' }, '18': { month: 5, name: 'květen' },
-  '19': { month: 5, name: 'květen' }, '20': { month: 5, name: 'květen' }, '21': { month: 5, name: 'květen' }, '22': { month: 5, name: 'květen' }, '23': { month: 6, name: 'červen' },
-  '24': { month: 6, name: 'červen' }, '25': { month: 6, name: 'červen' }, '26': { month: 6, name: 'červen' }, '27': { month: 7, name: 'červenec' },
-  '28': { month: 7, name: 'červenec' }, '29': { month: 7, name: 'červenec' }, '30': { month: 7, name: 'červenec' }, '31': { month: 8, name: 'srpen' },
-  '32': { month: 8, name: 'srpen' }, '33': { month: 8, name: 'srpen' }, '34': { month: 8, name: 'srpen' }, '35': { month: 8, name: 'srpen' },
-  '36': { month: 9, name: 'září' }, '37': { month: 9, name: 'září' }, '38': { month: 9, name: 'září' }, '39': { month: 9, name: 'září' },
-  '40': { month: 10, name: 'říjen' }, '41': { month: 10, name: 'říjen' }, '42': { month: 10, name: 'říjen' }, '43': { month: 10, name: 'říjen' }, '44': { month: 10, name: 'říjen' },
-  '45': { month: 11, name: 'listopad' }, '46': { month: 11, name: 'listopad' }, '47': { month: 11, name: 'listopad' }, '48': { month: 11, name: 'listopad' },
-  '49': { month: 12, name: 'prosinec' }, '50': { month: 12, name: 'prosinec' }, '51': { month: 12, name: 'prosinec' }, '52': { month: 12, name: 'prosinec' }
+// Czech month names by number
+const monthNumberToNameCZ: { [key: number]: string } = {
+  1: 'leden', 2: 'únor', 3: 'březen', 4: 'duben', 5: 'květen', 6: 'červen',
+  7: 'červenec', 8: 'srpen', 9: 'září', 10: 'říjen', 11: 'listopad', 12: 'prosinec'
+};
+
+// Dynamically get the primary month for a CW key (based on ISO week Monday's month)
+const getMonthForWeek = (cwKey: string): { month: number; year: number; name: string } | null => {
+  const match = cwKey.match(/CW(\d+)-(\d+)/);
+  if (!match) return null;
+  const cwNum = parseInt(match[1]);
+  const year = parseInt(match[2]);
+  const monday = getISOWeekMonday(cwNum, year);
+  // Use Thursday (ISO standard) to determine the "primary" month of the week
+  const thursday = new Date(monday);
+  thursday.setDate(monday.getDate() + 3);
+  const m = thursday.getMonth() + 1;
+  const y = thursday.getFullYear();
+  return { month: m, year: y, name: monthNumberToNameCZ[m] };
 };
 
 // Filter weeks based on maxEndDate
@@ -102,18 +107,10 @@ const filterWeeksByMaxDate = (weeksList: string[], maxEndDate?: { month: number;
   if (!maxEndDate) return weeksList;
   
   return weeksList.filter(week => {
-    const match = week.match(/CW(\d+)-(\d+)/);
-    if (!match) return false;
-    const cwNum = parseInt(match[1]);
-    const year = parseInt(match[2]);
-    
-    if (year < maxEndDate.year) return true;
-    if (year > maxEndDate.year) return false;
-    
-    // Get month for this week
-    const monthInfo = monthWeekMapping[cwNum.toString().padStart(2, '0')];
+    const monthInfo = getMonthForWeek(week);
     if (!monthInfo) return false;
-    
+    if (monthInfo.year < maxEndDate.year) return true;
+    if (monthInfo.year > maxEndDate.year) return false;
     return monthInfo.month <= maxEndDate.month;
   });
 };
@@ -123,18 +120,13 @@ const generateMonths = (weeksList: string[]): { name: string; weeks: string[] }[
   const monthsMap = new Map<string, string[]>();
   
   weeksList.forEach(week => {
-    const match = week.match(/CW(\d+)-(\d+)/);
-    if (match) {
-      const cwNum = match[1];
-      const year = match[2];
-      const monthInfo = monthWeekMapping[cwNum];
-      if (monthInfo) {
-        const monthKey = `${monthInfo.name} ${year}`;
-        if (!monthsMap.has(monthKey)) {
-          monthsMap.set(monthKey, []);
-        }
-        monthsMap.get(monthKey)!.push(week);
+    const monthInfo = getMonthForWeek(week);
+    if (monthInfo) {
+      const monthKey = `${monthInfo.name} ${monthInfo.year}`;
+      if (!monthsMap.has(monthKey)) {
+        monthsMap.set(monthKey, []);
       }
+      monthsMap.get(monthKey)!.push(week);
     }
   });
   
@@ -1467,20 +1459,37 @@ export const ProjectAssignmentMatrix = ({
                     )
                   ) : (
                     months.map((month, monthIndex) => {
-                      // Sum hours across all weeks in the month
-                      const monthWeeks = month.weeks;
-                      const totalHours = monthWeeks.reduce((monthSum, week) => {
-                        const weekHours = filteredEngineers.reduce((sum, engineer) => {
+                      // Parse month info
+                      const monthMapLocal: { [key: string]: number } = {
+                        'leden': 1, 'únor': 2, 'březen': 3, 'duben': 4, 'květen': 5, 'červen': 6,
+                        'červenec': 7, 'srpen': 8, 'září': 9, 'říjen': 10, 'listopad': 11, 'prosinec': 12
+                      };
+                      const [mName, yStr] = month.name.toLowerCase().split(' ');
+                      const mNum = monthMapLocal[mName];
+                      const mYear = parseInt(yStr);
+                      
+                      // Proportional hours: for each week, split hours into this month
+                      let totalHours = 0;
+                      month.weeks.forEach(week => {
+                        const cwMatch = week.match(/CW(\d+)-(\d+)/);
+                        if (!cwMatch) return;
+                        const cwNum = parseInt(cwMatch[1]);
+                        const wYear = parseInt(cwMatch[2]);
+                        const weekMonday = getISOWeekMonday(cwNum, wYear);
+                        
+                        filteredEngineers.forEach(engineer => {
                           const projectData = matrixData[engineer][week];
                           const project = projectData?.projekt;
                           const hours = projectData?.hours || 0;
-                          if (project === 'FREE' || project === 'DOVOLENÁ' || project === 'OVER') {
-                            return sum;
-                          }
-                          return sum + hours;
-                        }, 0);
-                        return monthSum + weekHours;
-                      }, 0);
+                          if (project === 'FREE' || project === 'DOVOLENÁ' || project === 'OVER') return;
+                          
+                          const isSlovak = getEngineerCompany(displayNameMap[engineer] || engineer) === 'MB Idea';
+                          const daysInMonth = getWorkingDaysInWeekForMonth(weekMonday, mYear, mNum, isSlovak);
+                          const totalWeekDays = getWorkingDaysInCW(cwNum, wYear, isSlovak);
+                          const proportion = totalWeekDays > 0 ? daysInMonth / totalWeekDays : 0;
+                          totalHours += hours * proportion;
+                        });
+                      });
                       
                       return (
                         <td 
@@ -1490,7 +1499,7 @@ export const ProjectAssignmentMatrix = ({
                           }`}
                         >
                           <div className="text-sm text-foreground">
-                            {totalHours}h
+                            {Math.round(totalHours)}h
                           </div>
                         </td>
                       );
@@ -1537,20 +1546,47 @@ export const ProjectAssignmentMatrix = ({
                     )
                   ) : (
                     months.map((month, monthIndex) => {
-                      const monthWeeks = month.weeks;
-                      const totalHours = monthWeeks.reduce((monthSum, week) => {
-                        const weekHours = filteredEngineers.reduce((sum, engineer) => {
+                      const monthMapLocal: { [key: string]: number } = {
+                        'leden': 1, 'únor': 2, 'březen': 3, 'duben': 4, 'květen': 5, 'červen': 6,
+                        'červenec': 7, 'srpen': 8, 'září': 9, 'říjen': 10, 'listopad': 11, 'prosinec': 12
+                      };
+                      const [mName, yStr] = month.name.toLowerCase().split(' ');
+                      const mNum = monthMapLocal[mName];
+                      const mYear = parseInt(yStr);
+                      
+                      // Proportional hours
+                      let totalHours = 0;
+                      let totalCapacity = 0;
+                      
+                      filteredEngineers.forEach(engineer => {
+                        const isSlovak = getEngineerCompany(displayNameMap[engineer] || engineer) === 'MB Idea';
+                        const workingDays = getWorkingDaysInMonth(mYear, mNum, isSlovak);
+                        totalCapacity += workingDays * 8;
+                      });
+                      
+                      month.weeks.forEach(week => {
+                        const cwMatch = week.match(/CW(\d+)-(\d+)/);
+                        if (!cwMatch) return;
+                        const cwNum = parseInt(cwMatch[1]);
+                        const wYear = parseInt(cwMatch[2]);
+                        const weekMonday = getISOWeekMonday(cwNum, wYear);
+                        
+                        filteredEngineers.forEach(engineer => {
                           const projectData = matrixData[engineer][week];
                           const project = projectData?.projekt;
                           const hours = projectData?.hours || 0;
-                          if (project === 'FREE' || project === 'DOVOLENÁ' || project === 'OVER') {
-                            return sum;
-                          }
-                          return sum + hours;
-                        }, 0);
-                        return monthSum + weekHours;
-                      }, 0);
-                      const fte = (totalHours / 40).toFixed(1);
+                          if (project === 'FREE' || project === 'DOVOLENÁ' || project === 'OVER') return;
+                          
+                          const isSlovak = getEngineerCompany(displayNameMap[engineer] || engineer) === 'MB Idea';
+                          const daysInMonth = getWorkingDaysInWeekForMonth(weekMonday, mYear, mNum, isSlovak);
+                          const totalWeekDays = getWorkingDaysInCW(cwNum, wYear, isSlovak);
+                          const proportion = totalWeekDays > 0 ? daysInMonth / totalWeekDays : 0;
+                          totalHours += hours * proportion;
+                        });
+                      });
+                      
+                      const fte = totalCapacity > 0 ? (totalHours / totalCapacity * filteredEngineers.length).toFixed(1) : '0.0';
+                      
                       return (
                         <td 
                           key={month.name} 
@@ -1661,35 +1697,6 @@ export const ProjectAssignmentMatrix = ({
                         ? Math.round((totalActualHours / totalMaxCapacity) * 100) 
                         : 0;
                       
-                      // Debug log for listopad 2025
-                      if (month.name === 'listopad 2025') {
-                        console.log('=== LISTOPAD 2025 DEBUG ===');
-                        console.log('Filtered Engineers:', filteredEngineers);
-                        console.log('Month weeks:', month.weeks);
-                        console.log('Total Max Capacity:', totalMaxCapacity, 'h');
-                        console.log('Total Actual Hours:', totalActualHours, 'h');
-                        console.log('Utilization:', utilization, '%');
-                        
-                        // Sample one engineer
-                        const sampleEngineer = filteredEngineers[0];
-                        if (sampleEngineer) {
-                          console.log('\nSample Engineer:', sampleEngineer);
-                          console.log('Display name:', displayNameMap[sampleEngineer]);
-                          console.log('Company:', getEngineerCompany(sampleEngineer));
-                          month.weeks.forEach(week => {
-                            const projectData = matrixData[sampleEngineer][week];
-                            const planningEntry = planningData.find(
-                              p => normalizeName(p.konstrukter) === normalizeName(sampleEngineer) && p.cw === week
-                            );
-                            console.log(`  ${week}:`, {
-                              projekt: projectData?.projekt,
-                              hours: projectData?.hours,
-                              has_week_monday: !!planningEntry?.week_monday,
-                              week_monday: planningEntry?.week_monday
-                            });
-                          });
-                        }
-                      }
                       
                       return (
                         <td 
