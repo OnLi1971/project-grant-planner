@@ -1,45 +1,32 @@
 
 
-## Plan: Nová komponenta „Vytížení" (Utilization Grid)
+## Fix: Vyloučit režimové aktivity z výpočtu vytížení
 
-### Co se přidá
-Nový tab „Vytížení" vedle „Matice projektů" a „Revenue" v sekci Výstupy. Bude to tabulka/grid kde:
-- **Osa X**: konstruktéři (sloupce)
-- **Osa Y**: čas — týdny (výchozí), přepínatelné na měsíce
-- **Buňky**: procento vytížení = `alokované hodiny / max kapacita × 100`
-  - Týden: max = 40h (nebo 32h pokud svátek)
-  - Měsíc: max = počet pracovních dnů × 8h
+### Změna v `src/components/UtilizationGrid.tsx`
 
-### Technické detaily
+V `hoursMap` builderu (řádky 126-136):
+1. Přeskočit entries s `projekt` = FREE, DOVOLENÁ, NEMOC, OVER
+2. Změnit default `entry.mhTyden ?? 40` na `entry.mhTyden ?? 0`
 
-**Nový soubor: `src/components/UtilizationGrid.tsx`**
-- Použije stejný `usePlanning()` context jako ostatní výstupy
-- Použije `useEngineers()` pro seznam konstruktérů
-- Sdílené utility z `workingDays.ts`: `getWorkingDaysInCW`, `getWorkingDaysInMonth`, `getISOWeekMonday`, `getWorkingDaysInWeekForMonth`
-- Přepínač týdny/měsíce (toggle nahoře)
-- Barevné kódování buněk: zelená (<80%), žlutá (80-100%), červená (>100%)
-- Sticky první sloupec (čas) a první řádek (konstruktéři)
-- Generování týdnů/měsíců stejnou logikou jako `ProjectAssignmentMatrix` (`getAllWeeks`, `generateMonths`)
-- Filtry: společnost (MB Idea / AERTEC / TM-CZ / Všichni)
+```typescript
+const REGIME_ACTIVITIES = ['FREE', 'DOVOLENÁ', 'NEMOC', 'OVER'];
 
-**Výpočet:**
-```
-// Týdenní
-weekCapacity = getWorkingDaysInCW(cwNum, year, isSlovak) * 8
-utilization = allocatedHours / weekCapacity * 100
-
-// Měsíční (s proporcionálním dělením přechodových týdnů)
-monthCapacity = getWorkingDaysInMonth(year, month, isSlovak) * 8
-proportionalHours = Σ(weekHours * daysInMonth/totalWeekDays)
-utilization = proportionalHours / monthCapacity * 100
+const hoursMap = useMemo(() => {
+  const map = new Map<string, Map<string, number>>();
+  for (const entry of planningData) {
+    if (REGIME_ACTIVITIES.includes(entry.projekt)) continue;
+    const slug = normalizeName(entry.konstrukter);
+    if (!map.has(slug)) map.set(slug, new Map());
+    const cwMap = map.get(slug)!;
+    const hours = entry.mhTyden ?? 0;
+    cwMap.set(entry.cw, (cwMap.get(entry.cw) || 0) + hours);
+  }
+  return map;
+}, [planningData]);
 ```
 
-**Úprava: `src/pages/Index.tsx`**
-- Přidat třetí tlačítko „Vytížení" do výstupů (vedle Matice projektů a Revenue)
-- Rozšířit `outputView` state o `'utilization'`
-- Import a renderování `<UtilizationGrid />`
-
-### Dotčené soubory
-- `src/components/UtilizationGrid.tsx` — nová komponenta
-- `src/pages/Index.tsx` — přidání tabu
+### Výsledek
+- Ambrož CW14 s FREE → 0% (prázdná buňka)
+- OVER, DOVOLENÁ, NEMOC se taky nepočítají
+- Pouze skutečné projektové hodiny ovlivňují vytížení
 
