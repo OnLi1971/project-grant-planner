@@ -147,14 +147,11 @@ export const UtilizationGrid: React.FC = () => {
   const isSlovak = (engineer: UIEngineer) => engineer.location === 'SK';
 
   // Weekly utilization
+  // Proportional scaling: rawHours × (workingDays/5) / (workingDays×8) = rawHours / 40
   const getWeeklyUtilization = (engineer: UIEngineer, cwKey: string): number => {
-    const parsed = parseCW(cwKey);
-    if (!parsed) return 0;
     const hours = getEngineerHoursForWeek(engineer, cwKey);
     if (hours === 0) return 0;
-    const capacity = getWorkingDaysInCW(parsed.cw, parsed.year, isSlovak(engineer)) * 8;
-    if (capacity === 0) return 0;
-    return (hours / capacity) * 100;
+    return (hours / 40) * 100;
   };
 
   // Monthly utilization with proportional splitting
