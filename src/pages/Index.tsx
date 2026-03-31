@@ -4,6 +4,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { PlanningEditor } from '@/components/PlanningEditor';
 import { ProjectAssignmentMatrix } from '@/components/ProjectAssignmentMatrix';
 import { RevenueOverview } from '@/components/RevenueOverview';
+import { UtilizationGrid } from '@/components/UtilizationGrid';
 import { ResourceManagement } from '@/components/ResourceManagement';
 import { LicenseManagement } from '@/components/LicenseManagement';
 import { ProjectManagement } from '@/components/ProjectManagement';
