@@ -14,6 +14,9 @@ import {
 import { getWeek } from 'date-fns';
 import { Calendar, BarChart3 } from 'lucide-react';
 
+// Regime activities excluded from utilization calculation
+const REGIME_ACTIVITIES = ['FREE', 'DOVOLENÁ', 'NEMOC', 'OVER'];
+
 // Company filter options
 const companies = ['Všichni', 'MB Idea', 'AERTEC', 'TM-CZ'];
 
@@ -122,14 +125,15 @@ export const UtilizationGrid: React.FC = () => {
     return list.sort((a, b) => a.jmeno.localeCompare(b.jmeno, 'cs'));
   }, [engineers, companyFilter]);
 
-  // Build hours lookup: engineerSlug -> cwKey -> totalHours
+  // Build hours lookup: engineerSlug -> cwKey -> totalHours (only project hours)
   const hoursMap = useMemo(() => {
     const map = new Map<string, Map<string, number>>();
     for (const entry of planningData) {
+      if (REGIME_ACTIVITIES.includes(entry.projekt)) continue;
       const slug = normalizeName(entry.konstrukter);
       if (!map.has(slug)) map.set(slug, new Map());
       const cwMap = map.get(slug)!;
-      const hours = entry.mhTyden ?? 40;
+      const hours = entry.mhTyden ?? 0;
       cwMap.set(entry.cw, (cwMap.get(entry.cw) || 0) + hours);
     }
     return map;
