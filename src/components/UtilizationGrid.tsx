@@ -218,30 +218,18 @@ export const UtilizationGrid: React.FC = () => {
           </div>
         </div>
 
-        {/* Grid */}
+        {/* Grid — engineers on Y axis, time on X axis */}
         <div className="overflow-auto max-h-[70vh] border rounded-md">
           <table className="text-xs border-collapse w-max min-w-full">
             <thead className="sticky top-0 z-10 bg-card">
               <tr>
-                <th className="sticky left-0 z-20 bg-card border px-3 py-2 text-left font-medium text-muted-foreground min-w-[100px]">
-                  {viewMode === 'weekly' ? 'Týden' : 'Měsíc'}
+                <th className="sticky left-0 z-20 bg-card border px-3 py-2 text-left font-medium text-muted-foreground min-w-[140px]">
+                  Konstruktér
                 </th>
-                {filteredEngineers.map(eng => (
-                  <th
-                    key={eng.id}
-                    className="border px-2 py-2 font-medium text-muted-foreground whitespace-nowrap min-w-[70px] text-center"
-                    title={eng.jmeno}
-                  >
-                    {eng.jmeno.split(' ').map(w => w[0]).join('')}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {viewMode === 'weekly'
-                ? allWeeks.map(cwKey => {
-                    const parsed = parseCW(cwKey);
-                    const label = parsed ? `CW${parsed.cw}` : cwKey;
+                {viewMode === 'weekly'
+                  ? allWeeks.map(cwKey => {
+                      const parsed = parseCW(cwKey);
+                      const label = parsed ? `CW${parsed.cw}` : cwKey;
                     return (
                       <tr key={cwKey} className="hover:bg-muted/30">
                         <td className="sticky left-0 z-[5] bg-card border px-3 py-1.5 font-medium text-muted-foreground whitespace-nowrap">
