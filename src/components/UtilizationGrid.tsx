@@ -130,7 +130,7 @@ export const UtilizationGrid: React.FC = () => {
     if (defaultViewApplied || customViews.length === 0) return;
     const railElView = customViews.find(v => v.id === '58440758-41f8-438c-a8dd-cc03d38b3789');
     if (railElView) {
-      setSelectedEngineers(railElView.selected_engineers);
+      setSelectedEngineers(railElView.engineers);
       setSelectedViewId(railElView.id);
     }
     setDefaultViewApplied(true);
