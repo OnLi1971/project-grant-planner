@@ -125,8 +125,6 @@ export const UtilizationGrid: React.FC = () => {
     return list.sort((a, b) => a.jmeno.localeCompare(b.jmeno, 'cs'));
   }, [engineers, companyFilter]);
 
-  const REGIME_ACTIVITIES = ['FREE', 'DOVOLENÁ', 'NEMOC', 'OVER'];
-
   // Build hours lookup: engineerSlug -> cwKey -> totalHours (only project hours)
   const hoursMap = useMemo(() => {
     const map = new Map<string, Map<string, number>>();
