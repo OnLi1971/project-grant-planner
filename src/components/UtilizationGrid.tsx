@@ -259,7 +259,7 @@ export const UtilizationGrid: React.FC = () => {
                         const pct = getWeeklyUtilization(eng, cwKey);
                         return (
                           <td key={cwKey} className={`border px-1 py-1.5 text-center font-mono ${getUtilizationColor(pct)}`}>
-                            {pct > 0 ? `${Math.round(pct)}%` : ''}
+{`${Math.round(pct)}%`}
                           </td>
                         );
                       })
@@ -267,7 +267,7 @@ export const UtilizationGrid: React.FC = () => {
                         const pct = getMonthlyUtilization(eng, mi);
                         return (
                           <td key={mi.label} className={`border px-1 py-1.5 text-center font-mono ${getUtilizationColor(pct)}`}>
-                            {pct > 0 ? `${Math.round(pct)}%` : ''}
+                            {`${Math.round(pct)}%`}
                           </td>
                         );
                       })}
