@@ -218,67 +218,55 @@ export const UtilizationGrid: React.FC = () => {
           </div>
         </div>
 
-        {/* Grid */}
+        {/* Grid — engineers on Y axis, time on X axis */}
         <div className="overflow-auto max-h-[70vh] border rounded-md">
           <table className="text-xs border-collapse w-max min-w-full">
             <thead className="sticky top-0 z-10 bg-card">
               <tr>
-                <th className="sticky left-0 z-20 bg-card border px-3 py-2 text-left font-medium text-muted-foreground min-w-[100px]">
-                  {viewMode === 'weekly' ? 'Týden' : 'Měsíc'}
+                <th className="sticky left-0 z-20 bg-card border px-3 py-2 text-left font-medium text-muted-foreground min-w-[140px]">
+                  Konstruktér
                 </th>
-                {filteredEngineers.map(eng => (
-                  <th
-                    key={eng.id}
-                    className="border px-2 py-2 font-medium text-muted-foreground whitespace-nowrap min-w-[70px] text-center"
-                    title={eng.jmeno}
-                  >
-                    {eng.jmeno.split(' ').map(w => w[0]).join('')}
-                  </th>
-                ))}
+                {viewMode === 'weekly'
+                  ? allWeeks.map(cwKey => {
+                      const parsed = parseCW(cwKey);
+                      return (
+                        <th key={cwKey} className="border px-2 py-2 font-medium text-muted-foreground whitespace-nowrap min-w-[55px] text-center">
+                          {parsed ? `CW${parsed.cw}` : cwKey}
+                        </th>
+                      );
+                    })
+                  : months.map(mi => (
+                      <th key={mi.label} className="border px-2 py-2 font-medium text-muted-foreground whitespace-nowrap min-w-[70px] text-center">
+                        {mi.label}
+                      </th>
+                    ))}
               </tr>
             </thead>
             <tbody>
-              {viewMode === 'weekly'
-                ? allWeeks.map(cwKey => {
-                    const parsed = parseCW(cwKey);
-                    const label = parsed ? `CW${parsed.cw}` : cwKey;
-                    return (
-                      <tr key={cwKey} className="hover:bg-muted/30">
-                        <td className="sticky left-0 z-[5] bg-card border px-3 py-1.5 font-medium text-muted-foreground whitespace-nowrap">
-                          {label}
-                        </td>
-                        {filteredEngineers.map(eng => {
-                          const pct = getWeeklyUtilization(eng, cwKey);
-                          return (
-                            <td
-                              key={eng.id}
-                              className={`border px-1 py-1.5 text-center font-mono ${getUtilizationColor(pct)}`}
-                            >
-                              {pct > 0 ? `${Math.round(pct)}%` : ''}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    );
-                  })
-                : months.map(mi => (
-                    <tr key={mi.label} className="hover:bg-muted/30">
-                      <td className="sticky left-0 z-[5] bg-card border px-3 py-1.5 font-medium text-muted-foreground whitespace-nowrap">
-                        {mi.label}
-                      </td>
-                      {filteredEngineers.map(eng => {
+              {filteredEngineers.map(eng => (
+                <tr key={eng.id} className="hover:bg-muted/30">
+                  <td className="sticky left-0 z-[5] bg-card border px-3 py-1.5 font-medium text-muted-foreground whitespace-nowrap">
+                    {eng.jmeno}
+                  </td>
+                  {viewMode === 'weekly'
+                    ? allWeeks.map(cwKey => {
+                        const pct = getWeeklyUtilization(eng, cwKey);
+                        return (
+                          <td key={cwKey} className={`border px-1 py-1.5 text-center font-mono ${getUtilizationColor(pct)}`}>
+                            {pct > 0 ? `${Math.round(pct)}%` : ''}
+                          </td>
+                        );
+                      })
+                    : months.map(mi => {
                         const pct = getMonthlyUtilization(eng, mi);
                         return (
-                          <td
-                            key={eng.id}
-                            className={`border px-1 py-1.5 text-center font-mono ${getUtilizationColor(pct)}`}
-                          >
+                          <td key={mi.label} className={`border px-1 py-1.5 text-center font-mono ${getUtilizationColor(pct)}`}>
                             {pct > 0 ? `${Math.round(pct)}%` : ''}
                           </td>
                         );
                       })}
-                    </tr>
-                  ))}
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
