@@ -176,8 +176,6 @@ export const UtilizationGrid: React.FC = () => {
     return (totalHours / capacity) * 100;
   };
 
-  const timeLabels = viewMode === 'weekly' ? allWeeks : months.map(m => m.label);
-
   return (
     <Card className="mt-4 shadow-card-custom">
       <CardContent className="p-4">

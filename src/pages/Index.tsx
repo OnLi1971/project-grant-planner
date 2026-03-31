@@ -142,13 +142,24 @@ const Index = () => {
                     <DollarSign className="h-3.5 w-3.5" />
                     Revenue
                   </Button>
+                  <Button
+                    variant={outputView === 'utilization' ? 'default' : 'outline'}
+                    onClick={() => setOutputView('utilization')}
+                    className="flex items-center gap-2 text-sm h-8"
+                    size="sm"
+                  >
+                    <Users className="h-3.5 w-3.5" />
+                    Vytížení
+                  </Button>
                 </div>
               </Card>
               
               {outputView === 'matrix' ? (
                 <ProjectAssignmentMatrix defaultFilterMode="custom" defaultCustomViewId="58440758-41f8-438c-a8dd-cc03d38b3789" />
-              ) : (
+              ) : outputView === 'revenue' ? (
                 <RevenueOverview />
+              ) : (
+                <UtilizationGrid />
               )}
             </TabsContent>
 
