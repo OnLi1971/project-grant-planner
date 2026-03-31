@@ -218,7 +218,7 @@ export const UtilizationGrid: React.FC = () => {
     if (capacity === 0) return 0;
 
     let totalScaledHours = 0;
-    for (const cwKey of mi.weeks) {
+    for (const cwKey of allWeeks) {
       const parsed = parseCW(cwKey);
       if (!parsed) continue;
       const weekHours = getEngineerHoursForWeek(engineer, cwKey);
