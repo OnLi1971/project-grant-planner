@@ -242,7 +242,7 @@ export const UtilizationGrid: React.FC = () => {
     <Card className="mt-4 shadow-card-custom">
       <CardContent className="p-4">
         {/* Controls */}
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center gap-3 mb-4 flex-wrap">
           <div className="flex gap-1">
             <Button
               variant={viewMode === 'weekly' ? 'default' : 'outline'}
@@ -263,7 +263,7 @@ export const UtilizationGrid: React.FC = () => {
               Měsíce
             </Button>
           </div>
-          <Select value={companyFilter} onValueChange={setCompanyFilter}>
+          <Select value={companyFilter} onValueChange={(v) => { setCompanyFilter(v); setSelectedEngineers([]); setSelectedViewId(null); }}>
             <SelectTrigger className="w-[140px] h-8 text-sm">
               <SelectValue />
             </SelectTrigger>
@@ -273,6 +273,109 @@ export const UtilizationGrid: React.FC = () => {
               ))}
             </SelectContent>
           </Select>
+
+          {/* Engineer name filter popover */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="h-8 text-sm flex items-center gap-1.5">
+                <Users className="h-3.5 w-3.5" />
+                {selectedEngineers.length > 0
+                  ? (selectedViewId
+                      ? `📁 ${customViews.find(v => v.id === selectedViewId)?.name || 'Vlastní'}`
+                      : `Konstruktéři (${selectedEngineers.length})`)
+                  : 'Konstruktéři'}
+                <ChevronDown className="h-3.5 w-3.5 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-72 p-0" align="start">
+              <div className="p-3 space-y-3">
+                {/* Saved views */}
+                {customViews.length > 0 && (
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground block mb-1">Uložené pohledy:</label>
+                    <div className="space-y-1 max-h-32 overflow-y-auto">
+                      {customViews.map(view => (
+                        <div
+                          key={view.id}
+                          onClick={() => loadCustomView(view.id)}
+                          className={`flex items-center justify-between py-1.5 px-2 rounded cursor-pointer text-sm ${
+                            selectedViewId === view.id ? 'bg-primary/10 text-primary' : 'hover:bg-muted/50'
+                          }`}
+                        >
+                          <span className="truncate flex-1">📁 {view.name} ({view.engineers.length})</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                            onClick={(e) => handleDeleteView(view.id, e)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Search + select all/none */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-medium text-muted-foreground">Konstruktéři:</label>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="sm" className="h-5 text-xs px-1"
+                        onClick={() => { setSelectedEngineers(allEngineerNames); setSelectedViewId(null); }}>
+                        Vše
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-5 text-xs px-1"
+                        onClick={() => { setSelectedEngineers([]); setSelectedViewId(null); }}>
+                        Nic
+                      </Button>
+                    </div>
+                  </div>
+                  <Input
+                    placeholder="Hledat..."
+                    value={engineerSearch}
+                    onChange={(e) => setEngineerSearch(e.target.value)}
+                    className="h-7 text-xs mb-1"
+                  />
+                  <ScrollArea className="h-48 border rounded p-1">
+                    {searchFilteredNames.map(name => (
+                      <div key={name} className="flex items-center space-x-2 py-1 px-2 hover:bg-muted/50 rounded">
+                        <Checkbox
+                          id={`util-eng-${name}`}
+                          checked={selectedEngineers.includes(name)}
+                          onCheckedChange={() => toggleEngineer(name)}
+                        />
+                        <label htmlFor={`util-eng-${name}`} className="text-xs cursor-pointer flex-1 truncate">
+                          {name}
+                        </label>
+                      </div>
+                    ))}
+                  </ScrollArea>
+                </div>
+
+                {/* Save view */}
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Název pohledu..."
+                    value={customViewName}
+                    onChange={(e) => setCustomViewName(e.target.value)}
+                    className="text-sm h-8"
+                  />
+                  <Button
+                    size="sm"
+                    className="h-8 px-3"
+                    onClick={handleSaveView}
+                    disabled={!customViewName.trim() || selectedEngineers.length === 0}
+                  >
+                    <Save className="h-4 w-4 mr-1" />
+                    Uložit
+                  </Button>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+
           <div className="flex items-center gap-2 ml-auto text-xs text-muted-foreground">
             <span className="inline-block w-3 h-3 rounded bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700" /> &lt;20%
             <span className="inline-block w-3 h-3 rounded bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700" /> 20-80%
@@ -281,7 +384,7 @@ export const UtilizationGrid: React.FC = () => {
           </div>
         </div>
 
-        {/* Grid — engineers on Y axis, time on X axis */}
+        {/* Grid */}
         <div className="overflow-auto max-h-[70vh] border rounded-md">
           <table className="text-xs border-collapse w-max min-w-full">
             <thead className="sticky top-0 z-10 bg-card">
