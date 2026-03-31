@@ -1,33 +1,47 @@
 
 
-## Přidat filtr konstruktérů do UtilizationGrid (stejný jako v matici)
+## Problém: Měsíční vytížení nesedí kvůli přiřazení týdnů k měsícům
 
-### Co se změní
+### Příčina
+Funkce `getMonthForWeek` přiřadí každý týden **jednomu** měsíci podle čtvrtka. Např. CW27 (29.6.–3.7.) má čtvrtek 2.7. → je přiřazen červenci. Ale 2 pracovní dny z CW27 spadají do června → ty se **ztratí**.
 
-Do `src/components/UtilizationGrid.tsx` přidám filtr konstruktérů ve stejném stylu jako v `ProjectAssignmentMatrix` — Popover s checkboxy, hledáním, tlačítky Vše/Nic, a napojením na uložené pohledy (`useCustomEngineerViews`).
+Důsledek: červen má kapacitu 22 dnů (176h), ale dostane hodiny jen z CW23–CW26 (4 plné týdny = 144h) → 144/176 = **82%** místo 90%.
 
-### Implementace
+### Řešení
+V `getMonthlyUtilization` iterovat přes **všechny týdny** (`allWeeks`), ne jen přes `mi.weeks`. Pro každý týden spočítat kolik jeho pracovních dnů spadá do daného měsíce přes `getWorkingDaysInWeekForMonth`. Tím se hranice měsíců správně pokryjí — každý týden přispěje do obou měsíců poměrně.
 
-**Nové importy**: `Popover`, `PopoverTrigger`, `PopoverContent`, `Checkbox`, `Input`, `ScrollArea`, `Separator`, `Users`, `Save`, `Trash2`, `ChevronDown` + `useCustomEngineerViews` hook + `useAuth`
+### Změna v `src/components/UtilizationGrid.tsx`
 
-**Nové stavy**:
-- `selectedEngineers: string[]` — vybraní konstruktéři (prázdný = všichni)
-- `selectedViewId: string | null` — ID uloženého pohledu
-- `customViewName: string` — název pro uložení nového pohledu
+Funkce `getMonthlyUtilization` — změnit `mi.weeks` → `allWeeks`:
 
-**UI**: Vedle company filtru přidat Popover tlačítko „Konstruktéři (N)" obsahující:
-1. Uložené pohledy (z `useCustomEngineerViews`) — kliknutím se načtou
-2. Seznam konstruktérů s checkboxy a hledáním
-3. Tlačítka „Vše" / „Nic"
-4. Input + tlačítko „Uložit" pro uložení nového pohledu
-
-**Filtrování**: Rozšířit `filteredEngineers` useMemo — po company filtru aplikovat `selectedEngineers`:
 ```typescript
-if (selectedEngineers.length > 0) {
-  list = list.filter(e => selectedEngineers.includes(e.jmeno));
-}
+const getMonthlyUtilization = (engineer: UIEngineer, mi: MonthInfo): number => {
+  const sk = isSlovak(engineer);
+  const capacity = getWorkingDaysInMonth(mi.year, mi.month, sk) * 8;
+  if (capacity === 0) return 0;
+
+  let totalScaledHours = 0;
+  for (const cwKey of allWeeks) {  // ← ALL weeks, not mi.weeks
+    const parsed = parseCW(cwKey);
+    if (!parsed) continue;
+    const weekHours = getEngineerHoursForWeek(engineer, cwKey);
+    if (weekHours === 0) continue;
+
+    const monday = getISOWeekMonday(parsed.cw, parsed.year);
+    const daysInMonth = getWorkingDaysInWeekForMonth(monday, mi.year, mi.month, sk);
+    if (daysInMonth === 0) continue;  // week has no days in this month
+
+    const workingDays = getWorkingDaysInCW(parsed.cw, parsed.year, sk);
+    if (workingDays === 0) continue;
+
+    const scaledHours = weekHours * (workingDays / 5);
+    totalScaledHours += scaledHours * (daysInMonth / workingDays);
+  }
+
+  return (totalScaledHours / capacity) * 100;
+};
 ```
 
-### Dotčený soubor
-- `src/components/UtilizationGrid.tsx`
+### Výsledek
+Při konstantních 36h/týden bude měsíční vytížení vždy **90%** bez ohledu na to, jak týdny padají na hranice měsíců.
 
