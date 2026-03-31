@@ -14,6 +14,9 @@ import {
 import { getWeek } from 'date-fns';
 import { Calendar, BarChart3 } from 'lucide-react';
 
+// Regime activities excluded from utilization calculation
+const REGIME_ACTIVITIES = ['FREE', 'DOVOLENÁ', 'NEMOC', 'OVER'];
+
 // Company filter options
 const companies = ['Všichni', 'MB Idea', 'AERTEC', 'TM-CZ'];
 
