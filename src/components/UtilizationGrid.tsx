@@ -96,9 +96,9 @@ const generateMonths = (weeksList: string[]): MonthInfo[] => {
 };
 
 const getUtilizationColor = (pct: number): string => {
-  if (pct === 0) return 'bg-muted text-muted-foreground';
-  if (pct < 80) return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
-  if (pct <= 100) return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300';
+  if (pct < 20) return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
+  if (pct < 80) return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300';
+  if (pct <= 100) return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
   return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
 };
 
@@ -218,8 +218,9 @@ export const UtilizationGrid: React.FC = () => {
             </SelectContent>
           </Select>
           <div className="flex items-center gap-2 ml-auto text-xs text-muted-foreground">
-            <span className="inline-block w-3 h-3 rounded bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700" /> &lt;80%
-            <span className="inline-block w-3 h-3 rounded bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700" /> 80-100%
+            <span className="inline-block w-3 h-3 rounded bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700" /> &lt;20%
+            <span className="inline-block w-3 h-3 rounded bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700" /> 20-80%
+            <span className="inline-block w-3 h-3 rounded bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700" /> 80-100%
             <span className="inline-block w-3 h-3 rounded bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700" /> &gt;100%
           </div>
         </div>
