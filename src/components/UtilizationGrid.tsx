@@ -2,8 +2,13 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { usePlanning } from '@/contexts/PlanningContext';
 import { useEngineers, UIEngineer } from '@/hooks/useEngineers';
+import { useCustomEngineerViews } from '@/hooks/useCustomEngineerViews';
 import { normalizeName } from '@/utils/nameNormalization';
 import {
   getWorkingDaysInCW,
@@ -12,7 +17,7 @@ import {
   getWorkingDaysInWeekForMonth,
 } from '@/utils/workingDays';
 import { getWeek } from 'date-fns';
-import { Calendar, BarChart3 } from 'lucide-react';
+import { Calendar, BarChart3, Users, Save, Trash2, ChevronDown } from 'lucide-react';
 
 // Regime activities excluded from utilization calculation
 const REGIME_ACTIVITIES = ['FREE', 'OVER'];
