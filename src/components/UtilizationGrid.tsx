@@ -118,17 +118,68 @@ export const UtilizationGrid: React.FC = () => {
   const { engineers } = useEngineers();
   const [viewMode, setViewMode] = useState<'weekly' | 'monthly'>('weekly');
   const [companyFilter, setCompanyFilter] = useState('Všichni');
+  const [selectedEngineers, setSelectedEngineers] = useState<string[]>([]);
+  const [engineerSearch, setEngineerSearch] = useState('');
+  const [selectedViewId, setSelectedViewId] = useState<string | null>(null);
+  const [customViewName, setCustomViewName] = useState('');
+  const { customViews, saveView, deleteView } = useCustomEngineerViews();
 
   const allWeeks = useMemo(() => getAllWeeks(), []);
   const months = useMemo(() => generateMonths(allWeeks), [allWeeks]);
 
-  const filteredEngineers = useMemo(() => {
+  // All active engineers after company filter (for checkbox list)
+  const companyFilteredEngineers = useMemo(() => {
     let list = engineers.filter(e => e.status === 'active' || e.status === 'contractor');
     if (companyFilter !== 'Všichni') {
       list = list.filter(e => getEngineerCompany(e.jmeno) === companyFilter);
     }
     return list.sort((a, b) => a.jmeno.localeCompare(b.jmeno, 'cs'));
   }, [engineers, companyFilter]);
+
+  const allEngineerNames = useMemo(() => companyFilteredEngineers.map(e => e.jmeno), [companyFilteredEngineers]);
+
+  // Final filtered list (company + name selection)
+  const filteredEngineers = useMemo(() => {
+    if (selectedEngineers.length === 0) return companyFilteredEngineers;
+    return companyFilteredEngineers.filter(e => selectedEngineers.includes(e.jmeno));
+  }, [companyFilteredEngineers, selectedEngineers]);
+
+  // Search-filtered list for the popover
+  const searchFilteredNames = useMemo(() => {
+    if (!engineerSearch) return allEngineerNames;
+    const q = engineerSearch.toLowerCase();
+    return allEngineerNames.filter(n => n.toLowerCase().includes(q));
+  }, [allEngineerNames, engineerSearch]);
+
+  const toggleEngineer = (name: string) => {
+    setSelectedEngineers(prev =>
+      prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]
+    );
+    setSelectedViewId(null);
+  };
+
+  const loadCustomView = (viewId: string) => {
+    const view = customViews.find(v => v.id === viewId);
+    if (view) {
+      setSelectedEngineers(view.engineers);
+      setSelectedViewId(viewId);
+    }
+  };
+
+  const handleSaveView = async () => {
+    if (!customViewName.trim() || selectedEngineers.length === 0) return;
+    const success = await saveView(customViewName.trim(), selectedEngineers);
+    if (success) setCustomViewName('');
+  };
+
+  const handleDeleteView = async (viewId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    await deleteView(viewId);
+    if (selectedViewId === viewId) {
+      setSelectedViewId(null);
+      setSelectedEngineers([]);
+    }
+  };
 
   // Build hours lookup: engineerSlug -> cwKey -> totalHours (only project hours)
   const hoursMap = useMemo(() => {
