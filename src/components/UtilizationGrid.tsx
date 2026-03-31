@@ -147,37 +147,39 @@ export const UtilizationGrid: React.FC = () => {
   const isSlovak = (engineer: UIEngineer) => engineer.location === 'SK';
 
   // Weekly utilization
+  // Proportional scaling: rawHours × (workingDays/5) / (workingDays×8) = rawHours / 40
   const getWeeklyUtilization = (engineer: UIEngineer, cwKey: string): number => {
-    const parsed = parseCW(cwKey);
-    if (!parsed) return 0;
     const hours = getEngineerHoursForWeek(engineer, cwKey);
     if (hours === 0) return 0;
-    const capacity = getWorkingDaysInCW(parsed.cw, parsed.year, isSlovak(engineer)) * 8;
-    if (capacity === 0) return 0;
-    return (hours / capacity) * 100;
+    return (hours / 40) * 100;
   };
 
   // Monthly utilization with proportional splitting
+  // Monthly: scale each week's hours proportionally, then sum for the month
   const getMonthlyUtilization = (engineer: UIEngineer, mi: MonthInfo): number => {
     const sk = isSlovak(engineer);
     const capacity = getWorkingDaysInMonth(mi.year, mi.month, sk) * 8;
     if (capacity === 0) return 0;
 
-    let totalHours = 0;
+    let totalScaledHours = 0;
     for (const cwKey of mi.weeks) {
       const parsed = parseCW(cwKey);
       if (!parsed) continue;
       const weekHours = getEngineerHoursForWeek(engineer, cwKey);
       if (weekHours === 0) continue;
 
+      // Scale hours proportionally: rawHours × (workingDays / 5)
+      const workingDays = getWorkingDaysInCW(parsed.cw, parsed.year, sk);
+      const scaledHours = weekHours * (workingDays / 5);
+
+      // Split scaled hours into the month proportionally
       const monday = getISOWeekMonday(parsed.cw, parsed.year);
       const daysInMonth = getWorkingDaysInWeekForMonth(monday, mi.year, mi.month, sk);
-      const totalWeekDays = getWorkingDaysInCW(parsed.cw, parsed.year, sk);
-      if (totalWeekDays === 0) continue;
-      totalHours += weekHours * (daysInMonth / totalWeekDays);
+      if (workingDays === 0) continue;
+      totalScaledHours += scaledHours * (daysInMonth / workingDays);
     }
 
-    return (totalHours / capacity) * 100;
+    return (totalScaledHours / capacity) * 100;
   };
 
   return (
