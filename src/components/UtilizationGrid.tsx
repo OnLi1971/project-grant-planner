@@ -445,6 +445,31 @@ export const UtilizationGrid: React.FC = () => {
                       })}
                 </tr>
               ))}
+            {/* Average row */}
+            <tr className="bg-muted/50 font-bold border-t-2">
+              <td className="sticky left-0 z-[5] bg-muted border px-3 py-1.5 font-semibold text-foreground whitespace-nowrap">
+                Průměr
+              </td>
+              {viewMode === 'weekly'
+                ? allWeeks.map(cwKey => {
+                    const values = filteredEngineers.map(eng => getWeeklyUtilization(eng, cwKey));
+                    const avg = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
+                    return (
+                      <td key={cwKey} className={`border px-1 py-1.5 text-center font-mono ${getUtilizationColor(avg)}`}>
+                        {`${Math.round(avg)}%`}
+                      </td>
+                    );
+                  })
+                : months.map(mi => {
+                    const values = filteredEngineers.map(eng => getMonthlyUtilization(eng, mi));
+                    const avg = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
+                    return (
+                      <td key={mi.label} className={`border px-1 py-1.5 text-center font-mono ${getUtilizationColor(avg)}`}>
+                        {`${Math.round(avg)}%`}
+                      </td>
+                    );
+                  })}
+            </tr>
             </tbody>
           </table>
         </div>
