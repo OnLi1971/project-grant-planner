@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -116,13 +116,25 @@ const parseCW = (cwKey: string): { cw: number; year: number } | null => {
 export const UtilizationGrid: React.FC = () => {
   const { planningData } = usePlanning();
   const { engineers } = useEngineers();
-  const [viewMode, setViewMode] = useState<'weekly' | 'monthly'>('weekly');
+  const [viewMode, setViewMode] = useState<'weekly' | 'monthly'>('monthly');
   const [companyFilter, setCompanyFilter] = useState('Všichni');
   const [selectedEngineers, setSelectedEngineers] = useState<string[]>([]);
   const [engineerSearch, setEngineerSearch] = useState('');
   const [selectedViewId, setSelectedViewId] = useState<string | null>(null);
   const [customViewName, setCustomViewName] = useState('');
+  const [defaultViewApplied, setDefaultViewApplied] = useState(false);
   const { customViews, saveView, deleteView } = useCustomEngineerViews();
+
+  // Auto-apply RAIL+EL view on first load
+  useEffect(() => {
+    if (defaultViewApplied || customViews.length === 0) return;
+    const railElView = customViews.find(v => v.id === '58440758-41f8-438c-a8dd-cc03d38b3789');
+    if (railElView) {
+      setSelectedEngineers(railElView.engineers);
+      setSelectedViewId(railElView.id);
+    }
+    setDefaultViewApplied(true);
+  }, [customViews, defaultViewApplied]);
 
   const allWeeks = useMemo(() => getAllWeeks(), []);
   const months = useMemo(() => generateMonths(allWeeks), [allWeeks]);
