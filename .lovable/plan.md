@@ -1,39 +1,51 @@
 
 
-## Dvě úpravy: Datum odchodu konstruktéra + Červený křížek při editaci
+## Zobrazení odchodu konstruktéra v matici, editoru a utilization gridu
 
-### 1. Datum odchodu (end_date) v EngineerManagement
+### Co se změní
 
-Tabulka `engineers` už má sloupec `end_date`, ale RPC funkce `engineers_update` a `engineers_create` ho nepropsují a UI ho nezobrazuje.
+Když má konstruktér nastaven `end_date` (datum odchodu), všechny týdny **po tomto datu** se zobrazí jako neaktivní s červeným křížkem ✕ místo "FREE". Buňky nebudou editovatelné.
 
-**Změny:**
+### Implementace
 
-**A) Migrace** — rozšířit obě RPC funkce o parametr `p_end_date date DEFAULT NULL`:
-- `engineers_create`: přidat `p_end_date` parametr, zapsat do INSERT
-- `engineers_update`: přidat `p_end_date` parametr, pokud není NULL, nastavit `v_row.end_date`
+**1. Rozšířit `EngineerInfo` o `end_date`** (`src/types/planning.ts`)
+- Přidat `end_date?: string | null` do `EngineerInfo`
 
-**B) `src/hooks/useEngineers.ts`**:
-- Přidat `endDate?: string` do `UIEngineer`
-- Namapovat `engineer.end_date` → `endDate` v select transformaci
-- Předat `p_end_date` v `createEngineer` a `updateEngineer`
+**2. Propsat `end_date` do PlanningContext** (`src/hooks/usePlanningData.ts`)
+- V mappingu `uiEngineers` → `EngineerInfo` přidat `end_date: e.endDate`
 
-**C) `src/components/EngineerManagement.tsx`**:
-- Přidat `endDate: ''` do formData
-- V create/edit dialogu přidat pole „Datum odchodu" s `DatePickerCell` (už existuje v komponentě)
-- V tabulce zobrazit sloupec „Odchod" s datem (pokud je nastaveno)
-- Při otevření edit dialogu naplnit `endDate` z engineera
+**3. Helper funkce — `isEngineerDeparted(engineerName, weekCW, engineers)`**
+- Porovná `end_date` s pondělkem daného týdne
+- Pokud pondělí > end_date → vrátí `true`
+- Bude sdílená utility (nebo inline v komponentách)
 
-### 2. Červený křížek při editaci v PlanningEditor
+**4. ProjectAssignmentMatrix** (`src/components/ProjectAssignmentMatrix.tsx`)
+- V `matrixData` useMemo: pokud `isEngineerDeparted` → projekt = `'DEPARTED'`, hours = 0
+- V `monthlyData` useMemo: stejná logika
+- Přidat styl pro `'DEPARTED'` v `getProjectBadgeStyle` — šedé pozadí s červeným ✕
+- V renderování buněk: pro `DEPARTED` zobrazit ✕ ikonu, zakázat kliknutí
+- Ve free/tentative počítání: ignorovat DEPARTED konstruktéry
 
-V `src/components/PlanningEditor.tsx` — když se edituje buňka (projekt nebo hodiny), přidat červený X button vedle inputu:
+**5. PlanningEditor** (`src/components/PlanningEditor.tsx`)
+- V renderování týdenních buněk: pokud `isEngineerDeparted` → zobrazit červený ✕, zakázat editaci
+- Nepovolit otevření editačního dialogu pro tyto buňky
 
-- U editace **projektu**: vedle SelectTriggeru přidat `<Button>` s červeným `<X>` ikonou → kliknutí nastaví projekt na `FREE` a zavře editaci
-- U editace **hodin**: vedle Input přidat červený X → kliknutí nastaví hodiny na `0` a zavře editaci
-- Také u **needitovaných buněk** s hodnotou (projekt !== FREE): zobrazit malý červený křížek pro rychlé smazání
+**6. UtilizationGrid** (`src/components/UtilizationGrid.tsx`)
+- Pro týdny po odchodu: ignorovat v kalkulaci vytížení (0h kapacita i 0h alokace)
+- Zobrazit ✕ místo procent
+
+### Vizuální podoba buňky po odchodu
+
+```text
+┌─────────┐
+│    ✕     │  šedé pozadí, červený křížek, kurzor not-allowed
+└─────────┘
+```
 
 ### Dotčené soubory
-- `supabase/migrations/` — nová migrace pro RPC funkce
-- `src/hooks/useEngineers.ts`
-- `src/components/EngineerManagement.tsx`
+- `src/types/planning.ts`
+- `src/hooks/usePlanningData.ts`
+- `src/components/ProjectAssignmentMatrix.tsx`
 - `src/components/PlanningEditor.tsx`
+- `src/components/UtilizationGrid.tsx`
 
