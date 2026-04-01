@@ -55,8 +55,8 @@ export function useEngineerProfile(id: string | undefined) {
 
       return {
         engineer: engRes.data,
-        software: (swRes.data || []).map((r: any) => r.knowledge_software?.name).filter(Boolean),
-        pdmPlm: (pdmRes.data || []).map((r: any) => r.knowledge_pdm_plm?.name).filter(Boolean),
+        software: (swRes.data || []).map((r: any) => ({ name: r.knowledge_software?.name, level: r.level ?? 1 })).filter((s: any) => s.name),
+        pdmPlm: (pdmRes.data || []).map((r: any) => ({ name: r.knowledge_pdm_plm?.name, level: r.level ?? 1 })).filter((s: any) => s.name),
         specializations: (specRes.data || []).map((r: any) => ({
           oblast: r.knowledge_oblast?.name || '',
           specialization: r.knowledge_specialization?.name || '',
