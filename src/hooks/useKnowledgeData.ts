@@ -162,13 +162,22 @@ export function useEngineerKnowledge(engineerId: string | null) {
           if (error) throw error;
         }
       })(),
+      (async () => {
+        await (supabase.from('engineer_language' as any).delete().eq('engineer_id', engId) as any);
+        if (languages && languages.length > 0) {
+          const { error } = await (supabase.from('engineer_language' as any).insert(
+            languages.map(l => ({ engineer_id: engId, language: l.language, level: l.level, test_year: l.test_year }))
+          ) as any);
+          if (error) throw error;
+        }
+      })(),
     ]);
 
     qc.invalidateQueries({ queryKey: ['engineer-knowledge', engId] });
   };
 
   return {
-    assignments: assignments || { software: [], pdmPlm: [], specializations: [] },
+    assignments: assignments || { software: [], pdmPlm: [], specializations: [], languages: [] },
     isLoading,
     saveAssignments,
   };

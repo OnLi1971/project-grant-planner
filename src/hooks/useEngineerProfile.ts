@@ -20,6 +20,11 @@ export type EngineerProfile = {
     has_exam: boolean;
     notes: string | null;
   }[];
+  languages: {
+    language: string;
+    level: string;
+    test_year: number | null;
+  }[];
   planning: {
     cw: string;
     projekt: string | null;
