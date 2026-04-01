@@ -55,6 +55,8 @@ function validateSpecDates(rows: SpecializationAssignment[]): string | null {
 }
 
 const LEVELS = ['A', 'B', 'C', 'D', 'E', 'F'] as const;
+const LANGUAGES = ['English', 'German', 'Russian'] as const;
+const LANG_LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const;
 
 /** Inline date picker: text input (dd.MM.yyyy) + calendar popover */
 function DatePickerCell({ value, onChange }: { value: string | null; onChange: (v: string | null) => void }) {
@@ -389,10 +391,7 @@ export function EngineerManagement() {
     </div>
   );
 
-  const LANGUAGES = ['English', 'German', 'Russian'] as const;
-  const LANG_LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const;
-
-  const LanguageEditor = () => (
+  const languageEditorJsx = (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <Label className="text-sm font-semibold">Jazyky</Label>
@@ -429,10 +428,10 @@ export function EngineerManagement() {
     </div>
   );
 
-  const KnowledgeFields = () => (
+  const knowledgeFieldsJsx = (
     <>
       <Separator className="my-2" />
-      <LanguageEditor />
+      {languageEditorJsx}
       <Separator className="my-2" />
       <h4 className="text-sm font-semibold text-muted-foreground">Správa znalostí</h4>
       <div>
@@ -631,7 +630,7 @@ export function EngineerManagement() {
                         </div>
                       </>
                     )}
-                    <KnowledgeFields />
+                    {knowledgeFieldsJsx}
                     <div className="flex justify-end space-x-2">
                       <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>Cancel</Button>
                       <Button onClick={handleCreate} disabled={isSubmitting}>
@@ -788,7 +787,7 @@ export function EngineerManagement() {
                 </div>
               </>
             )}
-            <KnowledgeFields />
+            {knowledgeFieldsJsx}
             <div className="flex justify-end space-x-2">
               <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
               <Button onClick={handleEdit} disabled={isSubmitting}>
