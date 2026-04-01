@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Building, MapPin, Clock, Calendar, GraduationCap, Wrench, Cpu, Award, Briefcase } from 'lucide-react';
+import { ArrowLeft, Building, MapPin, Clock, Calendar, GraduationCap, Wrench, Cpu, Award, Briefcase, Languages } from 'lucide-react';
 import { format, parse, isValid } from 'date-fns';
 
 function fmtDate(iso: string | null): string {
@@ -53,7 +53,7 @@ export default function EngineerProfile() {
     );
   }
 
-  const { engineer: eng, software, pdmPlm, specializations, trainings, planning } = data;
+  const { engineer: eng, software, pdmPlm, specializations, trainings, languages, planning } = data;
   const st = statusMap[eng.status] || statusMap.active;
 
   return (
@@ -97,6 +97,25 @@ export default function EngineerProfile() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Languages - full width before grid */}
+      {languages.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2"><Languages className="h-4 w-4" />Jazyky</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {languages.map(l => (
+                <Badge key={l.language} variant="secondary">
+                  {l.language} — {l.level}
+                  {l.test_year && <span className="ml-1 opacity-70">({l.test_year})</span>}
+                </Badge>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Info grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
