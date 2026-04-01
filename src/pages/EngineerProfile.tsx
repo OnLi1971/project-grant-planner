@@ -122,7 +122,7 @@ export default function EngineerProfile() {
           <CardContent>
             {software.length > 0 ? (
               <div className="flex flex-wrap gap-2">
-                {software.map(s => <Badge key={s} variant="secondary">{s}</Badge>)}
+                {software.map(s => <Badge key={s.name} variant="secondary">{s.name} <span className="ml-1 opacity-70">⭐{s.level}</span></Badge>)}
               </div>
             ) : <p className="text-sm text-muted-foreground">Žádný software</p>}
           </CardContent>
