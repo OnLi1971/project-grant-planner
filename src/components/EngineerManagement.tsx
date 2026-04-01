@@ -262,6 +262,7 @@ export function EngineerManagement() {
       hourlyRate: engineer.hourlyRate ? engineer.hourlyRate.toString() : '',
       currency: engineer.currency || 'CZK',
       location: engineer.location || 'PRG',
+      endDate: engineer.endDate ? isoToDisplay(engineer.endDate) : '',
     });
     setIsEditDialogOpen(true);
   };
