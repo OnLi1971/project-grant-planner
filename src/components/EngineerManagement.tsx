@@ -630,7 +630,7 @@ export function EngineerManagement() {
                         </div>
                       </>
                     )}
-                    <KnowledgeFields />
+                    {knowledgeFieldsJsx}
                     <div className="flex justify-end space-x-2">
                       <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>Cancel</Button>
                       <Button onClick={handleCreate} disabled={isSubmitting}>
