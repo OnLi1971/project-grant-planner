@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Building, MapPin, Clock, Calendar, GraduationCap, Wrench, Cpu, Award, Briefcase } from 'lucide-react';
+import { ArrowLeft, Building, MapPin, Clock, Calendar, GraduationCap, Wrench, Cpu, Award, Briefcase, Languages } from 'lucide-react';
 import { format, parse, isValid } from 'date-fns';
 
 function fmtDate(iso: string | null): string {
