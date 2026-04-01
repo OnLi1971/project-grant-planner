@@ -13,6 +13,7 @@ import { customers, projectManagers, programs, projects } from '@/data/projectsD
 import { getWeek } from 'date-fns';
 import { normalizeName, createNameMapping } from '@/utils/nameNormalization';
 import { getWorkingDaysFromMonthName, getWorkingDaysInWeekForMonth, getWorkingDaysInCW, getISOWeekMonday, getWorkingDaysInMonth } from '@/utils/workingDays';
+import { isEngineerDepartedForWeek, isEngineerDepartedForMonth } from '@/utils/engineerDeparture';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useCustomEngineerViews } from '@/hooks/useCustomEngineerViews';
