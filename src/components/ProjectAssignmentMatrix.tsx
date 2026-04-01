@@ -1079,7 +1079,11 @@ export const ProjectAssignmentMatrix = ({
                                 monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
                               }`}
                             >
-                            {project && (
+                            {project === 'DEPARTED' ? (
+                                <div className="text-xs px-1.5 py-0.5 w-full justify-center font-medium rounded-md inline-flex items-center cursor-not-allowed bg-gray-200 dark:bg-gray-800">
+                                  <X className="h-3.5 w-3.5 text-red-500" />
+                                </div>
+                              ) : project && (
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <div 
