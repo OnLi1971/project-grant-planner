@@ -197,8 +197,9 @@ export function EngineerManagement() {
     try {
       const hourlyRate = formData.status === 'contractor' ? parseFloat(formData.hourlyRate) : undefined;
       const currency = formData.status === 'contractor' ? formData.currency : undefined;
+      const endDateIso = formData.endDate ? displayToIso(formData.endDate) : undefined;
       
-      const result = await createEngineer(formData.displayName, undefined, formData.status, formData.company, hourlyRate, currency, formData.location);
+      const result = await createEngineer(formData.displayName, undefined, formData.status, formData.company, hourlyRate, currency, formData.location, undefined, undefined, undefined, endDateIso || undefined);
       
       if (result && (selectedSoftware.length || selectedPdmPlm.length || specRows.length)) {
         await saveAssignments(result.id, selectedSoftware, selectedPdmPlm, specRows);
