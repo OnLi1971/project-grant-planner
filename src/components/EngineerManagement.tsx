@@ -130,6 +130,7 @@ export function EngineerManagement() {
     hourlyRate: '' as string,
     currency: 'CZK' as 'EUR' | 'CZK',
     location: 'PRG' as 'PRG' | 'PLZ' | 'SK',
+    endDate: '' as string,
   });
   const [selectedSoftware, setSelectedSoftware] = useState<string[]>([]);
   const [selectedPdmPlm, setSelectedPdmPlm] = useState<string[]>([]);
@@ -148,7 +149,7 @@ export function EngineerManagement() {
   }, [editingEngineer, assignments]);
 
   const resetForm = () => {
-    setFormData({ displayName: '', status: 'active', company: 'TM CZ', hourlyRate: '', currency: 'CZK', location: 'PRG' });
+    setFormData({ displayName: '', status: 'active', company: 'TM CZ', hourlyRate: '', currency: 'CZK', location: 'PRG', endDate: '' });
     setSelectedSoftware([]);
     setSelectedPdmPlm([]);
     setSpecRows([]);
@@ -196,8 +197,9 @@ export function EngineerManagement() {
     try {
       const hourlyRate = formData.status === 'contractor' ? parseFloat(formData.hourlyRate) : undefined;
       const currency = formData.status === 'contractor' ? formData.currency : undefined;
+      const endDateIso = formData.endDate ? displayToIso(formData.endDate) : undefined;
       
-      const result = await createEngineer(formData.displayName, undefined, formData.status, formData.company, hourlyRate, currency, formData.location);
+      const result = await createEngineer(formData.displayName, undefined, formData.status, formData.company, hourlyRate, currency, formData.location, undefined, undefined, undefined, endDateIso || undefined);
       
       if (result && (selectedSoftware.length || selectedPdmPlm.length || specRows.length)) {
         await saveAssignments(result.id, selectedSoftware, selectedPdmPlm, specRows);
@@ -227,6 +229,7 @@ export function EngineerManagement() {
     try {
       const hourlyRate = formData.status === 'contractor' ? parseFloat(formData.hourlyRate) : undefined;
       const currency = formData.status === 'contractor' ? formData.currency : undefined;
+      const endDateIso = formData.endDate ? displayToIso(formData.endDate) : null;
       
       await updateEngineer(editingEngineer.id, {
         display_name: formData.displayName,
@@ -236,6 +239,7 @@ export function EngineerManagement() {
         hourly_rate: hourlyRate,
         currency: currency,
         location: formData.location,
+        end_date: endDateIso,
       } as any);
 
       await saveAssignments(editingEngineer.id, selectedSoftware, selectedPdmPlm, specRows);
@@ -258,6 +262,7 @@ export function EngineerManagement() {
       hourlyRate: engineer.hourlyRate ? engineer.hourlyRate.toString() : '',
       currency: engineer.currency || 'CZK',
       location: engineer.location || 'PRG',
+      endDate: engineer.endDate ? isoToDisplay(engineer.endDate) : '',
     });
     setIsEditDialogOpen(true);
   };
@@ -411,7 +416,14 @@ export function EngineerManagement() {
                         <SelectItem value="PLZ">PLZ</SelectItem>
                         <SelectItem value="SK">SK</SelectItem>
                       </SelectContent>
-                    </Select>
+                  </Select>
+                  </div>
+                  <div>
+                    <Label>Datum odchodu</Label>
+                    <DatePickerCell
+                      value={formData.endDate ? displayToIso(formData.endDate) : null}
+                      onChange={(iso) => setFormData(prev => ({ ...prev, endDate: iso ? isoToDisplay(iso) : '' }))}
+                    />
                   </div>
                   {formData.status === 'contractor' && (
                     <>
@@ -464,6 +476,7 @@ export function EngineerManagement() {
                   <TableHead>Company</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Location</TableHead>
+                  <TableHead>Odchod</TableHead>
                   <TableHead>Rate</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -476,6 +489,11 @@ export function EngineerManagement() {
                     <TableCell>{engineer.spolecnost}</TableCell>
                     <TableCell>{getStatusBadge(engineer.status)}</TableCell>
                     <TableCell>{engineer.location || 'PRG'}</TableCell>
+                    <TableCell>
+                      {engineer.endDate ? (
+                        <Badge variant="destructive" className="text-xs">{isoToDisplay(engineer.endDate)}</Badge>
+                      ) : '-'}
+                    </TableCell>
                     <TableCell>
                       {engineer.status === 'contractor' && engineer.hourlyRate 
                         ? `${engineer.hourlyRate} ${engineer.currency}` 
@@ -534,6 +552,13 @@ export function EngineerManagement() {
                   <SelectItem value="SK">SK</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div>
+              <Label>Datum odchodu</Label>
+              <DatePickerCell
+                value={formData.endDate ? displayToIso(formData.endDate) : null}
+                onChange={(iso) => setFormData(prev => ({ ...prev, endDate: iso ? isoToDisplay(iso) : '' }))}
+              />
             </div>
             {formData.status === 'contractor' && (
               <>

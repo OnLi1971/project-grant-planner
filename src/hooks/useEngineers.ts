@@ -21,6 +21,7 @@ export type UIEngineer = {
   software?: string;
   pdmPlm?: string;
   specialization?: string;
+  endDate?: string;
 };
 
 // Organizational mapping for compatibility (temporary)
@@ -62,6 +63,7 @@ export function useEngineers() {
           software: engineer.software,
           pdmPlm: engineer.pdm_plm,
           specialization: engineer.specialization,
+          endDate: engineer.end_date ?? undefined,
         };
       });
     },
@@ -78,7 +80,8 @@ export function useEngineers() {
     location?: 'PRG' | 'PLZ' | 'SK',
     software?: string,
     pdmPlm?: string,
-    specialization?: string
+    specialization?: string,
+    endDate?: string
   ) => {
     try {
       const { data, error } = await supabase.rpc('engineers_create', {
@@ -93,6 +96,7 @@ export function useEngineers() {
         p_software: software,
         p_pdm_plm: pdmPlm,
         p_specialization: specialization,
+        p_end_date: endDate || null,
       });
       if (error) throw error;
 
@@ -120,6 +124,7 @@ export function useEngineers() {
       if ((updates as any).software != null) params.p_software = (updates as any).software;
       if ((updates as any).pdm_plm != null) params.p_pdm_plm = (updates as any).pdm_plm;
       if ((updates as any).specialization != null) params.p_specialization = (updates as any).specialization;
+      if ((updates as any).end_date !== undefined) params.p_end_date = (updates as any).end_date;
 
       const { data, error } = await supabase.rpc('engineers_update', params as any);
       if (error) throw error;

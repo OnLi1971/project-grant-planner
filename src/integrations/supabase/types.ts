@@ -926,6 +926,7 @@ export type Database = {
           p_department?: string
           p_display_name: string
           p_email?: string
+          p_end_date?: string
           p_fte?: number
           p_hourly_rate?: number
           p_location?: string
@@ -971,6 +972,7 @@ export type Database = {
           p_department?: string
           p_display_name?: string
           p_email?: string
+          p_end_date?: string
           p_fte?: number
           p_hourly_rate?: number
           p_id: string
