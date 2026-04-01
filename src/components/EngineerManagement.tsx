@@ -239,8 +239,8 @@ export function EngineerManagement() {
       
       const result = await createEngineer(formData.displayName, undefined, formData.status, formData.company, hourlyRate, currency, formData.location, undefined, undefined, undefined, endDateIso || undefined);
       
-      if (result && (selectedSoftware.length || selectedPdmPlm.length || specRows.length)) {
-        await saveAssignments(result.id, selectedSoftware, selectedPdmPlm, specRows);
+      if (result && (selectedSoftware.length || selectedPdmPlm.length || specRows.length || languageRows.length)) {
+        await saveAssignments(result.id, selectedSoftware, selectedPdmPlm, specRows, languageRows);
       }
       
       setIsCreateDialogOpen(false);
