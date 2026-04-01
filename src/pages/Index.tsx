@@ -173,28 +173,12 @@ const Index = () => {
                     Správa projektů
                   </Button>
                   <Button
-                    variant={managementView === 'resources' ? 'default' : 'outline'}
-                    onClick={() => setManagementView('resources')}
-                    className="flex items-center gap-2"
-                  >
-                    <UserPlus className="h-4 w-4" />
-                    Správa zdrojů
-                  </Button>
-                  <Button
                     variant={managementView === 'licenses' ? 'default' : 'outline'}
                     onClick={() => setManagementView('licenses')}
                     className="flex items-center gap-2"
                   >
                     <Shield className="h-4 w-4" />
                     Správa licencí
-                  </Button>
-                  <Button
-                    variant={managementView === 'users' ? 'default' : 'outline'}
-                    onClick={() => setManagementView('users')}
-                    className="flex items-center gap-2"
-                  >
-                    <Users className="h-4 w-4" />
-                    Správa uživatelů
                   </Button>
                   <Button
                     variant={managementView === 'engineers' ? 'default' : 'outline'}
