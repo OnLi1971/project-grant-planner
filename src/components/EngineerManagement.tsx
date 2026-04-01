@@ -396,8 +396,93 @@ export function EngineerManagement() {
         <KnowledgeMultiSelect items={pdmList.items} selectedIds={selectedPdmPlm} onChange={setSelectedPdmPlm} placeholder="Vyberte PDM/PLM..." isLoading={pdmList.isLoading} />
       </div>
       <SpecializationEditor />
+      <Separator className="my-2" />
+      <TrainingEditor />
     </>
   );
+
+  function TrainingEditor() {
+    const addTrainingRow = () => {
+      setTrainingRows(prev => [...prev, { name: '', date_from: null, date_to: null, company_trainer: null, has_exam: false, notes: null }]);
+    };
+    const updateTrainingRow = (idx: number, field: string, value: any) => {
+      setTrainingRows(prev => prev.map((r, i) => i === idx ? { ...r, [field]: value } : r));
+    };
+    const removeTrainingRow = (idx: number) => {
+      setTrainingRows(prev => prev.filter((_, i) => i !== idx));
+    };
+
+    return (
+      <div className="space-y-2">
+        <div className="flex justify-between items-center">
+          <Label className="text-sm font-semibold">Trénink / Školení</Label>
+          <div className="flex gap-2">
+            {editingEngineer && (
+              <TrainingImport
+                engineerId={editingEngineer.id}
+                onImport={async (records) => {
+                  await bulkInsert(editingEngineer.id, records);
+                  setTrainingRows(prev => [...prev, ...records]);
+                }}
+              />
+            )}
+            <Button type="button" variant="outline" size="sm" onClick={addTrainingRow}>
+              <Plus className="mr-1 h-3 w-3" />Přidat řádek
+            </Button>
+          </div>
+        </div>
+        {trainingRows.length > 0 && (
+          <div className="border rounded-lg overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-xs">Název školení</TableHead>
+                  <TableHead className="text-xs w-32">Od</TableHead>
+                  <TableHead className="text-xs w-32">Do</TableHead>
+                  <TableHead className="text-xs">Firma/Školitel</TableHead>
+                  <TableHead className="text-xs w-16">Zkouška</TableHead>
+                  <TableHead className="text-xs">Poznámka</TableHead>
+                  <TableHead className="w-10"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {trainingRows.map((row, idx) => (
+                  <TableRow key={idx}>
+                    <TableCell className="p-1">
+                      <Input className="h-8 text-xs" value={row.name} onChange={e => updateTrainingRow(idx, 'name', e.target.value)} placeholder="Název..." />
+                    </TableCell>
+                    <TableCell className="p-1">
+                      <DatePickerCell value={row.date_from} onChange={v => updateTrainingRow(idx, 'date_from', v)} />
+                    </TableCell>
+                    <TableCell className="p-1">
+                      <DatePickerCell value={row.date_to} onChange={v => updateTrainingRow(idx, 'date_to', v)} />
+                    </TableCell>
+                    <TableCell className="p-1">
+                      <Input className="h-8 text-xs" value={row.company_trainer || ''} onChange={e => updateTrainingRow(idx, 'company_trainer', e.target.value || null)} placeholder="Firma..." />
+                    </TableCell>
+                    <TableCell className="p-1 text-center">
+                      <Checkbox checked={row.has_exam} onCheckedChange={v => updateTrainingRow(idx, 'has_exam', !!v)} />
+                    </TableCell>
+                    <TableCell className="p-1">
+                      <Input className="h-8 text-xs" value={row.notes || ''} onChange={e => updateTrainingRow(idx, 'notes', e.target.value || null)} placeholder="Poznámka..." />
+                    </TableCell>
+                    <TableCell className="p-1">
+                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive" onClick={() => removeTrainingRow(idx)}>
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+        {trainingRows.length === 0 && (
+          <p className="text-xs text-muted-foreground text-center py-2">Žádné tréninky. Klikněte "Přidat řádek" nebo importujte z Excelu.</p>
+        )}
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
