@@ -42,7 +42,7 @@ export function useEngineerProfile(id: string | undefined) {
 
       const currentYear = new Date().getFullYear();
 
-      const [engRes, swRes, pdmRes, specRes, trainRes, planRes] = await Promise.all([
+      const [engRes, swRes, pdmRes, specRes, trainRes, planRes, langRes] = await Promise.all([
         supabase.from('engineers').select('*').eq('id', id).single(),
         supabase.from('engineer_software').select('software_id, level, knowledge_software(name)').eq('engineer_id', id),
         supabase.from('engineer_pdm_plm').select('pdm_plm_id, level, knowledge_pdm_plm(name)').eq('engineer_id', id),
@@ -54,6 +54,7 @@ export function useEngineerProfile(id: string | undefined) {
           .eq('engineer_id', id)
           .gte('year', currentYear)
           .order('cw', { ascending: true }),
+        (supabase.from('engineer_language' as any).select('language, level, test_year').eq('engineer_id', id) as any),
       ]);
 
       if (engRes.error) throw engRes.error;
@@ -69,6 +70,7 @@ export function useEngineerProfile(id: string | undefined) {
           granted_date: r.granted_date,
         })),
         trainings: (trainRes.data || []) as EngineerProfile['trainings'],
+        languages: (langRes.data || []) as EngineerProfile['languages'],
         planning: ((planRes.data || []) as any[]).filter((p: any) => p.projekt && p.projekt !== 'FREE'),
       };
     },
