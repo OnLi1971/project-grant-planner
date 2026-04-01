@@ -1176,6 +1176,16 @@ export const ProjectAssignmentMatrix = ({
                                   {/* Main project */}
                                   {(() => {
                                     const mainProject = sortedProjects[0];
+                                    
+                                    // DEPARTED — show ✕ icon
+                                    if (mainProject === 'DEPARTED') {
+                                      return (
+                                        <div className="text-xs px-1.5 py-0.5 w-full justify-center font-medium rounded-md inline-flex items-center cursor-not-allowed bg-gray-200 dark:bg-gray-800">
+                                          <X className="h-3.5 w-3.5 text-red-500" />
+                                        </div>
+                                      );
+                                    }
+                                    
                                     const showText = isProjectVisibleForCustomer(mainProject, customerViewMode);
                                     
                                     const badgeContent = (
