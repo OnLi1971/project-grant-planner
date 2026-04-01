@@ -53,7 +53,7 @@ export default function EngineerProfile() {
     );
   }
 
-  const { engineer: eng, software, pdmPlm, specializations, trainings, planning } = data;
+  const { engineer: eng, software, pdmPlm, specializations, trainings, languages, planning } = data;
   const st = statusMap[eng.status] || statusMap.active;
 
   return (
