@@ -135,6 +135,9 @@ const generateMonths = (weeksList: string[]): { name: string; weeks: string[] }[
 };
 
 const getProjectBadgeStyle = (projekt: string) => {
+  // Departed engineer
+  if (projekt === 'DEPARTED') return 'bg-gray-200 text-red-500 border-gray-300 dark:bg-gray-800 dark:text-red-400 dark:border-gray-700';
+  
   // Free, vacation, sick leave and overtime
   if (projekt === 'FREE') return 'bg-destructive/20 text-destructive border-destructive/30 font-semibold dark:bg-destructive/30 dark:text-destructive-foreground';
   if (projekt === 'DOVOLENÁ') return 'bg-success/30 text-success-foreground border-success dark:bg-success/40 dark:text-success-foreground';
