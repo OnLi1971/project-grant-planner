@@ -1,44 +1,38 @@
 
 
-## Detailní profil konstruktéra — nová stránka
+## Přidat úrovně 1–5 k Software a PDM/PLM
 
-### Co se vytvoří
+### Co se změní
 
-Nová stránka `/engineer/:id` zobrazující kompletní profil konstruktéra s těmito sekcemi:
+Ke každému přiřazení Software a PDM/PLM u konstruktéra přibude úroveň 1–5 (1 = nejhorší, 5 = nejlepší). Výchozí hodnota: 1.
 
-**Hlavička**
-- Jméno, avatar (iniciály), status badge, firma, lokace, hodinová sazba
+### Databáze
 
-**Sekce v kartách:**
+Jedna migrace — přidání sloupce `level` (integer, default 1) do obou tabulek:
+- `ALTER TABLE engineer_software ADD COLUMN level integer NOT NULL DEFAULT 1;`
+- `ALTER TABLE engineer_pdm_plm ADD COLUMN level integer NOT NULL DEFAULT 1;`
 
-1. **Základní údaje** — firma, lokace, sazba, měna, datum nástupu/odchodu, status
-2. **Software** — seznam přiřazeného SW (z `engineer_software` + `knowledge_software`)
-3. **PDM/PLM** — seznam přiřazených systémů (z `engineer_pdm_plm` + `knowledge_pdm_plm`)
-4. **Specializace** — tabulka: Oblast, Specializace, Úroveň (A-F), Datum udělení (z `engineer_specialization` + `knowledge_specialization` + `knowledge_oblast`)
-5. **Trénink/Školení** — tabulka: Název, Od, Do, Firma/Školitel, Zkouška, Poznámka (z `engineer_training`)
-6. **Aktuální plánování** — přehled aktuálních projektových přiřazení z `planning_entries`
+### UI změny
 
-### Implementace
+**KnowledgeMultiSelect** se přepracuje — místo pouhého výběru ID se bude pracovat s `{ id: string, level: number }[]`. Po výběru položky se vedle badge zobrazí malý select/dropdown s hodnotami 1–5. Uživatel může měnit úroveň přímo v komponentě.
 
-**Nové soubory:**
-- `src/pages/EngineerProfile.tsx` — hlavní stránka profilu
-- `src/hooks/useEngineerProfile.ts` — hook stahující všechna data pro jednoho konstruktéra (engineer + software + PDM/PLM + specializace + tréninky + plánování)
+**EngineerManagement** — stav `selectedSoftware` a `selectedPdmPlm` se změní z `string[]` na `{ id: string, level: number }[]`.
 
-**Upravené soubory:**
-- `src/App.tsx` — přidat route `/engineer/:id`
-- `src/components/EngineerManagement.tsx` — přidat odkaz/tlačítko na profil u každého konstruktéra v tabulce
+**EngineerProfile** — u Software a PDM/PLM se vedle názvu zobrazí badge s úrovní (např. "CatiaV5 ⭐3").
 
-### Technický detail
+### Hook změny
 
-Hook `useEngineerProfile` provede paralelní dotazy:
-```
-1. engineers.select('*').eq('id', id)
-2. engineer_software.select('software_id, knowledge_software(name)').eq('engineer_id', id)
-3. engineer_pdm_plm.select('pdm_plm_id, knowledge_pdm_plm(name)').eq('engineer_id', id)
-4. engineer_specialization.select('*, knowledge_specialization(name), knowledge_oblast(name)').eq('engineer_id', id)
-5. engineer_training.select('*').eq('engineer_id', id)
-6. planning_entries.select('*').eq('engineer_id', id).gte('year', currentYear)
-```
+**useKnowledgeData.ts** — `useEngineerKnowledge`:
+- Dotazy na `engineer_software` a `engineer_pdm_plm` budou vracet i `level`
+- `saveAssignments` bude ukládat `level` spolu s ID
 
-Stránka bude responsivní — na mobilu (360px) sekce pod sebou, na desktopu grid layout. Tlačítko "Zpět" pro návrat do Engineer Management.
+**useEngineerProfile.ts** — dotazy vrátí i level, profil zobrazí úroveň
+
+### Dotčené soubory
+- Nová migrace — ALTER TABLE pro oba sloupce
+- `src/components/KnowledgeMultiSelect.tsx` — podpora levels
+- `src/hooks/useKnowledgeData.ts` — načítání/ukládání levels
+- `src/hooks/useEngineerProfile.ts` — načítání levels
+- `src/pages/EngineerProfile.tsx` — zobrazení levels
+- `src/components/EngineerManagement.tsx` — změna stavu na `{ id, level }[]`
 
