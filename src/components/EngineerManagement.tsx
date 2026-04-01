@@ -490,6 +490,10 @@ export function EngineerManagement() {
     );
   }
 
+  const filteredEngineers = trainingFilterIds !== null
+    ? engineers.filter(e => trainingFilterIds.includes(e.id))
+    : engineers;
+
   return (
     <div className="space-y-6">
       <Card>
