@@ -130,6 +130,7 @@ export function EngineerManagement() {
     hourlyRate: '' as string,
     currency: 'CZK' as 'EUR' | 'CZK',
     location: 'PRG' as 'PRG' | 'PLZ' | 'SK',
+    endDate: '' as string,
   });
   const [selectedSoftware, setSelectedSoftware] = useState<string[]>([]);
   const [selectedPdmPlm, setSelectedPdmPlm] = useState<string[]>([]);
