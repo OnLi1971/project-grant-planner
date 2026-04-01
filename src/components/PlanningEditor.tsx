@@ -744,13 +744,13 @@ export const PlanningEditor: React.FC = () => {
                      {editingCell?.konstrukter === selectedKonstrukter && 
                       editingCell?.cw === week.cw && 
                       editingCell?.field === 'mhTyden' && !isMultiSelectMode ? (
+                       <div className="flex items-center gap-1">
                        <Input
                          type="number"
                          value={editingValue}
                          onChange={(e) => setEditingValue(e.target.value)}
                           onBlur={() => {
                             const numValue = parseInt(editingValue) || 0;
-                            console.log('HOURS_EDIT_DEBUG:', { editingValue, numValue, konstrukter: selectedKonstrukter, cw: week.cw });
                             setEditingCell(null);
                             setEditingValue('');
                             updateCell(selectedKonstrukter, week.cw, 'mhTyden', numValue);
@@ -758,7 +758,6 @@ export const PlanningEditor: React.FC = () => {
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') {
                               const numValue = parseInt(editingValue) || 0;
-                              console.log('HOURS_EDIT_DEBUG:', { editingValue, numValue, konstrukter: selectedKonstrukter, cw: week.cw });
                               setEditingCell(null);
                               setEditingValue('');
                               updateCell(selectedKonstrukter, week.cw, 'mhTyden', numValue);
@@ -767,6 +766,20 @@ export const PlanningEditor: React.FC = () => {
                          className="w-20 h-8"
                          autoFocus
                        />
+                       <Button
+                         variant="ghost"
+                         size="icon"
+                         className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0"
+                         onMouseDown={(e) => {
+                           e.preventDefault();
+                           updateCell(selectedKonstrukter, week.cw, 'mhTyden', 0);
+                           setEditingCell(null);
+                           setEditingValue('');
+                         }}
+                       >
+                         <X className="h-4 w-4" />
+                       </Button>
+                       </div>
                        ) : (
                          <div 
                            className={`cursor-pointer hover:bg-muted p-1 rounded flex items-center gap-2 ${
