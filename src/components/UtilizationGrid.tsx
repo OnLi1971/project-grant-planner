@@ -440,6 +440,13 @@ export const UtilizationGrid: React.FC = () => {
                   {viewMode === 'weekly'
                     ? allWeeks.map(cwKey => {
                         const pct = getWeeklyUtilization(eng, cwKey);
+                        if (pct === null) {
+                          return (
+                            <td key={cwKey} className="border px-1 py-1.5 text-center bg-gray-100 dark:bg-gray-900/30">
+                              <X className="h-3.5 w-3.5 text-red-500 mx-auto" />
+                            </td>
+                          );
+                        }
                         return (
                           <td key={cwKey} className={`border px-1 py-1.5 text-center font-mono ${getUtilizationColor(pct)}`}>
 {`${Math.round(pct)}%`}
@@ -448,6 +455,13 @@ export const UtilizationGrid: React.FC = () => {
                       })
                     : months.map(mi => {
                         const pct = getMonthlyUtilization(eng, mi);
+                        if (pct === null) {
+                          return (
+                            <td key={mi.label} className="border px-1 py-1.5 text-center bg-gray-100 dark:bg-gray-900/30">
+                              <X className="h-3.5 w-3.5 text-red-500 mx-auto" />
+                            </td>
+                          );
+                        }
                         return (
                           <td key={mi.label} className={`border px-1 py-1.5 text-center font-mono ${getUtilizationColor(pct)}`}>
                             {`${Math.round(pct)}%`}
