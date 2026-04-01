@@ -273,6 +273,15 @@ export const ProjectAssignmentMatrix = ({
     return map;
   }, [planningData, engineers]);
 
+  // Map normalized name → end_date for departure checks
+  const endDateMap = useMemo(() => {
+    const map: Record<string, string | null> = {};
+    engineers.forEach(e => {
+      map[normalizeName(e.display_name)] = e.end_date || null;
+    });
+    return map;
+  }, [engineers]);
+
   // Dynamic project mappings based on projectsData
   const projektInfo = useMemo(() => {
     const info: { [key: string]: { zakaznik: string, pm: string, program: string } } = {};
