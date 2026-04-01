@@ -505,92 +505,109 @@ export function EngineerManagement() {
                   ? `${filteredEngineers.length} z ${engineers.length} konstruktérů (filtr: školení)`
                   : `${engineers.length} engineers currently active`}
               </p>
-              
-
-            <Dialog open={isCreateDialogOpen} onOpenChange={(open) => { setIsCreateDialogOpen(open); if (!open) resetForm(); }}>
-              <DialogTrigger asChild>
-                <Button><Plus className="mr-2 h-4 w-4" />Add Engineer</Button>
-              </DialogTrigger>
-              <DialogContent className="max-h-[90vh] overflow-y-auto max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>Add New Engineer</DialogTitle>
-                  <DialogDescription>Create a new engineer record. The system will automatically generate a unique slug.</DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="displayName">Display Name *</Label>
-                    <Input id="displayName" value={formData.displayName} onChange={(e) => setFormData(prev => ({ ...prev, displayName: e.target.value }))} placeholder="e.g., Novák Jan" />
-                  </div>
-                  <div>
-                    <Label htmlFor="status">Status</Label>
-                    <Select value={formData.status} onValueChange={(value: any) => setFormData(prev => ({ ...prev, status: value, company: value === 'contractor' ? prev.company : 'TM CZ' }))}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="inactive">Inactive</SelectItem>
-                        <SelectItem value="contractor">Contractor</SelectItem>
-                        <SelectItem value="on_leave">On Leave</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="location">Location</Label>
-                    <Select value={formData.location} onValueChange={(value: 'PRG' | 'PLZ' | 'SK') => setFormData(prev => ({ ...prev, location: value }))}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="PRG">PRG</SelectItem>
-                        <SelectItem value="PLZ">PLZ</SelectItem>
-                        <SelectItem value="SK">SK</SelectItem>
-                      </SelectContent>
-                  </Select>
-                  </div>
-                  <div>
-                    <Label>Datum odchodu</Label>
-                    <DatePickerCell
-                      value={formData.endDate ? displayToIso(formData.endDate) : null}
-                      onChange={(iso) => setFormData(prev => ({ ...prev, endDate: iso ? isoToDisplay(iso) : '' }))}
-                    />
-                  </div>
-                  {formData.status === 'contractor' && (
-                    <>
-                      <div>
-                        <Label htmlFor="company">Company</Label>
-                        <Select value={formData.company} onValueChange={(value) => setFormData(prev => ({ ...prev, company: value }))}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="MB Idea">MB Idea</SelectItem>
-                            <SelectItem value="AERTEC">AERTEC</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
+              <Dialog open={isCreateDialogOpen} onOpenChange={(open) => { setIsCreateDialogOpen(open); if (!open) resetForm(); }}>
+                <DialogTrigger asChild>
+                  <Button><Plus className="mr-2 h-4 w-4" />Add Engineer</Button>
+                </DialogTrigger>
+                <DialogContent className="max-h-[90vh] overflow-y-auto max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Add New Engineer</DialogTitle>
+                    <DialogDescription>Create a new engineer record. The system will automatically generate a unique slug.</DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="displayName">Display Name *</Label>
+                      <Input id="displayName" value={formData.displayName} onChange={(e) => setFormData(prev => ({ ...prev, displayName: e.target.value }))} placeholder="e.g., Novák Jan" />
+                    </div>
+                    <div>
+                      <Label htmlFor="status">Status</Label>
+                      <Select value={formData.status} onValueChange={(value: any) => setFormData(prev => ({ ...prev, status: value, company: value === 'contractor' ? prev.company : 'TM CZ' }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="inactive">Inactive</SelectItem>
+                          <SelectItem value="contractor">Contractor</SelectItem>
+                          <SelectItem value="on_leave">On Leave</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="location">Location</Label>
+                      <Select value={formData.location} onValueChange={(value: 'PRG' | 'PLZ' | 'SK') => setFormData(prev => ({ ...prev, location: value }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="PRG">PRG</SelectItem>
+                          <SelectItem value="PLZ">PLZ</SelectItem>
+                          <SelectItem value="SK">SK</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Datum odchodu</Label>
+                      <DatePickerCell
+                        value={formData.endDate ? displayToIso(formData.endDate) : null}
+                        onChange={(iso) => setFormData(prev => ({ ...prev, endDate: iso ? isoToDisplay(iso) : '' }))}
+                      />
+                    </div>
+                    {formData.status === 'contractor' && (
+                      <>
                         <div>
-                          <Label htmlFor="hourlyRate">Hourly Rate *</Label>
-                          <Input id="hourlyRate" type="number" step="0.01" value={formData.hourlyRate} onChange={(e) => setFormData(prev => ({ ...prev, hourlyRate: e.target.value }))} placeholder="0.00" />
-                        </div>
-                        <div>
-                          <Label htmlFor="currency">Currency</Label>
-                          <Select value={formData.currency} onValueChange={(value: 'EUR' | 'CZK') => setFormData(prev => ({ ...prev, currency: value }))}>
+                          <Label htmlFor="company">Company</Label>
+                          <Select value={formData.company} onValueChange={(value) => setFormData(prev => ({ ...prev, company: value }))}>
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="CZK">CZK</SelectItem>
-                              <SelectItem value="EUR">EUR</SelectItem>
+                              <SelectItem value="MB Idea">MB Idea</SelectItem>
+                              <SelectItem value="AERTEC">AERTEC</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
-                      </div>
-                    </>
-                  )}
-                  <KnowledgeFields />
-                  <div className="flex justify-end space-x-2">
-                    <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>Cancel</Button>
-                    <Button onClick={handleCreate} disabled={isSubmitting}>
-                      {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating...</> : 'Create Engineer'}
-                    </Button>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="hourlyRate">Hourly Rate *</Label>
+                            <Input id="hourlyRate" type="number" step="0.01" value={formData.hourlyRate} onChange={(e) => setFormData(prev => ({ ...prev, hourlyRate: e.target.value }))} placeholder="0.00" />
+                          </div>
+                          <div>
+                            <Label htmlFor="currency">Currency</Label>
+                            <Select value={formData.currency} onValueChange={(value: 'EUR' | 'CZK') => setFormData(prev => ({ ...prev, currency: value }))}>
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="CZK">CZK</SelectItem>
+                                <SelectItem value="EUR">EUR</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                    <KnowledgeFields />
+                    <div className="flex justify-end space-x-2">
+                      <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>Cancel</Button>
+                      <Button onClick={handleCreate} disabled={isSubmitting}>
+                        {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating...</> : 'Create Engineer'}
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </DialogContent>
-            </Dialog>
+                </DialogContent>
+              </Dialog>
+            </div>
+            <div className="flex gap-2 items-center">
+              <Search className="h-4 w-4 text-muted-foreground" />
+              <Input
+                className="max-w-xs h-9"
+                placeholder="Filtrovat podle školení..."
+                value={trainingSearchQuery}
+                onChange={e => setTrainingSearchQuery(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleTrainingSearch()}
+              />
+              <Button variant="outline" size="sm" onClick={handleTrainingSearch} disabled={isSearching}>
+                {isSearching ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Hledat'}
+              </Button>
+              {trainingFilterIds !== null && (
+                <Button variant="ghost" size="sm" onClick={() => { setTrainingFilterIds(null); setTrainingSearchQuery(''); }}>
+                  Zrušit filtr
+                </Button>
+              )}
+            </div>
           </div>
 
           <div className="border rounded-lg">
