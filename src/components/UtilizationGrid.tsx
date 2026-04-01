@@ -17,7 +17,8 @@ import {
   getWorkingDaysInWeekForMonth,
 } from '@/utils/workingDays';
 import { getWeek } from 'date-fns';
-import { Calendar, BarChart3, Users, Save, Trash2, ChevronDown } from 'lucide-react';
+import { Calendar, BarChart3, Users, Save, Trash2, ChevronDown, X } from 'lucide-react';
+import { isEngineerDepartedForWeek } from '@/utils/engineerDeparture';
 
 // Regime activities excluded from utilization calculation
 const REGIME_ACTIVITIES = ['FREE', 'OVER'];
