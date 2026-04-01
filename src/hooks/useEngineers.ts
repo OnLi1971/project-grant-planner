@@ -124,6 +124,7 @@ export function useEngineers() {
       if ((updates as any).software != null) params.p_software = (updates as any).software;
       if ((updates as any).pdm_plm != null) params.p_pdm_plm = (updates as any).pdm_plm;
       if ((updates as any).specialization != null) params.p_specialization = (updates as any).specialization;
+      if ((updates as any).end_date !== undefined) params.p_end_date = (updates as any).end_date;
 
       const { data, error } = await supabase.rpc('engineers_update', params as any);
       if (error) throw error;
