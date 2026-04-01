@@ -11,6 +11,7 @@ import ManagerView from "./pages/ManagerView";
 import ManagerRevenueView from "./pages/ManagerRevenueView";
 import CustomerViewST from "./pages/CustomerViewST";
 import NotFound from "./pages/NotFound";
+import EngineerProfile from "./pages/EngineerProfile";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +29,7 @@ const App = () => (
               <Route path="/manager" element={<ManagerView />} />
               <Route path="/manager-revenue" element={<ManagerRevenueView />} />
               <Route path="/customer/st" element={<CustomerViewST />} />
+              <Route path="/engineer/:id" element={<EngineerProfile />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

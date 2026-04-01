@@ -16,7 +16,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { Plus, Users, Edit, Loader2, Trash2, CalendarIcon, Search } from 'lucide-react';
+import { Plus, Users, Edit, Loader2, Trash2, CalendarIcon, Search, Eye } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { format, parse, isValid, getYear } from 'date-fns';
@@ -115,6 +116,7 @@ function DatePickerCell({ value, onChange }: { value: string | null; onChange: (
 }
 
 export function EngineerManagement() {
+  const navigate = useNavigate();
   const { engineers, isLoading, createEngineer, updateEngineer, deleteEngineer, refetch } = useEngineers();
   const swList = useKnowledgeList('knowledge_software');
   const pdmList = useKnowledgeList('knowledge_pdm_plm');
@@ -649,6 +651,9 @@ export function EngineerManagement() {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => navigate(`/engineer/${engineer.id}`)} title="Profil">
+                          <Eye className="h-4 w-4" />
+                        </Button>
                         <Button variant="ghost" size="sm" onClick={() => openEditDialog(engineer)}>
                           <Edit className="h-4 w-4" />
                         </Button>
