@@ -21,6 +21,7 @@ export type UIEngineer = {
   software?: string;
   pdmPlm?: string;
   specialization?: string;
+  endDate?: string;
 };
 
 // Organizational mapping for compatibility (temporary)
