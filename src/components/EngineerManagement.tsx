@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useEngineers } from '@/hooks/useEngineers';
-import { useKnowledgeList, useEngineerKnowledge, SpecializationAssignment } from '@/hooks/useKnowledgeData';
+import { useKnowledgeList, useEngineerKnowledge, SpecializationAssignment, LanguageAssignment } from '@/hooks/useKnowledgeData';
 import { useEngineerTraining, useTrainingSearch, TrainingRecord } from '@/hooks/useEngineerTraining';
 import { TrainingImport } from '@/components/TrainingImport';
 import { KnowledgeMultiSelect } from '@/components/KnowledgeMultiSelect';
