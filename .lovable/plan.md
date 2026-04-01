@@ -1,29 +1,30 @@
 
 
-## Přidat specializace do tabulky knowledge_specialization
+## Přidat specializace pro Obecné strojírenství
 
-Z obrázku přidám 12 specializací pod oblast **Kolejová vozidla** (`cd53be8f-a205-45f7-84bb-6a5b9c55b930`).
+Nová migrace vloží 13 specializací pod oblast **Obecné strojírenství** (`51cb06e9-9a08-4291-8441-e3fb6f818f08`).
 
 ### Data k vložení
 
-| Číslo | Název |
-|-------|-------|
-| 1R | Hrubá stavba |
-| 2R | Vnější opláštění a zasklení |
-| 3R | Stanoviště strojvedoucího / kabina řidiče |
-| 4R | Interiér - vybavení |
-| 5R | Dveře, vstupy |
-| 6R | Větrání, topení, klimatizace |
-| 7R | Interiér - výstroj |
-| 8R | Montáž elektro komponentů, kabeláž |
-| 9R | Montáž vnější výstroje vozidla |
-| 10R | Spřahovací zařízení, přechody |
-| 11R | Podvozky, pohony |
-| 12R | Zpracování dokumentace (katalogy, dokumenty potřebné k certifikaci) |
+| Číslo | Název | sort_order |
+|-------|-------|------------|
+| 1M | Svařované konstrukce | 1 |
+| 2M | Kinematické mechanismy, zdvihací zařízení, převody a pohony | 2 |
+| 3M | Mechatronika | 3 |
+| 4M | Nástroje a přípravky | 4 |
+| 5M | Automatizované výrobní a dopravní linky | 5 |
+| 6M | Technologie a podpora výroby | 6 |
+| 7M | Konstrukce a renovace turbín a turbínových těles | 7 |
+| 8M | Odlitky turbínových těles | 8 |
+| 9M | Svařence turbínových těles a příslušenství | 9 |
+| 10M | Turbínové lopatky a průtočná část | 10 |
+| 11M | Turbínové ventily | 11 |
+| 12M | Turbínové rotory | 12 |
+| 13M | Servis parních turbín | 13 |
 
 ### Implementace
 
-**Nová migrace** — jeden INSERT do `knowledge_specialization` s 12 řádky, každý s `oblast_id = 'cd53be8f-...'` a `name` ve formátu `"1R - Hrubá stavba"`.
+Jedna migrace — INSERT 13 řádků do `knowledge_specialization` s `oblast_id = '51cb06e9-...'`, `name` ve formátu `"1M - Svařované konstrukce"` a `sort_order` 1–13.
 
 ### Dotčené soubory
 - `supabase/migrations/` — nová migrace
