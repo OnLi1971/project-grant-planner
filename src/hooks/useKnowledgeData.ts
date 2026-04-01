@@ -83,8 +83,8 @@ export function useEngineerKnowledge(engineerId: string | null) {
       if (!engineerId) return { software: [], pdmPlm: [], specializations: [] };
 
       const [sw, pdm, spec] = await Promise.all([
-        supabase.from('engineer_software').select('software_id').eq('engineer_id', engineerId),
-        supabase.from('engineer_pdm_plm').select('pdm_plm_id').eq('engineer_id', engineerId),
+        supabase.from('engineer_software').select('software_id, level').eq('engineer_id', engineerId),
+        supabase.from('engineer_pdm_plm').select('pdm_plm_id, level').eq('engineer_id', engineerId),
         supabase.from('engineer_specialization').select('id, oblast_id, specialization_id, level, granted_date').eq('engineer_id', engineerId),
       ]);
 
