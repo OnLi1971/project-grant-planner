@@ -203,6 +203,48 @@ export type Database = {
         }
         Relationships: []
       }
+      engineer_language: {
+        Row: {
+          created_at: string
+          engineer_id: string
+          id: string
+          language: string
+          level: string
+          test_year: number | null
+        }
+        Insert: {
+          created_at?: string
+          engineer_id: string
+          id?: string
+          language: string
+          level: string
+          test_year?: number | null
+        }
+        Update: {
+          created_at?: string
+          engineer_id?: string
+          id?: string
+          language?: string
+          level?: string
+          test_year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "engineer_language_engineer_id_fkey"
+            columns: ["engineer_id"]
+            isOneToOne: false
+            referencedRelation: "engineers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "engineer_language_engineer_id_fkey"
+            columns: ["engineer_id"]
+            isOneToOne: false
+            referencedRelation: "planning_matrix"
+            referencedColumns: ["engineer_id"]
+          },
+        ]
+      }
       engineer_pdm_plm: {
         Row: {
           engineer_id: string
