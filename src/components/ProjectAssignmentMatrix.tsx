@@ -401,11 +401,17 @@ export const ProjectAssignmentMatrix = ({
     
     engineerKeys.forEach(engineerKey => {
       monthlyMatrix[engineerKey] = {};
+      const engEndDate = endDateMap[engineerKey] || null;
       months.forEach(month => {
         const monthProjects: { [project: string]: number } = {};
         let totalHours = 0;
         
         month.weeks.forEach(week => {
+          // Check departure
+          if (engEndDate && isEngineerDepartedForWeek(engEndDate, week)) {
+            monthProjects['DEPARTED'] = (monthProjects['DEPARTED'] || 0) + 0;
+            return;
+          }
           const entry = planningData.find(e => normalizeName(e.konstrukter) === engineerKey && e.cw === week);
           let projekt: string;
           let hours: number;
@@ -437,7 +443,7 @@ export const ProjectAssignmentMatrix = ({
     });
     
     return monthlyMatrix;
-  }, [planningData]);
+  }, [planningData, endDateMap]);
 
   // Get display data based on view mode
   const displayData = viewMode === 'weeks' ? matrixData : monthlyData;
