@@ -416,7 +416,14 @@ export function EngineerManagement() {
                         <SelectItem value="PLZ">PLZ</SelectItem>
                         <SelectItem value="SK">SK</SelectItem>
                       </SelectContent>
-                    </Select>
+                  </Select>
+                  </div>
+                  <div>
+                    <Label>Datum odchodu</Label>
+                    <DatePickerCell
+                      value={formData.endDate ? displayToIso(formData.endDate) : null}
+                      onChange={(iso) => setFormData(prev => ({ ...prev, endDate: iso ? isoToDisplay(iso) : '' }))}
+                    />
                   </div>
                   {formData.status === 'contractor' && (
                     <>
