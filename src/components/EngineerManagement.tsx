@@ -490,6 +490,11 @@ export function EngineerManagement() {
                     <TableCell>{getStatusBadge(engineer.status)}</TableCell>
                     <TableCell>{engineer.location || 'PRG'}</TableCell>
                     <TableCell>
+                      {engineer.endDate ? (
+                        <Badge variant="destructive" className="text-xs">{isoToDisplay(engineer.endDate)}</Badge>
+                      ) : '-'}
+                    </TableCell>
+                    <TableCell>
                       {engineer.status === 'contractor' && engineer.hourlyRate 
                         ? `${engineer.hourlyRate} ${engineer.currency}` 
                         : '-'
