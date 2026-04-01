@@ -240,7 +240,9 @@ export function EngineerManagement() {
       const result = await createEngineer(formData.displayName, undefined, formData.status, formData.company, hourlyRate, currency, formData.location, undefined, undefined, undefined, endDateIso || undefined);
       
       if (result && (selectedSoftware.length || selectedPdmPlm.length || specRows.length || languageRows.length)) {
-        await saveAssignments(result.id, selectedSoftware, selectedPdmPlm, specRows, languageRows);
+        const langToSave = languageRows.map(({ language, level, test_year_str }) => ({ language, level, test_year: test_year_str ? parseInt(test_year_str) || null : null }));
+        await saveAssignments(result.id, selectedSoftware, selectedPdmPlm, specRows, langToSave);
+      }
       }
       
       setIsCreateDialogOpen(false);
