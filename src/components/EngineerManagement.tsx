@@ -229,6 +229,7 @@ export function EngineerManagement() {
     try {
       const hourlyRate = formData.status === 'contractor' ? parseFloat(formData.hourlyRate) : undefined;
       const currency = formData.status === 'contractor' ? formData.currency : undefined;
+      const endDateIso = formData.endDate ? displayToIso(formData.endDate) : null;
       
       await updateEngineer(editingEngineer.id, {
         display_name: formData.displayName,
@@ -238,6 +239,7 @@ export function EngineerManagement() {
         hourly_rate: hourlyRate,
         currency: currency,
         location: formData.location,
+        end_date: endDateIso,
       } as any);
 
       await saveAssignments(editingEngineer.id, selectedSoftware, selectedPdmPlm, specRows);
