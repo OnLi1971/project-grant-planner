@@ -1,19 +1,22 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useEngineers } from '@/hooks/useEngineers';
 import { useKnowledgeList, useEngineerKnowledge, SpecializationAssignment } from '@/hooks/useKnowledgeData';
+import { useEngineerTraining, useTrainingSearch, TrainingRecord } from '@/hooks/useEngineerTraining';
+import { TrainingImport } from '@/components/TrainingImport';
 import { KnowledgeMultiSelect } from '@/components/KnowledgeMultiSelect';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { Plus, Users, Edit, Loader2, Trash2, CalendarIcon } from 'lucide-react';
+import { Plus, Users, Edit, Loader2, Trash2, CalendarIcon, Search } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { format, parse, isValid, getYear } from 'date-fns';
@@ -135,10 +138,16 @@ export function EngineerManagement() {
   const [selectedSoftware, setSelectedSoftware] = useState<string[]>([]);
   const [selectedPdmPlm, setSelectedPdmPlm] = useState<string[]>([]);
   const [specRows, setSpecRows] = useState<SpecializationAssignment[]>([]);
+  const [trainingRows, setTrainingRows] = useState<Omit<TrainingRecord, 'engineer_id'>[]>([]);
+  const [trainingSearchQuery, setTrainingSearchQuery] = useState('');
+  const [trainingFilterIds, setTrainingFilterIds] = useState<string[] | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
   const { assignments, saveAssignments } = useEngineerKnowledge(editingEngineer?.id || null);
+  const { trainings, saveTrainings, bulkInsert } = useEngineerTraining(editingEngineer?.id || null);
+  const searchTraining = useTrainingSearch();
 
   useEffect(() => {
     if (editingEngineer && assignments) {
@@ -148,10 +157,35 @@ export function EngineerManagement() {
     }
   }, [editingEngineer, assignments]);
 
+  useEffect(() => {
+    if (editingEngineer && trainings) {
+      setTrainingRows(trainings.map(t => ({
+        id: t.id,
+        name: t.name,
+        date_from: t.date_from,
+        date_to: t.date_to,
+        company_trainer: t.company_trainer,
+        has_exam: t.has_exam,
+        notes: t.notes,
+      })));
+    }
+  }, [editingEngineer, trainings]);
+
+  const handleTrainingSearch = useCallback(async () => {
+    const q = trainingSearchQuery.trim();
+    if (!q) { setTrainingFilterIds(null); return; }
+    setIsSearching(true);
+    const ids = await searchTraining(q);
+    setTrainingFilterIds(ids);
+    setIsSearching(false);
+  }, [trainingSearchQuery, searchTraining]);
+
   const resetForm = () => {
     setFormData({ displayName: '', status: 'active', company: 'TM CZ', hourlyRate: '', currency: 'CZK', location: 'PRG', endDate: '' });
     setSelectedSoftware([]);
     setSelectedPdmPlm([]);
+    setSpecRows([]);
+    setTrainingRows([]);
     setSpecRows([]);
   };
 
@@ -243,6 +277,7 @@ export function EngineerManagement() {
       } as any);
 
       await saveAssignments(editingEngineer.id, selectedSoftware, selectedPdmPlm, specRows);
+      await saveTrainings(editingEngineer.id, trainingRows);
       
       setIsEditDialogOpen(false);
       setEditingEngineer(null);
@@ -361,14 +396,103 @@ export function EngineerManagement() {
         <KnowledgeMultiSelect items={pdmList.items} selectedIds={selectedPdmPlm} onChange={setSelectedPdmPlm} placeholder="Vyberte PDM/PLM..." isLoading={pdmList.isLoading} />
       </div>
       <SpecializationEditor />
+      <Separator className="my-2" />
+      <TrainingEditor />
     </>
   );
+
+  function TrainingEditor() {
+    const addTrainingRow = () => {
+      setTrainingRows(prev => [...prev, { name: '', date_from: null, date_to: null, company_trainer: null, has_exam: false, notes: null }]);
+    };
+    const updateTrainingRow = (idx: number, field: string, value: any) => {
+      setTrainingRows(prev => prev.map((r, i) => i === idx ? { ...r, [field]: value } : r));
+    };
+    const removeTrainingRow = (idx: number) => {
+      setTrainingRows(prev => prev.filter((_, i) => i !== idx));
+    };
+
+    return (
+      <div className="space-y-2">
+        <div className="flex justify-between items-center">
+          <Label className="text-sm font-semibold">Trénink / Školení</Label>
+          <div className="flex gap-2">
+            {editingEngineer && (
+              <TrainingImport
+                engineerId={editingEngineer.id}
+                onImport={async (records) => {
+                  await bulkInsert(editingEngineer.id, records);
+                  setTrainingRows(prev => [...prev, ...records]);
+                }}
+              />
+            )}
+            <Button type="button" variant="outline" size="sm" onClick={addTrainingRow}>
+              <Plus className="mr-1 h-3 w-3" />Přidat řádek
+            </Button>
+          </div>
+        </div>
+        {trainingRows.length > 0 && (
+          <div className="border rounded-lg overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-xs">Název školení</TableHead>
+                  <TableHead className="text-xs w-32">Od</TableHead>
+                  <TableHead className="text-xs w-32">Do</TableHead>
+                  <TableHead className="text-xs">Firma/Školitel</TableHead>
+                  <TableHead className="text-xs w-16">Zkouška</TableHead>
+                  <TableHead className="text-xs">Poznámka</TableHead>
+                  <TableHead className="w-10"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {trainingRows.map((row, idx) => (
+                  <TableRow key={idx}>
+                    <TableCell className="p-1">
+                      <Input className="h-8 text-xs" value={row.name} onChange={e => updateTrainingRow(idx, 'name', e.target.value)} placeholder="Název..." />
+                    </TableCell>
+                    <TableCell className="p-1">
+                      <DatePickerCell value={row.date_from} onChange={v => updateTrainingRow(idx, 'date_from', v)} />
+                    </TableCell>
+                    <TableCell className="p-1">
+                      <DatePickerCell value={row.date_to} onChange={v => updateTrainingRow(idx, 'date_to', v)} />
+                    </TableCell>
+                    <TableCell className="p-1">
+                      <Input className="h-8 text-xs" value={row.company_trainer || ''} onChange={e => updateTrainingRow(idx, 'company_trainer', e.target.value || null)} placeholder="Firma..." />
+                    </TableCell>
+                    <TableCell className="p-1 text-center">
+                      <Checkbox checked={row.has_exam} onCheckedChange={v => updateTrainingRow(idx, 'has_exam', !!v)} />
+                    </TableCell>
+                    <TableCell className="p-1">
+                      <Input className="h-8 text-xs" value={row.notes || ''} onChange={e => updateTrainingRow(idx, 'notes', e.target.value || null)} placeholder="Poznámka..." />
+                    </TableCell>
+                    <TableCell className="p-1">
+                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive" onClick={() => removeTrainingRow(idx)}>
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+        {trainingRows.length === 0 && (
+          <p className="text-xs text-muted-foreground text-center py-2">Žádné tréninky. Klikněte "Přidat řádek" nebo importujte z Excelu.</p>
+        )}
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
       <Card><CardContent className="flex items-center justify-center py-8"><Loader2 className="h-8 w-8 animate-spin" /></CardContent></Card>
     );
   }
+
+  const filteredEngineers = trainingFilterIds !== null
+    ? engineers.filter(e => trainingFilterIds.includes(e.id))
+    : engineers;
 
   return (
     <div className="space-y-6">
@@ -378,93 +502,116 @@ export function EngineerManagement() {
           <CardDescription>Manage engineer records in the new centralized system</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex justify-between items-center mb-4">
-            <p className="text-sm text-muted-foreground">{engineers.length} engineers currently active</p>
-            
-            <Dialog open={isCreateDialogOpen} onOpenChange={(open) => { setIsCreateDialogOpen(open); if (!open) resetForm(); }}>
-              <DialogTrigger asChild>
-                <Button><Plus className="mr-2 h-4 w-4" />Add Engineer</Button>
-              </DialogTrigger>
-              <DialogContent className="max-h-[90vh] overflow-y-auto max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>Add New Engineer</DialogTitle>
-                  <DialogDescription>Create a new engineer record. The system will automatically generate a unique slug.</DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="displayName">Display Name *</Label>
-                    <Input id="displayName" value={formData.displayName} onChange={(e) => setFormData(prev => ({ ...prev, displayName: e.target.value }))} placeholder="e.g., Novák Jan" />
-                  </div>
-                  <div>
-                    <Label htmlFor="status">Status</Label>
-                    <Select value={formData.status} onValueChange={(value: any) => setFormData(prev => ({ ...prev, status: value, company: value === 'contractor' ? prev.company : 'TM CZ' }))}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="inactive">Inactive</SelectItem>
-                        <SelectItem value="contractor">Contractor</SelectItem>
-                        <SelectItem value="on_leave">On Leave</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="location">Location</Label>
-                    <Select value={formData.location} onValueChange={(value: 'PRG' | 'PLZ' | 'SK') => setFormData(prev => ({ ...prev, location: value }))}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="PRG">PRG</SelectItem>
-                        <SelectItem value="PLZ">PLZ</SelectItem>
-                        <SelectItem value="SK">SK</SelectItem>
-                      </SelectContent>
-                  </Select>
-                  </div>
-                  <div>
-                    <Label>Datum odchodu</Label>
-                    <DatePickerCell
-                      value={formData.endDate ? displayToIso(formData.endDate) : null}
-                      onChange={(iso) => setFormData(prev => ({ ...prev, endDate: iso ? isoToDisplay(iso) : '' }))}
-                    />
-                  </div>
-                  {formData.status === 'contractor' && (
-                    <>
-                      <div>
-                        <Label htmlFor="company">Company</Label>
-                        <Select value={formData.company} onValueChange={(value) => setFormData(prev => ({ ...prev, company: value }))}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="MB Idea">MB Idea</SelectItem>
-                            <SelectItem value="AERTEC">AERTEC</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col gap-3 mb-4">
+            <div className="flex justify-between items-center">
+              <p className="text-sm text-muted-foreground">
+                {trainingFilterIds !== null
+                  ? `${filteredEngineers.length} z ${engineers.length} konstruktérů (filtr: školení)`
+                  : `${engineers.length} engineers currently active`}
+              </p>
+              <Dialog open={isCreateDialogOpen} onOpenChange={(open) => { setIsCreateDialogOpen(open); if (!open) resetForm(); }}>
+                <DialogTrigger asChild>
+                  <Button><Plus className="mr-2 h-4 w-4" />Add Engineer</Button>
+                </DialogTrigger>
+                <DialogContent className="max-h-[90vh] overflow-y-auto max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Add New Engineer</DialogTitle>
+                    <DialogDescription>Create a new engineer record. The system will automatically generate a unique slug.</DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="displayName">Display Name *</Label>
+                      <Input id="displayName" value={formData.displayName} onChange={(e) => setFormData(prev => ({ ...prev, displayName: e.target.value }))} placeholder="e.g., Novák Jan" />
+                    </div>
+                    <div>
+                      <Label htmlFor="status">Status</Label>
+                      <Select value={formData.status} onValueChange={(value: any) => setFormData(prev => ({ ...prev, status: value, company: value === 'contractor' ? prev.company : 'TM CZ' }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="inactive">Inactive</SelectItem>
+                          <SelectItem value="contractor">Contractor</SelectItem>
+                          <SelectItem value="on_leave">On Leave</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="location">Location</Label>
+                      <Select value={formData.location} onValueChange={(value: 'PRG' | 'PLZ' | 'SK') => setFormData(prev => ({ ...prev, location: value }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="PRG">PRG</SelectItem>
+                          <SelectItem value="PLZ">PLZ</SelectItem>
+                          <SelectItem value="SK">SK</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Datum odchodu</Label>
+                      <DatePickerCell
+                        value={formData.endDate ? displayToIso(formData.endDate) : null}
+                        onChange={(iso) => setFormData(prev => ({ ...prev, endDate: iso ? isoToDisplay(iso) : '' }))}
+                      />
+                    </div>
+                    {formData.status === 'contractor' && (
+                      <>
                         <div>
-                          <Label htmlFor="hourlyRate">Hourly Rate *</Label>
-                          <Input id="hourlyRate" type="number" step="0.01" value={formData.hourlyRate} onChange={(e) => setFormData(prev => ({ ...prev, hourlyRate: e.target.value }))} placeholder="0.00" />
-                        </div>
-                        <div>
-                          <Label htmlFor="currency">Currency</Label>
-                          <Select value={formData.currency} onValueChange={(value: 'EUR' | 'CZK') => setFormData(prev => ({ ...prev, currency: value }))}>
+                          <Label htmlFor="company">Company</Label>
+                          <Select value={formData.company} onValueChange={(value) => setFormData(prev => ({ ...prev, company: value }))}>
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="CZK">CZK</SelectItem>
-                              <SelectItem value="EUR">EUR</SelectItem>
+                              <SelectItem value="MB Idea">MB Idea</SelectItem>
+                              <SelectItem value="AERTEC">AERTEC</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
-                      </div>
-                    </>
-                  )}
-                  <KnowledgeFields />
-                  <div className="flex justify-end space-x-2">
-                    <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>Cancel</Button>
-                    <Button onClick={handleCreate} disabled={isSubmitting}>
-                      {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating...</> : 'Create Engineer'}
-                    </Button>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="hourlyRate">Hourly Rate *</Label>
+                            <Input id="hourlyRate" type="number" step="0.01" value={formData.hourlyRate} onChange={(e) => setFormData(prev => ({ ...prev, hourlyRate: e.target.value }))} placeholder="0.00" />
+                          </div>
+                          <div>
+                            <Label htmlFor="currency">Currency</Label>
+                            <Select value={formData.currency} onValueChange={(value: 'EUR' | 'CZK') => setFormData(prev => ({ ...prev, currency: value }))}>
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="CZK">CZK</SelectItem>
+                                <SelectItem value="EUR">EUR</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                    <KnowledgeFields />
+                    <div className="flex justify-end space-x-2">
+                      <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>Cancel</Button>
+                      <Button onClick={handleCreate} disabled={isSubmitting}>
+                        {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating...</> : 'Create Engineer'}
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </DialogContent>
-            </Dialog>
+                </DialogContent>
+              </Dialog>
+            </div>
+            <div className="flex gap-2 items-center">
+              <Search className="h-4 w-4 text-muted-foreground" />
+              <Input
+                className="max-w-xs h-9"
+                placeholder="Filtrovat podle školení..."
+                value={trainingSearchQuery}
+                onChange={e => setTrainingSearchQuery(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleTrainingSearch()}
+              />
+              <Button variant="outline" size="sm" onClick={handleTrainingSearch} disabled={isSearching}>
+                {isSearching ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Hledat'}
+              </Button>
+              {trainingFilterIds !== null && (
+                <Button variant="ghost" size="sm" onClick={() => { setTrainingFilterIds(null); setTrainingSearchQuery(''); }}>
+                  Zrušit filtr
+                </Button>
+              )}
+            </div>
           </div>
 
           <div className="border rounded-lg">
@@ -482,7 +629,7 @@ export function EngineerManagement() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {engineers.map((engineer) => (
+                {filteredEngineers.map((engineer) => (
                   <TableRow key={engineer.id}>
                     <TableCell className="font-medium">{engineer.jmeno}</TableCell>
                     <TableCell className="font-mono text-sm">{engineer.slug}</TableCell>
