@@ -1,47 +1,39 @@
 
 
-## Problém: Měsíční vytížení nesedí kvůli přiřazení týdnů k měsícům
+## Dvě úpravy: Datum odchodu konstruktéra + Červený křížek při editaci
 
-### Příčina
-Funkce `getMonthForWeek` přiřadí každý týden **jednomu** měsíci podle čtvrtka. Např. CW27 (29.6.–3.7.) má čtvrtek 2.7. → je přiřazen červenci. Ale 2 pracovní dny z CW27 spadají do června → ty se **ztratí**.
+### 1. Datum odchodu (end_date) v EngineerManagement
 
-Důsledek: červen má kapacitu 22 dnů (176h), ale dostane hodiny jen z CW23–CW26 (4 plné týdny = 144h) → 144/176 = **82%** místo 90%.
+Tabulka `engineers` už má sloupec `end_date`, ale RPC funkce `engineers_update` a `engineers_create` ho nepropsují a UI ho nezobrazuje.
 
-### Řešení
-V `getMonthlyUtilization` iterovat přes **všechny týdny** (`allWeeks`), ne jen přes `mi.weeks`. Pro každý týden spočítat kolik jeho pracovních dnů spadá do daného měsíce přes `getWorkingDaysInWeekForMonth`. Tím se hranice měsíců správně pokryjí — každý týden přispěje do obou měsíců poměrně.
+**Změny:**
 
-### Změna v `src/components/UtilizationGrid.tsx`
+**A) Migrace** — rozšířit obě RPC funkce o parametr `p_end_date date DEFAULT NULL`:
+- `engineers_create`: přidat `p_end_date` parametr, zapsat do INSERT
+- `engineers_update`: přidat `p_end_date` parametr, pokud není NULL, nastavit `v_row.end_date`
 
-Funkce `getMonthlyUtilization` — změnit `mi.weeks` → `allWeeks`:
+**B) `src/hooks/useEngineers.ts`**:
+- Přidat `endDate?: string` do `UIEngineer`
+- Namapovat `engineer.end_date` → `endDate` v select transformaci
+- Předat `p_end_date` v `createEngineer` a `updateEngineer`
 
-```typescript
-const getMonthlyUtilization = (engineer: UIEngineer, mi: MonthInfo): number => {
-  const sk = isSlovak(engineer);
-  const capacity = getWorkingDaysInMonth(mi.year, mi.month, sk) * 8;
-  if (capacity === 0) return 0;
+**C) `src/components/EngineerManagement.tsx`**:
+- Přidat `endDate: ''` do formData
+- V create/edit dialogu přidat pole „Datum odchodu" s `DatePickerCell` (už existuje v komponentě)
+- V tabulce zobrazit sloupec „Odchod" s datem (pokud je nastaveno)
+- Při otevření edit dialogu naplnit `endDate` z engineera
 
-  let totalScaledHours = 0;
-  for (const cwKey of allWeeks) {  // ← ALL weeks, not mi.weeks
-    const parsed = parseCW(cwKey);
-    if (!parsed) continue;
-    const weekHours = getEngineerHoursForWeek(engineer, cwKey);
-    if (weekHours === 0) continue;
+### 2. Červený křížek při editaci v PlanningEditor
 
-    const monday = getISOWeekMonday(parsed.cw, parsed.year);
-    const daysInMonth = getWorkingDaysInWeekForMonth(monday, mi.year, mi.month, sk);
-    if (daysInMonth === 0) continue;  // week has no days in this month
+V `src/components/PlanningEditor.tsx` — když se edituje buňka (projekt nebo hodiny), přidat červený X button vedle inputu:
 
-    const workingDays = getWorkingDaysInCW(parsed.cw, parsed.year, sk);
-    if (workingDays === 0) continue;
+- U editace **projektu**: vedle SelectTriggeru přidat `<Button>` s červeným `<X>` ikonou → kliknutí nastaví projekt na `FREE` a zavře editaci
+- U editace **hodin**: vedle Input přidat červený X → kliknutí nastaví hodiny na `0` a zavře editaci
+- Také u **needitovaných buněk** s hodnotou (projekt !== FREE): zobrazit malý červený křížek pro rychlé smazání
 
-    const scaledHours = weekHours * (workingDays / 5);
-    totalScaledHours += scaledHours * (daysInMonth / workingDays);
-  }
-
-  return (totalScaledHours / capacity) * 100;
-};
-```
-
-### Výsledek
-Při konstantních 36h/týden bude měsíční vytížení vždy **90%** bez ohledu na to, jak týdny padají na hranice měsíců.
+### Dotčené soubory
+- `supabase/migrations/` — nová migrace pro RPC funkce
+- `src/hooks/useEngineers.ts`
+- `src/components/EngineerManagement.tsx`
+- `src/components/PlanningEditor.tsx`
 
