@@ -39,8 +39,8 @@ export function useEngineerProfile(id: string | undefined) {
 
       const [engRes, swRes, pdmRes, specRes, trainRes, planRes] = await Promise.all([
         supabase.from('engineers').select('*').eq('id', id).single(),
-        supabase.from('engineer_software').select('software_id, knowledge_software(name)').eq('engineer_id', id),
-        supabase.from('engineer_pdm_plm').select('pdm_plm_id, knowledge_pdm_plm(name)').eq('engineer_id', id),
+        supabase.from('engineer_software').select('software_id, level, knowledge_software(name)').eq('engineer_id', id),
+        supabase.from('engineer_pdm_plm').select('pdm_plm_id, level, knowledge_pdm_plm(name)').eq('engineer_id', id),
         supabase.from('engineer_specialization')
           .select('level, granted_date, knowledge_specialization(name), knowledge_oblast(name)')
           .eq('engineer_id', id),
