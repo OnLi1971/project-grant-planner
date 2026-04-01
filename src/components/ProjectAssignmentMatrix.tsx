@@ -364,7 +364,17 @@ export const ProjectAssignmentMatrix = ({
     
     engineerKeys.forEach(engineerKey => {
       matrix[engineerKey] = {};
+      const engEndDate = endDateMap[engineerKey] || null;
       weeks.forEach(week => {
+        // Check departure
+        if (engEndDate && isEngineerDepartedForWeek(engEndDate, week)) {
+          matrix[engineerKey][week] = {
+            projekt: 'DEPARTED',
+            isTentative: false,
+            hours: 0
+          };
+          return;
+        }
         const entry = planningData.find(e => normalizeName(e.konstrukter) === engineerKey && e.cw === week);
         // Default to 'DOVOLENÁ' for CW52, otherwise 'FREE' if no entry exists
         matrix[engineerKey][week] = {
@@ -376,7 +386,7 @@ export const ProjectAssignmentMatrix = ({
     });
     
     return matrix;
-  }, [planningData, engineers]);
+  }, [planningData, engineers, weeks, endDateMap]);
 
 // Create monthly aggregated data
   const monthlyData = useMemo(() => {
