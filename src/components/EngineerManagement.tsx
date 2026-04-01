@@ -157,6 +157,29 @@ export function EngineerManagement() {
     }
   }, [editingEngineer, assignments]);
 
+  useEffect(() => {
+    if (editingEngineer && trainings) {
+      setTrainingRows(trainings.map(t => ({
+        id: t.id,
+        name: t.name,
+        date_from: t.date_from,
+        date_to: t.date_to,
+        company_trainer: t.company_trainer,
+        has_exam: t.has_exam,
+        notes: t.notes,
+      })));
+    }
+  }, [editingEngineer, trainings]);
+
+  const handleTrainingSearch = useCallback(async () => {
+    const q = trainingSearchQuery.trim();
+    if (!q) { setTrainingFilterIds(null); return; }
+    setIsSearching(true);
+    const ids = await searchTraining(q);
+    setTrainingFilterIds(ids);
+    setIsSearching(false);
+  }, [trainingSearchQuery, searchTraining]);
+
   const resetForm = () => {
     setFormData({ displayName: '', status: 'active', company: 'TM CZ', hourlyRate: '', currency: 'CZK', location: 'PRG', endDate: '' });
     setSelectedSoftware([]);
