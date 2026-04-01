@@ -1,24 +1,30 @@
 
 
-## Odstranit Správa zdrojů + Správa uživatelů
+## Přidat specializace do tabulky knowledge_specialization
 
-### Co se odstraní
+Z obrázku přidám 12 specializací pod oblast **Kolejová vozidla** (`cd53be8f-a205-45f7-84bb-6a5b9c55b930`).
 
-**1. Správa zdrojů** — kompletně smazat. Je to localStorage-based legacy komponenta s hardcoded daty. Veškerá funkcionalita je pokryta v "Správa konstruktérů" (EngineerManagement), která pracuje se Supabase.
+### Data k vložení
 
-**2. Správa uživatelů** — smazat. Zobrazuje "Nemáte oprávnění" protože RLS na tabulce `profiles` povoluje SELECT jen vlastního profilu nebo admina (ale admin check sám potřebuje SELECT). Navíc role se ukládají přímo na `profiles` tabulku. Pokud bude potřeba v budoucnu, lze reimplementovat správně.
+| Číslo | Název |
+|-------|-------|
+| 1R | Hrubá stavba |
+| 2R | Vnější opláštění a zasklení |
+| 3R | Stanoviště strojvedoucího / kabina řidiče |
+| 4R | Interiér - vybavení |
+| 5R | Dveře, vstupy |
+| 6R | Větrání, topení, klimatizace |
+| 7R | Interiér - výstroj |
+| 8R | Montáž elektro komponentů, kabeláž |
+| 9R | Montáž vnější výstroje vozidla |
+| 10R | Spřahovací zařízení, přechody |
+| 11R | Podvozky, pohony |
+| 12R | Zpracování dokumentace (katalogy, dokumenty potřebné k certifikaci) |
 
-### Změny
+### Implementace
 
-**`src/pages/Index.tsx`**:
-- Odstranit importy `ResourceManagement` a `UserManagement`
-- Odstranit záložky "Správa zdrojů" a "Správa uživatelů" z tab navigace
-- Odstranit renderování těchto komponent z podmíněného bloku
+**Nová migrace** — jeden INSERT do `knowledge_specialization` s 12 řádky, každý s `oblast_id = 'cd53be8f-...'` a `name` ve formátu `"1R - Hrubá stavba"`.
 
-**Smazat soubory**:
-- `src/components/ResourceManagement.tsx`
-- `src/components/UserManagement.tsx`
-
-### Výsledek
-Záložky "Správa zdrojů" a "Správa uživatelů" zmizí z navigace. Zůstane: Správa projektů, Správa licencí, Správa konstruktérů, Migrace dat, Správa znalostí.
+### Dotčené soubory
+- `supabase/migrations/` — nová migrace
 
