@@ -477,7 +477,7 @@ export const UtilizationGrid: React.FC = () => {
               </td>
               {viewMode === 'weekly'
                 ? allWeeks.map(cwKey => {
-                    const values = filteredEngineers.map(eng => getWeeklyUtilization(eng, cwKey));
+                    const values = filteredEngineers.map(eng => getWeeklyUtilization(eng, cwKey)).filter((v): v is number => v !== null);
                     const avg = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
                     return (
                       <td key={cwKey} className={`border px-1 py-1.5 text-center font-mono ${getUtilizationColor(avg)}`}>
@@ -486,7 +486,7 @@ export const UtilizationGrid: React.FC = () => {
                     );
                   })
                 : months.map(mi => {
-                    const values = filteredEngineers.map(eng => getMonthlyUtilization(eng, mi));
+                    const values = filteredEngineers.map(eng => getMonthlyUtilization(eng, mi)).filter((v): v is number => v !== null);
                     const avg = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
                     return (
                       <td key={mi.label} className={`border px-1 py-1.5 text-center font-mono ${getUtilizationColor(avg)}`}>
