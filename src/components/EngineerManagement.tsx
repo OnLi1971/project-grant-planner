@@ -397,31 +397,32 @@ export function EngineerManagement() {
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <Label className="text-sm font-semibold">Jazyky</Label>
-        <Button type="button" variant="outline" size="sm" onClick={() => setLanguageRows(prev => [...prev, { language: 'English', level: 'A1', test_year: null }])}>
+        <Button type="button" variant="outline" size="sm" onClick={() => setLanguageRows(prev => [...prev, { uid: crypto.randomUUID(), language: 'English', level: 'A1', test_year: null, test_year_str: '' }])}>
           <Plus className="h-3 w-3 mr-1" />Přidat
         </Button>
       </div>
-      {languageRows.map((row, i) => (
-        <div key={i} className="flex items-center gap-2">
-          <Select value={row.language} onValueChange={v => setLanguageRows(prev => prev.map((r, idx) => idx === i ? { ...r, language: v } : r))}>
+      {languageRows.map((row) => (
+        <div key={row.uid} className="flex items-center gap-2">
+          <Select value={row.language} onValueChange={v => setLanguageRows(prev => prev.map(r => r.uid === row.uid ? { ...r, language: v } : r))}>
             <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
             <SelectContent>{LANGUAGES.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
           </Select>
-          <Select value={row.level} onValueChange={v => setLanguageRows(prev => prev.map((r, idx) => idx === i ? { ...r, level: v } : r))}>
+          <Select value={row.level} onValueChange={v => setLanguageRows(prev => prev.map(r => r.uid === row.uid ? { ...r, level: v } : r))}>
             <SelectTrigger className="w-[80px]"><SelectValue /></SelectTrigger>
             <SelectContent>{LANG_LEVELS.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
           </Select>
           <Input
-            type="number"
+            type="text"
+            inputMode="numeric"
             placeholder="Rok"
             className="w-[90px]"
-            value={row.test_year ?? ''}
+            value={row.test_year_str}
             onChange={e => {
-              const v = e.target.value ? parseInt(e.target.value) : null;
-              setLanguageRows(prev => prev.map((r, idx) => idx === i ? { ...r, test_year: v } : r));
+              const v = e.target.value.replace(/\D/g, '').slice(0, 4);
+              setLanguageRows(prev => prev.map(r => r.uid === row.uid ? { ...r, test_year_str: v } : r));
             }}
           />
-          <Button type="button" variant="ghost" size="sm" onClick={() => setLanguageRows(prev => prev.filter((_, idx) => idx !== i))}>
+          <Button type="button" variant="ghost" size="sm" onClick={() => setLanguageRows(prev => prev.filter(r => r.uid !== row.uid))}>
             <Trash2 className="h-3 w-3 text-destructive" />
           </Button>
         </div>
