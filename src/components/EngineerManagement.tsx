@@ -138,10 +138,16 @@ export function EngineerManagement() {
   const [selectedSoftware, setSelectedSoftware] = useState<string[]>([]);
   const [selectedPdmPlm, setSelectedPdmPlm] = useState<string[]>([]);
   const [specRows, setSpecRows] = useState<SpecializationAssignment[]>([]);
+  const [trainingRows, setTrainingRows] = useState<Omit<TrainingRecord, 'engineer_id'>[]>([]);
+  const [trainingSearchQuery, setTrainingSearchQuery] = useState('');
+  const [trainingFilterIds, setTrainingFilterIds] = useState<string[] | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
   const { assignments, saveAssignments } = useEngineerKnowledge(editingEngineer?.id || null);
+  const { trainings, saveTrainings, bulkInsert } = useEngineerTraining(editingEngineer?.id || null);
+  const searchTraining = useTrainingSearch();
 
   useEffect(() => {
     if (editingEngineer && assignments) {
