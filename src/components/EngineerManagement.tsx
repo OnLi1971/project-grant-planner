@@ -16,7 +16,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { Plus, Users, Edit, Loader2, Trash2, CalendarIcon, Search } from 'lucide-react';
+import { Plus, Users, Edit, Loader2, Trash2, CalendarIcon, Search, Eye } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { format, parse, isValid, getYear } from 'date-fns';
