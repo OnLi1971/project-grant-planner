@@ -98,6 +98,25 @@ export default function EngineerProfile() {
         </CardContent>
       </Card>
 
+      {/* Languages - full width before grid */}
+      {languages.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2"><Languages className="h-4 w-4" />Jazyky</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {languages.map(l => (
+                <Badge key={l.language} variant="secondary">
+                  {l.language} — {l.level}
+                  {l.test_year && <span className="ml-1 opacity-70">({l.test_year})</span>}
+                </Badge>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )
+
       {/* Info grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Basic info */}
