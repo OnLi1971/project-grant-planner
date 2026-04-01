@@ -5,10 +5,8 @@ import { PlanningEditor } from '@/components/PlanningEditor';
 import { ProjectAssignmentMatrix } from '@/components/ProjectAssignmentMatrix';
 import { RevenueOverview } from '@/components/RevenueOverview';
 import { UtilizationGrid } from '@/components/UtilizationGrid';
-import { ResourceManagement } from '@/components/ResourceManagement';
 import { LicenseManagement } from '@/components/LicenseManagement';
 import { ProjectManagement } from '@/components/ProjectManagement';
-import UserManagement from '@/components/UserManagement';
 import { EngineerManagement } from '@/components/EngineerManagement';
 import { EngineerMigration } from '@/components/EngineerMigration';
 import { KnowledgeManagement } from '@/components/KnowledgeManagement';
@@ -30,7 +28,7 @@ const Index = () => {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const [outputView, setOutputView] = useState<'matrix' | 'revenue' | 'utilization'>('matrix');
-  const [managementView, setManagementView] = useState<'projects' | 'resources' | 'licenses' | 'users' | 'engineers' | 'migration' | 'knowledge'>('projects');
+  const [managementView, setManagementView] = useState<'projects' | 'licenses' | 'engineers' | 'migration' | 'knowledge'>('projects');
 
   // Show loading while checking auth
   if (loading) {
@@ -175,28 +173,12 @@ const Index = () => {
                     Správa projektů
                   </Button>
                   <Button
-                    variant={managementView === 'resources' ? 'default' : 'outline'}
-                    onClick={() => setManagementView('resources')}
-                    className="flex items-center gap-2"
-                  >
-                    <UserPlus className="h-4 w-4" />
-                    Správa zdrojů
-                  </Button>
-                  <Button
                     variant={managementView === 'licenses' ? 'default' : 'outline'}
                     onClick={() => setManagementView('licenses')}
                     className="flex items-center gap-2"
                   >
                     <Shield className="h-4 w-4" />
                     Správa licencí
-                  </Button>
-                  <Button
-                    variant={managementView === 'users' ? 'default' : 'outline'}
-                    onClick={() => setManagementView('users')}
-                    className="flex items-center gap-2"
-                  >
-                    <Users className="h-4 w-4" />
-                    Správa uživatelů
                   </Button>
                   <Button
                     variant={managementView === 'engineers' ? 'default' : 'outline'}
@@ -227,12 +209,8 @@ const Index = () => {
               
               {managementView === 'projects' ? (
                 <ProjectManagement />
-              ) : managementView === 'resources' ? (
-                <ResourceManagement />
               ) : managementView === 'licenses' ? (
                 <LicenseManagement />
-              ) : managementView === 'users' ? (
-                <UserManagement />
               ) : managementView === 'engineers' ? (
                 <EngineerManagement />
               ) : managementView === 'knowledge' ? (
