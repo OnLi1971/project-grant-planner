@@ -116,6 +116,7 @@ function DatePickerCell({ value, onChange }: { value: string | null; onChange: (
 }
 
 export function EngineerManagement() {
+  const navigate = useNavigate();
   const { engineers, isLoading, createEngineer, updateEngineer, deleteEngineer, refetch } = useEngineers();
   const swList = useKnowledgeList('knowledge_software');
   const pdmList = useKnowledgeList('knowledge_pdm_plm');
