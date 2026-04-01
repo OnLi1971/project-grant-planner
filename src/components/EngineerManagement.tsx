@@ -277,6 +277,7 @@ export function EngineerManagement() {
       } as any);
 
       await saveAssignments(editingEngineer.id, selectedSoftware, selectedPdmPlm, specRows);
+      await saveTrainings(editingEngineer.id, trainingRows);
       
       setIsEditDialogOpen(false);
       setEditingEngineer(null);
