@@ -209,12 +209,8 @@ const Index = () => {
               
               {managementView === 'projects' ? (
                 <ProjectManagement />
-              ) : managementView === 'resources' ? (
-                <ResourceManagement />
               ) : managementView === 'licenses' ? (
                 <LicenseManagement />
-              ) : managementView === 'users' ? (
-                <UserManagement />
               ) : managementView === 'engineers' ? (
                 <EngineerManagement />
               ) : managementView === 'knowledge' ? (
