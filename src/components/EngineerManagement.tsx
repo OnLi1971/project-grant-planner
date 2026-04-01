@@ -282,7 +282,8 @@ export function EngineerManagement() {
         end_date: endDateIso,
       } as any);
 
-      await saveAssignments(editingEngineer.id, selectedSoftware, selectedPdmPlm, specRows, languageRows);
+      const langToSave = languageRows.map(({ language, level, test_year_str }) => ({ language, level, test_year: test_year_str ? parseInt(test_year_str) || null : null }));
+      await saveAssignments(editingEngineer.id, selectedSoftware, selectedPdmPlm, specRows, langToSave);
       await saveTrainings(editingEngineer.id, trainingRows);
       
       setIsEditDialogOpen(false);
