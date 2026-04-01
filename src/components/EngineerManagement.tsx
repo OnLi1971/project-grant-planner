@@ -498,9 +498,15 @@ export function EngineerManagement() {
           <CardDescription>Manage engineer records in the new centralized system</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex justify-between items-center mb-4">
-            <p className="text-sm text-muted-foreground">{engineers.length} engineers currently active</p>
-            
+          <div className="flex flex-col gap-3 mb-4">
+            <div className="flex justify-between items-center">
+              <p className="text-sm text-muted-foreground">
+                {trainingFilterIds !== null
+                  ? `${filteredEngineers.length} z ${engineers.length} konstruktérů (filtr: školení)`
+                  : `${engineers.length} engineers currently active`}
+              </p>
+              
+
             <Dialog open={isCreateDialogOpen} onOpenChange={(open) => { setIsCreateDialogOpen(open); if (!open) resetForm(); }}>
               <DialogTrigger asChild>
                 <Button><Plus className="mr-2 h-4 w-4" />Add Engineer</Button>
