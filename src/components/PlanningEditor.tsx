@@ -194,7 +194,8 @@ export const PlanningEditor: React.FC = () => {
   const allKonstrukteri = engineers.map(eng => ({
     jmeno: eng.display_name,
     slug: eng.slug,
-    id: eng.id
+    id: eng.id,
+    end_date: eng.end_date || null
   }));
   
   const [projects, setProjects] = useState<DatabaseProject[]>([]);
