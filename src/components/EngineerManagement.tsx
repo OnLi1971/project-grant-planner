@@ -149,7 +149,7 @@ export function EngineerManagement() {
   }, [editingEngineer, assignments]);
 
   const resetForm = () => {
-    setFormData({ displayName: '', status: 'active', company: 'TM CZ', hourlyRate: '', currency: 'CZK', location: 'PRG' });
+    setFormData({ displayName: '', status: 'active', company: 'TM CZ', hourlyRate: '', currency: 'CZK', location: 'PRG', endDate: '' });
     setSelectedSoftware([]);
     setSelectedPdmPlm([]);
     setSpecRows([]);
