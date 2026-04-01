@@ -699,17 +699,22 @@ export const PlanningEditor: React.FC = () => {
                 const currentYear = today.getFullYear();
                 const currentWeekString = `CW${currentWeek.toString().padStart(2, '0')}-${currentYear}`;
                 const isCurrentWeek = week.cw === currentWeekString;
+                const isDeparted = isEngineerDepartedForWeek(selectedEngineerEndDate, week.cw);
                 
-                // Debug logging
-                if (week.cw === currentWeekString) {
-                  console.log('✅ FOUND CURRENT WEEK:', {
-                    weekCW: week.cw,
-                    currentWeekString,
-                    isCurrentWeek,
-                    today: today.toISOString(),
-                    currentWeek,
-                    currentYear
-                  });
+                // Departed week — show ✕ row
+                if (isDeparted) {
+                  return (
+                    <tr key={week.cw} className="border-b bg-gray-100 dark:bg-gray-900/50">
+                      <td className="p-3 font-mono font-medium text-muted-foreground">{week.cw}</td>
+                      <td className="p-3 text-muted-foreground">{week.mesic}</td>
+                      <td className="p-3 text-center" colSpan={3}>
+                        <div className="flex items-center justify-center gap-2 text-red-500">
+                          <X className="h-4 w-4" />
+                          <span className="text-sm font-medium">Odešel/Odešla</span>
+                        </div>
+                      </td>
+                    </tr>
+                  );
                 }
                 
                 return (
