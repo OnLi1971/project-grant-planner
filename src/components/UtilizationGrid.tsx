@@ -217,7 +217,8 @@ export const UtilizationGrid: React.FC = () => {
 
   // Weekly utilization
   // Proportional scaling: rawHours × (workingDays/5) / (workingDays×8) = rawHours / 40
-  const getWeeklyUtilization = (engineer: UIEngineer, cwKey: string): number => {
+  const getWeeklyUtilization = (engineer: UIEngineer, cwKey: string): number | null => {
+    if (engineer.endDate && isEngineerDepartedForWeek(engineer.endDate, cwKey)) return null;
     const hours = getEngineerHoursForWeek(engineer, cwKey);
     if (hours === 0) return 0;
     return (hours / 40) * 100;
