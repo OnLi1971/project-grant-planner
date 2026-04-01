@@ -79,8 +79,8 @@ export function useTrainingSearch() {
       .select('engineer_id')
       .ilike('name', `%${query.trim()}%`) as any);
     if (error) return [];
-    const raw = (data || []).map((r: any) => String(r.engineer_id));
-    const ids: string[] = [...new Set(raw)];
+    const raw: string[] = (data || []).map((r: any) => String(r.engineer_id));
+    const ids = Array.from(new Set(raw));
     return ids;
   };
 }
