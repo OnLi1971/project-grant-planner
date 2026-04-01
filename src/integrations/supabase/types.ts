@@ -336,6 +336,57 @@ export type Database = {
           },
         ]
       }
+      engineer_training: {
+        Row: {
+          company_trainer: string | null
+          created_at: string
+          date_from: string | null
+          date_to: string | null
+          engineer_id: string
+          has_exam: boolean
+          id: string
+          name: string
+          notes: string | null
+        }
+        Insert: {
+          company_trainer?: string | null
+          created_at?: string
+          date_from?: string | null
+          date_to?: string | null
+          engineer_id: string
+          has_exam?: boolean
+          id?: string
+          name: string
+          notes?: string | null
+        }
+        Update: {
+          company_trainer?: string | null
+          created_at?: string
+          date_from?: string | null
+          date_to?: string | null
+          engineer_id?: string
+          has_exam?: boolean
+          id?: string
+          name?: string
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "engineer_training_engineer_id_fkey"
+            columns: ["engineer_id"]
+            isOneToOne: false
+            referencedRelation: "engineers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "engineer_training_engineer_id_fkey"
+            columns: ["engineer_id"]
+            isOneToOne: false
+            referencedRelation: "planning_matrix"
+            referencedColumns: ["engineer_id"]
+          },
+        ]
+      }
       engineers: {
         Row: {
           company: string
