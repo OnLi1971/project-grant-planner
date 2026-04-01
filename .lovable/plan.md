@@ -1,31 +1,48 @@
 
 
-## Přidat specializace pro Obecné strojírenství
+## Přidat Trénink (školení) s vyhledáváním
 
-Nová migrace vloží 13 specializací pod oblast **Obecné strojírenství** (`51cb06e9-9a08-4291-8441-e3fb6f818f08`).
+### Co se vytvoří
 
-### Data k vložení
+**1. Databázová tabulka `engineer_training`**
 
-| Číslo | Název | sort_order |
-|-------|-------|------------|
-| 1M | Svařované konstrukce | 1 |
-| 2M | Kinematické mechanismy, zdvihací zařízení, převody a pohony | 2 |
-| 3M | Mechatronika | 3 |
-| 4M | Nástroje a přípravky | 4 |
-| 5M | Automatizované výrobní a dopravní linky | 5 |
-| 6M | Technologie a podpora výroby | 6 |
-| 7M | Konstrukce a renovace turbín a turbínových těles | 7 |
-| 8M | Odlitky turbínových těles | 8 |
-| 9M | Svařence turbínových těles a příslušenství | 9 |
-| 10M | Turbínové lopatky a průtočná část | 10 |
-| 11M | Turbínové ventily | 11 |
-| 12M | Turbínové rotory | 12 |
-| 13M | Servis parních turbín | 13 |
+| Sloupec | Typ | Popis |
+|---------|-----|-------|
+| id | uuid PK | |
+| engineer_id | uuid | vazba na engineers |
+| name | text | Název školení |
+| date_from | date | Od |
+| date_to | date | Do |
+| company_trainer | text | Firma/Školitel |
+| has_exam | boolean | Zkouška (ano/ne) |
+| notes | text | Poznámka |
+| created_at | timestamptz | |
 
-### Implementace
+RLS: SELECT pro authenticated, INSERT/DELETE/UPDATE pro editors+admins.
 
-Jedna migrace — INSERT 13 řádků do `knowledge_specialization` s `oblast_id = '51cb06e9-...'`, `name` ve formátu `"1M - Svařované konstrukce"` a `sort_order` 1–13.
+**2. UI — záložka Trénink v profilu konstruktéra**
+
+V dialogu úpravy konstruktéra (EngineerManagement) přidat sekci "Trénink" pod stávající znalosti. Tabulka s řádky: Název, Od, Do, Firma/Školitel, Zkouška, Poznámka. Tlačítko přidat/smazat řádek.
+
+**3. Excel import**
+
+Tlačítko "Importovat z Excelu" nad tabulkou tréninků. Použije knihovnu `xlsx` (SheetJS) pro client-side parsing. Uživatel nahraje .xlsx, systém naparsuje sloupce (Název školení, Od, Do, Firma/Školitel, Zkouška, Poznámka) a uloží do DB pro vybraného konstruktéra.
+
+**4. Vyhledávání konstruktérů podle školení**
+
+V EngineerManagement přidat filtr "Filtrovat podle školení" — textový input, který vyhledá v `engineer_training.name` a zobrazí pouze konstruktéry, kteří mají odpovídající školení. Použije Supabase join dotaz.
 
 ### Dotčené soubory
-- `supabase/migrations/` — nová migrace
+
+- **Nová migrace** — CREATE TABLE `engineer_training` + RLS policies
+- **`src/hooks/useKnowledgeData.ts`** — nový hook `useEngineerTraining` (CRUD + search)
+- **`src/components/EngineerManagement.tsx`** — sekce Trénink v editačním dialogu + filtr v seznamu
+- **`package.json`** — přidat `xlsx` knihovnu pro Excel import
+- **`src/components/TrainingImport.tsx`** — nová komponenta pro Excel upload + preview + uložení
+
+### Technický detail
+
+Vyhledávání: `supabase.from('engineer_training').select('engineer_id').ilike('name', '%query%')` → filtrovat seznam engineers podle nalezených engineer_id.
+
+Excel parsing: `xlsx.read(file)` → extrahovat řádky → mapovat na sloupce → bulk insert do `engineer_training`.
 
