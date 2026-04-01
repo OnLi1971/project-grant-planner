@@ -391,11 +391,11 @@ export function EngineerManagement() {
       <h4 className="text-sm font-semibold text-muted-foreground">Správa znalostí</h4>
       <div>
         <Label>Software</Label>
-        <KnowledgeMultiSelect items={swList.items} selectedIds={selectedSoftware} onChange={setSelectedSoftware} placeholder="Vyberte software..." isLoading={swList.isLoading} />
+        <KnowledgeMultiSelect items={swList.items} selectedItems={selectedSoftware} onChange={setSelectedSoftware} placeholder="Vyberte software..." isLoading={swList.isLoading} showLevels />
       </div>
       <div>
         <Label>PDM/PLM</Label>
-        <KnowledgeMultiSelect items={pdmList.items} selectedIds={selectedPdmPlm} onChange={setSelectedPdmPlm} placeholder="Vyberte PDM/PLM..." isLoading={pdmList.isLoading} />
+        <KnowledgeMultiSelect items={pdmList.items} selectedItems={selectedPdmPlm} onChange={setSelectedPdmPlm} placeholder="Vyberte PDM/PLM..." isLoading={pdmList.isLoading} showLevels />
       </div>
       <SpecializationEditor />
       <Separator className="my-2" />

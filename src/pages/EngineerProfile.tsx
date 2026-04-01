@@ -136,7 +136,7 @@ export default function EngineerProfile() {
           <CardContent>
             {pdmPlm.length > 0 ? (
               <div className="flex flex-wrap gap-2">
-                {pdmPlm.map(p => <Badge key={p} variant="secondary">{p}</Badge>)}
+                {pdmPlm.map(p => <Badge key={p.name} variant="secondary">{p.name} <span className="ml-1 opacity-70">⭐{p.level}</span></Badge>)}
               </div>
             ) : <p className="text-sm text-muted-foreground">Žádné PDM/PLM</p>}
           </CardContent>
