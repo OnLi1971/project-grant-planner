@@ -74,18 +74,25 @@ export type SpecializationAssignment = {
   granted_date: string | null;
 };
 
+export type LanguageAssignment = {
+  language: string;
+  level: string;
+  test_year: number | null;
+};
+
 export function useEngineerKnowledge(engineerId: string | null) {
   const qc = useQueryClient();
 
   const { data: assignments, isLoading } = useQuery({
     queryKey: ['engineer-knowledge', engineerId],
     queryFn: async () => {
-      if (!engineerId) return { software: [], pdmPlm: [], specializations: [] };
+      if (!engineerId) return { software: [], pdmPlm: [], specializations: [], languages: [] };
 
-      const [sw, pdm, spec] = await Promise.all([
+      const [sw, pdm, spec, lang] = await Promise.all([
         supabase.from('engineer_software').select('software_id, level').eq('engineer_id', engineerId),
         supabase.from('engineer_pdm_plm').select('pdm_plm_id, level').eq('engineer_id', engineerId),
         supabase.from('engineer_specialization').select('id, oblast_id, specialization_id, level, granted_date').eq('engineer_id', engineerId),
+        (supabase.from('engineer_language' as any).select('language, level, test_year').eq('engineer_id', engineerId) as any),
       ]);
 
       return {
@@ -98,6 +105,7 @@ export function useEngineerKnowledge(engineerId: string | null) {
           level: r.level,
           granted_date: r.granted_date,
         })) as SpecializationAssignment[],
+        languages: (lang.data || []) as LanguageAssignment[],
       };
     },
     enabled: !!engineerId,
