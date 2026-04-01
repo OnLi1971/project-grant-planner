@@ -226,13 +226,22 @@ export const UtilizationGrid: React.FC = () => {
 
   // Monthly utilization with proportional splitting
   // Monthly: scale each week's hours proportionally, then sum for the month
-  const getMonthlyUtilization = (engineer: UIEngineer, mi: MonthInfo): number => {
+  const getMonthlyUtilization = (engineer: UIEngineer, mi: MonthInfo): number | null => {
+    // Check if ALL weeks in this month are departed
+    const allDeparted = mi.weeks.every(cwKey => 
+      engineer.endDate && isEngineerDepartedForWeek(engineer.endDate, cwKey)
+    );
+    if (allDeparted) return null;
+
     const sk = isSlovak(engineer);
     const capacity = getWorkingDaysInMonth(mi.year, mi.month, sk) * 8;
     if (capacity === 0) return 0;
 
     let totalScaledHours = 0;
     for (const cwKey of allWeeks) {
+      // Skip departed weeks
+      if (engineer.endDate && isEngineerDepartedForWeek(engineer.endDate, cwKey)) continue;
+      
       const parsed = parseCW(cwKey);
       if (!parsed) continue;
       const weekHours = getEngineerHoursForWeek(engineer, cwKey);
