@@ -140,7 +140,7 @@ export function EngineerManagement() {
   const [selectedSoftware, setSelectedSoftware] = useState<{ id: string; level: number }[]>([]);
   const [selectedPdmPlm, setSelectedPdmPlm] = useState<{ id: string; level: number }[]>([]);
   const [specRows, setSpecRows] = useState<SpecializationAssignment[]>([]);
-  const [languageRows, setLanguageRows] = useState<LanguageAssignment[]>([]);
+  const [languageRows, setLanguageRows] = useState<(LanguageAssignment & { uid: string; test_year_str: string })[]>([]);
   const [trainingRows, setTrainingRows] = useState<Omit<TrainingRecord, 'engineer_id'>[]>([]);
   const [trainingSearchQuery, setTrainingSearchQuery] = useState('');
   const [trainingFilterIds, setTrainingFilterIds] = useState<string[] | null>(null);
@@ -157,7 +157,7 @@ export function EngineerManagement() {
       setSelectedSoftware(assignments.software);
       setSelectedPdmPlm(assignments.pdmPlm);
       setSpecRows(assignments.specializations.length > 0 ? assignments.specializations : []);
-      setLanguageRows(assignments.languages || []);
+      setLanguageRows((assignments.languages || []).map(l => ({ ...l, uid: crypto.randomUUID(), test_year_str: l.test_year != null ? String(l.test_year) : '' })));
     }
   }, [editingEngineer, assignments]);
 
@@ -240,7 +240,8 @@ export function EngineerManagement() {
       const result = await createEngineer(formData.displayName, undefined, formData.status, formData.company, hourlyRate, currency, formData.location, undefined, undefined, undefined, endDateIso || undefined);
       
       if (result && (selectedSoftware.length || selectedPdmPlm.length || specRows.length || languageRows.length)) {
-        await saveAssignments(result.id, selectedSoftware, selectedPdmPlm, specRows, languageRows);
+        const langToSave = languageRows.map(({ language, level, test_year_str }) => ({ language, level, test_year: test_year_str ? parseInt(test_year_str) || null : null }));
+        await saveAssignments(result.id, selectedSoftware, selectedPdmPlm, specRows, langToSave);
       }
       
       setIsCreateDialogOpen(false);
@@ -280,7 +281,8 @@ export function EngineerManagement() {
         end_date: endDateIso,
       } as any);
 
-      await saveAssignments(editingEngineer.id, selectedSoftware, selectedPdmPlm, specRows, languageRows);
+      const langToSave = languageRows.map(({ language, level, test_year_str }) => ({ language, level, test_year: test_year_str ? parseInt(test_year_str) || null : null }));
+      await saveAssignments(editingEngineer.id, selectedSoftware, selectedPdmPlm, specRows, langToSave);
       await saveTrainings(editingEngineer.id, trainingRows);
       
       setIsEditDialogOpen(false);
@@ -394,31 +396,32 @@ export function EngineerManagement() {
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <Label className="text-sm font-semibold">Jazyky</Label>
-        <Button type="button" variant="outline" size="sm" onClick={() => setLanguageRows(prev => [...prev, { language: 'English', level: 'A1', test_year: null }])}>
+        <Button type="button" variant="outline" size="sm" onClick={() => setLanguageRows(prev => [...prev, { uid: crypto.randomUUID(), language: 'English', level: 'A1', test_year: null, test_year_str: '' }])}>
           <Plus className="h-3 w-3 mr-1" />Přidat
         </Button>
       </div>
-      {languageRows.map((row, i) => (
-        <div key={i} className="flex items-center gap-2">
-          <Select value={row.language} onValueChange={v => setLanguageRows(prev => prev.map((r, idx) => idx === i ? { ...r, language: v } : r))}>
+      {languageRows.map((row) => (
+        <div key={row.uid} className="flex items-center gap-2">
+          <Select value={row.language} onValueChange={v => setLanguageRows(prev => prev.map(r => r.uid === row.uid ? { ...r, language: v } : r))}>
             <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
             <SelectContent>{LANGUAGES.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
           </Select>
-          <Select value={row.level} onValueChange={v => setLanguageRows(prev => prev.map((r, idx) => idx === i ? { ...r, level: v } : r))}>
+          <Select value={row.level} onValueChange={v => setLanguageRows(prev => prev.map(r => r.uid === row.uid ? { ...r, level: v } : r))}>
             <SelectTrigger className="w-[80px]"><SelectValue /></SelectTrigger>
             <SelectContent>{LANG_LEVELS.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
           </Select>
           <Input
-            type="number"
+            type="text"
+            inputMode="numeric"
             placeholder="Rok"
             className="w-[90px]"
-            value={row.test_year ?? ''}
+            value={row.test_year_str}
             onChange={e => {
-              const v = e.target.value ? parseInt(e.target.value) : null;
-              setLanguageRows(prev => prev.map((r, idx) => idx === i ? { ...r, test_year: v } : r));
+              const v = e.target.value.replace(/\D/g, '').slice(0, 4);
+              setLanguageRows(prev => prev.map(r => r.uid === row.uid ? { ...r, test_year_str: v } : r));
             }}
           />
-          <Button type="button" variant="ghost" size="sm" onClick={() => setLanguageRows(prev => prev.filter((_, idx) => idx !== i))}>
+          <Button type="button" variant="ghost" size="sm" onClick={() => setLanguageRows(prev => prev.filter(r => r.uid !== row.uid))}>
             <Trash2 className="h-3 w-3 text-destructive" />
           </Button>
         </div>
