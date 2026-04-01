@@ -243,7 +243,6 @@ export function EngineerManagement() {
         const langToSave = languageRows.map(({ language, level, test_year_str }) => ({ language, level, test_year: test_year_str ? parseInt(test_year_str) || null : null }));
         await saveAssignments(result.id, selectedSoftware, selectedPdmPlm, specRows, langToSave);
       }
-      }
       
       setIsCreateDialogOpen(false);
       resetForm();
