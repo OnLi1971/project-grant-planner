@@ -116,7 +116,8 @@ export function useEngineerKnowledge(engineerId: string | null) {
     engId: string,
     softwareItems: { id: string; level: number }[],
     pdmPlmItems: { id: string; level: number }[],
-    specializations: SpecializationAssignment[]
+    specializations: SpecializationAssignment[],
+    languages?: LanguageAssignment[]
   ) => {
     await Promise.all([
       (async () => {
