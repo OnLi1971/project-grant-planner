@@ -55,6 +55,8 @@ function validateSpecDates(rows: SpecializationAssignment[]): string | null {
 }
 
 const LEVELS = ['A', 'B', 'C', 'D', 'E', 'F'] as const;
+const LANGUAGES = ['English', 'German', 'Russian'] as const;
+const LANG_LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const;
 
 /** Inline date picker: text input (dd.MM.yyyy) + calendar popover */
 function DatePickerCell({ value, onChange }: { value: string | null; onChange: (v: string | null) => void }) {
