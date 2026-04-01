@@ -206,14 +206,17 @@ export type Database = {
       engineer_pdm_plm: {
         Row: {
           engineer_id: string
+          level: number
           pdm_plm_id: string
         }
         Insert: {
           engineer_id: string
+          level?: number
           pdm_plm_id: string
         }
         Update: {
           engineer_id?: string
+          level?: number
           pdm_plm_id?: string
         }
         Relationships: [
@@ -243,14 +246,17 @@ export type Database = {
       engineer_software: {
         Row: {
           engineer_id: string
+          level: number
           software_id: string
         }
         Insert: {
           engineer_id: string
+          level?: number
           software_id: string
         }
         Update: {
           engineer_id?: string
+          level?: number
           software_id?: string
         }
         Relationships: [
