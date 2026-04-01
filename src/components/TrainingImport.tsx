@@ -26,7 +26,7 @@ function excelDateToISO(val: any): string | null {
   return null;
 }
 
-export function TrainingImport({ engineerId, onImport }: Props) {
+export function TrainingImport({ onImport }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<Omit<TrainingRecord, 'engineer_id'>[]>([]);
   const [open, setOpen] = useState(false);
