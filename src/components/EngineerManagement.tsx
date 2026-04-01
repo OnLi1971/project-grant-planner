@@ -629,7 +629,7 @@ export function EngineerManagement() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {engineers.map((engineer) => (
+                {filteredEngineers.map((engineer) => (
                   <TableRow key={engineer.id}>
                     <TableCell className="font-medium">{engineer.jmeno}</TableCell>
                     <TableCell className="font-mono text-sm">{engineer.slug}</TableCell>
