@@ -63,6 +63,7 @@ export function useEngineers() {
           software: engineer.software,
           pdmPlm: engineer.pdm_plm,
           specialization: engineer.specialization,
+          endDate: engineer.end_date ?? undefined,
         };
       });
     },
