@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, Filter, History, Save, Trash2, Users } from 'lucide-react';
+import { ChevronDown, Filter, History, Save, Trash2, Users, X } from 'lucide-react';
 import { PlanningHistoryDialog } from './PlanningHistoryDialog';
 import { ProjectAllocationDialog, AllocationEntry } from './ProjectAllocationDialog';
 import { usePlanning } from '@/contexts/PlanningContext';
