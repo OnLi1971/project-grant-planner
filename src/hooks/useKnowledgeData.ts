@@ -20,7 +20,13 @@ export function useKnowledgeList(table: KnowledgeTable) {
   const { data = [], isLoading } = useQuery({
     queryKey: qk,
     queryFn: async () => {
-      const { data, error } = await (supabase.from(table as any).select('*').order('name') as any);
+      const query = supabase.from(table as any).select('*');
+      if (table === 'knowledge_specialization') {
+        (query as any).order('sort_order', { ascending: true }).order('name', { ascending: true });
+      } else {
+        (query as any).order('name');
+      }
+      const { data, error } = await (query as any);
       if (error) throw error;
       return data as KnowledgeItem[];
     },
