@@ -189,8 +189,8 @@ export function EngineerManagement() {
     setSelectedSoftware([]);
     setSelectedPdmPlm([]);
     setSpecRows([]);
+    setLanguageRows([]);
     setTrainingRows([]);
-    setSpecRows([]);
   };
 
   const addSpecRow = () => {
