@@ -80,7 +80,8 @@ export function useEngineers() {
     location?: 'PRG' | 'PLZ' | 'SK',
     software?: string,
     pdmPlm?: string,
-    specialization?: string
+    specialization?: string,
+    endDate?: string
   ) => {
     try {
       const { data, error } = await supabase.rpc('engineers_create', {
@@ -95,6 +96,7 @@ export function useEngineers() {
         p_software: software,
         p_pdm_plm: pdmPlm,
         p_specialization: specialization,
+        p_end_date: endDate || null,
       });
       if (error) throw error;
 
