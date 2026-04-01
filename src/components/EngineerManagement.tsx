@@ -140,7 +140,7 @@ export function EngineerManagement() {
   const [selectedSoftware, setSelectedSoftware] = useState<{ id: string; level: number }[]>([]);
   const [selectedPdmPlm, setSelectedPdmPlm] = useState<{ id: string; level: number }[]>([]);
   const [specRows, setSpecRows] = useState<SpecializationAssignment[]>([]);
-  const [languageRows, setLanguageRows] = useState<LanguageAssignment[]>([]);
+  const [languageRows, setLanguageRows] = useState<(LanguageAssignment & { uid: string; test_year_str: string })[]>([]);
   const [trainingRows, setTrainingRows] = useState<Omit<TrainingRecord, 'engineer_id'>[]>([]);
   const [trainingSearchQuery, setTrainingSearchQuery] = useState('');
   const [trainingFilterIds, setTrainingFilterIds] = useState<string[] | null>(null);
