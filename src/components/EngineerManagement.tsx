@@ -137,8 +137,8 @@ export function EngineerManagement() {
     location: 'PRG' as 'PRG' | 'PLZ' | 'SK',
     endDate: '' as string,
   });
-  const [selectedSoftware, setSelectedSoftware] = useState<string[]>([]);
-  const [selectedPdmPlm, setSelectedPdmPlm] = useState<string[]>([]);
+  const [selectedSoftware, setSelectedSoftware] = useState<{ id: string; level: number }[]>([]);
+  const [selectedPdmPlm, setSelectedPdmPlm] = useState<{ id: string; level: number }[]>([]);
   const [specRows, setSpecRows] = useState<SpecializationAssignment[]>([]);
   const [trainingRows, setTrainingRows] = useState<Omit<TrainingRecord, 'engineer_id'>[]>([]);
   const [trainingSearchQuery, setTrainingSearchQuery] = useState('');
