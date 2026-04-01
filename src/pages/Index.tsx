@@ -28,7 +28,7 @@ const Index = () => {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const [outputView, setOutputView] = useState<'matrix' | 'revenue' | 'utilization'>('matrix');
-  const [managementView, setManagementView] = useState<'projects' | 'resources' | 'licenses' | 'users' | 'engineers' | 'migration' | 'knowledge'>('projects');
+  const [managementView, setManagementView] = useState<'projects' | 'licenses' | 'engineers' | 'migration' | 'knowledge'>('projects');
 
   // Show loading while checking auth
   if (loading) {
