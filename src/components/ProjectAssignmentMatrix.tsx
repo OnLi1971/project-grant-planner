@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, Filter, History, Save, Trash2, Users } from 'lucide-react';
+import { ChevronDown, Filter, History, Save, Trash2, Users, X } from 'lucide-react';
 import { PlanningHistoryDialog } from './PlanningHistoryDialog';
 import { ProjectAllocationDialog, AllocationEntry } from './ProjectAllocationDialog';
 import { usePlanning } from '@/contexts/PlanningContext';
@@ -13,6 +13,7 @@ import { customers, projectManagers, programs, projects } from '@/data/projectsD
 import { getWeek } from 'date-fns';
 import { normalizeName, createNameMapping } from '@/utils/nameNormalization';
 import { getWorkingDaysFromMonthName, getWorkingDaysInWeekForMonth, getWorkingDaysInCW, getISOWeekMonday, getWorkingDaysInMonth } from '@/utils/workingDays';
+import { isEngineerDepartedForWeek } from '@/utils/engineerDeparture';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useCustomEngineerViews } from '@/hooks/useCustomEngineerViews';
@@ -134,6 +135,9 @@ const generateMonths = (weeksList: string[]): { name: string; weeks: string[] }[
 };
 
 const getProjectBadgeStyle = (projekt: string) => {
+  // Departed engineer
+  if (projekt === 'DEPARTED') return 'bg-gray-200 text-red-500 border-gray-300 dark:bg-gray-800 dark:text-red-400 dark:border-gray-700';
+  
   // Free, vacation, sick leave and overtime
   if (projekt === 'FREE') return 'bg-destructive/20 text-destructive border-destructive/30 font-semibold dark:bg-destructive/30 dark:text-destructive-foreground';
   if (projekt === 'DOVOLENÁ') return 'bg-success/30 text-success-foreground border-success dark:bg-success/40 dark:text-success-foreground';
@@ -272,6 +276,15 @@ export const ProjectAssignmentMatrix = ({
     return map;
   }, [planningData, engineers]);
 
+  // Map normalized name → end_date for departure checks
+  const endDateMap = useMemo(() => {
+    const map: Record<string, string | null> = {};
+    engineers.forEach(e => {
+      map[normalizeName(e.display_name)] = e.end_date || null;
+    });
+    return map;
+  }, [engineers]);
+
   // Dynamic project mappings based on projectsData
   const projektInfo = useMemo(() => {
     const info: { [key: string]: { zakaznik: string, pm: string, program: string } } = {};
@@ -354,7 +367,17 @@ export const ProjectAssignmentMatrix = ({
     
     engineerKeys.forEach(engineerKey => {
       matrix[engineerKey] = {};
+      const engEndDate = endDateMap[engineerKey] || null;
       weeks.forEach(week => {
+        // Check departure
+        if (engEndDate && isEngineerDepartedForWeek(engEndDate, week)) {
+          matrix[engineerKey][week] = {
+            projekt: 'DEPARTED',
+            isTentative: false,
+            hours: 0
+          };
+          return;
+        }
         const entry = planningData.find(e => normalizeName(e.konstrukter) === engineerKey && e.cw === week);
         // Default to 'DOVOLENÁ' for CW52, otherwise 'FREE' if no entry exists
         matrix[engineerKey][week] = {
@@ -366,7 +389,7 @@ export const ProjectAssignmentMatrix = ({
     });
     
     return matrix;
-  }, [planningData, engineers]);
+  }, [planningData, engineers, weeks, endDateMap]);
 
 // Create monthly aggregated data
   const monthlyData = useMemo(() => {
@@ -378,11 +401,17 @@ export const ProjectAssignmentMatrix = ({
     
     engineerKeys.forEach(engineerKey => {
       monthlyMatrix[engineerKey] = {};
+      const engEndDate = endDateMap[engineerKey] || null;
       months.forEach(month => {
         const monthProjects: { [project: string]: number } = {};
         let totalHours = 0;
         
         month.weeks.forEach(week => {
+          // Check departure
+          if (engEndDate && isEngineerDepartedForWeek(engEndDate, week)) {
+            monthProjects['DEPARTED'] = (monthProjects['DEPARTED'] || 0) + 0;
+            return;
+          }
           const entry = planningData.find(e => normalizeName(e.konstrukter) === engineerKey && e.cw === week);
           let projekt: string;
           let hours: number;
@@ -414,7 +443,7 @@ export const ProjectAssignmentMatrix = ({
     });
     
     return monthlyMatrix;
-  }, [planningData]);
+  }, [planningData, endDateMap]);
 
   // Get display data based on view mode
   const displayData = viewMode === 'weeks' ? matrixData : monthlyData;
@@ -1050,7 +1079,11 @@ export const ProjectAssignmentMatrix = ({
                                 monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
                               }`}
                             >
-                            {project && (
+                            {project === 'DEPARTED' ? (
+                                <div className="text-xs px-1.5 py-0.5 w-full justify-center font-medium rounded-md inline-flex items-center cursor-not-allowed bg-gray-200 dark:bg-gray-800">
+                                  <X className="h-3.5 w-3.5 text-red-500" />
+                                </div>
+                              ) : project && (
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <div 
@@ -1143,6 +1176,16 @@ export const ProjectAssignmentMatrix = ({
                                   {/* Main project */}
                                   {(() => {
                                     const mainProject = sortedProjects[0];
+                                    
+                                    // DEPARTED — show ✕ icon
+                                    if (mainProject === 'DEPARTED') {
+                                      return (
+                                        <div className="text-xs px-1.5 py-0.5 w-full justify-center font-medium rounded-md inline-flex items-center cursor-not-allowed bg-gray-200 dark:bg-gray-800">
+                                          <X className="h-3.5 w-3.5 text-red-500" />
+                                        </div>
+                                      );
+                                    }
+                                    
                                     const showText = isProjectVisibleForCustomer(mainProject, customerViewMode);
                                     
                                     const badgeContent = (

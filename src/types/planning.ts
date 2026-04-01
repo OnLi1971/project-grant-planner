@@ -15,6 +15,7 @@ export interface EngineerInfo {
   display_name: string;
   slug: string;
   status: string;
+  end_date?: string | null;
 }
 
 export interface PlanningContextType {

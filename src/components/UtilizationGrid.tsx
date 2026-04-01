@@ -17,7 +17,8 @@ import {
   getWorkingDaysInWeekForMonth,
 } from '@/utils/workingDays';
 import { getWeek } from 'date-fns';
-import { Calendar, BarChart3, Users, Save, Trash2, ChevronDown } from 'lucide-react';
+import { Calendar, BarChart3, Users, Save, Trash2, ChevronDown, X } from 'lucide-react';
+import { isEngineerDepartedForWeek } from '@/utils/engineerDeparture';
 
 // Regime activities excluded from utilization calculation
 const REGIME_ACTIVITIES = ['FREE', 'OVER'];
@@ -216,7 +217,8 @@ export const UtilizationGrid: React.FC = () => {
 
   // Weekly utilization
   // Proportional scaling: rawHours × (workingDays/5) / (workingDays×8) = rawHours / 40
-  const getWeeklyUtilization = (engineer: UIEngineer, cwKey: string): number => {
+  const getWeeklyUtilization = (engineer: UIEngineer, cwKey: string): number | null => {
+    if (engineer.endDate && isEngineerDepartedForWeek(engineer.endDate, cwKey)) return null;
     const hours = getEngineerHoursForWeek(engineer, cwKey);
     if (hours === 0) return 0;
     return (hours / 40) * 100;
@@ -224,13 +226,22 @@ export const UtilizationGrid: React.FC = () => {
 
   // Monthly utilization with proportional splitting
   // Monthly: scale each week's hours proportionally, then sum for the month
-  const getMonthlyUtilization = (engineer: UIEngineer, mi: MonthInfo): number => {
+  const getMonthlyUtilization = (engineer: UIEngineer, mi: MonthInfo): number | null => {
+    // Check if ALL weeks in this month are departed
+    const allDeparted = mi.weeks.every(cwKey => 
+      engineer.endDate && isEngineerDepartedForWeek(engineer.endDate, cwKey)
+    );
+    if (allDeparted) return null;
+
     const sk = isSlovak(engineer);
     const capacity = getWorkingDaysInMonth(mi.year, mi.month, sk) * 8;
     if (capacity === 0) return 0;
 
     let totalScaledHours = 0;
     for (const cwKey of allWeeks) {
+      // Skip departed weeks
+      if (engineer.endDate && isEngineerDepartedForWeek(engineer.endDate, cwKey)) continue;
+      
       const parsed = parseCW(cwKey);
       if (!parsed) continue;
       const weekHours = getEngineerHoursForWeek(engineer, cwKey);
@@ -429,6 +440,13 @@ export const UtilizationGrid: React.FC = () => {
                   {viewMode === 'weekly'
                     ? allWeeks.map(cwKey => {
                         const pct = getWeeklyUtilization(eng, cwKey);
+                        if (pct === null) {
+                          return (
+                            <td key={cwKey} className="border px-1 py-1.5 text-center bg-gray-100 dark:bg-gray-900/30">
+                              <X className="h-3.5 w-3.5 text-red-500 mx-auto" />
+                            </td>
+                          );
+                        }
                         return (
                           <td key={cwKey} className={`border px-1 py-1.5 text-center font-mono ${getUtilizationColor(pct)}`}>
 {`${Math.round(pct)}%`}
@@ -437,6 +455,13 @@ export const UtilizationGrid: React.FC = () => {
                       })
                     : months.map(mi => {
                         const pct = getMonthlyUtilization(eng, mi);
+                        if (pct === null) {
+                          return (
+                            <td key={mi.label} className="border px-1 py-1.5 text-center bg-gray-100 dark:bg-gray-900/30">
+                              <X className="h-3.5 w-3.5 text-red-500 mx-auto" />
+                            </td>
+                          );
+                        }
                         return (
                           <td key={mi.label} className={`border px-1 py-1.5 text-center font-mono ${getUtilizationColor(pct)}`}>
                             {`${Math.round(pct)}%`}
@@ -452,7 +477,7 @@ export const UtilizationGrid: React.FC = () => {
               </td>
               {viewMode === 'weekly'
                 ? allWeeks.map(cwKey => {
-                    const values = filteredEngineers.map(eng => getWeeklyUtilization(eng, cwKey));
+                    const values = filteredEngineers.map(eng => getWeeklyUtilization(eng, cwKey)).filter((v): v is number => v !== null);
                     const avg = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
                     return (
                       <td key={cwKey} className={`border px-1 py-1.5 text-center font-mono ${getUtilizationColor(avg)}`}>
@@ -461,7 +486,7 @@ export const UtilizationGrid: React.FC = () => {
                     );
                   })
                 : months.map(mi => {
-                    const values = filteredEngineers.map(eng => getMonthlyUtilization(eng, mi));
+                    const values = filteredEngineers.map(eng => getMonthlyUtilization(eng, mi)).filter((v): v is number => v !== null);
                     const avg = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
                     return (
                       <td key={mi.label} className={`border px-1 py-1.5 text-center font-mono ${getUtilizationColor(avg)}`}>

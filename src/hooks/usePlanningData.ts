@@ -16,6 +16,7 @@ export function usePlanningData() {
     display_name: e.jmeno,
     slug: e.slug,
     status: e.status,
+    end_date: e.endDate || null,
   })), [uiEngineers]);
   
   // Refs to prevent race conditions
