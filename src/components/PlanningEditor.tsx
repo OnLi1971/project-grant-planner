@@ -815,6 +815,7 @@ export const PlanningEditor: React.FC = () => {
                     {editingCell?.konstrukter === selectedKonstrukter && 
                      editingCell?.cw === week.cw && 
                      editingCell?.field === 'projekt' && !isMultiSelectMode ? (
+                      <div className="flex items-center gap-1">
                       <Select
                         value={week.projekt || 'FREE'}
                         onValueChange={(value) => {
@@ -831,6 +832,19 @@ export const PlanningEditor: React.FC = () => {
                           ))}
                         </SelectContent>
                       </Select>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          updateCell(selectedKonstrukter, week.cw, 'projekt', 'FREE');
+                          setEditingCell(null);
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                      </div>
                       ) : (
                         <div 
                           className={`cursor-pointer hover:bg-muted p-1 rounded flex items-center gap-2 ${
