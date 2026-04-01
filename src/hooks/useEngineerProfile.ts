@@ -3,8 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 
 export type EngineerProfile = {
   engineer: any;
-  software: string[];
-  pdmPlm: string[];
+  software: { name: string; level: number }[];
+  pdmPlm: { name: string; level: number }[];
   specializations: {
     oblast: string;
     specialization: string;
