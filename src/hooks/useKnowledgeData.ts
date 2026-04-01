@@ -89,8 +89,8 @@ export function useEngineerKnowledge(engineerId: string | null) {
       ]);
 
       return {
-        software: (sw.data || []).map(r => r.software_id),
-        pdmPlm: (pdm.data || []).map(r => r.pdm_plm_id),
+        software: (sw.data || []).map(r => ({ id: r.software_id, level: (r as any).level ?? 1 })),
+        pdmPlm: (pdm.data || []).map(r => ({ id: r.pdm_plm_id, level: (r as any).level ?? 1 })),
         specializations: (spec.data || []).map(r => ({
           id: r.id,
           oblast_id: r.oblast_id,
