@@ -157,7 +157,7 @@ export function EngineerManagement() {
       setSelectedSoftware(assignments.software);
       setSelectedPdmPlm(assignments.pdmPlm);
       setSpecRows(assignments.specializations.length > 0 ? assignments.specializations : []);
-      setLanguageRows(assignments.languages || []);
+      setLanguageRows((assignments.languages || []).map(l => ({ ...l, uid: crypto.randomUUID(), test_year_str: l.test_year != null ? String(l.test_year) : '' })));
     }
   }, [editingEngineer, assignments]);
 
