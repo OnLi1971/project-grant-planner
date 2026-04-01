@@ -476,6 +476,7 @@ export function EngineerManagement() {
                   <TableHead>Company</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Location</TableHead>
+                  <TableHead>Odchod</TableHead>
                   <TableHead>Rate</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
