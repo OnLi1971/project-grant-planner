@@ -411,6 +411,7 @@ export const PlanningEditor: React.FC = () => {
   };
 
   const currentPlan = planData[selectedKonstrukter] || [];
+  const selectedEngineerEndDate = allKonstrukteri.find(k => k.jmeno === selectedKonstrukter)?.end_date || null;
 
   const addNewEngineer = () => {
     const newName = prompt('Zadejte jméno nového konstruktéra:');
