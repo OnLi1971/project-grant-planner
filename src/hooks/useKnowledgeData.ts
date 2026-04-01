@@ -83,14 +83,14 @@ export function useEngineerKnowledge(engineerId: string | null) {
       if (!engineerId) return { software: [], pdmPlm: [], specializations: [] };
 
       const [sw, pdm, spec] = await Promise.all([
-        supabase.from('engineer_software').select('software_id').eq('engineer_id', engineerId),
-        supabase.from('engineer_pdm_plm').select('pdm_plm_id').eq('engineer_id', engineerId),
+        supabase.from('engineer_software').select('software_id, level').eq('engineer_id', engineerId),
+        supabase.from('engineer_pdm_plm').select('pdm_plm_id, level').eq('engineer_id', engineerId),
         supabase.from('engineer_specialization').select('id, oblast_id, specialization_id, level, granted_date').eq('engineer_id', engineerId),
       ]);
 
       return {
-        software: (sw.data || []).map(r => r.software_id),
-        pdmPlm: (pdm.data || []).map(r => r.pdm_plm_id),
+        software: (sw.data || []).map(r => ({ id: r.software_id, level: (r as any).level ?? 1 })),
+        pdmPlm: (pdm.data || []).map(r => ({ id: r.pdm_plm_id, level: (r as any).level ?? 1 })),
         specializations: (spec.data || []).map(r => ({
           id: r.id,
           oblast_id: r.oblast_id,
@@ -106,25 +106,25 @@ export function useEngineerKnowledge(engineerId: string | null) {
 
   const saveAssignments = async (
     engId: string,
-    softwareIds: string[],
-    pdmPlmIds: string[],
+    softwareItems: { id: string; level: number }[],
+    pdmPlmItems: { id: string; level: number }[],
     specializations: SpecializationAssignment[]
   ) => {
     await Promise.all([
       (async () => {
         await supabase.from('engineer_software').delete().eq('engineer_id', engId);
-        if (softwareIds.length > 0) {
+        if (softwareItems.length > 0) {
           const { error } = await supabase.from('engineer_software').insert(
-            softwareIds.map(id => ({ engineer_id: engId, software_id: id }))
+            softwareItems.map(s => ({ engineer_id: engId, software_id: s.id, level: s.level } as any))
           );
           if (error) throw error;
         }
       })(),
       (async () => {
         await supabase.from('engineer_pdm_plm').delete().eq('engineer_id', engId);
-        if (pdmPlmIds.length > 0) {
+        if (pdmPlmItems.length > 0) {
           const { error } = await supabase.from('engineer_pdm_plm').insert(
-            pdmPlmIds.map(id => ({ engineer_id: engId, pdm_plm_id: id }))
+            pdmPlmItems.map(s => ({ engineer_id: engId, pdm_plm_id: s.id, level: s.level } as any))
           );
           if (error) throw error;
         }
