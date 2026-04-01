@@ -280,7 +280,7 @@ export function EngineerManagement() {
         end_date: endDateIso,
       } as any);
 
-      await saveAssignments(editingEngineer.id, selectedSoftware, selectedPdmPlm, specRows);
+      await saveAssignments(editingEngineer.id, selectedSoftware, selectedPdmPlm, specRows, languageRows);
       await saveTrainings(editingEngineer.id, trainingRows);
       
       setIsEditDialogOpen(false);
