@@ -486,18 +486,21 @@ export type Database = {
           id: string
           name: string
           oblast_id: string | null
+          sort_order: number | null
         }
         Insert: {
           created_at?: string
           id?: string
           name: string
           oblast_id?: string | null
+          sort_order?: number | null
         }
         Update: {
           created_at?: string
           id?: string
           name?: string
           oblast_id?: string | null
+          sort_order?: number | null
         }
         Relationships: [
           {
