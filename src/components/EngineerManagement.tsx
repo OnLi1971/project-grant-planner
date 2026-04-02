@@ -165,6 +165,41 @@ export function EngineerManagement() {
   const { trainings, saveTrainings, bulkInsert } = useEngineerTraining(editingEngineer?.id || null);
   const searchTraining = useTrainingSearch();
 
+  // Fetch junction data for filtering
+  const { data: filterData } = useQuery({
+    queryKey: ['engineer-filters-data'],
+    queryFn: async () => {
+      const [swRes, pdmRes, specRes, langRes] = await Promise.all([
+        supabase.from('engineer_software').select('engineer_id, software_id, knowledge_software(name)') as any,
+        supabase.from('engineer_pdm_plm').select('engineer_id, pdm_plm_id, knowledge_pdm_plm(name)') as any,
+        supabase.from('engineer_specialization').select('engineer_id, specialization_id, knowledge_specialization(name)') as any,
+        supabase.from('engineer_language' as any).select('engineer_id, language') as any,
+      ]);
+      // Build maps: engineer_id -> list of names
+      const buildMap = (rows: any[], nameKey: string) => {
+        const map: Record<string, string[]> = {};
+        for (const r of (rows || [])) {
+          const name = r[nameKey]?.name || '';
+          if (!map[r.engineer_id]) map[r.engineer_id] = [];
+          map[r.engineer_id].push(name.toLowerCase());
+        }
+        return map;
+      };
+      const langMap: Record<string, string[]> = {};
+      for (const r of (langRes.data || [])) {
+        if (!langMap[r.engineer_id]) langMap[r.engineer_id] = [];
+        langMap[r.engineer_id].push((r.language || '').toLowerCase());
+      }
+      return {
+        software: buildMap(swRes.data, 'knowledge_software'),
+        pdmPlm: buildMap(pdmRes.data, 'knowledge_pdm_plm'),
+        specialization: buildMap(specRes.data, 'knowledge_specialization'),
+        language: langMap,
+      };
+    },
+    staleTime: 60_000,
+  });
+
   useEffect(() => {
     if (editingEngineer && assignments) {
       setSelectedSoftware(assignments.software);
