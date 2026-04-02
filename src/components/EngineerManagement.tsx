@@ -1,9 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useEngineers } from '@/hooks/useEngineers';
 import { useKnowledgeList, useEngineerKnowledge, SpecializationAssignment, LanguageAssignment } from '@/hooks/useKnowledgeData';
 import { useEngineerTraining, useTrainingSearch, TrainingRecord } from '@/hooks/useEngineerTraining';
 import { TrainingImport } from '@/components/TrainingImport';
 import { KnowledgeMultiSelect } from '@/components/KnowledgeMultiSelect';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -148,11 +150,55 @@ export function EngineerManagement() {
   const [trainingFilterIds, setTrainingFilterIds] = useState<string[] | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // New filter states
+  const [filterLocation, setFilterLocation] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterSoftware, setFilterSoftware] = useState('');
+  const [filterPdmPlm, setFilterPdmPlm] = useState('');
+  const [filterSpecialization, setFilterSpecialization] = useState('');
+  const [filterLanguage, setFilterLanguage] = useState('');
+
   const { toast } = useToast();
 
   const { assignments, saveAssignments } = useEngineerKnowledge(editingEngineer?.id || null);
   const { trainings, saveTrainings, bulkInsert } = useEngineerTraining(editingEngineer?.id || null);
   const searchTraining = useTrainingSearch();
+
+  // Fetch junction data for filtering
+  const { data: filterData } = useQuery({
+    queryKey: ['engineer-filters-data'],
+    queryFn: async () => {
+      const [swRes, pdmRes, specRes, langRes] = await Promise.all([
+        supabase.from('engineer_software').select('engineer_id, software_id, knowledge_software(name)') as any,
+        supabase.from('engineer_pdm_plm').select('engineer_id, pdm_plm_id, knowledge_pdm_plm(name)') as any,
+        supabase.from('engineer_specialization').select('engineer_id, specialization_id, knowledge_specialization(name)') as any,
+        supabase.from('engineer_language' as any).select('engineer_id, language') as any,
+      ]);
+      // Build maps: engineer_id -> list of names
+      const buildMap = (rows: any[], nameKey: string) => {
+        const map: Record<string, string[]> = {};
+        for (const r of (rows || [])) {
+          const name = r[nameKey]?.name || '';
+          if (!map[r.engineer_id]) map[r.engineer_id] = [];
+          map[r.engineer_id].push(name.toLowerCase());
+        }
+        return map;
+      };
+      const langMap: Record<string, string[]> = {};
+      for (const r of (langRes.data || [])) {
+        if (!langMap[r.engineer_id]) langMap[r.engineer_id] = [];
+        langMap[r.engineer_id].push((r.language || '').toLowerCase());
+      }
+      return {
+        software: buildMap(swRes.data, 'knowledge_software'),
+        pdmPlm: buildMap(pdmRes.data, 'knowledge_pdm_plm'),
+        specialization: buildMap(specRes.data, 'knowledge_specialization'),
+        language: langMap,
+      };
+    },
+    staleTime: 60_000,
+  });
 
   useEffect(() => {
     if (editingEngineer && assignments) {
@@ -531,15 +577,54 @@ export function EngineerManagement() {
     );
   }
 
+  const hasAnyFilter = filterLocation !== 'all' || filterStatus !== 'all' || filterSoftware || filterPdmPlm || filterSpecialization || filterLanguage || trainingFilterIds !== null;
+
+  const filteredEngineers = useMemo(() => {
+    let result = engineers;
+    if (trainingFilterIds !== null) {
+      result = result.filter(e => trainingFilterIds.includes(e.id));
+    }
+    if (filterLocation !== 'all') {
+      result = result.filter(e => (e.location || 'PRG') === filterLocation);
+    }
+    if (filterStatus !== 'all') {
+      result = result.filter(e => e.status === filterStatus);
+    }
+    if (filterSoftware && filterData) {
+      const q = filterSoftware.toLowerCase();
+      result = result.filter(e => filterData.software[e.id]?.some(n => n.includes(q)));
+    }
+    if (filterPdmPlm && filterData) {
+      const q = filterPdmPlm.toLowerCase();
+      result = result.filter(e => filterData.pdmPlm[e.id]?.some(n => n.includes(q)));
+    }
+    if (filterSpecialization && filterData) {
+      const q = filterSpecialization.toLowerCase();
+      result = result.filter(e => filterData.specialization[e.id]?.some(n => n.includes(q)));
+    }
+    if (filterLanguage && filterData) {
+      const q = filterLanguage.toLowerCase();
+      result = result.filter(e => filterData.language[e.id]?.some(n => n.includes(q)));
+    }
+    return result;
+  }, [engineers, trainingFilterIds, filterLocation, filterStatus, filterSoftware, filterPdmPlm, filterSpecialization, filterLanguage, filterData]);
+
+  const clearAllFilters = () => {
+    setFilterLocation('all');
+    setFilterStatus('all');
+    setFilterSoftware('');
+    setFilterPdmPlm('');
+    setFilterSpecialization('');
+    setFilterLanguage('');
+    setTrainingFilterIds(null);
+    setTrainingSearchQuery('');
+  };
+
   if (isLoading) {
     return (
       <Card><CardContent className="flex items-center justify-center py-8"><Loader2 className="h-8 w-8 animate-spin" /></CardContent></Card>
     );
   }
-
-  const filteredEngineers = trainingFilterIds !== null
-    ? engineers.filter(e => trainingFilterIds.includes(e.id))
-    : engineers;
 
   return (
     <div className="space-y-6">
@@ -552,8 +637,8 @@ export function EngineerManagement() {
           <div className="flex flex-col gap-3 mb-4">
             <div className="flex justify-between items-center">
               <p className="text-sm text-muted-foreground">
-                {trainingFilterIds !== null
-                  ? `${filteredEngineers.length} z ${engineers.length} konstruktérů (filtr: školení)`
+                {hasAnyFilter
+                  ? `${filteredEngineers.length} z ${engineers.length} konstruktérů (filtrováno)`
                   : `${engineers.length} engineers currently active`}
               </p>
               <Dialog open={isCreateDialogOpen} onOpenChange={(open) => { setIsCreateDialogOpen(open); if (!open) resetForm(); }}>
@@ -656,6 +741,55 @@ export function EngineerManagement() {
               {trainingFilterIds !== null && (
                 <Button variant="ghost" size="sm" onClick={() => { setTrainingFilterIds(null); setTrainingSearchQuery(''); }}>
                   Zrušit filtr
+                </Button>
+              )}
+            </div>
+            {/* New filters row */}
+            <div className="flex flex-wrap gap-2 items-end">
+              <div className="w-[120px]">
+                <Label className="text-xs text-muted-foreground">Lokace</Label>
+                <Select value={filterLocation} onValueChange={setFilterLocation}>
+                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Vše</SelectItem>
+                    <SelectItem value="PRG">PRG</SelectItem>
+                    <SelectItem value="PLZ">PLZ</SelectItem>
+                    <SelectItem value="SK">SK</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="w-[140px]">
+                <Label className="text-xs text-muted-foreground">Status</Label>
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Vše</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="contractor">Contractor</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="on_leave">On Leave</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="w-[140px]">
+                <Label className="text-xs text-muted-foreground">Software</Label>
+                <Input className="h-9" placeholder="Hledat..." value={filterSoftware} onChange={e => setFilterSoftware(e.target.value)} />
+              </div>
+              <div className="w-[140px]">
+                <Label className="text-xs text-muted-foreground">PDM/PLM</Label>
+                <Input className="h-9" placeholder="Hledat..." value={filterPdmPlm} onChange={e => setFilterPdmPlm(e.target.value)} />
+              </div>
+              <div className="w-[140px]">
+                <Label className="text-xs text-muted-foreground">Specializace</Label>
+                <Input className="h-9" placeholder="Hledat..." value={filterSpecialization} onChange={e => setFilterSpecialization(e.target.value)} />
+              </div>
+              <div className="w-[140px]">
+                <Label className="text-xs text-muted-foreground">Jazyk</Label>
+                <Input className="h-9" placeholder="Hledat..." value={filterLanguage} onChange={e => setFilterLanguage(e.target.value)} />
+              </div>
+              {hasAnyFilter && (
+                <Button variant="ghost" size="sm" onClick={clearAllFilters} className="h-9">
+                  Zrušit filtry
                 </Button>
               )}
             </div>
