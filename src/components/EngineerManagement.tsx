@@ -583,9 +583,48 @@ export function EngineerManagement() {
     );
   }
 
-  const filteredEngineers = trainingFilterIds !== null
-    ? engineers.filter(e => trainingFilterIds.includes(e.id))
-    : engineers;
+  const hasAnyFilter = filterLocation !== 'all' || filterStatus !== 'all' || filterSoftware || filterPdmPlm || filterSpecialization || filterLanguage || trainingFilterIds !== null;
+
+  const filteredEngineers = useMemo(() => {
+    let result = engineers;
+    if (trainingFilterIds !== null) {
+      result = result.filter(e => trainingFilterIds.includes(e.id));
+    }
+    if (filterLocation !== 'all') {
+      result = result.filter(e => (e.location || 'PRG') === filterLocation);
+    }
+    if (filterStatus !== 'all') {
+      result = result.filter(e => e.status === filterStatus);
+    }
+    if (filterSoftware && filterData) {
+      const q = filterSoftware.toLowerCase();
+      result = result.filter(e => filterData.software[e.id]?.some(n => n.includes(q)));
+    }
+    if (filterPdmPlm && filterData) {
+      const q = filterPdmPlm.toLowerCase();
+      result = result.filter(e => filterData.pdmPlm[e.id]?.some(n => n.includes(q)));
+    }
+    if (filterSpecialization && filterData) {
+      const q = filterSpecialization.toLowerCase();
+      result = result.filter(e => filterData.specialization[e.id]?.some(n => n.includes(q)));
+    }
+    if (filterLanguage && filterData) {
+      const q = filterLanguage.toLowerCase();
+      result = result.filter(e => filterData.language[e.id]?.some(n => n.includes(q)));
+    }
+    return result;
+  }, [engineers, trainingFilterIds, filterLocation, filterStatus, filterSoftware, filterPdmPlm, filterSpecialization, filterLanguage, filterData]);
+
+  const clearAllFilters = () => {
+    setFilterLocation('all');
+    setFilterStatus('all');
+    setFilterSoftware('');
+    setFilterPdmPlm('');
+    setFilterSpecialization('');
+    setFilterLanguage('');
+    setTrainingFilterIds(null);
+    setTrainingSearchQuery('');
+  };
 
   return (
     <div className="space-y-6">
