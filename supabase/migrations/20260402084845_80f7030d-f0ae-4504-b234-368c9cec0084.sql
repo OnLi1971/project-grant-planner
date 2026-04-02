@@ -1,0 +1,1 @@
+UPDATE profiles SET role = 'admin' WHERE id IN ('a5bad5e8-cc5c-4f16-a194-2eafb02ac8ca', '637f4250-4c1e-484e-8690-8420263ecbf9');
