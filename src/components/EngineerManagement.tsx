@@ -150,6 +150,15 @@ export function EngineerManagement() {
   const [trainingFilterIds, setTrainingFilterIds] = useState<string[] | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // New filter states
+  const [filterLocation, setFilterLocation] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterSoftware, setFilterSoftware] = useState('');
+  const [filterPdmPlm, setFilterPdmPlm] = useState('');
+  const [filterSpecialization, setFilterSpecialization] = useState('');
+  const [filterLanguage, setFilterLanguage] = useState('');
+
   const { toast } = useToast();
 
   const { assignments, saveAssignments } = useEngineerKnowledge(editingEngineer?.id || null);
