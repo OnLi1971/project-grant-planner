@@ -637,8 +637,8 @@ export function EngineerManagement() {
           <div className="flex flex-col gap-3 mb-4">
             <div className="flex justify-between items-center">
               <p className="text-sm text-muted-foreground">
-                {trainingFilterIds !== null
-                  ? `${filteredEngineers.length} z ${engineers.length} konstruktérů (filtr: školení)`
+                {hasAnyFilter
+                  ? `${filteredEngineers.length} z ${engineers.length} konstruktérů (filtrováno)`
                   : `${engineers.length} engineers currently active`}
               </p>
               <Dialog open={isCreateDialogOpen} onOpenChange={(open) => { setIsCreateDialogOpen(open); if (!open) resetForm(); }}>
