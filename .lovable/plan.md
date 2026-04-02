@@ -1,62 +1,43 @@
 
-## Oprava přetrvávající ztráty focusu v poli Rok
 
-### Co je skutečný problém
-Předchozí oprava byla jen částečná:
-- `key={row.uid}` je správně
-- `test_year_str` jako string je také správně
+## Přidání filtrů do Engineer Management
 
-Ale focus se pořád ztrácí, protože `LanguageEditor` je definovaný uvnitř `EngineerManagement` jako inline komponenta:
+### Problém
+V tabulce konstruktérů je aktuálně jen filtr podle školení. Chybí filtry podle lokace, software, PDM/PLM, specializace, jazyka a statusu.
 
-```tsx
-const LanguageEditor = () => ( ... )
-```
-
-a pak se renderuje jako:
-
-```tsx
-<LanguageEditor />
-```
-
-Při každé změně stavu v `EngineerManagement` React vytvoří novou komponentu typu `LanguageEditor`, tím pádem její subtree remountne a input ztratí focus. Stejný problém platí i pro `KnowledgeFields`, které je také definované uvnitř a renderované jako komponenta.
-
-### Co upravit
+### Řešení
 
 **Soubor: `src/components/EngineerManagement.tsx`**
 
-1. Přesunout `LanguageEditor` mimo `EngineerManagement`
-   - udělat z něj samostatnou top-level komponentu ve stejném souboru
-   - předávat jí props:
-     - `languageRows`
-     - `setLanguageRows`
+1. **Přidat stavové proměnné pro nové filtry:**
+   - `filterLocation: string` (PRG/PLZ/SK/all)
+   - `filterStatus: string` (active/inactive/contractor/on_leave/all)
+   - `filterSoftware: string` (textový vyhledávací vstup)
+   - `filterPdmPlm: string` (textový vyhledávací vstup)
+   - `filterSpecialization: string` (textový vyhledávací vstup)
+   - `filterLanguage: string` (textový vyhledávací vstup)
 
-2. Nepoužívat uzavření přes parent scope
-   - `LANGUAGES` a `LANG_LEVELS` přesunout mimo `EngineerManagement` na top-level
-   - všechny handlery nechat běžet přes props/setter
+2. **Načíst data o SW, PDM/PLM, specializacích a jazycích pro všechny inženýry** z junction tabulek (`engineer_software`, `engineer_pdm_plm`, `engineer_specialization`, `engineer_language`) jedním hromadným dotazem, aby bylo možné filtrovat podle těchto atributů.
 
-3. Opravit i `KnowledgeFields`
-   - buď:
-     - převést ho na obyčejný JSX blok bez `<KnowledgeFields />`
-     - nebo ho také přesunout mimo `EngineerManagement` a předat mu props
-   - nejjednodušší a nejbezpečnější varianta: vložit jeho obsah přímo do create/edit dialogu místo inline komponenty
+3. **Přidat řádek s filtry** nad tabulku (pod stávající filtr školení):
+   - Select dropdown pro **Lokaci** (PRG/PLZ/SK/Vše)
+   - Select dropdown pro **Status** (active/contractor/inactive/on_leave/Vše)
+   - Textové pole pro **Software** (filtruje jména z `engineer_software`)
+   - Textové pole pro **PDM/PLM** (filtruje z `engineer_pdm_plm`)
+   - Textové pole pro **Specializace** (filtruje z `engineer_specialization`)
+   - Textové pole pro **Jazyk** (filtruje z `engineer_language`)
+   - Tlačítko "Zrušit filtry" pro reset všech filtrů
 
-4. Zachovat dosavadní opravy
-   - ponechat `key={row.uid}`
-   - ponechat `test_year_str`
-   - ponechat sanitaci `replace(/\D/g, '').slice(0, 4)`
+4. **Rozšířit logiku `filteredEngineers`:**
+   - Stávající filtr školení zůstane
+   - Přidá se řetězení `.filter()` pro každý aktivní filtr
+   - Pro SW/PDM/PLM/specializace/jazyk se porovná proti načteným junction datům
 
-### Výsledek
-Po této úpravě se při psaní roku nebude řádek remountovat a input už nebude po každé číslici ztrácet focus.
+5. **Aktualizovat text počítadla** aby zobrazoval počet filtrovaných vs. celkových
 
-### Dotčené části
-- `src/components/EngineerManagement.tsx`
-  - přesun `LanguageEditor` na top-level
-  - přesun konstant pro jazyky/úrovně na top-level
-  - odstranění inline `KnowledgeFields` komponenty nebo její přesun mimo parent
-  - zachování stávající logiky `languageRows`
+### Technické detaily
+- Junction data se načtou přes `useQuery` s klíčem `['engineer-filters-data']`
+- Dotazy: `engineer_software` JOIN `knowledge_software`, `engineer_pdm_plm` JOIN `knowledge_pdm_plm`, `engineer_specialization` JOIN `knowledge_specialization`, `engineer_language`
+- Filtrování probíhá na klientovi (case-insensitive `includes`)
+- Dropdowny používají stávající `Select` komponentu z UI knihovny
 
-### Technické poznámky
-- Problém není v `Input` komponentě
-- Problém už primárně není ani v `key`
-- Root cause je React remount inline komponent definovaných uvnitř parent render scope
-- Pokud bude potřeba, stejný princip je vhodné aplikovat i na další editory v tomto souboru, ale pro opravu roku je kritický hlavně `LanguageEditor`
