@@ -744,6 +744,55 @@ export function EngineerManagement() {
                 </Button>
               )}
             </div>
+            {/* New filters row */}
+            <div className="flex flex-wrap gap-2 items-end">
+              <div className="w-[120px]">
+                <Label className="text-xs text-muted-foreground">Lokace</Label>
+                <Select value={filterLocation} onValueChange={setFilterLocation}>
+                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Vše</SelectItem>
+                    <SelectItem value="PRG">PRG</SelectItem>
+                    <SelectItem value="PLZ">PLZ</SelectItem>
+                    <SelectItem value="SK">SK</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="w-[140px]">
+                <Label className="text-xs text-muted-foreground">Status</Label>
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Vše</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="contractor">Contractor</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="on_leave">On Leave</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="w-[140px]">
+                <Label className="text-xs text-muted-foreground">Software</Label>
+                <Input className="h-9" placeholder="Hledat..." value={filterSoftware} onChange={e => setFilterSoftware(e.target.value)} />
+              </div>
+              <div className="w-[140px]">
+                <Label className="text-xs text-muted-foreground">PDM/PLM</Label>
+                <Input className="h-9" placeholder="Hledat..." value={filterPdmPlm} onChange={e => setFilterPdmPlm(e.target.value)} />
+              </div>
+              <div className="w-[140px]">
+                <Label className="text-xs text-muted-foreground">Specializace</Label>
+                <Input className="h-9" placeholder="Hledat..." value={filterSpecialization} onChange={e => setFilterSpecialization(e.target.value)} />
+              </div>
+              <div className="w-[140px]">
+                <Label className="text-xs text-muted-foreground">Jazyk</Label>
+                <Input className="h-9" placeholder="Hledat..." value={filterLanguage} onChange={e => setFilterLanguage(e.target.value)} />
+              </div>
+              {hasAnyFilter && (
+                <Button variant="ghost" size="sm" onClick={clearAllFilters} className="h-9">
+                  Zrušit filtry
+                </Button>
+              )}
+            </div>
           </div>
 
           <div className="border rounded-lg">
