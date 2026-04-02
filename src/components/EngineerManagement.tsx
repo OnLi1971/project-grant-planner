@@ -577,12 +577,6 @@ export function EngineerManagement() {
     );
   }
 
-  if (isLoading) {
-    return (
-      <Card><CardContent className="flex items-center justify-center py-8"><Loader2 className="h-8 w-8 animate-spin" /></CardContent></Card>
-    );
-  }
-
   const hasAnyFilter = filterLocation !== 'all' || filterStatus !== 'all' || filterSoftware || filterPdmPlm || filterSpecialization || filterLanguage || trainingFilterIds !== null;
 
   const filteredEngineers = useMemo(() => {
@@ -625,6 +619,12 @@ export function EngineerManagement() {
     setTrainingFilterIds(null);
     setTrainingSearchQuery('');
   };
+
+  if (isLoading) {
+    return (
+      <Card><CardContent className="flex items-center justify-center py-8"><Loader2 className="h-8 w-8 animate-spin" /></CardContent></Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
