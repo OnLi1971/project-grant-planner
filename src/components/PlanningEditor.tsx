@@ -436,7 +436,7 @@ export const PlanningEditor: React.FC = () => {
     // Copy each week's data to the target constructor
     for (const sourceWeek of sourceWeeks) {
       try {
-        await updatePlanningEntry(to, sourceWeek.cw, sourceWeek.projekt || 'FREE');
+        await updatePlanningEntry(to, sourceWeek.cw, sourceWeek.projekt || 'FREE', sourceWeek.is_tentative || false);
         await updatePlanningHours(to, sourceWeek.cw, sourceWeek.mhTyden || 0);
       } catch (error) {
         console.error('Error copying week:', sourceWeek.cw, error);
