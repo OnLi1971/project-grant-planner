@@ -427,7 +427,7 @@ export const UtilizationGrid: React.FC = () => {
                   Konstruktér
                 </th>
                 {viewMode === 'weekly'
-                  ? allWeeks.map(cwKey => {
+                  ? displayedWeeks.map(cwKey => {
                       const parsed = parseCW(cwKey);
                       return (
                         <th key={cwKey} className="border px-2 py-2 font-medium text-muted-foreground whitespace-nowrap min-w-[55px] text-center">
@@ -435,7 +435,7 @@ export const UtilizationGrid: React.FC = () => {
                         </th>
                       );
                     })
-                  : months.map(mi => (
+                  : displayedMonths.map(mi => (
                       <th key={mi.label} className="border px-2 py-2 font-medium text-muted-foreground whitespace-nowrap min-w-[70px] text-center">
                         {mi.label}
                       </th>
@@ -449,7 +449,7 @@ export const UtilizationGrid: React.FC = () => {
                     {eng.jmeno}
                   </td>
                   {viewMode === 'weekly'
-                    ? allWeeks.map(cwKey => {
+                    ? displayedWeeks.map(cwKey => {
                         const pct = getWeeklyUtilization(eng, cwKey);
                         if (pct === null) {
                           return (
@@ -464,7 +464,7 @@ export const UtilizationGrid: React.FC = () => {
                           </td>
                         );
                       })
-                    : months.map(mi => {
+                    : displayedMonths.map(mi => {
                         const pct = getMonthlyUtilization(eng, mi);
                         if (pct === null) {
                           return (
@@ -487,7 +487,7 @@ export const UtilizationGrid: React.FC = () => {
                 Průměr
               </td>
               {viewMode === 'weekly'
-                ? allWeeks.map(cwKey => {
+                ? displayedWeeks.map(cwKey => {
                     const values = filteredEngineers.map(eng => getWeeklyUtilization(eng, cwKey)).filter((v): v is number => v !== null);
                     const avg = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
                     return (
@@ -496,7 +496,7 @@ export const UtilizationGrid: React.FC = () => {
                       </td>
                     );
                   })
-                : months.map(mi => {
+                : displayedMonths.map(mi => {
                     const values = filteredEngineers.map(eng => getMonthlyUtilization(eng, mi)).filter((v): v is number => v !== null);
                     const avg = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
                     return (
