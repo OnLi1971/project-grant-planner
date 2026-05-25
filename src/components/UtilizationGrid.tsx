@@ -124,6 +124,7 @@ export const UtilizationGrid: React.FC = () => {
   const [selectedViewId, setSelectedViewId] = useState<string | null>(null);
   const [customViewName, setCustomViewName] = useState('');
   const [defaultViewApplied, setDefaultViewApplied] = useState(false);
+  const [selectedMonthKeys, setSelectedMonthKeys] = useState<string[]>([]);
   const { customViews, saveView, deleteView } = useCustomEngineerViews();
 
   // Auto-apply RAIL+EL view on first load
