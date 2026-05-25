@@ -140,6 +140,16 @@ export const UtilizationGrid: React.FC = () => {
 
   const allWeeks = useMemo(() => getAllWeeks(), []);
   const months = useMemo(() => generateMonths(allWeeks), [allWeeks]);
+  const monthKey = (mi: MonthInfo) => `${mi.month}-${mi.year}`;
+  const displayedMonths = useMemo(
+    () => selectedMonthKeys.length === 0 ? months : months.filter(mi => selectedMonthKeys.includes(monthKey(mi))),
+    [months, selectedMonthKeys]
+  );
+  const displayedWeeks = useMemo(() => {
+    if (selectedMonthKeys.length === 0) return allWeeks;
+    const set = new Set(displayedMonths.flatMap(mi => mi.weeks));
+    return allWeeks.filter(w => set.has(w));
+  }, [allWeeks, displayedMonths, selectedMonthKeys]);
 
   // All active engineers after company filter (for checkbox list)
   const companyFilteredEngineers = useMemo(() => {
