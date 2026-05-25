@@ -410,6 +410,49 @@ export const UtilizationGrid: React.FC = () => {
             </PopoverContent>
           </Popover>
 
+          {/* Month filter popover */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="h-8 text-sm flex items-center gap-1.5">
+                <Calendar className="h-3.5 w-3.5" />
+                {selectedMonthKeys.length > 0 ? `Měsíce (${selectedMonthKeys.length})` : 'Všechny měsíce'}
+                <ChevronDown className="h-3.5 w-3.5 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-3" align="start">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-medium text-muted-foreground">Zobrazené měsíce:</label>
+                <div className="flex gap-1">
+                  <Button variant="ghost" size="sm" className="h-5 text-xs px-1"
+                    onClick={() => setSelectedMonthKeys(months.map(monthKey))}>Vše</Button>
+                  <Button variant="ghost" size="sm" className="h-5 text-xs px-1"
+                    onClick={() => setSelectedMonthKeys([])}>Nic</Button>
+                </div>
+              </div>
+              <ScrollArea className="h-64 border rounded p-1">
+                {months.map(mi => {
+                  const k = monthKey(mi);
+                  const checked = selectedMonthKeys.includes(k);
+                  return (
+                    <div key={k} className="flex items-center space-x-2 py-1 px-2 hover:bg-muted/50 rounded">
+                      <Checkbox
+                        id={`util-month-${k}`}
+                        checked={checked}
+                        onCheckedChange={() => setSelectedMonthKeys(prev =>
+                          prev.includes(k) ? prev.filter(x => x !== k) : [...prev, k]
+                        )}
+                      />
+                      <label htmlFor={`util-month-${k}`} className="text-xs cursor-pointer flex-1 truncate">
+                        {mi.label}
+                      </label>
+                    </div>
+                  );
+                })}
+              </ScrollArea>
+            </PopoverContent>
+          </Popover>
+
+
           <div className="flex items-center gap-2 ml-auto text-xs text-muted-foreground">
             <span className="inline-block w-3 h-3 rounded bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700" /> &lt;20%
             <span className="inline-block w-3 h-3 rounded bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700" /> 20-80%
