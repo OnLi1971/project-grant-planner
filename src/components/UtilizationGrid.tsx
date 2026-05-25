@@ -124,6 +124,7 @@ export const UtilizationGrid: React.FC = () => {
   const [selectedViewId, setSelectedViewId] = useState<string | null>(null);
   const [customViewName, setCustomViewName] = useState('');
   const [defaultViewApplied, setDefaultViewApplied] = useState(false);
+  const [selectedMonthKeys, setSelectedMonthKeys] = useState<string[]>([]);
   const { customViews, saveView, deleteView } = useCustomEngineerViews();
 
   // Auto-apply RAIL+EL view on first load
@@ -139,6 +140,16 @@ export const UtilizationGrid: React.FC = () => {
 
   const allWeeks = useMemo(() => getAllWeeks(), []);
   const months = useMemo(() => generateMonths(allWeeks), [allWeeks]);
+  const monthKey = (mi: MonthInfo) => `${mi.month}-${mi.year}`;
+  const displayedMonths = useMemo(
+    () => selectedMonthKeys.length === 0 ? months : months.filter(mi => selectedMonthKeys.includes(monthKey(mi))),
+    [months, selectedMonthKeys]
+  );
+  const displayedWeeks = useMemo(() => {
+    if (selectedMonthKeys.length === 0) return allWeeks;
+    const set = new Set(displayedMonths.flatMap(mi => mi.weeks));
+    return allWeeks.filter(w => set.has(w));
+  }, [allWeeks, displayedMonths, selectedMonthKeys]);
 
   // All active engineers after company filter (for checkbox list)
   const companyFilteredEngineers = useMemo(() => {
@@ -399,6 +410,49 @@ export const UtilizationGrid: React.FC = () => {
             </PopoverContent>
           </Popover>
 
+          {/* Month filter popover */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="h-8 text-sm flex items-center gap-1.5">
+                <Calendar className="h-3.5 w-3.5" />
+                {selectedMonthKeys.length > 0 ? `Měsíce (${selectedMonthKeys.length})` : 'Všechny měsíce'}
+                <ChevronDown className="h-3.5 w-3.5 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-3" align="start">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-medium text-muted-foreground">Zobrazené měsíce:</label>
+                <div className="flex gap-1">
+                  <Button variant="ghost" size="sm" className="h-5 text-xs px-1"
+                    onClick={() => setSelectedMonthKeys(months.map(monthKey))}>Vše</Button>
+                  <Button variant="ghost" size="sm" className="h-5 text-xs px-1"
+                    onClick={() => setSelectedMonthKeys([])}>Nic</Button>
+                </div>
+              </div>
+              <ScrollArea className="h-64 border rounded p-1">
+                {months.map(mi => {
+                  const k = monthKey(mi);
+                  const checked = selectedMonthKeys.includes(k);
+                  return (
+                    <div key={k} className="flex items-center space-x-2 py-1 px-2 hover:bg-muted/50 rounded">
+                      <Checkbox
+                        id={`util-month-${k}`}
+                        checked={checked}
+                        onCheckedChange={() => setSelectedMonthKeys(prev =>
+                          prev.includes(k) ? prev.filter(x => x !== k) : [...prev, k]
+                        )}
+                      />
+                      <label htmlFor={`util-month-${k}`} className="text-xs cursor-pointer flex-1 truncate">
+                        {mi.label}
+                      </label>
+                    </div>
+                  );
+                })}
+              </ScrollArea>
+            </PopoverContent>
+          </Popover>
+
+
           <div className="flex items-center gap-2 ml-auto text-xs text-muted-foreground">
             <span className="inline-block w-3 h-3 rounded bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700" /> &lt;20%
             <span className="inline-block w-3 h-3 rounded bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700" /> 20-80%
@@ -416,7 +470,7 @@ export const UtilizationGrid: React.FC = () => {
                   Konstruktér
                 </th>
                 {viewMode === 'weekly'
-                  ? allWeeks.map(cwKey => {
+                  ? displayedWeeks.map(cwKey => {
                       const parsed = parseCW(cwKey);
                       return (
                         <th key={cwKey} className="border px-2 py-2 font-medium text-muted-foreground whitespace-nowrap min-w-[55px] text-center">
@@ -424,7 +478,7 @@ export const UtilizationGrid: React.FC = () => {
                         </th>
                       );
                     })
-                  : months.map(mi => (
+                  : displayedMonths.map(mi => (
                       <th key={mi.label} className="border px-2 py-2 font-medium text-muted-foreground whitespace-nowrap min-w-[70px] text-center">
                         {mi.label}
                       </th>
@@ -438,7 +492,7 @@ export const UtilizationGrid: React.FC = () => {
                     {eng.jmeno}
                   </td>
                   {viewMode === 'weekly'
-                    ? allWeeks.map(cwKey => {
+                    ? displayedWeeks.map(cwKey => {
                         const pct = getWeeklyUtilization(eng, cwKey);
                         if (pct === null) {
                           return (
@@ -453,7 +507,7 @@ export const UtilizationGrid: React.FC = () => {
                           </td>
                         );
                       })
-                    : months.map(mi => {
+                    : displayedMonths.map(mi => {
                         const pct = getMonthlyUtilization(eng, mi);
                         if (pct === null) {
                           return (
@@ -476,7 +530,7 @@ export const UtilizationGrid: React.FC = () => {
                 Průměr
               </td>
               {viewMode === 'weekly'
-                ? allWeeks.map(cwKey => {
+                ? displayedWeeks.map(cwKey => {
                     const values = filteredEngineers.map(eng => getWeeklyUtilization(eng, cwKey)).filter((v): v is number => v !== null);
                     const avg = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
                     return (
@@ -485,7 +539,7 @@ export const UtilizationGrid: React.FC = () => {
                       </td>
                     );
                   })
-                : months.map(mi => {
+                : displayedMonths.map(mi => {
                     const values = filteredEngineers.map(eng => getMonthlyUtilization(eng, mi)).filter((v): v is number => v !== null);
                     const avg = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
                     return (
