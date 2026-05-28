@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, Filter, History, Save, Trash2, Users, X } from 'lucide-react';
+import { ChevronDown, Filter, History, Save, Trash2, Users, X, Download } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { PlanningHistoryDialog } from './PlanningHistoryDialog';
 import { ProjectAllocationDialog, AllocationEntry } from './ProjectAllocationDialog';
 import { usePlanning } from '@/contexts/PlanningContext';
@@ -739,6 +740,48 @@ export const ProjectAssignmentMatrix = ({
               {customerViewMode ? 'Přehled kapacit' : 'Matice plánování projektů'}
             </CardTitle>
             <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const headers = viewMode === 'weeks'
+                    ? ['Konstruktér', ...weeks]
+                    : ['Konstruktér', ...months.map(m => m.name)];
+                  const rows = filteredEngineers.map(engineer => {
+                    const name = displayNameMap[engineer] || engineer;
+                    if (viewMode === 'weeks') {
+                      return [name, ...weeks.map(w => {
+                        const d = matrixData[engineer]?.[w];
+                        if (!d) return '';
+                        if (customerViewMode && !isProjectVisibleForCustomer(d.projekt, customerViewMode)) {
+                          return d.projekt === 'FREE' || ['DOVOLENÁ','NEMOC','OVER'].includes(d.projekt) ? d.projekt : 'OBSAZEN';
+                        }
+                        return (d.isTentative ? '[?] ' : '') + d.projekt;
+                      })];
+                    }
+                    return [name, ...months.map(m => {
+                      const md = monthlyData[engineer]?.[m.name];
+                      if (!md) return '';
+                      const proj = md.dominantProject;
+                      if (customerViewMode && !isProjectVisibleForCustomer(proj, customerViewMode)) {
+                        return ['DOVOLENÁ','NEMOC','OVER','FREE'].includes(proj) ? proj : 'OBSAZEN';
+                      }
+                      return proj;
+                    })];
+                  });
+                  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+                  ws['!cols'] = headers.map((_, i) => ({ wch: i === 0 ? 25 : 14 }));
+                  const wb = XLSX.utils.book_new();
+                  XLSX.utils.book_append_sheet(wb, ws, 'Přehled kapacit');
+                  const today = new Date().toISOString().slice(0, 10);
+                  const prefix = customerViewMode ? `Prehled_kapacit_${customerViewMode}` : 'Matice_planovani';
+                  XLSX.writeFile(wb, `${prefix}_${today}.xlsx`);
+                }}
+                className="gap-2"
+              >
+                <Download className="h-4 w-4" />
+                Export do Excelu
+              </Button>
               {!customerViewMode && (
                 <Button 
                   variant="outline" 
