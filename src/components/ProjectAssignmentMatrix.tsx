@@ -1229,22 +1229,37 @@ export const ProjectAssignmentMatrix = ({
                                       );
                                     }
                                     
-                                    const showText = isProjectVisibleForCustomer(mainProject, customerViewMode);
-                                    
-                                    const badgeContent = (
-                                      <div 
-                                        onClick={customerViewMode ? undefined : (e) => handleProjectClick(mainProject, e)}
-                                        className={`text-xs px-1.5 py-0.5 w-full justify-center font-medium shadow-sm ${!customerViewMode ? 'hover:shadow-md cursor-pointer' : ''} transition-all duration-200 rounded-md inline-flex items-center ${getProjectBadgeStyle(mainProject)}`}
-                                      >
-                                        {showText ? (
-                                          <span className="truncate max-w-[55px]" title={mainProject}>
-                                            {mainProject}
-                                          </span>
-                                        ) : (
-                                          <span className="opacity-0">-</span>
-                                        )}
-                                      </div>
-                                    );
+                                     const showText = isProjectVisibleForCustomer(mainProject, customerViewMode);
+                                     
+                                     // Compute total hours and tentative status for the main project across month weeks
+                                     let mainHours = 0;
+                                     let mainTentative = false;
+                                     month.weeks.forEach(week => {
+                                       const entry = planningData.find(e => normalizeName(e.konstrukter) === engineer && e.cw === week && e.projekt === mainProject);
+                                       if (entry) {
+                                         mainHours += typeof entry.mhTyden === 'number' ? entry.mhTyden : 0;
+                                         if (entry.is_tentative) mainTentative = true;
+                                       }
+                                     });
+                                     const lowCapacityThreshold = month.weeks.length * 35;
+                                     const isLowCapacity = mainHours > 0 && mainHours <= lowCapacityThreshold;
+                                     
+                                     const badgeContent = (
+                                       <div 
+                                         onClick={customerViewMode ? undefined : (e) => handleProjectClick(mainProject, e)}
+                                         className={`text-xs px-1.5 py-0.5 w-full justify-center font-medium shadow-sm ${!customerViewMode ? 'hover:shadow-md cursor-pointer' : ''} transition-all duration-200 rounded-md inline-flex items-center ${getProjectBadgeStyle(mainProject)} ${
+                                           mainTentative ? 'border-[3px] border-dashed !border-yellow-400' : (isLowCapacity ? 'border-[3px] border-dashed !border-red-500' : '')
+                                         }`}
+                                       >
+                                         {showText ? (
+                                           <span className="truncate max-w-[55px]" title={mainProject}>
+                                             {mainProject}
+                                           </span>
+                                         ) : (
+                                           <span className="opacity-0">-</span>
+                                         )}
+                                       </div>
+                                     );
                                     
                                     // In customer view, no tooltip
                                     if (customerViewMode) {
