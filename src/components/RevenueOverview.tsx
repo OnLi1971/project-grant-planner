@@ -608,11 +608,11 @@ export const RevenueOverview = ({
         const monthData = activeData[month] || {};
         // Lepší zkracování názvu měsíce pro graf
         const monthLabels: { [key: string]: string } = {
-          'říjen_2025': 'říj 25', 'listopad_2025': 'lis 25', 'prosinec_2025': 'pro 25',
-          'leden_2026': 'led 26', 'únor_2026': 'úno 26', 'březen_2026': 'bře 26', 
-          'duben_2026': 'dub 26', 'květen_2026': 'kvě 26', 'červen_2026': 'čer 26',
-          'červenec_2026': 'čec 26', 'srpen_2026': 'srp 26', 'září_2026': 'zář 26',
-          'říjen_2026': 'říj 26', 'listopad_2026': 'lis 26', 'prosinec_2026': 'pro 26'
+          'říjen_2025': 'Oct 25', 'listopad_2025': 'Nov 25', 'prosinec_2025': 'Dec 25',
+          'leden_2026': 'Jan 26', 'únor_2026': 'Feb 26', 'březen_2026': 'Mar 26',
+          'duben_2026': 'Apr 26', 'květen_2026': 'May 26', 'červen_2026': 'Jun 26',
+          'červenec_2026': 'Jul 26', 'srpen_2026': 'Aug 26', 'září_2026': 'Sep 26',
+          'říjen_2026': 'Oct 26', 'listopad_2026': 'Nov 26', 'prosinec_2026': 'Dec 26'
         };
         const monthNameForDisplay = monthLabels[month] || month;
         const data: any = {
@@ -646,30 +646,30 @@ export const RevenueOverview = ({
 
   // Možnosti pro kvartální filtr
   const getQuarterOptions = () => [
-    { value: 'Q4-2025', label: 'Q4 2025 (říjen-prosinec)' },
-    { value: 'Q1-2026', label: 'Q1 2026 (leden-březen)' },
-    { value: 'Q2-2026', label: 'Q2 2026 (duben-červen)' },
-    { value: 'Q3-2026', label: 'Q3 2026 (červenec-září)' },
-    { value: 'Q4-2026', label: 'Q4 2026 (říjen-prosinec)' }
+    { value: 'Q4-2025', label: 'Q4 2025 (Oct-Dec)' },
+    { value: 'Q1-2026', label: 'Q1 2026 (Jan-Mar)' },
+    { value: 'Q2-2026', label: 'Q2 2026 (Apr-Jun)' },
+    { value: 'Q3-2026', label: 'Q3 2026 (Jul-Sep)' },
+    { value: 'Q4-2026', label: 'Q4 2026 (Oct-Dec)' }
   ];
 
-  // Možnosti pro měsíční filtr
+  // Month filter options
   const getMonthOptions = () => [
-    { value: 'říjen_2025', label: 'Říjen 2025' },
-    { value: 'listopad_2025', label: 'Listopad 2025' },
-    { value: 'prosinec_2025', label: 'Prosinec 2025' },
-    { value: 'leden_2026', label: 'Leden 2026' },
-    { value: 'únor_2026', label: 'Únor 2026' },
-    { value: 'březen_2026', label: 'Březen 2026' },
-    { value: 'duben_2026', label: 'Duben 2026' },
-    { value: 'květen_2026', label: 'Květen 2026' },
-    { value: 'červen_2026', label: 'Červen 2026' },
-    { value: 'červenec_2026', label: 'Červenec 2026' },
-    { value: 'srpen_2026', label: 'Srpen 2026' },
-    { value: 'září_2026', label: 'Září 2026' },
-    { value: 'říjen_2026', label: 'Říjen 2026' },
-    { value: 'listopad_2026', label: 'Listopad 2026' },
-    { value: 'prosinec_2026', label: 'Prosinec 2026' }
+    { value: 'říjen_2025', label: 'October 2025' },
+    { value: 'listopad_2025', label: 'November 2025' },
+    { value: 'prosinec_2025', label: 'December 2025' },
+    { value: 'leden_2026', label: 'January 2026' },
+    { value: 'únor_2026', label: 'February 2026' },
+    { value: 'březen_2026', label: 'March 2026' },
+    { value: 'duben_2026', label: 'April 2026' },
+    { value: 'květen_2026', label: 'May 2026' },
+    { value: 'červen_2026', label: 'June 2026' },
+    { value: 'červenec_2026', label: 'July 2026' },
+    { value: 'srpen_2026', label: 'August 2026' },
+    { value: 'září_2026', label: 'September 2026' },
+    { value: 'říjen_2026', label: 'October 2026' },
+    { value: 'listopad_2026', label: 'November 2026' },
+    { value: 'prosinec_2026', label: 'December 2026' }
   ];
 
   const filterOptions = getFilterOptions();
@@ -724,7 +724,7 @@ export const RevenueOverview = ({
   if (loading) {
     return (
     <div className="space-y-6">
-        <div className="text-center py-8">Načítám data...</div>
+        <div className="text-center py-8">Loading data...</div>
       </div>
     );
   }
@@ -735,7 +735,7 @@ export const RevenueOverview = ({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
-            Revenue - Obrat po měsících
+            Revenue - Monthly Turnover
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -744,53 +744,53 @@ export const RevenueOverview = ({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Filter className="h-4 w-4 text-primary" />
-                <Label className="font-medium text-sm">Filtrovat podle:</Label>
+                <Label className="font-medium text-sm">Filter by:</Label>
               </div>
               <Button variant="ghost" size="sm" onClick={() => loadData()} disabled={loading}>
                 <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                Obnovit data
+                Refresh data
               </Button>
             </div>
             
             {/* Kompaktní řádek s hlavními filtry */}
             <div className="flex flex-wrap items-center gap-3">
               <div className="min-w-[120px]">
-                <Label htmlFor="viewType" className="text-xs text-muted-foreground">Pohled</Label>
+                <Label htmlFor="viewType" className="text-xs text-muted-foreground">View</Label>
                 <Select value={viewType} onValueChange={handleViewTypeChange}>
                   <SelectTrigger className="h-8 text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-background border z-50">
-                    <SelectItem value="mesic">Měsíční</SelectItem>
-                    <SelectItem value="kvartal">Kvartální</SelectItem>
+                    <SelectItem value="mesic">Monthly</SelectItem>
+                    <SelectItem value="kvartal">Quarterly</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="min-w-[130px]">
-                <Label htmlFor="filterType" className="text-xs text-muted-foreground">Typ filtru</Label>
+                <Label htmlFor="filterType" className="text-xs text-muted-foreground">Filter type</Label>
                 <Select value={filterType} onValueChange={handleFilterTypeChange}>
                   <SelectTrigger className="h-8 text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-background border z-50">
-                    <SelectItem value="all">Vše</SelectItem>
-                    <SelectItem value="customer">Zákazník</SelectItem>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="customer">Customer</SelectItem>
                     <SelectItem value="program">Program</SelectItem>
-                    <SelectItem value="project">Projekt</SelectItem>
+                    <SelectItem value="project">Project</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               {filterType !== 'all' && filterType !== 'program' && (
                 <div className="min-w-[150px]">
-                  <Label htmlFor="filterValue" className="text-xs text-muted-foreground">Hodnota</Label>
+                  <Label htmlFor="filterValue" className="text-xs text-muted-foreground">Value</Label>
                   <Select value={filterValue} onValueChange={setFilterValue}>
                     <SelectTrigger className="h-8 text-sm">
-                      <SelectValue placeholder="Vyberte..." />
+                      <SelectValue placeholder="Select..." />
                     </SelectTrigger>
                     <SelectContent className="bg-background border z-50">
-                      <SelectItem value="all">Vše</SelectItem>
+                      <SelectItem value="all">All</SelectItem>
                       {filterOptions.map(option => (
                         <SelectItem key={option.value} value={option.value}>
                           {option.label}
@@ -802,21 +802,21 @@ export const RevenueOverview = ({
               )}
 
               <div className="min-w-[100px]">
-                <Label htmlFor="displayUnit" className="text-xs text-muted-foreground">Jednotky</Label>
+                <Label htmlFor="displayUnit" className="text-xs text-muted-foreground">Units</Label>
                 <Select value={displayUnit} onValueChange={(value: 'kc' | 'hodiny') => setDisplayUnit(value)}>
                   <SelectTrigger className="h-8 text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-background border z-50">
-                    <SelectItem value="kc">Kč</SelectItem>
-                    <SelectItem value="hodiny">Hodiny</SelectItem>
+                    <SelectItem value="kc">Currency</SelectItem>
+                    <SelectItem value="hodiny">Hours</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               {displayUnit === 'kc' && (
                 <div className="min-w-[100px]">
-                  <Label htmlFor="currency" className="text-xs text-muted-foreground">Měna</Label>
+                  <Label htmlFor="currency" className="text-xs text-muted-foreground">Currency</Label>
                   <Select value={currency} onValueChange={(value: 'CZK' | 'USD') => setCurrency(value)}>
                     <SelectTrigger className="h-8 text-sm">
                       <SelectValue />
@@ -830,14 +830,14 @@ export const RevenueOverview = ({
               )}
 
               <div className="min-w-[130px]">
-                <Label htmlFor="projectStatus" className="text-xs text-muted-foreground">Status projektu</Label>
+                <Label htmlFor="projectStatus" className="text-xs text-muted-foreground">Project status</Label>
                 <Select value={projectStatusFilter} onValueChange={(value: 'all' | 'realizace' | 'presales' | 'P0' | 'P1' | 'P2' | 'P3') => setProjectStatusFilter(value)}>
                   <SelectTrigger className="h-8 text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-background border z-50">
-                    <SelectItem value="all">PreSales + Realizace</SelectItem>
-                    <SelectItem value="realizace">Realizace</SelectItem>
+                    <SelectItem value="all">PreSales + Delivery</SelectItem>
+                    <SelectItem value="realizace">Delivery</SelectItem>
                     <SelectItem value="presales">PreSales</SelectItem>
                     <SelectItem value="P0">P0</SelectItem>
                     <SelectItem value="P1">P1</SelectItem>
@@ -853,7 +853,7 @@ export const RevenueOverview = ({
               {/* Kvartální filtr */}
               {viewType === 'kvartal' && (
                 <div>
-                  <Label className="text-xs text-muted-foreground">Kvartály</Label>
+                  <Label className="text-xs text-muted-foreground">Quarters</Label>
                   <div className="grid grid-cols-3 gap-1 mt-2 p-2 border rounded-md bg-background/50 max-h-24 overflow-y-auto">
                     {quarterOptions.map((quarter) => (
                       <div key={quarter.value} className="flex items-center space-x-1">
@@ -879,7 +879,7 @@ export const RevenueOverview = ({
               {/* Měsíční filtr */}
               {viewType === 'mesic' && (
                 <div>
-                  <Label className="text-xs text-muted-foreground">Měsíce</Label>
+                  <Label className="text-xs text-muted-foreground">Months</Label>
                   <div className="grid grid-cols-3 gap-1 mt-2 p-2 border rounded-md bg-background/50 max-h-32 overflow-y-auto">
                     {monthOptions.map((month) => (
                       <div key={month.value} className="flex items-center space-x-1">
@@ -905,7 +905,7 @@ export const RevenueOverview = ({
               {/* Program filtr */}
               {filterType === 'program' && (
                 <div>
-                  <Label className="text-xs text-muted-foreground">Programy</Label>
+                  <Label className="text-xs text-muted-foreground">Programs</Label>
                   <div className="grid grid-cols-2 gap-1 mt-2 p-2 border rounded-md bg-background/50 max-h-32 overflow-y-auto">
                     {programs.map((program) => (
                       <div key={program.id} className="flex items-center space-x-1">
@@ -933,19 +933,19 @@ export const RevenueOverview = ({
            {/* Celkový obrat */}
            <div className="mb-6">
               <div className="text-2xl font-bold text-primary">
-                {displayUnit === 'kc' ? 'Celkový obrat' : 'Celkové hodiny'}: {formatValue(totalRevenue)}
+                {displayUnit === 'kc' ? 'Total revenue' : 'Total hours'}: {formatValue(totalRevenue)}
              </div>
              <p className="text-sm text-muted-foreground mt-1">
                {filterType === 'program' && selectedPrograms.length > 0
-                 ? `Filtrováno podle programů: ${selectedPrograms.map(id => programs.find(p => p.id === id)?.name).join(', ')}`
-                 : filterType !== 'all' && filterValue !== 'all' 
-                 ? `Filtrováno podle: ${
-                     filterType === 'customer' ? 'zákazník' : 
-                     filterType === 'project' ? 'projekt' : 
+                 ? `Filtered by programs: ${selectedPrograms.map(id => programs.find(p => p.id === id)?.name).join(', ')}`
+                 : filterType !== 'all' && filterValue !== 'all'
+                 ? `Filtered by: ${
+                     filterType === 'customer' ? 'customer' :
+                     filterType === 'project' ? 'project' :
                      'program'
                    }`
-                 : 'Všechny projekty s revenue'
-                 } | Pohled: {viewType === 'mesic' ? 'Měsíční' : 'Kvartální'}
+                 : 'All projects with revenue'
+                 } | View: {viewType === 'mesic' ? 'Monthly' : 'Quarterly'}
                  {viewType === 'kvartal' && selectedQuarters.length > 0 && selectedQuarters.length < quarterOptions.length ? ` - ${selectedQuarters.map(q => quarterOptions.find(opt => opt.value === q)?.label).join(', ')}` : ''}
                  {viewType === 'mesic' && selectedMonths.length > 0 && selectedMonths.length < monthOptions.length ? ` - ${selectedMonths.map(m => monthOptions.find(opt => opt.value === m)?.label).join(', ')}` : ''}
               </p>
@@ -1008,14 +1008,14 @@ export const RevenueOverview = ({
                     return (
                       <div className="bg-card border border-border rounded-md p-3 shadow-md max-w-sm max-h-96 overflow-y-auto">
                         <p className="font-medium mb-2 border-b pb-2">
-                          {viewType === 'kvartal' ? 'Kvartál' : 'Měsíc'}: {props.label}
+                          {viewType === 'kvartal' ? 'Quarter' : 'Month'}: {props.label}
                         </p>
                         
                         {/* Realizace sekce */}
                         {realizaceItems.length > 0 && (
                           <div className="mb-3">
                             <p className="text-xs font-semibold text-muted-foreground mb-1">
-                              REALIZACE ({formatValue(realizaceSum)})
+                              DELIVERY ({formatValue(realizaceSum)})
                             </p>
                             <div className="space-y-0.5 pl-2">
                               {realizaceItems.map(item => {
@@ -1075,7 +1075,7 @@ export const RevenueOverview = ({
                         {/* Celkem */}
                         <div className="border-t pt-2 mt-2">
                           <div className="flex justify-between font-semibold">
-                            <span>Celkem:</span>
+                            <span>Total:</span>
                             <span>{formatValue(total)}</span>
                           </div>
                         </div>
@@ -1120,23 +1120,29 @@ export const RevenueOverview = ({
       {/* Detailní tabulka projektů */}
       <Card className="shadow-card-custom">
         <CardHeader>
-          <CardTitle>Detailní rozpis podle projektů</CardTitle>
+          <CardTitle>Detailed breakdown by project</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="font-bold">Projekt</TableHead>
+                  <TableHead className="font-bold">Project</TableHead>
                    {months.map(month => {
-                    const monthDisplay = month.replace('_2025', ' 25').replace('_2026', ' 26');
+                    const shortMap: Record<string, string> = {
+                      'leden': 'Jan', 'únor': 'Feb', 'březen': 'Mar', 'duben': 'Apr',
+                      'květen': 'May', 'červen': 'Jun', 'červenec': 'Jul', 'srpen': 'Aug',
+                      'září': 'Sep', 'říjen': 'Oct', 'listopad': 'Nov', 'prosinec': 'Dec'
+                    };
+                    const [czName, year] = month.split('_');
+                    const monthDisplay = `${shortMap[czName] || czName} ${year.slice(2)}`;
                     return (
                       <TableHead key={month} className="text-right font-bold min-w-[120px]">
                         {monthDisplay}
                       </TableHead>
                     );
                   })}
-                  <TableHead className="text-right font-bold">Celkem</TableHead>
+                  <TableHead className="text-right font-bold">Total</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1190,7 +1196,7 @@ export const RevenueOverview = ({
                               </div>
                               {isPresales && project?.presales_phase && (
                                 <span className="text-xs text-muted-foreground">
-                                  {project.presales_phase} • {project.probability}% pravděpodobnost
+                                  {project.presales_phase} • {project.probability}% probability
                                 </span>
                               )}
                             </div>
@@ -1214,7 +1220,7 @@ export const RevenueOverview = ({
                 
                 {/* Celkový řádek */}
                 <TableRow className="font-bold border-t-2">
-                  <TableCell className="font-bold">CELKEM</TableCell>
+                  <TableCell className="font-bold">TOTAL</TableCell>
                    {months.map(month => {
                      const monthData = activeData[month] || {};
                      const monthTotal = filteredProjectList.reduce((sum: number, projectCode) => sum + (monthData[projectCode] || 0), 0);
