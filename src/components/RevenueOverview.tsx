@@ -517,7 +517,19 @@ export const RevenueOverview = ({
 
   const monthlyRevenueByProject = calculateMonthlyRevenueByProject();
   const monthlyHoursByProject = calculateMonthlyHoursByProject();
-  const activeData = displayUnit === 'kc' ? monthlyRevenueByProject : monthlyHoursByProject;
+  const rawActiveData = displayUnit === 'kc' ? monthlyRevenueByProject : monthlyHoursByProject;
+  // Apply per-month correction coefficient
+  const activeData = useMemo(() => {
+    const result: { [month: string]: { [projectCode: string]: number } } = {};
+    Object.entries(rawActiveData).forEach(([month, projData]) => {
+      const c = getCoeff(month);
+      result[month] = {};
+      Object.entries(projData).forEach(([code, value]) => {
+        result[month][code] = (value as number) * c;
+      });
+    });
+    return result;
+  }, [rawActiveData, monthCoefficients]);
   const months = viewType === 'mesic' ? 
     [
       'říjen_2025', 'listopad_2025', 'prosinec_2025',
