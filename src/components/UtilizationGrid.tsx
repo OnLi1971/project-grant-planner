@@ -245,9 +245,10 @@ export const UtilizationGrid: React.FC = () => {
     if (allDeparted) return null;
 
     const sk = isSlovak(engineer);
-    // Capacity counts only working days from the weeks actually included (handles partial current month)
+    // Capacity = working days from ALL weeks overlapping this month (matches numerator's basis,
+    // including bridge weeks). Excludes departed weeks.
     let capacityDays = 0;
-    for (const cwKey of mi.weeks) {
+    for (const cwKey of allWeeks) {
       if (engineer.endDate && isEngineerDepartedForWeek(engineer.endDate, cwKey)) continue;
       const parsed = parseCW(cwKey);
       if (!parsed) continue;
