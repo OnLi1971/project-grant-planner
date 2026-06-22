@@ -323,7 +323,8 @@ export const RevenueOverview = ({
 
       // Rozdělíme týdenní výkon podle poměru dnů v měsících
       Object.entries(weekMapping).forEach(([month, ratio]) => {
-        // Inicializace projektu v měsíci
+        // Inicializace měsíce a projektu v měsíci (pokud měsíc není v seznamu, přeskočit)
+        if (!monthlyData[month]) return;
         if (!monthlyData[month][entry.projekt]) {
           monthlyData[month][entry.projekt] = 0;
         }
@@ -443,6 +444,7 @@ export const RevenueOverview = ({
       if (hourlyRate === 0) return;
 
       Object.entries(weekMapping).forEach(([month, ratio]) => {
+        if (!monthlyData[month]) return;
         if (!monthlyData[month][entry.projekt]) monthlyData[month][entry.projekt] = 0;
         let probabilityCoefficient = 1;
         if (project.project_status === 'Pre sales' && project.probability) probabilityCoefficient = project.probability / 100;
