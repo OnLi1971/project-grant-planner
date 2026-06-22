@@ -245,7 +245,16 @@ export const UtilizationGrid: React.FC = () => {
     if (allDeparted) return null;
 
     const sk = isSlovak(engineer);
-    const capacity = getWorkingDaysInMonth(mi.year, mi.month, sk) * 8;
+    // Capacity counts only working days from the weeks actually included (handles partial current month)
+    let capacityDays = 0;
+    for (const cwKey of mi.weeks) {
+      if (engineer.endDate && isEngineerDepartedForWeek(engineer.endDate, cwKey)) continue;
+      const parsed = parseCW(cwKey);
+      if (!parsed) continue;
+      const monday = getISOWeekMonday(parsed.cw, parsed.year);
+      capacityDays += getWorkingDaysInWeekForMonth(monday, mi.year, mi.month, sk);
+    }
+    const capacity = capacityDays * 8;
     if (capacity === 0) return 0;
 
     let totalScaledHours = 0;
