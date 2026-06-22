@@ -72,6 +72,28 @@ export const RevenueOverview = ({
   const [programs, setPrograms] = useState<DatabaseProgram[]>([]);
   const [loading, setLoading] = useState(true);
   const [defaultProgramsApplied, setDefaultProgramsApplied] = useState(false);
+  const [monthCoefficients, setMonthCoefficients] = useState<Record<string, number>>(() => {
+    try {
+      const stored = localStorage.getItem('revenueMonthCoefficients');
+      return stored ? JSON.parse(stored) : {};
+    } catch { return {}; }
+  });
+
+  const getCoeff = (month: string): number => {
+    const v = monthCoefficients[month];
+    return (typeof v === 'number' && !isNaN(v)) ? v : 1;
+  };
+
+  const handleCoeffChange = (month: string, raw: string) => {
+    const parsed = parseFloat(raw.replace(',', '.'));
+    setMonthCoefficients(prev => {
+      const next = { ...prev };
+      if (raw === '' || isNaN(parsed)) delete next[month];
+      else next[month] = parsed;
+      try { localStorage.setItem('revenueMonthCoefficients', JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
 
   // Exchange rate CZK to USD (approximately 23 CZK = 1 USD)
   const exchangeRate = 23;
@@ -495,7 +517,19 @@ export const RevenueOverview = ({
 
   const monthlyRevenueByProject = calculateMonthlyRevenueByProject();
   const monthlyHoursByProject = calculateMonthlyHoursByProject();
-  const activeData = displayUnit === 'kc' ? monthlyRevenueByProject : monthlyHoursByProject;
+  const rawActiveData = displayUnit === 'kc' ? monthlyRevenueByProject : monthlyHoursByProject;
+  // Apply per-month correction coefficient
+  const activeData = useMemo(() => {
+    const result: { [month: string]: { [projectCode: string]: number } } = {};
+    Object.entries(rawActiveData).forEach(([month, projData]) => {
+      const c = getCoeff(month);
+      result[month] = {};
+      Object.entries(projData).forEach(([code, value]) => {
+        result[month][code] = (value as number) * c;
+      });
+    });
+    return result;
+  }, [rawActiveData, monthCoefficients]);
   const months = viewType === 'mesic' ? 
     [
       'říjen_2025', 'listopad_2025', 'prosinec_2025',
@@ -927,6 +961,54 @@ export const RevenueOverview = ({
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* Correction coefficients per month */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label className="text-xs text-muted-foreground">
+                  Correction coefficient per month (multiplies the value, default 1.0)
+                </Label>
+                {Object.keys(monthCoefficients).length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 text-xs"
+                    onClick={() => {
+                      setMonthCoefficients({});
+                      try { localStorage.removeItem('revenueMonthCoefficients'); } catch {}
+                    }}
+                  >
+                    Reset all
+                  </Button>
+                )}
+              </div>
+              <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-8 gap-2 p-2 border rounded-md bg-background/50">
+                {(viewType === 'mesic' ? selectedMonths : months).map(month => {
+                  const shortMap: Record<string, string> = {
+                    'leden': 'Jan', 'únor': 'Feb', 'březen': 'Mar', 'duben': 'Apr',
+                    'květen': 'May', 'červen': 'Jun', 'červenec': 'Jul', 'srpen': 'Aug',
+                    'září': 'Sep', 'říjen': 'Oct', 'listopad': 'Nov', 'prosinec': 'Dec'
+                  };
+                  const [cz, yr] = month.split('_');
+                  const label = `${shortMap[cz] || cz} ${yr.slice(2)}`;
+                  const val = monthCoefficients[month];
+                  return (
+                    <div key={month} className="flex flex-col">
+                      <Label className="text-[10px] text-muted-foreground">{label}</Label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="1.00"
+                        value={val ?? ''}
+                        onChange={(e) => handleCoeffChange(month, e.target.value)}
+                        className="h-7 text-xs px-2 rounded border bg-background"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
