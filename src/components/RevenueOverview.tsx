@@ -72,6 +72,28 @@ export const RevenueOverview = ({
   const [programs, setPrograms] = useState<DatabaseProgram[]>([]);
   const [loading, setLoading] = useState(true);
   const [defaultProgramsApplied, setDefaultProgramsApplied] = useState(false);
+  const [monthCoefficients, setMonthCoefficients] = useState<Record<string, number>>(() => {
+    try {
+      const stored = localStorage.getItem('revenueMonthCoefficients');
+      return stored ? JSON.parse(stored) : {};
+    } catch { return {}; }
+  });
+
+  const getCoeff = (month: string): number => {
+    const v = monthCoefficients[month];
+    return (typeof v === 'number' && !isNaN(v)) ? v : 1;
+  };
+
+  const handleCoeffChange = (month: string, raw: string) => {
+    const parsed = parseFloat(raw.replace(',', '.'));
+    setMonthCoefficients(prev => {
+      const next = { ...prev };
+      if (raw === '' || isNaN(parsed)) delete next[month];
+      else next[month] = parsed;
+      try { localStorage.setItem('revenueMonthCoefficients', JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
 
   // Exchange rate CZK to USD (approximately 23 CZK = 1 USD)
   const exchangeRate = 23;
