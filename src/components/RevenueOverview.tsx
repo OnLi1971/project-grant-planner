@@ -444,6 +444,7 @@ export const RevenueOverview = ({
       if (hourlyRate === 0) return;
 
       Object.entries(weekMapping).forEach(([month, ratio]) => {
+        if (!monthlyData[month]) return;
         if (!monthlyData[month][entry.projekt]) monthlyData[month][entry.projekt] = 0;
         let probabilityCoefficient = 1;
         if (project.project_status === 'Pre sales' && project.probability) probabilityCoefficient = project.probability / 100;
