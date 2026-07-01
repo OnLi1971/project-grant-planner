@@ -364,11 +364,17 @@ export const ProjectAssignmentMatrix = ({
       ...engineers.map(e => normalizeName(e.display_name)),
       ...planningData.map(entry => normalizeName(entry.konstrukter))
     ]));
+    // Build lookup: engineerKey -> isSlovak
+    const isSlovakMap: { [key: string]: boolean } = {};
+    engineers.forEach(e => {
+      isSlovakMap[normalizeName(e.display_name)] = getEngineerCompany(e.display_name) === 'MB Idea';
+    });
     const matrix: { [engineer: string]: { [week: string]: { projekt: string; isTentative: boolean; hours: number } } } = {};
     
     engineerKeys.forEach(engineerKey => {
       matrix[engineerKey] = {};
       const engEndDate = endDateMap[engineerKey] || null;
+      const isSlovak = isSlovakMap[engineerKey] || false;
       weeks.forEach(week => {
         // Check departure
         if (engEndDate && isEngineerDepartedForWeek(engEndDate, week)) {
@@ -380,17 +386,30 @@ export const ProjectAssignmentMatrix = ({
           return;
         }
         const entry = planningData.find(e => normalizeName(e.konstrukter) === engineerKey && e.cw === week);
-        // Default to 'DOVOLENÁ' for CW52, otherwise 'FREE' if no entry exists
+        const projekt = entry?.projekt || (week.includes('CW52') ? 'DOVOLENÁ' : 'FREE');
+        let hours = typeof entry?.mhTyden === 'number' ? entry.mhTyden : 0;
+        // Auto-reduce project hours for holiday weeks (cap at engineer's actual capacity)
+        const isRegime = projekt === 'DOVOLENÁ' || projekt === 'NEMOC' || projekt === 'OVER' || projekt === 'FREE';
+        if (!isRegime && hours > 0) {
+          const cwMatch = week.match(/CW(\d+)-(\d+)/);
+          if (cwMatch) {
+            const cwN = parseInt(cwMatch[1]);
+            const yN = parseInt(cwMatch[2]);
+            const capacity = getWorkingDaysInCW(cwN, yN, isSlovak) * 8;
+            if (capacity > 0 && hours > capacity) hours = capacity;
+          }
+        }
         matrix[engineerKey][week] = {
-          projekt: entry?.projekt || (week.includes('CW52') ? 'DOVOLENÁ' : 'FREE'),
+          projekt,
           isTentative: entry?.is_tentative || false,
-          hours: typeof entry?.mhTyden === 'number' ? entry.mhTyden : 0
+          hours
         };
       });
     });
     
     return matrix;
   }, [planningData, engineers, weeks, endDateMap]);
+
 
 // Create monthly aggregated data
   const monthlyData = useMemo(() => {
