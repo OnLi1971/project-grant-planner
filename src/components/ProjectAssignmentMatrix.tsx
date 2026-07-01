@@ -1606,9 +1606,86 @@ export const ProjectAssignmentMatrix = ({
                       );
                     })
                   )}
-                </tr>
-                )}
-                {/* Summary row for FTE - hide in customer view */}
+                 </tr>
+                 )}
+                 {/* Summary row for engineer count - hide in customer view */}
+                 {!customerViewMode && (
+                 <tr className="bg-secondary/10 border-t border-secondary/20">
+                   <td className="border border-border p-2 font-bold sticky left-0 bg-secondary/10 z-10 text-foreground text-sm">
+                     Počet konstruktérů
+                   </td>
+                   {viewMode === 'weeks' ? (
+                     months.map((month, monthIndex) =>
+                       month.weeks.map((week, weekIndex) => {
+                         const count = filteredEngineers.reduce((sum, engineer) => {
+                           const projectData = matrixData[engineer][week];
+                           const project = projectData?.projekt;
+                           if (project === 'FREE' || project === 'DOVOLENÁ' || project === 'OVER') {
+                             return sum;
+                           }
+                           return sum + 1;
+                         }, 0);
+                         return (
+                           <td
+                             key={week}
+                             className={`border border-border p-1 text-center font-semibold ${
+                               monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
+                             }`}
+                           >
+                             <div className="text-sm text-foreground">
+                               {count}
+                             </div>
+                           </td>
+                         );
+                       })
+                     )
+                   ) : (
+                     months.map((month, monthIndex) => {
+                       const monthMapLocal: { [key: string]: number } = {
+                         'leden': 1, 'únor': 2, 'březen': 3, 'duben': 4, 'květen': 5, 'červen': 6,
+                         'červenec': 7, 'srpen': 8, 'září': 9, 'říjen': 10, 'listopad': 11, 'prosinec': 12
+                       };
+                       const [mName, yStr] = month.name.toLowerCase().split(' ');
+                       const mNum = monthMapLocal[mName];
+                       const mYear = parseInt(yStr);
+                       let count = 0;
+                       filteredEngineers.forEach(engineer => {
+                         let hasProject = false;
+                         month.weeks.forEach(week => {
+                           const cwMatch = week.match(/CW(\d+)-(\d+)/);
+                           if (!cwMatch) return;
+                           const cwNum = parseInt(cwMatch[1]);
+                           const wYear = parseInt(cwMatch[2]);
+                           const weekMonday = getISOWeekMonday(cwNum, wYear);
+                           const isSlovak = getEngineerCompany(displayNameMap[engineer] || engineer) === 'MB Idea';
+                           const daysInMonth = getWorkingDaysInWeekForMonth(weekMonday, mYear, mNum, isSlovak);
+                           const totalWeekDays = getWorkingDaysInCW(cwNum, wYear, isSlovak);
+                           const proportion = totalWeekDays > 0 ? daysInMonth / totalWeekDays : 0;
+                           const projectData = matrixData[engineer][week];
+                           const project = projectData?.projekt;
+                           if (proportion > 0 && project !== 'FREE' && project !== 'DOVOLENÁ' && project !== 'OVER') {
+                             hasProject = true;
+                           }
+                         });
+                         if (hasProject) count++;
+                       });
+                       return (
+                         <td
+                           key={month.name}
+                           className={`border border-border p-1.5 text-center font-semibold ${
+                             monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
+                           }`}
+                         >
+                           <div className="text-sm text-foreground">
+                             {count}
+                           </div>
+                         </td>
+                       );
+                     })
+                   )}
+                 </tr>
+                 )}
+                 {/* Summary row for FTE - hide in customer view */}
                 {!customerViewMode && (
                 <tr className="bg-secondary/10 border-t border-secondary/20">
                   <td className="border border-border p-2 font-bold sticky left-0 bg-secondary/10 z-10 text-foreground text-sm">
