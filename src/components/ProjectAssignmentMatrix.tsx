@@ -1694,20 +1694,22 @@ export const ProjectAssignmentMatrix = ({
                   {viewMode === 'weeks' ? (
                     months.map((month, monthIndex) => 
                       month.weeks.map((week, weekIndex) => {
-                        const totalHours = filteredEngineers.reduce((sum, engineer) => {
-                          const projectData = matrixData[engineer][week];
-                          const project = projectData?.projekt;
-                          const hours = projectData?.hours || 0;
-                          if (project === 'FREE' || project === 'DOVOLENÁ' || project === 'OVER') {
-                            return sum;
-                          }
-                          return sum + hours;
-                        }, 0);
                         const cwMatch = week.match(/CW(\d+)/);
                         const cwNum = cwMatch ? parseInt(cwMatch[1]) : 0;
                         const weekYear = parseInt(week.split('-').pop() || String(new Date().getFullYear()));
-                        const workingDays = cwNum > 0 ? getWorkingDaysInCW(cwNum, weekYear) : 5;
-                        const fte = (totalHours / (workingDays * 8)).toFixed(1);
+                        // Sum FTE per engineer using their own working-day count (CZ vs SK holidays differ)
+                        let totalFte = 0;
+                        filteredEngineers.forEach(engineer => {
+                          const projectData = matrixData[engineer][week];
+                          const project = projectData?.projekt;
+                          const hours = projectData?.hours || 0;
+                          if (!hours || project === 'FREE' || project === 'DOVOLENÁ' || project === 'OVER') return;
+                          const isSlovak = getEngineerCompany(displayNameMap[engineer] || engineer) === 'MB Idea';
+                          const workingDays = cwNum > 0 ? getWorkingDaysInCW(cwNum, weekYear, isSlovak) : 5;
+                          const capacity = workingDays * 8;
+                          if (capacity > 0) totalFte += hours / capacity;
+                        });
+                        const fte = totalFte.toFixed(1);
                         return (
                           <td 
                             key={week} 
@@ -1722,6 +1724,7 @@ export const ProjectAssignmentMatrix = ({
                         );
                       })
                     )
+
                   ) : (
                     months.map((month, monthIndex) => {
                       const monthMapLocal: { [key: string]: number } = {
