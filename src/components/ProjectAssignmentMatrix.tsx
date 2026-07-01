@@ -13,7 +13,7 @@ import { usePlanning } from '@/contexts/PlanningContext';
 import { customers, projectManagers, programs, projects } from '@/data/projectsData';
 import { getWeek } from 'date-fns';
 import { normalizeName, createNameMapping } from '@/utils/nameNormalization';
-import { getWorkingDaysFromMonthName, getWorkingDaysInWeekForMonth, getWorkingDaysInCW, getISOWeekMonday, getWorkingDaysInMonth } from '@/utils/workingDays';
+import { getWorkingDaysFromMonthName, getWorkingDaysInWeekForMonth, getWorkingDaysInCW, getISOWeekMonday, getWorkingDaysInMonth, isHoliday } from '@/utils/workingDays';
 import { isEngineerDepartedForWeek } from '@/utils/engineerDeparture';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
@@ -1043,7 +1043,40 @@ export const ProjectAssignmentMatrix = ({
                             }`}
                           >
                             <div className="flex items-center justify-center gap-1">
-                              <span className="text-muted-foreground">{week}</span>
+                              {(() => {
+                                const m = week.match(/CW(\d+)-(\d+)/);
+                                if (!m) return <span className="text-muted-foreground">{week}</span>;
+                                const cwN = parseInt(m[1]);
+                                const yN = parseInt(m[2]);
+                                const monday = getISOWeekMonday(cwN, yN);
+                                const holidays: string[] = [];
+                                for (let i = 0; i < 5; i++) {
+                                  const d = new Date(monday);
+                                  d.setDate(monday.getDate() + i);
+                                  const cz = isHoliday(d, false);
+                                  const sk = isHoliday(d, true);
+                                  if (cz || sk) {
+                                    const dayName = ['Po','Út','St','Čt','Pá'][i];
+                                    const tags = [cz && 'CZ', sk && 'SK'].filter(Boolean).join('+');
+                                    holidays.push(`${dayName} ${d.getDate()}.${d.getMonth()+1}. (${tags})`);
+                                  }
+                                }
+                                if (holidays.length === 0) return <span className="text-muted-foreground">{week}</span>;
+                                return (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span className="text-muted-foreground cursor-help">
+                                        {week} <span className="text-red-500">🎌</span>
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top">
+                                      <div className="text-xs font-semibold mb-1">Svátek v týdnu:</div>
+                                      {holidays.map(h => <div key={h} className="text-xs">{h}</div>)}
+                                    </TooltipContent>
+                                  </Tooltip>
+                                );
+                              })()}
+
                               <Popover>
                                 <PopoverTrigger asChild>
                                   <Button 
