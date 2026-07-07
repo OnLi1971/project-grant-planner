@@ -46,6 +46,19 @@ const CUSTOMER_COLORS = {
       'hsl(125 65% 45%)',       // travní zelená
     ]
   },
+  'SE': {
+    primary: 'hsl(142 70% 40%)',    // Zelená (Škoda Electric)
+    light: 'hsl(142 60% 55%)',
+    dark: 'hsl(142 80% 28%)',
+    accent: 'hsl(142 55% 65%)',
+    shades: [
+      'hsl(142 70% 40%)',
+      'hsl(142 80% 28%)',
+      'hsl(142 60% 55%)',
+      'hsl(160 70% 42%)',
+      'hsl(125 60% 45%)',
+    ]
+  },
   'BUCHER': {
     primary: 'hsl(0 84% 60%)',      // Červená
     light: 'hsl(0 75% 70%)',
