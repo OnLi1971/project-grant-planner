@@ -1096,9 +1096,14 @@ export const RevenueOverview = ({
                     
                     return (
                       <div className="bg-card border border-border rounded-md p-3 shadow-md max-w-sm max-h-96 overflow-y-auto">
-                        <p className="font-medium mb-2 border-b pb-2">
-                          {viewType === 'kvartal' ? 'Quarter' : 'Month'}: {props.label}
-                        </p>
+                        <div className="mb-2 border-b pb-2">
+                          <p className="font-medium">
+                            {viewType === 'kvartal' ? 'Quarter' : 'Month'}: {props.label}
+                          </p>
+                          {viewType === 'kvartal' && data?.dateRange && (
+                            <p className="text-xs text-muted-foreground">{data.dateRange}</p>
+                          )}
+                        </div>
                         
                         {/* Realizace sekce */}
                         {realizaceItems.length > 0 && (
