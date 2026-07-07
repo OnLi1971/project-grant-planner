@@ -62,7 +62,7 @@ export const RevenueOverview = ({
   const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
   const [viewType, setViewType] = useState<'mesic' | 'kvartal'>(defaultViewType);
   // Indické fiskální kvartály: Q1=Apr-Jun, Q2=Jul-Sep, Q3=Oct-Dec, Q4=Jan-Mar (FY = Apr-Mar)
-  const [selectedQuarters, setSelectedQuarters] = useState<string[]>(['Q3-FY25', 'Q4-FY25', 'Q1-FY26', 'Q2-FY26', 'Q3-FY26']);
+  const [selectedQuarters, setSelectedQuarters] = useState<string[]>(['Q4-FY25', 'Q1-FY26', 'Q2-FY26', 'Q3-FY26']);
   const [selectedMonths, setSelectedMonths] = useState<string[]>([
     'leden_2026', 'únor_2026', 'březen_2026', 'duben_2026', 'květen_2026', 'červen_2026',
     'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026'
@@ -287,7 +287,6 @@ export const RevenueOverview = ({
 
     // Inicializace struktur pro všechny měsíce s rokem
     const months = [
-      'říjen_2025', 'listopad_2025', 'prosinec_2025',
       'leden_2026', 'únor_2026', 'březen_2026', 'duben_2026', 'květen_2026', 'červen_2026',
       'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026'
     ];
@@ -444,7 +443,6 @@ export const RevenueOverview = ({
   const calculateMonthlyHoursByProject = (data = filteredData) => {
     const monthlyData: { [month: string]: { [projectCode: string]: number } } = {};
     const months = [
-      'říjen_2025', 'listopad_2025', 'prosinec_2025',
       'leden_2026', 'únor_2026', 'březen_2026', 'duben_2026', 'květen_2026', 'červen_2026',
       'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026'
     ];
@@ -535,12 +533,10 @@ export const RevenueOverview = ({
   }, [rawActiveData, monthCoefficients]);
   const months = viewType === 'mesic' ? 
     [
-      'říjen_2025', 'listopad_2025', 'prosinec_2025',
       'leden_2026', 'únor_2026', 'březen_2026', 'duben_2026', 'květen_2026', 'červen_2026',
       'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026'
     ].filter(month => selectedMonths.includes(month))
     : [
-      'říjen_2025', 'listopad_2025', 'prosinec_2025',
       'leden_2026', 'únor_2026', 'březen_2026', 'duben_2026', 'květen_2026', 'červen_2026',
       'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026'
     ];
@@ -592,12 +588,6 @@ export const RevenueOverview = ({
     if (viewType === 'kvartal') {
       // Kvartální data
       const quarterData = [
-        {
-          quarter: 'Q3 FY25-26',
-          months: ['říjen_2025', 'listopad_2025', 'prosinec_2025'],
-          label: 'Q3 FY25',
-          dateRange: '1 Oct – 31 Dec 2025'
-        },
         {
           quarter: 'Q4 FY25-26',
           months: ['leden_2026', 'únor_2026', 'březen_2026'],
@@ -689,7 +679,6 @@ export const RevenueOverview = ({
 
   // Možnosti pro kvartální filtr
   const getQuarterOptions = () => [
-    { value: 'Q3-FY25', label: 'Q3 FY25-26 (Oct-Dec 2025)' },
     { value: 'Q4-FY25', label: 'Q4 FY25-26 (Jan-Mar 2026)' },
     { value: 'Q1-FY26', label: 'Q1 FY26-27 (Apr-Jun 2026)' },
     { value: 'Q2-FY26', label: 'Q2 FY26-27 (Jul-Sep 2026)' },
@@ -698,9 +687,6 @@ export const RevenueOverview = ({
 
   // Month filter options
   const getMonthOptions = () => [
-    { value: 'říjen_2025', label: 'October 2025' },
-    { value: 'listopad_2025', label: 'November 2025' },
-    { value: 'prosinec_2025', label: 'December 2025' },
     { value: 'leden_2026', label: 'January 2026' },
     { value: 'únor_2026', label: 'February 2026' },
     { value: 'březen_2026', label: 'March 2026' },
@@ -731,9 +717,9 @@ export const RevenueOverview = ({
     setViewType(value);
     // Reset to all quarters/months when switching view type
     if (value === 'kvartal') {
-      setSelectedQuarters(['Q3-FY25', 'Q4-FY25', 'Q1-FY26', 'Q2-FY26', 'Q3-FY26']);
+      setSelectedQuarters(['Q4-FY25', 'Q1-FY26', 'Q2-FY26', 'Q3-FY26']);
     } else {
-      setSelectedMonths(['říjen_2025', 'listopad_2025', 'prosinec_2025', 'leden_2026', 'únor_2026', 'březen_2026', 'duben_2026', 'květen_2026', 'červen_2026', 'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026']);
+      setSelectedMonths(['leden_2026', 'únor_2026', 'březen_2026', 'duben_2026', 'květen_2026', 'červen_2026', 'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026']);
     }
   };
 
