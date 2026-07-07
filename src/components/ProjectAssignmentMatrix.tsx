@@ -822,7 +822,7 @@ export const ProjectAssignmentMatrix = ({
                   className="gap-2"
                 >
                   <History className="h-4 w-4" />
-                  Historie změn
+                  Change history
                 </Button>
               )}
               {!customerViewMode && (
