@@ -39,6 +39,7 @@ const ManagerRevenueView = () => {
             defaultStatusFilter="realizace" 
             defaultViewType="mesic" 
             defaultProgramCodes={['MACH', 'RAIL']}
+            hideCorrectionCoefficients
           />
         </div>
       </div>
