@@ -866,23 +866,25 @@ export const RevenueOverview = ({
                 </div>
               )}
 
-              <div className="min-w-[130px]">
-                <Label htmlFor="projectStatus" className="text-xs text-muted-foreground">Project status</Label>
-                <Select value={projectStatusFilter} onValueChange={(value: 'all' | 'realizace' | 'presales' | 'P0' | 'P1' | 'P2' | 'P3') => setProjectStatusFilter(value)}>
-                  <SelectTrigger className="h-8 text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background border z-50">
-                    <SelectItem value="all">PreSales + Delivery</SelectItem>
-                    <SelectItem value="realizace">Delivery</SelectItem>
-                    <SelectItem value="presales">PreSales</SelectItem>
-                    <SelectItem value="P0">P0</SelectItem>
-                    <SelectItem value="P1">P1</SelectItem>
-                    <SelectItem value="P2">P2</SelectItem>
-                    <SelectItem value="P3">P3</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {!hideProjectStatus && (
+                <div className="min-w-[130px]">
+                  <Label htmlFor="projectStatus" className="text-xs text-muted-foreground">Project status</Label>
+                  <Select value={projectStatusFilter} onValueChange={(value: 'all' | 'realizace' | 'presales' | 'P0' | 'P1' | 'P2' | 'P3') => setProjectStatusFilter(value)}>
+                    <SelectTrigger className="h-8 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background border z-50">
+                      <SelectItem value="all">PreSales + Delivery</SelectItem>
+                      <SelectItem value="realizace">Delivery</SelectItem>
+                      <SelectItem value="presales">PreSales</SelectItem>
+                      <SelectItem value="P0">P0</SelectItem>
+                      <SelectItem value="P1">P1</SelectItem>
+                      <SelectItem value="P2">P2</SelectItem>
+                      <SelectItem value="P3">P3</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
 
             {/* Rozšířené filtry v novém řádku */}
