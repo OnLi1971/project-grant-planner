@@ -1224,20 +1224,35 @@ export const RevenueOverview = ({
               <TableHeader>
                 <TableRow>
                   <TableHead className="font-bold">Project</TableHead>
-                   {months.map(month => {
-                    const shortMap: Record<string, string> = {
-                      'leden': 'Jan', 'únor': 'Feb', 'březen': 'Mar', 'duben': 'Apr',
-                      'květen': 'May', 'červen': 'Jun', 'červenec': 'Jul', 'srpen': 'Aug',
-                      'září': 'Sep', 'říjen': 'Oct', 'listopad': 'Nov', 'prosinec': 'Dec'
-                    };
-                    const [czName, year] = month.split('_');
-                    const monthDisplay = `${shortMap[czName] || czName} ${year.slice(2)}`;
-                    return (
-                      <TableHead key={month} className="text-right font-bold min-w-[120px]">
-                        {monthDisplay}
-                      </TableHead>
-                    );
-                  })}
+                   {viewType === 'kvartal' ? (
+                     [
+                       { key: 'Q4-FY25', label: 'Q4 FY25' },
+                       { key: 'Q1-FY26', label: 'Q1 FY26' },
+                       { key: 'Q2-FY26', label: 'Q2 FY26' },
+                       { key: 'Q3-FY26', label: 'Q3 FY26' },
+                     ]
+                       .filter(q => selectedQuarters.includes(q.key))
+                       .map(q => (
+                         <TableHead key={q.key} className="text-right font-bold min-w-[120px]">
+                           {q.label}
+                         </TableHead>
+                       ))
+                   ) : (
+                     months.map(month => {
+                       const shortMap: Record<string, string> = {
+                         'leden': 'Jan', 'únor': 'Feb', 'březen': 'Mar', 'duben': 'Apr',
+                         'květen': 'May', 'červen': 'Jun', 'červenec': 'Jul', 'srpen': 'Aug',
+                         'září': 'Sep', 'říjen': 'Oct', 'listopad': 'Nov', 'prosinec': 'Dec'
+                       };
+                       const [czName, year] = month.split('_');
+                       const monthDisplay = `${shortMap[czName] || czName} ${year.slice(2)}`;
+                       return (
+                         <TableHead key={month} className="text-right font-bold min-w-[120px]">
+                           {monthDisplay}
+                         </TableHead>
+                       );
+                     })
+                   )}
                   <TableHead className="text-right font-bold">Total</TableHead>
                 </TableRow>
               </TableHeader>
