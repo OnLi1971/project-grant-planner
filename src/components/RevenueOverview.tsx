@@ -47,6 +47,8 @@ interface RevenueOverviewProps {
   defaultViewType?: 'mesic' | 'kvartal';
   defaultProgramCodes?: string[];
   hideCorrectionCoefficients?: boolean;
+  hideFilterType?: boolean;
+  hideProjectStatus?: boolean;
 }
 
 export const RevenueOverview = ({ 
