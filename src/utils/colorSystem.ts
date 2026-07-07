@@ -130,6 +130,8 @@ const PROJECT_TO_CUSTOMER_MAP: { [key: string]: string } = {
   'ST_JIGS': 'ST',
   'ST_TRAM_HS': 'ST',
   'ST_ELEKTRO': 'ST',
+  'ST_HVAC': 'ST',
+  'SE_FEM': 'WABTEC',
   'NU_CRAIN': 'NUVIA',
   'WA_HVAC': 'WABTEC',
   'SAF_FEM': 'SAFRAN',
