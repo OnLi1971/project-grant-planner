@@ -135,6 +135,12 @@ const generateMonths = (weeksList: string[]): { name: string; weeks: string[] }[
   return Array.from(monthsMap.entries()).map(([name, weeks]) => ({ name, weeks }));
 };
 
+const PROJECT_DISPLAY_NAMES: Record<string, string> = {
+  'DOVOLENÁ': 'VACATION',
+  'NEMOC': 'SICK LEAVE',
+};
+const getProjectDisplayName = (project: string): string => PROJECT_DISPLAY_NAMES[project] || project;
+
 const getProjectBadgeStyle = (projekt: string) => {
   // Departed engineer
   if (projekt === 'DEPARTED') return 'bg-gray-200 text-red-500 border-gray-300 dark:bg-gray-800 dark:text-red-400 dark:border-gray-700';
@@ -1133,7 +1139,7 @@ export const ProjectAssignmentMatrix = ({
                                           htmlFor={`week-${week}-project-${project}`} 
                                           className="text-sm cursor-pointer flex-1"
                                         >
-                                          {project === 'Všechny' ? 'All' : project}
+                                          {project === 'Všechny' ? 'All' : getProjectDisplayName(project)}
                                         </label>
                                       </div>
                                     ))}
@@ -1200,8 +1206,8 @@ export const ProjectAssignmentMatrix = ({
                                         isTentative ? 'border-[3px] border-dashed !border-yellow-400' : (isLowCapacity ? 'border-[3px] border-dashed !border-red-500' : '')
                                       }`}
                                     >
-                                      <span className="truncate max-w-[65px]" title={project}>
-                                        {project}
+                                      <span className="truncate max-w-[65px]" title={getProjectDisplayName(project)}>
+                                        {getProjectDisplayName(project)}
                                       </span>
                                     </div>
                                   </TooltipTrigger>
@@ -1215,7 +1221,7 @@ export const ProjectAssignmentMatrix = ({
                                       const totalHours = engineers.reduce((sum, e) => sum + e.hours, 0);
                                       return (
                                         <div className="text-sm">
-                                          <div className="font-semibold mb-1">{project} - {week}</div>
+                                          <div className="font-semibold mb-1">{getProjectDisplayName(project)} - {week}</div>
                                           <div className="text-xs text-muted-foreground mb-2 space-y-0.5">
                                             <div>{isFreeProject ? 'Available:' : 'Allocated:'} {engineers.length} engineers</div>
                                             <div className="text-blue-400">📊 Total: {totalHours}h</div>
@@ -1317,9 +1323,9 @@ export const ProjectAssignmentMatrix = ({
                                          }`}
                                        >
                                          {showText ? (
-                                           <span className="truncate max-w-[55px]" title={mainProject}>
-                                             {mainProject}
-                                           </span>
+                                            <span className="truncate max-w-[55px]" title={getProjectDisplayName(mainProject)}>
+                                              {getProjectDisplayName(mainProject)}
+                                            </span>
                                          ) : (
                                            <span className="opacity-0">-</span>
                                          )}
@@ -1349,7 +1355,7 @@ export const ProjectAssignmentMatrix = ({
                                             const isFreeProject = mainProject === 'FREE';
                                             return (
                                               <div className="text-sm">
-                                                <div className="font-semibold mb-1">{mainProject} - {getFullMonthNameEN(month.name)}</div>
+                                                <div className="font-semibold mb-1">{getProjectDisplayName(mainProject)} - {getFullMonthNameEN(month.name)}</div>
                                                 <div className="text-xs text-muted-foreground mb-2 space-y-0.5">
                                                   <div>{isFreeProject ? 'Available:' : 'Allocated:'} {engineers.length} engineers</div>
                                                   <div className="text-blue-400">📊 Total: {totalHours}h ({avgHoursPerWeekTotal}h/week)</div>
@@ -1399,8 +1405,8 @@ export const ProjectAssignmentMatrix = ({
                                         className={`text-xs px-1 py-0.5 w-full justify-center font-normal opacity-75 rounded-sm inline-flex items-center ${!customerViewMode ? 'cursor-pointer' : ''} ${getProjectBadgeStyle(project)}`}
                                       >
                                         {showText ? (
-                                          <span className="truncate max-w-[85px] text-xs" title={project}>
-                                            {project}
+                                          <span className="truncate max-w-[85px] text-xs" title={getProjectDisplayName(project)}>
+                                            {getProjectDisplayName(project)}
                                           </span>
                                         ) : (
                                           <span className="opacity-0">-</span>
@@ -1431,7 +1437,7 @@ export const ProjectAssignmentMatrix = ({
                                             const isFreeProject = project === 'FREE';
                                             return (
                                               <div className="text-sm">
-                                                <div className="font-semibold mb-1">{project} - {getFullMonthNameEN(month.name)}</div>
+                                                <div className="font-semibold mb-1">{getProjectDisplayName(project)} - {getFullMonthNameEN(month.name)}</div>
                                                 <div className="text-xs text-muted-foreground mb-2 space-y-0.5">
                                                   <div>{isFreeProject ? 'Available:' : 'Allocated:'} {engineers.length} engineers</div>
                                                   <div className="text-blue-400">📊 Total: {totalHours}h ({avgHoursPerWeekTotal}h/week)</div>
