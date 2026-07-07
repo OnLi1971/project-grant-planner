@@ -178,17 +178,16 @@ export const getColorByCustomerId = (customerId: string, variant: 'primary' | 'l
 };
 
 // Získání barvy s indexem pro fallback (pro zachování kompatibility)
-export const getProjectColorWithIndex = (projectCode: string, index: number, variant: 'primary' | 'light' | 'dark' | 'accent' = 'primary'): string => {
+// POZOR: index se ignoruje pro nezmapované projekty – barva je odvozena z hash(projectCode),
+// aby byla identická napříč všemi pohledy (chart, tooltip, breakdown table)
+export const getProjectColorWithIndex = (projectCode: string, _index: number, variant: 'primary' | 'light' | 'dark' | 'accent' = 'primary'): string => {
   const projectColor = getProjectColor(projectCode, variant);
   
-  // Pokud jsme nenašli projekt/zákazníka, použijeme index pro náhradní barvu
+  // Pokud jsme nenašli projekt/zákazníka, použijeme deterministický hash kódu projektu
   if (projectColor === CUSTOMER_COLORS['N/A'][variant]) {
     const fallbackColors = [
-      'hsl(213 88% 45%)',    // primary
       'hsl(35 80% 55%)',     // orange
       'hsl(262 83% 58%)',    // purple
-      'hsl(142 80% 35%)',    // green
-      'hsl(0 84% 60%)',      // red
       'hsl(48 96% 53%)',     // yellow
       'hsl(200 85% 50%)',    // cyan
       'hsl(280 75% 55%)',    // violet
@@ -196,8 +195,16 @@ export const getProjectColorWithIndex = (projectCode: string, index: number, var
       'hsl(120 70% 45%)',    // lime
       'hsl(300 70% 50%)',    // magenta
       'hsl(190 80% 45%)',    // teal
+      'hsl(340 75% 55%)',    // pink
+      'hsl(90 60% 45%)',     // olive
+      'hsl(25 85% 50%)',     // deep orange
     ];
-    return fallbackColors[index % fallbackColors.length];
+    let hash = 0;
+    for (let i = 0; i < projectCode.length; i++) {
+      hash = ((hash << 5) - hash) + projectCode.charCodeAt(i);
+      hash = hash & hash;
+    }
+    return fallbackColors[Math.abs(hash) % fallbackColors.length];
   }
   
   return projectColor;
