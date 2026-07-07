@@ -972,53 +972,57 @@ export const RevenueOverview = ({
               )}
             </div>
 
-            {/* Correction coefficients per month */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <Label className="text-xs text-muted-foreground">
-                  Correction coefficient per month (multiplies the value, default 1.0)
-                </Label>
-                {Object.keys(monthCoefficients).length > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 text-xs"
-                    onClick={() => {
-                      setMonthCoefficients({});
-                      try { localStorage.removeItem('revenueMonthCoefficients'); } catch {}
-                    }}
-                  >
-                    Reset all
-                  </Button>
-                )}
-              </div>
-              <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-8 gap-2 p-2 border rounded-md bg-background/50">
-                {(viewType === 'mesic' ? selectedMonths : months).map(month => {
-                  const shortMap: Record<string, string> = {
-                    'leden': 'Jan', 'únor': 'Feb', 'březen': 'Mar', 'duben': 'Apr',
-                    'květen': 'May', 'červen': 'Jun', 'červenec': 'Jul', 'srpen': 'Aug',
-                    'září': 'Sep', 'říjen': 'Oct', 'listopad': 'Nov', 'prosinec': 'Dec'
-                  };
-                  const [cz, yr] = month.split('_');
-                  const label = `${shortMap[cz] || cz} ${yr.slice(2)}`;
-                  const val = monthCoefficients[month];
-                  return (
-                    <div key={month} className="flex flex-col">
-                      <Label className="text-[10px] text-muted-foreground">{label}</Label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="1.00"
-                        value={val ?? ''}
-                        onChange={(e) => handleCoeffChange(month, e.target.value)}
-                        className="h-7 text-xs px-2 rounded border bg-background"
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            {!hideCorrectionCoefficients && (
+              <>
+                {/* Correction coefficients per month */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label className="text-xs text-muted-foreground">
+                      Correction coefficient per month (multiplies the value, default 1.0)
+                    </Label>
+                    {Object.keys(monthCoefficients).length > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 text-xs"
+                        onClick={() => {
+                          setMonthCoefficients({});
+                          try { localStorage.removeItem('revenueMonthCoefficients'); } catch {}
+                        }}
+                      >
+                        Reset all
+                      </Button>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-8 gap-2 p-2 border rounded-md bg-background/50">
+                    {(viewType === 'mesic' ? selectedMonths : months).map(month => {
+                      const shortMap: Record<string, string> = {
+                        'leden': 'Jan', 'únor': 'Feb', 'březen': 'Mar', 'duben': 'Apr',
+                        'květen': 'May', 'červen': 'Jun', 'červenec': 'Jul', 'srpen': 'Aug',
+                        'září': 'Sep', 'říjen': 'Oct', 'listopad': 'Nov', 'prosinec': 'Dec'
+                      };
+                      const [cz, yr] = month.split('_');
+                      const label = `${shortMap[cz] || cz} ${yr.slice(2)}`;
+                      const val = monthCoefficients[month];
+                      return (
+                        <div key={month} className="flex flex-col">
+                          <Label className="text-[10px] text-muted-foreground">{label}</Label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            placeholder="1.00"
+                            value={val ?? ''}
+                            onChange={(e) => handleCoeffChange(month, e.target.value)}
+                            className="h-7 text-xs px-2 rounded border bg-background"
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
            {/* Celkový obrat */}
