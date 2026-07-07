@@ -593,34 +593,40 @@ export const RevenueOverview = ({
         {
           quarter: 'Q3 FY25-26',
           months: ['říjen_2025', 'listopad_2025', 'prosinec_2025'],
-          label: 'Q3 FY26'
+          label: 'Q3 FY26',
+          dateRange: '1 Oct – 31 Dec 2025'
         },
         {
           quarter: 'Q4 FY25-26',
           months: ['leden_2026', 'únor_2026', 'březen_2026'],
-          label: 'Q4 FY26'
+          label: 'Q4 FY26',
+          dateRange: '1 Jan – 31 Mar 2026'
         },
         {
           quarter: 'Q1 FY26-27',
           months: ['duben_2026', 'květen_2026', 'červen_2026'],
-          label: 'Q1 FY27'
+          label: 'Q1 FY27',
+          dateRange: '1 Apr – 30 Jun 2026'
         },
         {
           quarter: 'Q2 FY26-27',
           months: ['červenec_2026', 'srpen_2026', 'září_2026'],
-          label: 'Q2 FY27'
+          label: 'Q2 FY27',
+          dateRange: '1 Jul – 30 Sep 2026'
         },
         {
           quarter: 'Q3 FY26-27',
           months: ['říjen_2026', 'listopad_2026', 'prosinec_2026'],
-          label: 'Q3 FY27'
+          label: 'Q3 FY27',
+          dateRange: '1 Oct – 31 Dec 2026'
         }
       ];
 
-      return quarterData.map(({ quarter, months, label }) => {
+      return quarterData.map(({ quarter, months, label, dateRange }) => {
         const data: any = {
           month: label,
-          total: 0
+          total: 0,
+          dateRange
         };
         
         // Sečteme data za všechny měsíce v kvartálu (pouze filtrované projekty)
