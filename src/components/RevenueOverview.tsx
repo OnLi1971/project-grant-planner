@@ -800,38 +800,42 @@ export const RevenueOverview = ({
                 </Select>
               </div>
 
-              <div className="min-w-[130px]">
-                <Label htmlFor="filterType" className="text-xs text-muted-foreground">Filter type</Label>
-                <Select value={filterType} onValueChange={handleFilterTypeChange}>
-                  <SelectTrigger className="h-8 text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background border z-50">
-                    <SelectItem value="all">All</SelectItem>
-                    <SelectItem value="customer">Customer</SelectItem>
-                    <SelectItem value="program">Program</SelectItem>
-                    <SelectItem value="project">Project</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {!hideFilterType && (
+                <>
+                  <div className="min-w-[130px]">
+                    <Label htmlFor="filterType" className="text-xs text-muted-foreground">Filter type</Label>
+                    <Select value={filterType} onValueChange={handleFilterTypeChange}>
+                      <SelectTrigger className="h-8 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background border z-50">
+                        <SelectItem value="all">All</SelectItem>
+                        <SelectItem value="customer">Customer</SelectItem>
+                        <SelectItem value="program">Program</SelectItem>
+                        <SelectItem value="project">Project</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-              {filterType !== 'all' && filterType !== 'program' && (
-                <div className="min-w-[150px]">
-                  <Label htmlFor="filterValue" className="text-xs text-muted-foreground">Value</Label>
-                  <Select value={filterValue} onValueChange={setFilterValue}>
-                    <SelectTrigger className="h-8 text-sm">
-                      <SelectValue placeholder="Select..." />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background border z-50">
-                      <SelectItem value="all">All</SelectItem>
-                      {filterOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                  {filterType !== 'all' && filterType !== 'program' && (
+                    <div className="min-w-[150px]">
+                      <Label htmlFor="filterValue" className="text-xs text-muted-foreground">Value</Label>
+                      <Select value={filterValue} onValueChange={setFilterValue}>
+                        <SelectTrigger className="h-8 text-sm">
+                          <SelectValue placeholder="Select..." />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background border z-50">
+                          <SelectItem value="all">All</SelectItem>
+                          {filterOptions.map(option => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </>
               )}
 
               <div className="min-w-[100px]">
