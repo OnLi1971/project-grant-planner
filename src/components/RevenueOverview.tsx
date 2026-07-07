@@ -1224,20 +1224,35 @@ export const RevenueOverview = ({
               <TableHeader>
                 <TableRow>
                   <TableHead className="font-bold">Project</TableHead>
-                   {months.map(month => {
-                    const shortMap: Record<string, string> = {
-                      'leden': 'Jan', 'únor': 'Feb', 'březen': 'Mar', 'duben': 'Apr',
-                      'květen': 'May', 'červen': 'Jun', 'červenec': 'Jul', 'srpen': 'Aug',
-                      'září': 'Sep', 'říjen': 'Oct', 'listopad': 'Nov', 'prosinec': 'Dec'
-                    };
-                    const [czName, year] = month.split('_');
-                    const monthDisplay = `${shortMap[czName] || czName} ${year.slice(2)}`;
-                    return (
-                      <TableHead key={month} className="text-right font-bold min-w-[120px]">
-                        {monthDisplay}
-                      </TableHead>
-                    );
-                  })}
+                   {viewType === 'kvartal' ? (
+                     [
+                       { key: 'Q4-FY25', label: 'Q4 FY25' },
+                       { key: 'Q1-FY26', label: 'Q1 FY26' },
+                       { key: 'Q2-FY26', label: 'Q2 FY26' },
+                       { key: 'Q3-FY26', label: 'Q3 FY26' },
+                     ]
+                       .filter(q => selectedQuarters.includes(q.key))
+                       .map(q => (
+                         <TableHead key={q.key} className="text-right font-bold min-w-[120px]">
+                           {q.label}
+                         </TableHead>
+                       ))
+                   ) : (
+                     months.map(month => {
+                       const shortMap: Record<string, string> = {
+                         'leden': 'Jan', 'únor': 'Feb', 'březen': 'Mar', 'duben': 'Apr',
+                         'květen': 'May', 'červen': 'Jun', 'červenec': 'Jul', 'srpen': 'Aug',
+                         'září': 'Sep', 'říjen': 'Oct', 'listopad': 'Nov', 'prosinec': 'Dec'
+                       };
+                       const [czName, year] = month.split('_');
+                       const monthDisplay = `${shortMap[czName] || czName} ${year.slice(2)}`;
+                       return (
+                         <TableHead key={month} className="text-right font-bold min-w-[120px]">
+                           {monthDisplay}
+                         </TableHead>
+                       );
+                     })
+                   )}
                   <TableHead className="text-right font-bold">Total</TableHead>
                 </TableRow>
               </TableHeader>
@@ -1298,14 +1313,32 @@ export const RevenueOverview = ({
                             </div>
                           </div>
                         </TableCell>
-                         {months.map(month => {
-                           const revenue = activeData[month]?.[projectCode] || 0;
-                           return (
-                             <TableCell key={month} className={`text-right font-mono ${isPresales ? 'text-muted-foreground' : ''}`}>
-                               {revenue > 0 ? formatValue(revenue) : '-'}
-                             </TableCell>
-                           );
-                         })}
+                         {viewType === 'kvartal' ? (
+                           [
+                             { key: 'Q4-FY25', months: ['leden_2026', 'únor_2026', 'březen_2026'] },
+                             { key: 'Q1-FY26', months: ['duben_2026', 'květen_2026', 'červen_2026'] },
+                             { key: 'Q2-FY26', months: ['červenec_2026', 'srpen_2026', 'září_2026'] },
+                             { key: 'Q3-FY26', months: ['říjen_2026', 'listopad_2026', 'prosinec_2026'] },
+                           ]
+                             .filter(q => selectedQuarters.includes(q.key))
+                             .map(q => {
+                               const revenue = q.months.reduce((sum, m) => sum + (activeData[m]?.[projectCode] || 0), 0);
+                               return (
+                                 <TableCell key={q.key} className={`text-right font-mono ${isPresales ? 'text-muted-foreground' : ''}`}>
+                                   {revenue > 0 ? formatValue(revenue) : '-'}
+                                 </TableCell>
+                               );
+                             })
+                         ) : (
+                           months.map(month => {
+                             const revenue = activeData[month]?.[projectCode] || 0;
+                             return (
+                               <TableCell key={month} className={`text-right font-mono ${isPresales ? 'text-muted-foreground' : ''}`}>
+                                 {revenue > 0 ? formatValue(revenue) : '-'}
+                               </TableCell>
+                             );
+                           })
+                         )}
                          <TableCell className={`text-right font-mono font-bold ${isPresales ? 'text-muted-foreground' : ''}`}>
                            {formatValue(projectTotal)}
                          </TableCell>
@@ -1317,15 +1350,36 @@ export const RevenueOverview = ({
                 {/* Celkový řádek */}
                 <TableRow className="font-bold border-t-2">
                   <TableCell className="font-bold">TOTAL</TableCell>
-                   {months.map(month => {
-                     const monthData = activeData[month] || {};
-                     const monthTotal = filteredProjectList.reduce((sum: number, projectCode) => sum + (monthData[projectCode] || 0), 0);
-                     return (
-                       <TableCell key={month} className="text-right font-mono font-bold">
-                         {formatValue(monthTotal)}
-                       </TableCell>
-                     );
-                   })}
+                   {viewType === 'kvartal' ? (
+                     [
+                       { key: 'Q4-FY25', months: ['leden_2026', 'únor_2026', 'březen_2026'] },
+                       { key: 'Q1-FY26', months: ['duben_2026', 'květen_2026', 'červen_2026'] },
+                       { key: 'Q2-FY26', months: ['červenec_2026', 'srpen_2026', 'září_2026'] },
+                       { key: 'Q3-FY26', months: ['říjen_2026', 'listopad_2026', 'prosinec_2026'] },
+                     ]
+                       .filter(q => selectedQuarters.includes(q.key))
+                       .map(q => {
+                         const quarterTotal = q.months.reduce((sum, m) => {
+                           const monthData = activeData[m] || {};
+                           return sum + filteredProjectList.reduce((s: number, projectCode) => s + (monthData[projectCode] || 0), 0);
+                         }, 0);
+                         return (
+                           <TableCell key={q.key} className="text-right font-mono font-bold">
+                             {formatValue(quarterTotal)}
+                           </TableCell>
+                         );
+                       })
+                   ) : (
+                     months.map(month => {
+                       const monthData = activeData[month] || {};
+                       const monthTotal = filteredProjectList.reduce((sum: number, projectCode) => sum + (monthData[projectCode] || 0), 0);
+                       return (
+                         <TableCell key={month} className="text-right font-mono font-bold">
+                           {formatValue(monthTotal)}
+                         </TableCell>
+                       );
+                     })
+                   )}
                    <TableCell className="text-right font-mono font-bold text-primary">
                      {formatValue(totalRevenue)}
                    </TableCell>
