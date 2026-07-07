@@ -40,6 +40,8 @@ const ManagerRevenueView = () => {
             defaultViewType="mesic" 
             defaultProgramCodes={['MACH', 'RAIL']}
             hideCorrectionCoefficients
+            hideFilterType
+            hideProjectStatus
           />
         </div>
       </div>
