@@ -1133,7 +1133,7 @@ export const ProjectAssignmentMatrix = ({
                                           htmlFor={`week-${week}-project-${project}`} 
                                           className="text-sm cursor-pointer flex-1"
                                         >
-                                          {project}
+                                          {project === 'Všechny' ? 'All' : project}
                                         </label>
                                       </div>
                                     ))}
