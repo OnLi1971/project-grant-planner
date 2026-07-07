@@ -242,11 +242,11 @@ export const RevenueOverview = ({
     // Kvartální/měsíční filtrování
     if (viewType === 'kvartal' && selectedQuarters.length > 0) {
       const quarterMonths: { [key: string]: string[] } = {
-        'Q4-2025': ['říjen_2025', 'listopad_2025', 'prosinec_2025'],
-        'Q1-2026': ['leden_2026', 'únor_2026', 'březen_2026'],
-        'Q2-2026': ['duben_2026', 'květen_2026', 'červen_2026'],
-        'Q3-2026': ['červenec_2026', 'srpen_2026', 'září_2026'],
-        'Q4-2026': ['říjen_2026', 'listopad_2026', 'prosinec_2026']
+        'Q3-FY26': ['říjen_2025', 'listopad_2025', 'prosinec_2025'],
+        'Q4-FY26': ['leden_2026', 'únor_2026', 'březen_2026'],
+        'Q1-FY27': ['duben_2026', 'květen_2026', 'červen_2026'],
+        'Q2-FY27': ['červenec_2026', 'srpen_2026', 'září_2026'],
+        'Q3-FY27': ['říjen_2026', 'listopad_2026', 'prosinec_2026']
       };
       
       const allSelectedMonths = selectedQuarters.flatMap(quarter => quarterMonths[quarter] || []);
