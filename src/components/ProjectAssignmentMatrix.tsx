@@ -777,8 +777,8 @@ export const ProjectAssignmentMatrix = ({
                 size="sm"
                 onClick={() => {
                   const headers = viewMode === 'weeks'
-                    ? ['Konstruktér', ...weeks]
-                    : ['Konstruktér', ...months.map(m => m.name)];
+                    ? ['Engineer', ...weeks]
+                    : ['Engineer', ...months.map(m => getFullMonthNameEN(m.name))];
                   const rows = filteredEngineers.map(engineer => {
                     const name = displayNameMap[engineer] || engineer;
                     if (viewMode === 'weeks') {
