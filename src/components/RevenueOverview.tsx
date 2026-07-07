@@ -46,6 +46,7 @@ interface RevenueOverviewProps {
   defaultStatusFilter?: 'all' | 'realizace' | 'presales' | 'P0' | 'P1' | 'P2' | 'P3';
   defaultViewType?: 'mesic' | 'kvartal';
   defaultProgramCodes?: string[];
+  hideCorrectionCoefficients?: boolean;
 }
 
 export const RevenueOverview = ({ 
