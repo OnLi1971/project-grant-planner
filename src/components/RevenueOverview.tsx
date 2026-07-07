@@ -681,11 +681,11 @@ export const RevenueOverview = ({
 
   // Možnosti pro kvartální filtr
   const getQuarterOptions = () => [
-    { value: 'Q4-2025', label: 'Q4 2025 (Oct-Dec)' },
-    { value: 'Q1-2026', label: 'Q1 2026 (Jan-Mar)' },
-    { value: 'Q2-2026', label: 'Q2 2026 (Apr-Jun)' },
-    { value: 'Q3-2026', label: 'Q3 2026 (Jul-Sep)' },
-    { value: 'Q4-2026', label: 'Q4 2026 (Oct-Dec)' }
+    { value: 'Q3-FY26', label: 'Q3 FY25-26 (Oct-Dec 2025)' },
+    { value: 'Q4-FY26', label: 'Q4 FY25-26 (Jan-Mar 2026)' },
+    { value: 'Q1-FY27', label: 'Q1 FY26-27 (Apr-Jun 2026)' },
+    { value: 'Q2-FY27', label: 'Q2 FY26-27 (Jul-Sep 2026)' },
+    { value: 'Q3-FY27', label: 'Q3 FY26-27 (Oct-Dec 2026)' }
   ];
 
   // Month filter options
