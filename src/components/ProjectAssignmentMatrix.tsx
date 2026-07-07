@@ -180,11 +180,17 @@ const getProjectBadgeStyle = (projekt: string) => {
 
 const REGIME_ACTIVITIES = ['DOVOLENÁ', 'NEMOC', 'OVER'];
 
-// Short month names for compact display
+// English short month names for compact display
 const shortMonthNames: Record<string, string> = {
-  'leden': 'Led', 'únor': 'Úno', 'březen': 'Bře', 'duben': 'Dub',
-  'květen': 'Kvě', 'červen': 'Čvn', 'červenec': 'Čvc', 'srpen': 'Srp',
-  'září': 'Zář', 'říjen': 'Říj', 'listopad': 'Lis', 'prosinec': 'Pro'
+  'leden': 'Jan', 'únor': 'Feb', 'březen': 'Mar', 'duben': 'Apr',
+  'květen': 'May', 'červen': 'Jun', 'červenec': 'Jul', 'srpen': 'Aug',
+  'září': 'Sep', 'říjen': 'Oct', 'listopad': 'Nov', 'prosinec': 'Dec'
+};
+
+const fullMonthNamesEN: Record<string, string> = {
+  'leden': 'January', 'únor': 'February', 'březen': 'March', 'duben': 'April',
+  'květen': 'May', 'červen': 'June', 'červenec': 'July', 'srpen': 'August',
+  'září': 'September', 'říjen': 'October', 'listopad': 'November', 'prosinec': 'December'
 };
 
 const getShortMonthName = (fullName: string): string => {
@@ -192,6 +198,13 @@ const getShortMonthName = (fullName: string): string => {
   const month = parts[0].toLowerCase();
   const year = parts[1]?.slice(-2) || '';
   return `${shortMonthNames[month] || parts[0]} ${year}`;
+};
+
+const getFullMonthNameEN = (fullName: string): string => {
+  const parts = fullName.split(' ');
+  const month = parts[0].toLowerCase();
+  const year = parts[1] || '';
+  return `${fullMonthNamesEN[month] || parts[0]} ${year}`.trim();
 };
 
 // Customer view constants - which projects are visible for each customer prefix
@@ -537,12 +550,12 @@ export const ProjectAssignmentMatrix = ({
 
   const getFilterDisplayText = (filter: string[]) => {
     if (filter.includes('Všichni') || filter.length === 0) {
-      return 'Všichni';
+      return 'All';
     }
     if (filter.length === 1) {
       return filter[0];
     }
-    return `${filter.length} vybraných`;
+    return `${filter.length} selected`;
   };
 
 
@@ -756,7 +769,7 @@ export const ProjectAssignmentMatrix = ({
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-2xl font-bold">
-              {customerViewMode ? 'Přehled kapacit' : 'Matice plánování projektů'}
+              {customerViewMode ? 'Capacity Overview' : 'Project Planning Matrix'}
             </CardTitle>
             <div className="flex items-center gap-2">
               <Button
@@ -791,9 +804,9 @@ export const ProjectAssignmentMatrix = ({
                   const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
                   ws['!cols'] = headers.map((_, i) => ({ wch: i === 0 ? 25 : 14 }));
                   const wb = XLSX.utils.book_new();
-                  XLSX.utils.book_append_sheet(wb, ws, 'Přehled kapacit');
+                  XLSX.utils.book_append_sheet(wb, ws, 'Capacity Overview');
                   const today = new Date().toISOString().slice(0, 10);
-                  const prefix = customerViewMode ? `Prehled_kapacit_${customerViewMode}` : 'Matice_planovani';
+                  const prefix = customerViewMode ? `Capacity_Overview_${customerViewMode}` : 'Planning_Matrix';
                   XLSX.writeFile(wb, `${prefix}_${today}.xlsx`);
                 }}
                 className="gap-2"
@@ -814,14 +827,14 @@ export const ProjectAssignmentMatrix = ({
               )}
               {!customerViewMode && (
                 <>
-                  <label className="text-sm font-medium">Zobrazení:</label>
+                  <label className="text-sm font-medium">View:</label>
                   <Select value={viewMode} onValueChange={(value: 'weeks' | 'months') => setViewMode(value)}>
                     <SelectTrigger className="w-32">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="weeks">Týdny</SelectItem>
-                      <SelectItem value="months">Měsíce</SelectItem>
+                      <SelectItem value="weeks">Weeks</SelectItem>
+                      <SelectItem value="months">Months</SelectItem>
                     </SelectContent>
                   </Select>
                 </>
@@ -834,7 +847,7 @@ export const ProjectAssignmentMatrix = ({
           {!customerViewMode && (
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div>
-              <label className="text-sm font-medium mb-2 block">Společnost</label>
+              <label className="text-sm font-medium mb-2 block">Company</label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="w-full justify-between">
@@ -852,7 +865,7 @@ export const ProjectAssignmentMatrix = ({
                           onCheckedChange={() => toggleFilterValue(filterSpolecnost, spolecnost, setFilterSpolecnost)}
                         />
                         <label htmlFor={`company-${spolecnost}`} className="text-sm cursor-pointer flex-1">
-                          {spolecnost}
+                          {spolecnost === 'Všichni' ? 'All' : spolecnost}
                         </label>
                       </div>
                     ))}
@@ -863,14 +876,14 @@ export const ProjectAssignmentMatrix = ({
             
             
             <div>
-              <label className="text-sm font-medium mb-2 block">Program / Vlastní</label>
+              <label className="text-sm font-medium mb-2 block">Program / Custom</label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="w-full justify-between">
                     {filterMode === 'custom' 
                       ? (selectedViewId 
-                          ? `📁 ${customViews.find(v => v.id === selectedViewId)?.name || 'Vlastní'}` 
-                          : `Vlastní (${selectedCustomEngineers.length})`)
+                        ? `📁 ${customViews.find(v => v.id === selectedViewId)?.name || 'Custom'}` 
+                          : `Custom (${selectedCustomEngineers.length})`)
                       : getFilterDisplayText(filterProgram)}
                     <ChevronDown className="h-4 w-4 opacity-50" />
                   </Button>
@@ -878,7 +891,7 @@ export const ProjectAssignmentMatrix = ({
                 <PopoverContent className="w-80 p-0" align="start">
                   <div className="p-2">
                     {/* Standard programs */}
-                    <div className="text-xs font-medium text-muted-foreground mb-1 px-2">Programy</div>
+                    <div className="text-xs font-medium text-muted-foreground mb-1 px-2">Programs</div>
                     {programyList.map(program => (
                       <div key={program} className="flex items-center space-x-2 py-1.5 px-2 rounded hover:bg-muted/50">
                         <Checkbox
@@ -891,7 +904,7 @@ export const ProjectAssignmentMatrix = ({
                           }}
                         />
                         <label htmlFor={`program-${program}`} className="text-sm cursor-pointer flex-1">
-                          {program}
+                          {program === 'Všichni' ? 'All' : program}
                         </label>
                       </div>
                     ))}
@@ -915,7 +928,7 @@ export const ProjectAssignmentMatrix = ({
                       />
                       <label htmlFor="program-custom" className="text-sm cursor-pointer flex-1 flex items-center gap-1">
                         <Users className="h-4 w-4" />
-                        Vlastní výběr konstruktérů
+                        Custom engineer selection
                       </label>
                     </div>
                     
@@ -925,7 +938,7 @@ export const ProjectAssignmentMatrix = ({
                         {/* Saved views dropdown */}
                         {customViews.length > 0 && (
                           <div className="mb-3 px-2">
-                            <label className="text-xs font-medium text-muted-foreground block mb-1">Uložené pohledy:</label>
+                            <label className="text-xs font-medium text-muted-foreground block mb-1">Saved views:</label>
                             <div className="space-y-1 max-h-32 overflow-y-auto">
                               {customViews.map(view => (
                                 <div 
@@ -955,7 +968,7 @@ export const ProjectAssignmentMatrix = ({
                         {/* Engineer selection */}
                         <div className="px-2">
                           <div className="flex items-center justify-between mb-1">
-                            <label className="text-xs font-medium text-muted-foreground">Konstruktéři:</label>
+                            <label className="text-xs font-medium text-muted-foreground">Engineers:</label>
                             <div className="flex gap-1">
                               <Button 
                                 variant="ghost" 
@@ -963,7 +976,7 @@ export const ProjectAssignmentMatrix = ({
                                 className="h-5 text-xs px-1"
                                 onClick={() => setSelectedCustomEngineers(allEngineersList)}
                               >
-                                Vše
+                                All
                               </Button>
                               <Button 
                                 variant="ghost" 
@@ -974,7 +987,7 @@ export const ProjectAssignmentMatrix = ({
                                   setSelectedViewId(null);
                                 }}
                               >
-                                Nic
+                                None
                               </Button>
                             </div>
                           </div>
@@ -1003,7 +1016,7 @@ export const ProjectAssignmentMatrix = ({
                         {/* Save view */}
                         <div className="mt-3 px-2 flex gap-2">
                           <Input 
-                            placeholder="Název pohledu..."
+                            placeholder="View name..."
                             value={customViewName}
                             onChange={(e) => setCustomViewName(e.target.value)}
                             className="text-sm h-8"
@@ -1015,7 +1028,7 @@ export const ProjectAssignmentMatrix = ({
                             disabled={!customViewName.trim() || selectedCustomEngineers.length === 0}
                           >
                             <Save className="h-4 w-4 mr-1" />
-                            Uložit
+                            Save
                           </Button>
                         </div>
                       </div>
@@ -1035,7 +1048,7 @@ export const ProjectAssignmentMatrix = ({
                   <>
                     <tr>
                       <th className="border-2 border-border p-2 bg-background text-left sticky left-0 sticky top-0 z-30 min-w-[200px] font-semibold text-sm">
-                        Konstruktér
+                        Engineer
                       </th>
                       {months.map((month, monthIndex) => (
                         <th 
@@ -1046,7 +1059,7 @@ export const ProjectAssignmentMatrix = ({
                           colSpan={month.weeks.length}
                         >
                           <div className="flex items-center justify-center gap-2">
-                            <span className="text-primary">{month.name}</span>
+                            <span className="text-primary">{getFullMonthNameEN(month.name)}</span>
                           </div>
                         </th>
                       ))}
@@ -1075,7 +1088,7 @@ export const ProjectAssignmentMatrix = ({
                                   const cz = isHoliday(d, false);
                                   const sk = isHoliday(d, true);
                                   if (cz || sk) {
-                                    const dayName = ['Po','Út','St','Čt','Pá'][i];
+                                    const dayName = ['Mon','Tue','Wed','Thu','Fri'][i];
                                     const tags = [cz && 'CZ', sk && 'SK'].filter(Boolean).join('+');
                                     holidays.push(`${dayName} ${d.getDate()}.${d.getMonth()+1}. (${tags})`);
                                   }
@@ -1089,7 +1102,7 @@ export const ProjectAssignmentMatrix = ({
                                       </span>
                                     </TooltipTrigger>
                                     <TooltipContent side="top">
-                                      <div className="text-xs font-semibold mb-1">Svátek v týdnu:</div>
+                                      <div className="text-xs font-semibold mb-1">Holidays this week:</div>
                                       {holidays.map(h => <div key={h} className="text-xs">{h}</div>)}
                                     </TooltipContent>
                                   </Tooltip>
@@ -1136,7 +1149,7 @@ export const ProjectAssignmentMatrix = ({
                 ) : (
                   <tr>
                     <th className="border-2 border-border p-1 bg-background text-left sticky left-0 sticky top-0 z-30 min-w-[140px] font-semibold text-xs">
-                      Konstruktér
+                      Engineer
                     </th>
                     {months.map((month, monthIndex) => (
                       <th 
@@ -1204,16 +1217,16 @@ export const ProjectAssignmentMatrix = ({
                                         <div className="text-sm">
                                           <div className="font-semibold mb-1">{project} - {week}</div>
                                           <div className="text-xs text-muted-foreground mb-2 space-y-0.5">
-                                            <div>{isFreeProject ? 'Volných:' : 'Alokováno:'} {engineers.length} konstruktérů</div>
-                                            <div className="text-blue-400">📊 Celkem: {totalHours}h</div>
+                                            <div>{isFreeProject ? 'Available:' : 'Allocated:'} {engineers.length} engineers</div>
+                                            <div className="text-blue-400">📊 Total: {totalHours}h</div>
                                             {fullCount > 0 && (
-                                              <div className="text-green-500">● {isFreeProject ? 'Volné kapacity' : 'Plně vytížení'}: {fullCount}</div>
+                                              <div className="text-green-500">● {isFreeProject ? 'Free capacity' : 'Fully allocated'}: {fullCount}</div>
                                             )}
                                             {partialCount > 0 && (
-                                              <div className="text-orange-400">◐ Částečně: {partialCount}</div>
+                                              <div className="text-orange-400">◐ Partial: {partialCount}</div>
                                             )}
                                             {tentativeCount > 0 && (
-                                              <div className="text-yellow-400">⚠ Předběžně: {tentativeCount}</div>
+                                              <div className="text-yellow-400">⚠ Tentative: {tentativeCount}</div>
                                             )}
                                           </div>
                                           <div className="flex flex-col gap-0.5 max-h-[200px] overflow-y-auto">
@@ -1221,12 +1234,12 @@ export const ProjectAssignmentMatrix = ({
                                               <div key={eng.name} className="text-xs flex items-center gap-1.5">
                                                 <span className={eng.isTentative ? 'text-yellow-400' : ''}>{eng.name}</span>
                                                 {eng.hours >= 35 ? (
-                                                  <span className="text-green-500 text-[10px]">{isFreeProject ? '(volný)' : '(plně)'}</span>
+                                                  <span className="text-green-500 text-[10px]">{isFreeProject ? '(free)' : '(full)'}</span>
                                                 ) : eng.hours > 0 && (
                                                   <span className="text-orange-400 text-[10px]">({eng.hours}h)</span>
                                                 )}
                                                 {eng.isTentative && (
-                                                  <span className="text-yellow-400 text-[10px]">(předběžně)</span>
+                                                  <span className="text-yellow-400 text-[10px]">(tentative)</span>
                                                 )}
                                               </div>
                                             ))}
@@ -1336,18 +1349,18 @@ export const ProjectAssignmentMatrix = ({
                                             const isFreeProject = mainProject === 'FREE';
                                             return (
                                               <div className="text-sm">
-                                                <div className="font-semibold mb-1">{mainProject} - {month.name}</div>
+                                                <div className="font-semibold mb-1">{mainProject} - {getFullMonthNameEN(month.name)}</div>
                                                 <div className="text-xs text-muted-foreground mb-2 space-y-0.5">
-                                                  <div>{isFreeProject ? 'Volných:' : 'Alokováno:'} {engineers.length} konstruktérů</div>
-                                                  <div className="text-blue-400">📊 Celkem: {totalHours}h ({avgHoursPerWeekTotal}h/týden)</div>
+                                                  <div>{isFreeProject ? 'Available:' : 'Allocated:'} {engineers.length} engineers</div>
+                                                  <div className="text-blue-400">📊 Total: {totalHours}h ({avgHoursPerWeekTotal}h/week)</div>
                                                   {fullCount > 0 && (
-                                                    <div className="text-green-500">● {isFreeProject ? 'Volné kapacity' : 'Plně vytížení'}: {fullCount}</div>
+                                                    <div className="text-green-500">● {isFreeProject ? 'Free capacity' : 'Fully allocated'}: {fullCount}</div>
                                                   )}
                                                   {partialCount > 0 && (
-                                                    <div className="text-orange-400">◐ Částečně: {partialCount}</div>
+                                                    <div className="text-orange-400">◐ Partial: {partialCount}</div>
                                                   )}
                                                   {tentativeCount > 0 && (
-                                                    <div className="text-yellow-400">⚠ Předběžně: {tentativeCount}</div>
+                                                    <div className="text-yellow-400">⚠ Tentative: {tentativeCount}</div>
                                                   )}
                                                 </div>
                                                 <div className="flex flex-col gap-0.5 max-h-[200px] overflow-y-auto">
@@ -1357,12 +1370,12 @@ export const ProjectAssignmentMatrix = ({
                                                       <div key={eng.name} className="text-xs flex items-center gap-1.5">
                                                         <span className={eng.isTentative ? 'text-yellow-400' : ''}>{eng.name}</span>
                                                         {avgHours >= 35 ? (
-                                                          <span className="text-green-500 text-[10px]">(plně)</span>
+                                                          <span className="text-green-500 text-[10px]">(full)</span>
                                                         ) : avgHours > 0 && (
-                                                          <span className="text-orange-400 text-[10px]">({Math.round(avgHours)}h/t)</span>
+                                                          <span className="text-orange-400 text-[10px]">({Math.round(avgHours)}h/w)</span>
                                                         )}
                                                         {eng.isTentative && (
-                                                          <span className="text-yellow-400 text-[10px]">(předběžně)</span>
+                                                          <span className="text-yellow-400 text-[10px]">(tentative)</span>
                                                         )}
                                                       </div>
                                                     );
@@ -1418,18 +1431,18 @@ export const ProjectAssignmentMatrix = ({
                                             const isFreeProject = project === 'FREE';
                                             return (
                                               <div className="text-sm">
-                                                <div className="font-semibold mb-1">{project} - {month.name}</div>
+                                                <div className="font-semibold mb-1">{project} - {getFullMonthNameEN(month.name)}</div>
                                                 <div className="text-xs text-muted-foreground mb-2 space-y-0.5">
-                                                  <div>{isFreeProject ? 'Volných:' : 'Alokováno:'} {engineers.length} konstruktérů</div>
-                                                  <div className="text-blue-400">📊 Celkem: {totalHours}h ({avgHoursPerWeekTotal}h/týden)</div>
+                                                  <div>{isFreeProject ? 'Available:' : 'Allocated:'} {engineers.length} engineers</div>
+                                                  <div className="text-blue-400">📊 Total: {totalHours}h ({avgHoursPerWeekTotal}h/week)</div>
                                                   {fullCount > 0 && (
-                                                    <div className="text-green-500">● {isFreeProject ? 'Volné kapacity' : 'Plně vytížení'}: {fullCount}</div>
+                                                    <div className="text-green-500">● {isFreeProject ? 'Free capacity' : 'Fully allocated'}: {fullCount}</div>
                                                   )}
                                                   {partialCount > 0 && (
-                                                    <div className="text-orange-400">◐ Částečně: {partialCount}</div>
+                                                    <div className="text-orange-400">◐ Partial: {partialCount}</div>
                                                   )}
                                                   {tentativeCount > 0 && (
-                                                    <div className="text-yellow-400">⚠ Předběžně: {tentativeCount}</div>
+                                                    <div className="text-yellow-400">⚠ Tentative: {tentativeCount}</div>
                                                   )}
                                                 </div>
                                                 <div className="flex flex-col gap-0.5 max-h-[200px] overflow-y-auto">
@@ -1439,12 +1452,12 @@ export const ProjectAssignmentMatrix = ({
                                                       <div key={eng.name} className="text-xs flex items-center gap-1.5">
                                                         <span className={eng.isTentative ? 'text-yellow-400' : ''}>{eng.name}</span>
                                                         {avgHours >= 35 ? (
-                                                          <span className="text-green-500 text-[10px]">(plně)</span>
+                                                          <span className="text-green-500 text-[10px]">(full)</span>
                                                         ) : avgHours > 0 && (
-                                                          <span className="text-orange-400 text-[10px]">({Math.round(avgHours)}h/t)</span>
+                                                          <span className="text-orange-400 text-[10px]">({Math.round(avgHours)}h/w)</span>
                                                         )}
                                                         {eng.isTentative && (
-                                                          <span className="text-yellow-400 text-[10px]">(předběžně)</span>
+                                                          <span className="text-yellow-400 text-[10px]">(tentative)</span>
                                                         )}
                                                       </div>
                                                     );
@@ -1468,7 +1481,7 @@ export const ProjectAssignmentMatrix = ({
                 {/* Summary row for free capacity */}
                 <tr className="bg-primary/5 border-t-2 border-primary/30">
                   <td className="border border-border p-2 font-bold sticky left-0 bg-primary/5 z-10 text-foreground text-sm">
-                    Volné kapacity min.
+                    Free capacity min.
                   </td>
                   {viewMode === 'weeks' ? (
                     months.map((month, monthIndex) => 
@@ -1520,7 +1533,7 @@ export const ProjectAssignmentMatrix = ({
                 {!customerViewMode && (
                 <tr className="bg-primary/5 border-t border-primary/20">
                   <td className="border border-border p-2 font-bold sticky left-0 bg-primary/5 z-10 text-foreground text-sm">
-                    Volné kapacity max.
+                    Free capacity max.
                   </td>
                   {viewMode === 'weeks' ? (
                     months.map((month, monthIndex) => 
@@ -1580,7 +1593,7 @@ export const ProjectAssignmentMatrix = ({
                 {!customerViewMode && (
                 <tr className="bg-secondary/10 border-t-2 border-secondary/30">
                   <td className="border border-border p-2 font-bold sticky left-0 bg-secondary/10 z-10 text-foreground text-sm">
-                    Počet hodin
+                    Hours
                   </td>
                   {viewMode === 'weeks' ? (
                     months.map((month, monthIndex) => 
@@ -1664,7 +1677,7 @@ export const ProjectAssignmentMatrix = ({
                  {!customerViewMode && (
                  <tr className="bg-secondary/10 border-t border-secondary/20">
                    <td className="border border-border p-2 font-bold sticky left-0 bg-secondary/10 z-10 text-foreground text-sm">
-                     Počet konstruktérů
+                     Engineer count
                    </td>
                    {viewMode === 'weeks' ? (
                      months.map((month, monthIndex) =>
@@ -1741,7 +1754,7 @@ export const ProjectAssignmentMatrix = ({
                 {!customerViewMode && (
                 <tr className="bg-secondary/10 border-t border-secondary/20">
                   <td className="border border-border p-2 font-bold sticky left-0 bg-secondary/10 z-10 text-foreground text-sm">
-                    Celkem FTE
+                    Total FTE
                   </td>
                   {viewMode === 'weeks' ? (
                     months.map((month, monthIndex) => 
@@ -1840,7 +1853,7 @@ export const ProjectAssignmentMatrix = ({
                 {!customerViewMode && (
                 <tr className="bg-accent/10 border-t-2 border-accent/30">
                   <td className="border border-border p-2 font-bold sticky left-0 bg-accent/10 z-10 text-foreground text-sm">
-                    Vytížení
+                    Utilization
                   </td>
                   {viewMode === 'weeks' ? (
                     months.map((month, monthIndex) => 
@@ -1951,7 +1964,7 @@ export const ProjectAssignmentMatrix = ({
                 {!customerViewMode && (
                 <tr className="bg-muted/30 border-t border-border">
                   <td className="border border-border p-2 font-medium sticky left-0 bg-muted/30 z-10 text-foreground text-xs">
-                    Legenda:
+                    Legend:
                   </td>
                   <td 
                     colSpan={viewMode === 'weeks' ? months.reduce((sum, m) => sum + m.weeks.length, 0) : months.length}
@@ -1960,21 +1973,21 @@ export const ProjectAssignmentMatrix = ({
                     <div className="flex items-center gap-6 flex-wrap text-xs">
                       <div className="flex items-center gap-2">
                         <div className="px-3 py-1 bg-primary/20 text-primary rounded-md">
-                          Projekt
+                          Project
                         </div>
-                        <span className="text-muted-foreground">Plně vytížen</span>
+                        <span className="text-muted-foreground">Fully allocated</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="px-3 py-1 bg-primary/20 text-primary rounded-md border-[3px] border-dashed border-red-500">
-                          Projekt
+                          Project
                         </div>
-                        <span className="text-muted-foreground">Částečně vytížen</span>
+                        <span className="text-muted-foreground">Partially allocated</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="px-3 py-1 bg-primary/20 text-primary rounded-md border-[3px] border-dashed border-yellow-400">
-                          Projekt
+                          Project
                         </div>
-                        <span className="text-muted-foreground">Předběžně plánován</span>
+                        <span className="text-muted-foreground">Tentatively planned</span>
                       </div>
                     </div>
                   </td>
@@ -1985,7 +1998,7 @@ export const ProjectAssignmentMatrix = ({
           </div>
           
           <div className="mt-4 text-sm text-muted-foreground">
-            Zobrazeno {filteredEngineers.length} konstruktérů
+            Showing {filteredEngineers.length} engineers
           </div>
         </CardContent>
 
