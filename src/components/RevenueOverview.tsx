@@ -591,29 +591,29 @@ export const RevenueOverview = ({
       // Kvartální data
       const quarterData = [
         {
-          quarter: 'Q4 2025',
+          quarter: 'Q3 FY25-26',
           months: ['říjen_2025', 'listopad_2025', 'prosinec_2025'],
-          label: 'Q4 25'
+          label: 'Q3 FY26'
         },
         {
-          quarter: 'Q1 2026',
-          months: ['leden_2026', 'únor_2026', 'březen_2026'], 
-          label: 'Q1 26'
+          quarter: 'Q4 FY25-26',
+          months: ['leden_2026', 'únor_2026', 'březen_2026'],
+          label: 'Q4 FY26'
         },
         {
-          quarter: 'Q2 2026',
+          quarter: 'Q1 FY26-27',
           months: ['duben_2026', 'květen_2026', 'červen_2026'],
-          label: 'Q2 26'
+          label: 'Q1 FY27'
         },
         {
-          quarter: 'Q3 2026',
+          quarter: 'Q2 FY26-27',
           months: ['červenec_2026', 'srpen_2026', 'září_2026'],
-          label: 'Q3 26'
+          label: 'Q2 FY27'
         },
         {
-          quarter: 'Q4 2026',
+          quarter: 'Q3 FY26-27',
           months: ['říjen_2026', 'listopad_2026', 'prosinec_2026'],
-          label: 'Q4 26'
+          label: 'Q3 FY27'
         }
       ];
 
