@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { RevenueOverview } from '@/components/RevenueOverview';
 import { PlanningProvider } from '@/contexts/PlanningContext';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 
 const ManagerRevenueView = () => {
   const navigate = useNavigate();
+  const [viewType, setViewType] = useState<'mesic' | 'kvartal'>('mesic');
 
   return (
     <PlanningProvider key="manager-revenue-planning-provider">
