@@ -10,6 +10,7 @@ import { TrendingUp, Filter, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getProjectColorWithIndex } from '@/utils/colorSystem';
 import { getWeekToMonthFractions, getWorkingDaysInMonth as getWorkingDaysInMonthFromUtils } from '@/utils/workingDays';
+import { getEffectiveRate, RateHistoryEntry } from '@/utils/projectRates';
 
 interface DatabaseProject {
   id: string;
