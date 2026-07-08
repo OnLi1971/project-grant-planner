@@ -532,16 +532,16 @@ export const ProjectAllocationDialog = ({
           </div>
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 rounded bg-yellow-500/30 border border-yellow-500/50"></div>
-            <span>Předběžná rezervace (?)</span>
+            <span>Tentative reservation (?)</span>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 rounded bg-yellow-500/15 border border-yellow-500/40"></div>
-            <span>Částečná volná kapacita (&lt; 30h/týden) (~)</span>
+            <span>Partial free capacity (&lt; 30h/week) (~)</span>
           </div>
           <Separator orientation="vertical" className="h-4" />
           <div className="flex items-center gap-1">
             <Badge variant="outline" className="text-[9px] px-1 py-0 bg-blue-100 text-blue-700 border-blue-300">DOV</Badge>
-            <span>Dovolená</span>
+            <span>Holiday</span>
           </div>
           <div className="flex items-center gap-1">
             <Badge variant="outline" className="text-[9px] px-1 py-0 bg-red-100 text-red-700 border-red-300">NEM</Badge>
