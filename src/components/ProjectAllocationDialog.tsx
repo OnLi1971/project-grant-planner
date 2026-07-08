@@ -331,7 +331,7 @@ export const ProjectAllocationDialog = ({
           <div className="flex flex-wrap gap-3 text-xs text-muted-foreground border-b pb-2">
             {customer && (
               <div>
-                <span className="font-medium text-foreground">Zákazník:</span> {customer.name}
+                <span className="font-medium text-foreground">Customer:</span> {customer.name}
               </div>
             )}
             {program && (
@@ -346,7 +346,7 @@ export const ProjectAllocationDialog = ({
             )}
             {projectInfo.averageHourlyRate && (
               <div>
-                <span className="font-medium text-foreground">Hod. sazba:</span> {projectInfo.averageHourlyRate} Kč
+                <span className="font-medium text-foreground">Hourly rate:</span> {projectInfo.averageHourlyRate} Kč
               </div>
             )}
           </div>
@@ -377,7 +377,7 @@ export const ProjectAllocationDialog = ({
                     )}
                     <TableRow>
                       <TableHead className="sticky left-0 bg-background z-20 min-w-[90px] font-semibold text-xs py-1.5 px-2">
-                        Konstruktér
+                        Engineer
                       </TableHead>
                       {displayColumns.map(col => {
                         const isHolidayWeek = viewMode === 'weeks' && holidayWeeks.has(col);
@@ -389,7 +389,7 @@ export const ProjectAllocationDialog = ({
                         );
                       })}
                       <TableHead className="text-center min-w-[50px] font-semibold bg-muted/30 text-xs py-1.5 px-1">
-                        Celkem
+                        Total
                       </TableHead>
                     </TableRow>
                   </TableHeader>
