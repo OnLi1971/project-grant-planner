@@ -50,6 +50,7 @@ interface RevenueOverviewProps {
   hideCorrectionCoefficients?: boolean;
   hideFilterType?: boolean;
   hideProjectStatus?: boolean;
+  onViewTypeChange?: (viewType: 'mesic' | 'kvartal') => void;
 }
 
 export const RevenueOverview = ({ 
@@ -59,7 +60,8 @@ export const RevenueOverview = ({
   defaultProgramCodes = ['MACH', 'RAIL'],
   hideCorrectionCoefficients = false,
   hideFilterType = false,
-  hideProjectStatus = false
+  hideProjectStatus = false,
+  onViewTypeChange
 }: RevenueOverviewProps) => {
   const { planningData } = usePlanning();
   const [filterType, setFilterType] = useState<'all' | 'customer' | 'program' | 'project'>('program');
@@ -721,6 +723,7 @@ export const RevenueOverview = ({
   // Handle view type change
   const handleViewTypeChange = (value: 'mesic' | 'kvartal') => {
     setViewType(value);
+    onViewTypeChange?.(value);
     // Reset to all quarters/months when switching view type
     if (value === 'kvartal') {
       setSelectedQuarters(['Q4-FY25', 'Q1-FY26', 'Q2-FY26', 'Q3-FY26']);

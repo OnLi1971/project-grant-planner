@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { RevenueOverview } from '@/components/RevenueOverview';
 import { PlanningProvider } from '@/contexts/PlanningContext';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 
 const ManagerRevenueView = () => {
   const navigate = useNavigate();
+  const [viewType, setViewType] = useState<'mesic' | 'kvartal'>('mesic');
 
   return (
     <PlanningProvider key="manager-revenue-planning-provider">
@@ -34,6 +35,9 @@ const ManagerRevenueView = () => {
         </Card>
 
         <div className="mx-6">
+          <h2 className="text-lg font-medium text-muted-foreground text-center mb-4">
+            Revenue RAIL + MACH {viewType === 'mesic' ? 'Monthly' : 'Quarterly'} Turnover
+          </h2>
           <RevenueOverview 
             defaultCurrency="USD" 
             defaultStatusFilter="realizace" 
@@ -42,6 +46,7 @@ const ManagerRevenueView = () => {
             hideCorrectionCoefficients
             hideFilterType
             hideProjectStatus
+            onViewTypeChange={setViewType}
           />
         </div>
       </div>
