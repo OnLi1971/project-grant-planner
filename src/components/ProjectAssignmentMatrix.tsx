@@ -244,6 +244,7 @@ interface ProjectAssignmentMatrixProps {
   defaultSelectedEngineers?: string[]; // Hardcoded list of engineers (for public pages without DB access)
   customerViewMode?: string; // Customer prefix (e.g., "ST") for customer-specific view
   maxEndDate?: { month: number; year: number }; // Limit the view to a specific end date
+  hideFilters?: boolean;
 }
 
 export const ProjectAssignmentMatrix = ({ 
