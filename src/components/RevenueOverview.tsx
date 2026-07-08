@@ -1029,6 +1029,16 @@ export const RevenueOverview = ({
             )}
           </div>
 
+           <RevenueAIAnalyzer
+             chartData={chartData}
+             projects={projects}
+             viewType={viewType}
+             displayUnit={displayUnit}
+             currency={currency}
+             selectedQuarters={selectedQuarters}
+             selectedMonths={selectedMonths}
+           />
+
            {/* Celkový obrat */}
            <div className="mb-6">
               <div className="text-2xl font-bold text-primary">
