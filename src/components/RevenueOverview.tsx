@@ -723,6 +723,7 @@ export const RevenueOverview = ({
   // Handle view type change
   const handleViewTypeChange = (value: 'mesic' | 'kvartal') => {
     setViewType(value);
+    onViewTypeChange?.(value);
     // Reset to all quarters/months when switching view type
     if (value === 'kvartal') {
       setSelectedQuarters(['Q4-FY25', 'Q1-FY26', 'Q2-FY26', 'Q3-FY26']);
