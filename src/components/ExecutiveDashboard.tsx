@@ -9,6 +9,7 @@ import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, LineChart, Line, PieC
 import { TrendingUp, TrendingDown, DollarSign, Target, Calendar, Award, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getWeekToMonthFractions } from '@/utils/workingDays';
+import { getEffectiveRate, RateHistoryEntry } from '@/utils/projectRates';
 
 interface DatabaseProject {
   id: string;
