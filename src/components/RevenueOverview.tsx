@@ -329,37 +329,34 @@ export const RevenueOverview = ({
         return;
       }
 
-      let hourlyRate = 0;
-      
-      // Určíme hodinovou sazbu podle typu projektu z databáze
-      // Pro WP projekty používáme average_hourly_rate
-      // Pro Hodinovka projekty používáme primárně average_hourly_rate, jinak budget, jinak default
+      let baseHourlyRate = 0;
+
+      // Určíme základní hodinovou sazbu podle typu projektu (fallback, když pro měsíc není override)
       if (project.project_type === 'WP' && project.average_hourly_rate) {
-        hourlyRate = project.average_hourly_rate;
+        baseHourlyRate = project.average_hourly_rate;
       } else if (project.project_type === 'Hodinovka' && project.hourly_rate) {
-        hourlyRate = project.hourly_rate;
+        baseHourlyRate = project.hourly_rate;
       }
 
-      // Debug výpis pro realizace projekty
-      if (project.project_status === 'Realizace' && entry.cw.includes('CW45')) {
-        console.log(`Realizace project ${entry.projekt}: type=${project.project_type}, hourlyRate=${hourlyRate}, avg_rate=${project.average_hourly_rate}, budget=${project.budget}, hours=${entry.mhTyden}`);
-      }
-
-      // Pokud nemáme sazbu, přeskočíme
-      if (hourlyRate === 0) {
+      // Pokud nemáme ani základní sazbu ani žádnou historickou, přeskočíme
+      const hasAnyHistoric = rateHistory.some(h => h.project_id === project.id);
+      if (baseHourlyRate === 0 && !hasAnyHistoric) {
         if (project.project_status === 'Realizace') {
           console.log(`Skipping Realizace project ${entry.projekt} - no hourly rate found`);
         }
         return;
       }
 
-      // Rozdělíme týdenní výkon podle poměru dnů v měsících
+      // Rozdělíme týdenní výkon podle poměru dnů v měsících (sazba se volí per-měsíc)
       Object.entries(weekMapping).forEach(([month, ratio]) => {
-        // Inicializace měsíce a projektu v měsíci (pokud měsíc není v seznamu, přeskočit)
         if (!monthlyData[month]) return;
         if (!monthlyData[month][entry.projekt]) {
           monthlyData[month][entry.projekt] = 0;
         }
+
+        // Efektivní sazba pro daný měsíc (historie sazeb má přednost)
+        const hourlyRate = getEffectiveRate(project, rateHistory, month);
+        if (!hourlyRate) return;
 
         // Koeficient pravděpodobnosti pro presales projekty
         let probabilityCoefficient = 1;
