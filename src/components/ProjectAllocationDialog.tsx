@@ -116,7 +116,7 @@ export const ProjectAllocationDialog = ({
   }, [weeks]);
 
   // Czech month names for dynamic mapping
-  const monthNames = ['', 'leden', 'únor', 'březen', 'duben', 'květen', 'červen', 'červenec', 'srpen', 'září', 'říjen', 'listopad', 'prosinec'];
+  const monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
   // Get unique months sorted chronologically (for monthly view) with proportional week splitting
   const monthsData = useMemo(() => {
