@@ -773,7 +773,9 @@ export const RevenueOverview = ({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
-            Revenue RAIL + MACH {viewType === 'mesic' ? 'Monthly' : 'Quarterly'} Turnover in {currency}
+            {displayUnit === 'hodiny'
+              ? `Revenue RAIL + MACH ${viewType === 'mesic' ? 'Monthly' : 'Quarterly'} Capacity in Hours`
+              : `Revenue RAIL + MACH ${viewType === 'mesic' ? 'Monthly' : 'Quarterly'} Turnover in ${currency}`}
           </CardTitle>
         </CardHeader>
         <CardContent>
