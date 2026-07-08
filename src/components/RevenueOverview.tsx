@@ -60,7 +60,8 @@ export const RevenueOverview = ({
   defaultProgramCodes = ['MACH', 'RAIL'],
   hideCorrectionCoefficients = false,
   hideFilterType = false,
-  hideProjectStatus = false
+  hideProjectStatus = false,
+  onViewTypeChange
 }: RevenueOverviewProps) => {
   const { planningData } = usePlanning();
   const [filterType, setFilterType] = useState<'all' | 'customer' | 'program' | 'project'>('program');
