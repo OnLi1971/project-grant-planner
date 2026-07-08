@@ -895,6 +895,41 @@ export type Database = {
         }
         Relationships: []
       }
+      project_rate_history: {
+        Row: {
+          average_hourly_rate: number | null
+          created_at: string
+          hourly_rate: number | null
+          id: string
+          project_id: string
+          valid_from: string
+        }
+        Insert: {
+          average_hourly_rate?: number | null
+          created_at?: string
+          hourly_rate?: number | null
+          id?: string
+          project_id: string
+          valid_from: string
+        }
+        Update: {
+          average_hourly_rate?: number | null
+          created_at?: string
+          hourly_rate?: number | null
+          id?: string
+          project_id?: string
+          valid_from?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_rate_history_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           average_hourly_rate: number | null
