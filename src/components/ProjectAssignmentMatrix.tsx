@@ -831,7 +831,7 @@ export const ProjectAssignmentMatrix = ({
                 className="gap-2"
               >
                 <Download className="h-4 w-4" />
-                Export do Excelu
+                Export to Excel
               </Button>
               {!customerViewMode && (
                 <Button 
