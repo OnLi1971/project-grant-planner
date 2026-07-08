@@ -863,7 +863,7 @@ export const ProjectAssignmentMatrix = ({
         </CardHeader>
         <CardContent>
           {/* Filters - hidden in customer view */}
-          {!customerViewMode && (
+          {!customerViewMode && !hideFilters && (
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div>
               <label className="text-sm font-medium mb-2 block">Company</label>
