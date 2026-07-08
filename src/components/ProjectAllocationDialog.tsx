@@ -516,7 +516,7 @@ export const ProjectAllocationDialog = ({
           </div>
         ) : (
           <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
-            Žádné alokace pro tento projekt
+            No allocations for this project
           </div>
         )}
 
@@ -524,11 +524,11 @@ export const ProjectAllocationDialog = ({
         <div className="flex flex-wrap items-center gap-3 pt-2 border-t text-[10px] text-muted-foreground">
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 rounded bg-green-500/20 border border-green-500/30"></div>
-            <span>Plné vytížení (35+ h)</span>
+            <span>Fully allocated (35+ h)</span>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 rounded bg-orange-500/20 border border-orange-500/30"></div>
-            <span>Částečné vytížení</span>
+            <span>Partial allocation</span>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 rounded bg-yellow-500/30 border border-yellow-500/50"></div>
