@@ -788,7 +788,7 @@ export const ProjectAssignmentMatrix = ({
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-2xl font-bold">
-              {customerViewMode ? 'Capacity Overview' : 'Project Planning Matrix'}
+              {customerViewMode ? 'Capacity Overview' : `Planning RAIL + MACH ${viewMode === 'weeks' ? 'weekly' : 'monthly'}`}
             </CardTitle>
             <div className="flex items-center gap-2">
               <Button
