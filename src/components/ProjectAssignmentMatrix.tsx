@@ -137,9 +137,20 @@ const generateMonths = (weeksList: string[]): { name: string; weeks: string[] }[
 
 const PROJECT_DISPLAY_NAMES: Record<string, string> = {
   'DOVOLENÁ': 'VACATION',
+  'DOVOLENA': 'VACATION',
+  'Dovolená': 'VACATION',
+  'Dovolena': 'VACATION',
   'NEMOC': 'SICK LEAVE',
+  'Nemoc': 'SICK LEAVE',
 };
-const getProjectDisplayName = (project: string): string => PROJECT_DISPLAY_NAMES[project] || project;
+const getProjectDisplayName = (project: string): string => {
+  if (!project) return project;
+  if (PROJECT_DISPLAY_NAMES[project]) return PROJECT_DISPLAY_NAMES[project];
+  const normalized = project.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+  if (normalized === 'DOVOLENA') return 'VACATION';
+  if (normalized === 'NEMOC') return 'SICK LEAVE';
+  return project;
+};
 
 const getProjectBadgeStyle = (projekt: string) => {
   // Departed engineer
