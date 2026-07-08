@@ -994,6 +994,12 @@ export const ProjectManagement = () => {
                     />
                   </div>
                 )}
+                {editingProject && (
+                  <ProjectRateHistoryEditor
+                    projectId={editingProject.id}
+                    projectType={formData.projectType}
+                  />
+                )}
                 <div>
                   <div className="flex justify-between items-center mb-2">
                     <Label>Přiřazené licence</Label>
