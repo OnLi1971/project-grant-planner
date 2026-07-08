@@ -43,18 +43,18 @@ interface ProjectAllocationDialogProps {
 
 // Week to month mapping
 const monthWeekMapping: { [key: string]: { month: number; name: string } } = {
-  '01': { month: 1, name: 'leden' }, '02': { month: 1, name: 'leden' }, '03': { month: 1, name: 'leden' }, '04': { month: 1, name: 'leden' }, '05': { month: 2, name: 'únor' },
-  '06': { month: 2, name: 'únor' }, '07': { month: 2, name: 'únor' }, '08': { month: 2, name: 'únor' }, '09': { month: 3, name: 'březen' },
-  '10': { month: 3, name: 'březen' }, '11': { month: 3, name: 'březen' }, '12': { month: 3, name: 'březen' }, '13': { month: 3, name: 'březen' }, '14': { month: 4, name: 'duben' },
-  '15': { month: 4, name: 'duben' }, '16': { month: 4, name: 'duben' }, '17': { month: 4, name: 'duben' }, '18': { month: 5, name: 'květen' },
-  '19': { month: 5, name: 'květen' }, '20': { month: 5, name: 'květen' }, '21': { month: 5, name: 'květen' }, '22': { month: 5, name: 'květen' }, '23': { month: 6, name: 'červen' },
-  '24': { month: 6, name: 'červen' }, '25': { month: 6, name: 'červen' }, '26': { month: 6, name: 'červen' }, '27': { month: 7, name: 'červenec' },
-  '28': { month: 7, name: 'červenec' }, '29': { month: 7, name: 'červenec' }, '30': { month: 7, name: 'červenec' }, '31': { month: 8, name: 'srpen' },
-  '32': { month: 8, name: 'srpen' }, '33': { month: 8, name: 'srpen' }, '34': { month: 8, name: 'srpen' }, '35': { month: 8, name: 'srpen' },
-  '36': { month: 9, name: 'září' }, '37': { month: 9, name: 'září' }, '38': { month: 9, name: 'září' }, '39': { month: 9, name: 'září' },
-  '40': { month: 10, name: 'říjen' }, '41': { month: 10, name: 'říjen' }, '42': { month: 10, name: 'říjen' }, '43': { month: 10, name: 'říjen' }, '44': { month: 10, name: 'říjen' },
-  '45': { month: 11, name: 'listopad' }, '46': { month: 11, name: 'listopad' }, '47': { month: 11, name: 'listopad' }, '48': { month: 11, name: 'listopad' },
-  '49': { month: 12, name: 'prosinec' }, '50': { month: 12, name: 'prosinec' }, '51': { month: 12, name: 'prosinec' }, '52': { month: 12, name: 'prosinec' }
+  '01': { month: 1, name: 'January' }, '02': { month: 1, name: 'January' }, '03': { month: 1, name: 'January' }, '04': { month: 1, name: 'January' }, '05': { month: 2, name: 'February' },
+  '06': { month: 2, name: 'February' }, '07': { month: 2, name: 'February' }, '08': { month: 2, name: 'February' }, '09': { month: 3, name: 'March' },
+  '10': { month: 3, name: 'March' }, '11': { month: 3, name: 'March' }, '12': { month: 3, name: 'March' }, '13': { month: 3, name: 'March' }, '14': { month: 4, name: 'April' },
+  '15': { month: 4, name: 'April' }, '16': { month: 4, name: 'April' }, '17': { month: 4, name: 'April' }, '18': { month: 5, name: 'May' },
+  '19': { month: 5, name: 'May' }, '20': { month: 5, name: 'May' }, '21': { month: 5, name: 'May' }, '22': { month: 5, name: 'May' }, '23': { month: 6, name: 'June' },
+  '24': { month: 6, name: 'June' }, '25': { month: 6, name: 'June' }, '26': { month: 6, name: 'June' }, '27': { month: 7, name: 'July' },
+  '28': { month: 7, name: 'July' }, '29': { month: 7, name: 'July' }, '30': { month: 7, name: 'July' }, '31': { month: 8, name: 'August' },
+  '32': { month: 8, name: 'August' }, '33': { month: 8, name: 'August' }, '34': { month: 8, name: 'August' }, '35': { month: 8, name: 'August' },
+  '36': { month: 9, name: 'September' }, '37': { month: 9, name: 'September' }, '38': { month: 9, name: 'September' }, '39': { month: 9, name: 'September' },
+  '40': { month: 10, name: 'October' }, '41': { month: 10, name: 'October' }, '42': { month: 10, name: 'October' }, '43': { month: 10, name: 'October' }, '44': { month: 10, name: 'October' },
+  '45': { month: 11, name: 'November' }, '46': { month: 11, name: 'November' }, '47': { month: 11, name: 'November' }, '48': { month: 11, name: 'November' },
+  '49': { month: 12, name: 'December' }, '50': { month: 12, name: 'December' }, '51': { month: 12, name: 'December' }, '52': { month: 12, name: 'December' }
 };
 // Helper functions for alternative activities
 const getActivityLabel = (activity: string): string => {
@@ -116,7 +116,7 @@ export const ProjectAllocationDialog = ({
   }, [weeks]);
 
   // Czech month names for dynamic mapping
-  const monthNames = ['', 'leden', 'únor', 'březen', 'duben', 'květen', 'červen', 'červenec', 'srpen', 'září', 'říjen', 'listopad', 'prosinec'];
+  const monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
   // Get unique months sorted chronologically (for monthly view) with proportional week splitting
   const monthsData = useMemo(() => {
@@ -331,7 +331,7 @@ export const ProjectAllocationDialog = ({
           <div className="flex flex-wrap gap-3 text-xs text-muted-foreground border-b pb-2">
             {customer && (
               <div>
-                <span className="font-medium text-foreground">Zákazník:</span> {customer.name}
+                <span className="font-medium text-foreground">Customer:</span> {customer.name}
               </div>
             )}
             {program && (
@@ -346,7 +346,7 @@ export const ProjectAllocationDialog = ({
             )}
             {projectInfo.averageHourlyRate && (
               <div>
-                <span className="font-medium text-foreground">Hod. sazba:</span> {projectInfo.averageHourlyRate} Kč
+                <span className="font-medium text-foreground">Hourly rate:</span> {projectInfo.averageHourlyRate} Kč
               </div>
             )}
           </div>
@@ -377,7 +377,7 @@ export const ProjectAllocationDialog = ({
                     )}
                     <TableRow>
                       <TableHead className="sticky left-0 bg-background z-20 min-w-[90px] font-semibold text-xs py-1.5 px-2">
-                        Konstruktér
+                        Engineer
                       </TableHead>
                       {displayColumns.map(col => {
                         const isHolidayWeek = viewMode === 'weeks' && holidayWeeks.has(col);
@@ -389,7 +389,7 @@ export const ProjectAllocationDialog = ({
                         );
                       })}
                       <TableHead className="text-center min-w-[50px] font-semibold bg-muted/30 text-xs py-1.5 px-1">
-                        Celkem
+                        Total
                       </TableHead>
                     </TableRow>
                   </TableHeader>
@@ -467,7 +467,7 @@ export const ProjectAllocationDialog = ({
                     {/* Column totals row */}
                     <TableRow className="bg-muted/50 border-t-2">
                       <TableCell className="sticky left-0 bg-muted/50 z-10 font-bold text-xs py-1 px-2">
-                        Celkem
+                        Total
                       </TableCell>
                       {displayColumns.map(col => (
                         <TableCell key={col} className="text-center font-bold text-xs py-1 px-1">
@@ -480,7 +480,7 @@ export const ProjectAllocationDialog = ({
                     </TableRow>
                     <TableRow className="bg-secondary/10">
                       <TableCell className="sticky left-0 bg-secondary/10 z-10 font-bold text-xs py-1 px-2">
-                        Celkem FTE
+                        Total FTE
                       </TableCell>
                       {displayColumns.map(col => (
                         <TableCell key={col} className="text-center font-bold text-xs py-1 px-1">
@@ -493,7 +493,7 @@ export const ProjectAllocationDialog = ({
                     </TableRow>
                     <TableRow className="bg-secondary/5">
                       <TableCell className="sticky left-0 bg-secondary/5 z-10 font-bold text-xs py-1 px-2">
-                        Celkem konstruktérů
+                        Total engineers
                       </TableCell>
                       {displayColumns.map(col => {
                         const count = engineers.filter(eng => (allocationMatrix[eng]?.[col]?.hours || 0) > 0).length;
@@ -516,7 +516,7 @@ export const ProjectAllocationDialog = ({
           </div>
         ) : (
           <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
-            Žádné alokace pro tento projekt
+            No allocations for this project
           </div>
         )}
 
@@ -524,28 +524,28 @@ export const ProjectAllocationDialog = ({
         <div className="flex flex-wrap items-center gap-3 pt-2 border-t text-[10px] text-muted-foreground">
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 rounded bg-green-500/20 border border-green-500/30"></div>
-            <span>Plné vytížení (35+ h)</span>
+            <span>Fully allocated (35+ h)</span>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 rounded bg-orange-500/20 border border-orange-500/30"></div>
-            <span>Částečné vytížení</span>
+            <span>Partial allocation</span>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 rounded bg-yellow-500/30 border border-yellow-500/50"></div>
-            <span>Předběžná rezervace (?)</span>
+            <span>Tentative reservation (?)</span>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 rounded bg-yellow-500/15 border border-yellow-500/40"></div>
-            <span>Částečná volná kapacita (&lt; 30h/týden) (~)</span>
+            <span>Partial free capacity (&lt; 30h/week) (~)</span>
           </div>
           <Separator orientation="vertical" className="h-4" />
           <div className="flex items-center gap-1">
             <Badge variant="outline" className="text-[9px] px-1 py-0 bg-blue-100 text-blue-700 border-blue-300">DOV</Badge>
-            <span>Dovolená</span>
+            <span>Holiday</span>
           </div>
           <div className="flex items-center gap-1">
             <Badge variant="outline" className="text-[9px] px-1 py-0 bg-red-100 text-red-700 border-red-300">NEM</Badge>
-            <span>Nemoc</span>
+            <span>Sick leave</span>
           </div>
           <div className="flex items-center gap-1">
            <Badge variant="outline" className="text-[9px] px-1 py-0 bg-purple-100 text-purple-700 border-purple-300">OVR</Badge>
@@ -554,7 +554,7 @@ export const ProjectAllocationDialog = ({
           <Separator orientation="vertical" className="h-4" />
           <div className="flex items-center gap-1">
             <span className="text-destructive font-bold text-[11px]">*</span>
-            <span>Týden se svátkem (snížená kapacita)</span>
+            <span>Holiday week (reduced capacity)</span>
           </div>
         </div>
       </DialogContent>
