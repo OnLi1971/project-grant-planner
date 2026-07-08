@@ -164,15 +164,17 @@ export const RevenueOverview = ({
   const loadData = async () => {
     setLoading(true);
     try {
-      const [projectsRes, customersRes, programsRes] = await Promise.all([
+      const [projectsRes, customersRes, programsRes, rateHistRes] = await Promise.all([
         supabase.from('projects').select('*').order('name'),
         supabase.from('customers').select('*').order('name'),
-        supabase.from('programs').select('*').order('name')
+        supabase.from('programs').select('*').order('name'),
+        supabase.from('project_rate_history').select('*')
       ]);
 
       if (projectsRes.data) setProjects(projectsRes.data);
       if (customersRes.data) setCustomers(customersRes.data);
       if (programsRes.data) setPrograms(programsRes.data);
+      if (rateHistRes.data) setRateHistory(rateHistRes.data as RateHistoryEntry[]);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
