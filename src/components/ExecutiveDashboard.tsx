@@ -79,15 +79,17 @@ export const ExecutiveDashboard = () => {
 
   const loadData = async () => {
     try {
-      const [projectsResponse, customersResponse, programsResponse] = await Promise.all([
+      const [projectsResponse, customersResponse, programsResponse, rateHistResponse] = await Promise.all([
         supabase.from('projects').select('*'),
         supabase.from('customers').select('*'),
-        supabase.from('programs').select('*')
+        supabase.from('programs').select('*'),
+        supabase.from('project_rate_history').select('*')
       ]);
 
       if (projectsResponse.data) setProjects(projectsResponse.data);
       if (customersResponse.data) setCustomers(customersResponse.data);
       if (programsResponse.data) setPrograms(programsResponse.data);
+      if (rateHistResponse.data) setRateHistory(rateHistResponse.data as RateHistoryEntry[]);
       setLoading(false);
     } catch (error) {
       console.error('Error loading data:', error);
