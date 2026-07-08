@@ -23,10 +23,10 @@ const ManagerView = () => {
                 className="flex items-center gap-2"
               >
                 <ArrowLeft className="h-4 w-4" />
-                Zpět
+                Back
               </Button>
-              <h1 className="text-2xl font-bold">Manažerský pohled - Matice plánování projektů</h1>
             </div>
+            <h1 className="text-2xl font-bold flex-1 text-center">Manager View - Project Planning Matrix</h1>
             <div className="flex items-center gap-2">
               <ThemeToggle />
             </div>
