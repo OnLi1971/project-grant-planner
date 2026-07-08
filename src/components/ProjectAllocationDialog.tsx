@@ -545,7 +545,7 @@ export const ProjectAllocationDialog = ({
           </div>
           <div className="flex items-center gap-1">
             <Badge variant="outline" className="text-[9px] px-1 py-0 bg-red-100 text-red-700 border-red-300">NEM</Badge>
-            <span>Nemoc</span>
+            <span>Sick leave</span>
           </div>
           <div className="flex items-center gap-1">
            <Badge variant="outline" className="text-[9px] px-1 py-0 bg-purple-100 text-purple-700 border-purple-300">OVR</Badge>
@@ -554,7 +554,7 @@ export const ProjectAllocationDialog = ({
           <Separator orientation="vertical" className="h-4" />
           <div className="flex items-center gap-1">
             <span className="text-destructive font-bold text-[11px]">*</span>
-            <span>Týden se svátkem (snížená kapacita)</span>
+            <span>Holiday week (reduced capacity)</span>
           </div>
         </div>
       </DialogContent>
