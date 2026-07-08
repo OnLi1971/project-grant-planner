@@ -15,6 +15,7 @@ import { usePlanning } from '@/contexts/PlanningContext';
 import { getProjectColor, getCustomerByProjectCode } from '@/utils/colorSystem';
 import { supabase } from '@/integrations/supabase/client';
 import { OrganizationalStructure } from '@/components/OrganizationalStructure';
+import { ProjectRateHistoryEditor } from '@/components/ProjectRateHistoryEditor';
 
 interface License {
   id: string;
@@ -992,6 +993,12 @@ export const ProjectManagement = () => {
                       placeholder="1200"
                     />
                   </div>
+                )}
+                {editingProject && (
+                  <ProjectRateHistoryEditor
+                    projectId={editingProject.id}
+                    projectType={formData.projectType}
+                  />
                 )}
                 <div>
                   <div className="flex justify-between items-center mb-2">

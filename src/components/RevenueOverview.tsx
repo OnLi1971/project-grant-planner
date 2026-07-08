@@ -10,6 +10,7 @@ import { TrendingUp, Filter, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getProjectColorWithIndex } from '@/utils/colorSystem';
 import { getWeekToMonthFractions, getWorkingDaysInMonth as getWorkingDaysInMonthFromUtils } from '@/utils/workingDays';
+import { getEffectiveRate, RateHistoryEntry } from '@/utils/projectRates';
 
 interface DatabaseProject {
   id: string;
@@ -77,6 +78,7 @@ export const RevenueOverview = ({
   const [projects, setProjects] = useState<DatabaseProject[]>([]);
   const [customers, setCustomers] = useState<DatabaseCustomer[]>([]);
   const [programs, setPrograms] = useState<DatabaseProgram[]>([]);
+  const [rateHistory, setRateHistory] = useState<RateHistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [defaultProgramsApplied, setDefaultProgramsApplied] = useState(false);
   const [monthCoefficients, setMonthCoefficients] = useState<Record<string, number>>(() => {
@@ -162,15 +164,17 @@ export const RevenueOverview = ({
   const loadData = async () => {
     setLoading(true);
     try {
-      const [projectsRes, customersRes, programsRes] = await Promise.all([
+      const [projectsRes, customersRes, programsRes, rateHistRes] = await Promise.all([
         supabase.from('projects').select('*').order('name'),
         supabase.from('customers').select('*').order('name'),
-        supabase.from('programs').select('*').order('name')
+        supabase.from('programs').select('*').order('name'),
+        supabase.from('project_rate_history').select('*')
       ]);
 
       if (projectsRes.data) setProjects(projectsRes.data);
       if (customersRes.data) setCustomers(customersRes.data);
       if (programsRes.data) setPrograms(programsRes.data);
+      if (rateHistRes.data) setRateHistory(rateHistRes.data as RateHistoryEntry[]);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -325,37 +329,34 @@ export const RevenueOverview = ({
         return;
       }
 
-      let hourlyRate = 0;
-      
-      // Určíme hodinovou sazbu podle typu projektu z databáze
-      // Pro WP projekty používáme average_hourly_rate
-      // Pro Hodinovka projekty používáme primárně average_hourly_rate, jinak budget, jinak default
+      let baseHourlyRate = 0;
+
+      // Určíme základní hodinovou sazbu podle typu projektu (fallback, když pro měsíc není override)
       if (project.project_type === 'WP' && project.average_hourly_rate) {
-        hourlyRate = project.average_hourly_rate;
+        baseHourlyRate = project.average_hourly_rate;
       } else if (project.project_type === 'Hodinovka' && project.hourly_rate) {
-        hourlyRate = project.hourly_rate;
+        baseHourlyRate = project.hourly_rate;
       }
 
-      // Debug výpis pro realizace projekty
-      if (project.project_status === 'Realizace' && entry.cw.includes('CW45')) {
-        console.log(`Realizace project ${entry.projekt}: type=${project.project_type}, hourlyRate=${hourlyRate}, avg_rate=${project.average_hourly_rate}, budget=${project.budget}, hours=${entry.mhTyden}`);
-      }
-
-      // Pokud nemáme sazbu, přeskočíme
-      if (hourlyRate === 0) {
+      // Pokud nemáme ani základní sazbu ani žádnou historickou, přeskočíme
+      const hasAnyHistoric = rateHistory.some(h => h.project_id === project.id);
+      if (baseHourlyRate === 0 && !hasAnyHistoric) {
         if (project.project_status === 'Realizace') {
           console.log(`Skipping Realizace project ${entry.projekt} - no hourly rate found`);
         }
         return;
       }
 
-      // Rozdělíme týdenní výkon podle poměru dnů v měsících
+      // Rozdělíme týdenní výkon podle poměru dnů v měsících (sazba se volí per-měsíc)
       Object.entries(weekMapping).forEach(([month, ratio]) => {
-        // Inicializace měsíce a projektu v měsíci (pokud měsíc není v seznamu, přeskočit)
         if (!monthlyData[month]) return;
         if (!monthlyData[month][entry.projekt]) {
           monthlyData[month][entry.projekt] = 0;
         }
+
+        // Efektivní sazba pro daný měsíc (historie sazeb má přednost)
+        const hourlyRate = getEffectiveRate(project, rateHistory, month);
+        if (!hourlyRate) return;
 
         // Koeficient pravděpodobnosti pro presales projekty
         let probabilityCoefficient = 1;
@@ -425,12 +426,13 @@ export const RevenueOverview = ({
 
         if (totalWorkingDays === 0) return;
 
-        // Rozdělíme revenue poměrně mezi měsíce
+        // Rozdělíme revenue poměrně mezi měsíce (sazba per-měsíc dle historie)
         monthsInPeriod.forEach(monthName => {
           const workingDaysInMonth = getWorkingDaysForMonthKey(monthName);
           const monthRatio = workingDaysInMonth / totalWorkingDays;
           const monthHours = totalHours * monthRatio;
-          const monthRevenue = monthHours * hourlyRate * probabilityCoefficient;
+          const effRate = getEffectiveRate(project, rateHistory, monthName) || hourlyRate;
+          const monthRevenue = monthHours * effRate * probabilityCoefficient;
 
           if (!monthlyData[monthName][project.code]) {
             monthlyData[monthName][project.code] = 0;

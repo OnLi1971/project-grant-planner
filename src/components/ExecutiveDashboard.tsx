@@ -9,6 +9,7 @@ import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, LineChart, Line, PieC
 import { TrendingUp, TrendingDown, DollarSign, Target, Calendar, Award, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getWeekToMonthFractions } from '@/utils/workingDays';
+import { getEffectiveRate, RateHistoryEntry } from '@/utils/projectRates';
 
 interface DatabaseProject {
   id: string;
@@ -47,6 +48,7 @@ export const ExecutiveDashboard = () => {
   const [projects, setProjects] = useState<DatabaseProject[]>([]);
   const [customers, setCustomers] = useState<DatabaseCustomer[]>([]);
   const [programs, setPrograms] = useState<DatabaseProgram[]>([]);
+  const [rateHistory, setRateHistory] = useState<RateHistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   const exchangeRate = 23;
@@ -77,15 +79,17 @@ export const ExecutiveDashboard = () => {
 
   const loadData = async () => {
     try {
-      const [projectsResponse, customersResponse, programsResponse] = await Promise.all([
+      const [projectsResponse, customersResponse, programsResponse, rateHistResponse] = await Promise.all([
         supabase.from('projects').select('*'),
         supabase.from('customers').select('*'),
-        supabase.from('programs').select('*')
+        supabase.from('programs').select('*'),
+        supabase.from('project_rate_history').select('*')
       ]);
 
       if (projectsResponse.data) setProjects(projectsResponse.data);
       if (customersResponse.data) setCustomers(customersResponse.data);
       if (programsResponse.data) setPrograms(programsResponse.data);
+      if (rateHistResponse.data) setRateHistory(rateHistResponse.data as RateHistoryEntry[]);
       setLoading(false);
     } catch (error) {
       console.error('Error loading data:', error);
@@ -141,13 +145,8 @@ export const ExecutiveDashboard = () => {
       if (Object.keys(weekMapping).length > 0 && mhTyden > 0) {
         Object.entries(weekMapping).forEach(([month, ratio]) => {
           const hoursForMonth = mhTyden * (ratio as number);
-          let revenue = 0;
-
-          if (project.project_type === 'WP' && project.average_hourly_rate) {
-            revenue = hoursForMonth * project.average_hourly_rate;
-          } else if (project.project_type === 'Hodinovka' && project.hourly_rate) {
-            revenue = hoursForMonth * project.hourly_rate;
-          }
+          const effRate = getEffectiveRate(project as any, rateHistory, month);
+          let revenue = hoursForMonth * effRate;
 
           if (project.project_status === 'Pre sales' && project.probability) {
             revenue *= (project.probability / 100);
@@ -164,7 +163,7 @@ export const ExecutiveDashboard = () => {
     return monthlyData;
   };
 
-  const monthlyRevenueByProject = useMemo(() => calculateMonthlyRevenueByProject(), [planningData, projects]);
+  const monthlyRevenueByProject = useMemo(() => calculateMonthlyRevenueByProject(), [planningData, projects, rateHistory]);
 
   // Výpočet KPI dat
   const kpiData = useMemo(() => {
