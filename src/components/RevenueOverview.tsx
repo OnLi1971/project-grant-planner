@@ -78,6 +78,7 @@ export const RevenueOverview = ({
   const [projects, setProjects] = useState<DatabaseProject[]>([]);
   const [customers, setCustomers] = useState<DatabaseCustomer[]>([]);
   const [programs, setPrograms] = useState<DatabaseProgram[]>([]);
+  const [rateHistory, setRateHistory] = useState<RateHistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [defaultProgramsApplied, setDefaultProgramsApplied] = useState(false);
   const [monthCoefficients, setMonthCoefficients] = useState<Record<string, number>>(() => {
