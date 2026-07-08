@@ -467,7 +467,7 @@ export const ProjectAllocationDialog = ({
                     {/* Column totals row */}
                     <TableRow className="bg-muted/50 border-t-2">
                       <TableCell className="sticky left-0 bg-muted/50 z-10 font-bold text-xs py-1 px-2">
-                        Celkem
+                        Total
                       </TableCell>
                       {displayColumns.map(col => (
                         <TableCell key={col} className="text-center font-bold text-xs py-1 px-1">
@@ -480,7 +480,7 @@ export const ProjectAllocationDialog = ({
                     </TableRow>
                     <TableRow className="bg-secondary/10">
                       <TableCell className="sticky left-0 bg-secondary/10 z-10 font-bold text-xs py-1 px-2">
-                        Celkem FTE
+                        Total FTE
                       </TableCell>
                       {displayColumns.map(col => (
                         <TableCell key={col} className="text-center font-bold text-xs py-1 px-1">
@@ -493,7 +493,7 @@ export const ProjectAllocationDialog = ({
                     </TableRow>
                     <TableRow className="bg-secondary/5">
                       <TableCell className="sticky left-0 bg-secondary/5 z-10 font-bold text-xs py-1 px-2">
-                        Celkem konstruktérů
+                        Total engineers
                       </TableCell>
                       {displayColumns.map(col => {
                         const count = engineers.filter(eng => (allocationMatrix[eng]?.[col]?.hours || 0) > 0).length;
