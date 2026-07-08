@@ -35,9 +35,6 @@ const ManagerRevenueView = () => {
         </Card>
 
         <div className="mx-6">
-          <h2 className="text-lg font-medium text-muted-foreground text-center mb-4">
-            Revenue RAIL + MACH {viewType === 'mesic' ? 'Monthly' : 'Quarterly'} Turnover
-          </h2>
           <RevenueOverview 
             defaultCurrency="USD" 
             defaultStatusFilter="realizace" 
