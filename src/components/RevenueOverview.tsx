@@ -6,7 +6,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList } from 'recharts';
-import { TrendingUp, Filter, RefreshCw } from 'lucide-react';
+import { TrendingUp, Filter, RefreshCw, Sparkles } from 'lucide-react';
+import { RevenueAIAnalyzer } from './RevenueAIAnalyzer';
 import { Button } from '@/components/ui/button';
 import { getProjectColorWithIndex } from '@/utils/colorSystem';
 import { getWeekToMonthFractions, getWorkingDaysInMonth as getWorkingDaysInMonthFromUtils } from '@/utils/workingDays';
