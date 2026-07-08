@@ -15,7 +15,7 @@ const ManagerRevenueView = () => {
       <div className="min-h-screen bg-background">
         <Card className="m-6 p-4 shadow-card-custom">
           <div className="flex justify-between items-center">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 flex-1">
               <Button
                 variant="outline"
                 size="sm"
@@ -23,9 +23,9 @@ const ManagerRevenueView = () => {
                 className="flex items-center gap-2"
               >
                 <ArrowLeft className="h-4 w-4" />
-                Zpět
+                Back
               </Button>
-              <h1 className="text-2xl font-bold">Manažerský pohled - Revenue</h1>
+              <h1 className="text-2xl font-bold flex-1 text-center">Manager View - Revenue</h1>
             </div>
             <div className="flex items-center gap-2">
               <ThemeToggle />
