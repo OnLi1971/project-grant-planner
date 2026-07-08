@@ -254,7 +254,8 @@ export const ProjectAssignmentMatrix = ({
   defaultCustomViewId,
   defaultSelectedEngineers,
   customerViewMode,
-  maxEndDate
+  maxEndDate,
+  hideFilters
 }: ProjectAssignmentMatrixProps) => {
   const { planningData, engineers } = usePlanning();
   const [viewMode, setViewMode] = useState<'weeks' | 'months'>(defaultViewMode);
