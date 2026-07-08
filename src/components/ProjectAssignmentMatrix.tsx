@@ -244,6 +244,7 @@ interface ProjectAssignmentMatrixProps {
   defaultSelectedEngineers?: string[]; // Hardcoded list of engineers (for public pages without DB access)
   customerViewMode?: string; // Customer prefix (e.g., "ST") for customer-specific view
   maxEndDate?: { month: number; year: number }; // Limit the view to a specific end date
+  hideFilters?: boolean;
 }
 
 export const ProjectAssignmentMatrix = ({ 
@@ -253,7 +254,8 @@ export const ProjectAssignmentMatrix = ({
   defaultCustomViewId,
   defaultSelectedEngineers,
   customerViewMode,
-  maxEndDate
+  maxEndDate,
+  hideFilters
 }: ProjectAssignmentMatrixProps) => {
   const { planningData, engineers } = usePlanning();
   const [viewMode, setViewMode] = useState<'weeks' | 'months'>(defaultViewMode);
@@ -861,7 +863,7 @@ export const ProjectAssignmentMatrix = ({
         </CardHeader>
         <CardContent>
           {/* Filters - hidden in customer view */}
-          {!customerViewMode && (
+          {!customerViewMode && !hideFilters && (
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div>
               <label className="text-sm font-medium mb-2 block">Company</label>
