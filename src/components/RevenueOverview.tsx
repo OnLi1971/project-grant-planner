@@ -50,6 +50,7 @@ interface RevenueOverviewProps {
   hideCorrectionCoefficients?: boolean;
   hideFilterType?: boolean;
   hideProjectStatus?: boolean;
+  onViewTypeChange?: (viewType: 'mesic' | 'kvartal') => void;
 }
 
 export const RevenueOverview = ({ 
