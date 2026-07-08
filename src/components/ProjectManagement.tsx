@@ -15,6 +15,7 @@ import { usePlanning } from '@/contexts/PlanningContext';
 import { getProjectColor, getCustomerByProjectCode } from '@/utils/colorSystem';
 import { supabase } from '@/integrations/supabase/client';
 import { OrganizationalStructure } from '@/components/OrganizationalStructure';
+import { ProjectRateHistoryEditor } from '@/components/ProjectRateHistoryEditor';
 
 interface License {
   id: string;
