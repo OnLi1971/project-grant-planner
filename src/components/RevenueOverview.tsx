@@ -426,12 +426,13 @@ export const RevenueOverview = ({
 
         if (totalWorkingDays === 0) return;
 
-        // Rozdělíme revenue poměrně mezi měsíce
+        // Rozdělíme revenue poměrně mezi měsíce (sazba per-měsíc dle historie)
         monthsInPeriod.forEach(monthName => {
           const workingDaysInMonth = getWorkingDaysForMonthKey(monthName);
           const monthRatio = workingDaysInMonth / totalWorkingDays;
           const monthHours = totalHours * monthRatio;
-          const monthRevenue = monthHours * hourlyRate * probabilityCoefficient;
+          const effRate = getEffectiveRate(project, rateHistory, monthName) || hourlyRate;
+          const monthRevenue = monthHours * effRate * probabilityCoefficient;
 
           if (!monthlyData[monthName][project.code]) {
             monthlyData[monthName][project.code] = 0;
