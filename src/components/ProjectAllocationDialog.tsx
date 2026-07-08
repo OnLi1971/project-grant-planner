@@ -43,18 +43,18 @@ interface ProjectAllocationDialogProps {
 
 // Week to month mapping
 const monthWeekMapping: { [key: string]: { month: number; name: string } } = {
-  '01': { month: 1, name: 'leden' }, '02': { month: 1, name: 'leden' }, '03': { month: 1, name: 'leden' }, '04': { month: 1, name: 'leden' }, '05': { month: 2, name: 'únor' },
-  '06': { month: 2, name: 'únor' }, '07': { month: 2, name: 'únor' }, '08': { month: 2, name: 'únor' }, '09': { month: 3, name: 'březen' },
-  '10': { month: 3, name: 'březen' }, '11': { month: 3, name: 'březen' }, '12': { month: 3, name: 'březen' }, '13': { month: 3, name: 'březen' }, '14': { month: 4, name: 'duben' },
-  '15': { month: 4, name: 'duben' }, '16': { month: 4, name: 'duben' }, '17': { month: 4, name: 'duben' }, '18': { month: 5, name: 'květen' },
-  '19': { month: 5, name: 'květen' }, '20': { month: 5, name: 'květen' }, '21': { month: 5, name: 'květen' }, '22': { month: 5, name: 'květen' }, '23': { month: 6, name: 'červen' },
-  '24': { month: 6, name: 'červen' }, '25': { month: 6, name: 'červen' }, '26': { month: 6, name: 'červen' }, '27': { month: 7, name: 'červenec' },
-  '28': { month: 7, name: 'červenec' }, '29': { month: 7, name: 'červenec' }, '30': { month: 7, name: 'červenec' }, '31': { month: 8, name: 'srpen' },
-  '32': { month: 8, name: 'srpen' }, '33': { month: 8, name: 'srpen' }, '34': { month: 8, name: 'srpen' }, '35': { month: 8, name: 'srpen' },
-  '36': { month: 9, name: 'září' }, '37': { month: 9, name: 'září' }, '38': { month: 9, name: 'září' }, '39': { month: 9, name: 'září' },
-  '40': { month: 10, name: 'říjen' }, '41': { month: 10, name: 'říjen' }, '42': { month: 10, name: 'říjen' }, '43': { month: 10, name: 'říjen' }, '44': { month: 10, name: 'říjen' },
-  '45': { month: 11, name: 'listopad' }, '46': { month: 11, name: 'listopad' }, '47': { month: 11, name: 'listopad' }, '48': { month: 11, name: 'listopad' },
-  '49': { month: 12, name: 'prosinec' }, '50': { month: 12, name: 'prosinec' }, '51': { month: 12, name: 'prosinec' }, '52': { month: 12, name: 'prosinec' }
+  '01': { month: 1, name: 'January' }, '02': { month: 1, name: 'January' }, '03': { month: 1, name: 'January' }, '04': { month: 1, name: 'January' }, '05': { month: 2, name: 'February' },
+  '06': { month: 2, name: 'February' }, '07': { month: 2, name: 'February' }, '08': { month: 2, name: 'February' }, '09': { month: 3, name: 'March' },
+  '10': { month: 3, name: 'March' }, '11': { month: 3, name: 'March' }, '12': { month: 3, name: 'March' }, '13': { month: 3, name: 'March' }, '14': { month: 4, name: 'April' },
+  '15': { month: 4, name: 'April' }, '16': { month: 4, name: 'April' }, '17': { month: 4, name: 'April' }, '18': { month: 5, name: 'May' },
+  '19': { month: 5, name: 'May' }, '20': { month: 5, name: 'May' }, '21': { month: 5, name: 'May' }, '22': { month: 5, name: 'May' }, '23': { month: 6, name: 'June' },
+  '24': { month: 6, name: 'June' }, '25': { month: 6, name: 'June' }, '26': { month: 6, name: 'June' }, '27': { month: 7, name: 'July' },
+  '28': { month: 7, name: 'July' }, '29': { month: 7, name: 'July' }, '30': { month: 7, name: 'July' }, '31': { month: 8, name: 'August' },
+  '32': { month: 8, name: 'August' }, '33': { month: 8, name: 'August' }, '34': { month: 8, name: 'August' }, '35': { month: 8, name: 'August' },
+  '36': { month: 9, name: 'September' }, '37': { month: 9, name: 'September' }, '38': { month: 9, name: 'September' }, '39': { month: 9, name: 'September' },
+  '40': { month: 10, name: 'October' }, '41': { month: 10, name: 'October' }, '42': { month: 10, name: 'October' }, '43': { month: 10, name: 'October' }, '44': { month: 10, name: 'October' },
+  '45': { month: 11, name: 'November' }, '46': { month: 11, name: 'November' }, '47': { month: 11, name: 'November' }, '48': { month: 11, name: 'November' },
+  '49': { month: 12, name: 'December' }, '50': { month: 12, name: 'December' }, '51': { month: 12, name: 'December' }, '52': { month: 12, name: 'December' }
 };
 // Helper functions for alternative activities
 const getActivityLabel = (activity: string): string => {
