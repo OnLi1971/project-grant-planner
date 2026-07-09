@@ -70,20 +70,23 @@ export const PlanningChangesTrendChart: React.FC<Props> = ({ viewType, selectedQ
       if (!alloc && !dealloc) continue;
 
       const cwNum = parseInt(String(c.cw).replace('CW', ''), 10);
-      const key = `${c.cw}/${String(c.year).slice(-2)}`;
+      const key = `${c.cw}/${c.year}`;
+      const shortLabel = `${c.cw}/${String(c.year).slice(-2)}`;
       const sortKey = c.year * 100 + cwNum;
-      if (!byWeek[key]) byWeek[key] = { key, sortKey, allocated: 0, deallocated: 0 };
+      if (!byWeek[key]) byWeek[key] = { key, sortKey, allocated: 0, deallocated: 0, shortLabel } as any;
       if (alloc) byWeek[key].allocated += 1;
       if (dealloc) byWeek[key].deallocated += 1;
     }
     return Object.values(byWeek)
       .sort((a, b) => a.sortKey - b.sortKey)
-      .map(({ key, allocated, deallocated }) => ({
-        week: key,
+      .map(({ key, allocated, deallocated, shortLabel }: any) => ({
+        week: shortLabel,
+        fullWeek: key,
         Allocations: allocated,
         Deallocations: -deallocated,
         Net: allocated - deallocated,
       }));
+
   }, [rows, targetMonths]);
 
   return (
@@ -110,9 +113,21 @@ export const PlanningChangesTrendChart: React.FC<Props> = ({ viewType, selectedQ
               <XAxis dataKey="week" angle={-45} textAnchor="end" height={60} tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 11 }} />
               <Tooltip
+                cursor={{ fill: 'hsl(var(--muted) / 0.3)' }}
+                contentStyle={{
+                  backgroundColor: 'hsl(var(--popover))',
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '0.75rem',
+                  boxShadow: '0 10px 30px -10px hsl(0 0% 0% / 0.4)',
+                  padding: '10px 12px',
+                  color: 'hsl(var(--popover-foreground))',
+                }}
+                labelStyle={{ color: 'hsl(var(--foreground))', fontWeight: 600, marginBottom: 4 }}
+                itemStyle={{ padding: '2px 0' }}
                 formatter={(value: number, name: string) => [Math.abs(value), name]}
-                labelFormatter={(l) => `Week ${l}`}
+                labelFormatter={(_l, payload: any) => payload?.[0]?.payload?.fullWeek ?? _l}
               />
+
               <Legend />
               <Bar dataKey="Allocations" stackId="s" fill="hsl(142 71% 45%)" />
               <Bar dataKey="Deallocations" stackId="s" fill="hsl(0 72% 55%)" />
