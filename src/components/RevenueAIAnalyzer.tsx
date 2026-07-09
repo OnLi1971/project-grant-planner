@@ -115,10 +115,10 @@ export const RevenueAIAnalyzer: React.FC<RevenueAIAnalyzerProps> = ({
   // Aggregate planning data per month so AI can correlate revenue dips with
   // vacations/sick leave/free capacity (e.g. Christmas in December).
   const planningSummary = useMemo(() => {
-    if (!planningData || planningData.length === 0) return [];
+    if (!planningData || planningData.length === 0) return { overall_partial_engineers: [], months: [] };
     const allowed = new Set(RAIL_EL_ENGINEERS.map(n => normalizeName(n)));
     const filtered = planningData.filter(e => allowed.has(normalizeName(e.konstrukter)));
-    if (filtered.length === 0) return [];
+    if (filtered.length === 0) return { overall_partial_engineers: [], months: [] };
     const byMonth: Record<string, {
       total: number; project: number; vacation: number; sick: number;
       free: number; over: number;
@@ -128,6 +128,7 @@ export const RevenueAIAnalyzer: React.FC<RevenueAIAnalyzerProps> = ({
       partialByEngineer: Record<string, { weeks: number; totalHours: number; minHours: number }>;
     }> = {};
     const PARTIAL_THRESHOLD = 35;
+    const overallPartialByEngineer: Record<string, { weeks: number; totalHours: number; minHours: number; maxFreeCapacity: number; examples: { week: string; month: string; project: string; project_hours: number; free_capacity_hours: number }[] }> = {};
     for (const e of filtered) {
       const m = e.mesic;
       if (!m) continue;
@@ -155,10 +156,32 @@ export const RevenueAIAnalyzer: React.FC<RevenueAIAnalyzerProps> = ({
           cur.totalHours += h;
           cur.minHours = Math.min(cur.minHours, h);
           byMonth[m].partialByEngineer[e.konstrukter] = cur;
+
+          const freeCapacityHours = Math.max(0, 40 - h);
+          const overall = overallPartialByEngineer[e.konstrukter] || { weeks: 0, totalHours: 0, minHours: h, maxFreeCapacity: freeCapacityHours, examples: [] };
+          overall.weeks += 1;
+          overall.totalHours += h;
+          overall.minHours = Math.min(overall.minHours, h);
+          overall.maxFreeCapacity = Math.max(overall.maxFreeCapacity, freeCapacityHours);
+          if (overall.examples.length < 8) {
+            overall.examples.push({ week: e.cw, month: m, project: e.projekt, project_hours: h, free_capacity_hours: freeCapacityHours });
+          }
+          overallPartialByEngineer[e.konstrukter] = overall;
         }
       }
     }
-    return Object.entries(byMonth).map(([month, v]) => ({
+    const overall_partial_engineers = Object.entries(overallPartialByEngineer)
+      .map(([name, s]) => ({
+        name,
+        weeks_partial: s.weeks,
+        avg_project_hours_per_week: Math.round(s.totalHours / s.weeks),
+        min_project_hours_per_week: s.minHours,
+        max_free_capacity_hours_per_week: s.maxFreeCapacity,
+        examples: s.examples,
+      }))
+      .sort((a, b) => a.avg_project_hours_per_week - b.avg_project_hours_per_week || b.weeks_partial - a.weeks_partial);
+
+    const months = Object.entries(byMonth).map(([month, v]) => ({
       month,
       total_planned_hours: Math.round(v.total),
       billable_project_hours: Math.round(v.project),
@@ -182,6 +205,12 @@ export const RevenueAIAnalyzer: React.FC<RevenueAIAnalyzerProps> = ({
         }))
         .sort((a, b) => a.avg_project_hours_per_week - b.avg_project_hours_per_week),
     }));
+
+    return {
+      partial_definition: `Partially utilized = project allocation >0 and <=${PARTIAL_THRESHOLD} Mh/week. Example: 20Mh/week counts.`,
+      overall_partial_engineers,
+      months,
+    };
   }, [planningData]);
 
 
