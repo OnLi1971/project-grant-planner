@@ -32,6 +32,39 @@ export const RevenueAIAnalyzer: React.FC<RevenueAIAnalyzerProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Aggregate planning data per month so AI can correlate revenue dips with
+  // vacations/sick leave/free capacity (e.g. Christmas in December).
+  const planningSummary = useMemo(() => {
+    if (!planningData || planningData.length === 0) return [];
+    const byMonth: Record<string, {
+      total: number; project: number; vacation: number; sick: number;
+      free: number; over: number; vacationEngineers: Set<string>;
+    }> = {};
+    for (const e of planningData) {
+      const m = e.mesic;
+      if (!m) continue;
+      if (!byMonth[m]) byMonth[m] = { total: 0, project: 0, vacation: 0, sick: 0, free: 0, over: 0, vacationEngineers: new Set() };
+      const h = e.mhTyden || 0;
+      const p = (e.projekt || '').toUpperCase();
+      byMonth[m].total += h;
+      if (p === 'DOVOLENÁ' || p === 'DOVOLENA') { byMonth[m].vacation += h; byMonth[m].vacationEngineers.add(e.konstrukter); }
+      else if (p === 'NEMOC') byMonth[m].sick += h;
+      else if (p === 'FREE') byMonth[m].free += h;
+      else if (p === 'OVER') byMonth[m].over += h;
+      else byMonth[m].project += h;
+    }
+    return Object.entries(byMonth).map(([month, v]) => ({
+      month,
+      total_planned_hours: Math.round(v.total),
+      billable_project_hours: Math.round(v.project),
+      vacation_hours: Math.round(v.vacation),
+      sick_hours: Math.round(v.sick),
+      free_hours: Math.round(v.free),
+      overtime_hours: Math.round(v.over),
+      engineers_on_vacation: v.vacationEngineers.size,
+    }));
+  }, [planningData]);
+
   const callAI = async (q: string) => {
     setLoading(true);
     setError('');
@@ -51,7 +84,9 @@ export const RevenueAIAnalyzer: React.FC<RevenueAIAnalyzerProps> = ({
         currency,
         selectedQuarters,
         selectedMonths,
+        planningSummary,
       };
+
 
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-revenue-analyze`,
