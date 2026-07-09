@@ -38,18 +38,28 @@ export const RevenueAIAnalyzer: React.FC<RevenueAIAnalyzerProps> = ({
     if (!planningData || planningData.length === 0) return [];
     const byMonth: Record<string, {
       total: number; project: number; vacation: number; sick: number;
-      free: number; over: number; vacationEngineers: Set<string>;
+      free: number; over: number;
+      vacationEngineers: Set<string>;
+      freeByEngineer: Record<string, number>;
+      vacationByEngineer: Record<string, number>;
     }> = {};
     for (const e of planningData) {
       const m = e.mesic;
       if (!m) continue;
-      if (!byMonth[m]) byMonth[m] = { total: 0, project: 0, vacation: 0, sick: 0, free: 0, over: 0, vacationEngineers: new Set() };
+      if (!byMonth[m]) byMonth[m] = { total: 0, project: 0, vacation: 0, sick: 0, free: 0, over: 0, vacationEngineers: new Set(), freeByEngineer: {}, vacationByEngineer: {} };
       const h = e.mhTyden || 0;
       const p = (e.projekt || '').toUpperCase();
       byMonth[m].total += h;
-      if (p === 'DOVOLENÁ' || p === 'DOVOLENA') { byMonth[m].vacation += h; byMonth[m].vacationEngineers.add(e.konstrukter); }
+      if (p === 'DOVOLENÁ' || p === 'DOVOLENA') {
+        byMonth[m].vacation += h;
+        byMonth[m].vacationEngineers.add(e.konstrukter);
+        byMonth[m].vacationByEngineer[e.konstrukter] = (byMonth[m].vacationByEngineer[e.konstrukter] || 0) + h;
+      }
       else if (p === 'NEMOC') byMonth[m].sick += h;
-      else if (p === 'FREE') byMonth[m].free += h;
+      else if (p === 'FREE') {
+        byMonth[m].free += h;
+        byMonth[m].freeByEngineer[e.konstrukter] = (byMonth[m].freeByEngineer[e.konstrukter] || 0) + h;
+      }
       else if (p === 'OVER') byMonth[m].over += h;
       else byMonth[m].project += h;
     }
@@ -62,6 +72,12 @@ export const RevenueAIAnalyzer: React.FC<RevenueAIAnalyzerProps> = ({
       free_hours: Math.round(v.free),
       overtime_hours: Math.round(v.over),
       engineers_on_vacation: v.vacationEngineers.size,
+      free_engineers: Object.entries(v.freeByEngineer)
+        .map(([name, hours]) => ({ name, hours: Math.round(hours) }))
+        .sort((a, b) => b.hours - a.hours),
+      vacation_engineers: Object.entries(v.vacationByEngineer)
+        .map(([name, hours]) => ({ name, hours: Math.round(hours) }))
+        .sort((a, b) => b.hours - a.hours),
     }));
   }, [planningData]);
 
