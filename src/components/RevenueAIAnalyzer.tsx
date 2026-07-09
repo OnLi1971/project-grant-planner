@@ -50,13 +50,14 @@ export const RevenueAIAnalyzer: React.FC<RevenueAIAnalyzerProps> = ({
     const allowed = new Set(RAIL_EL_ENGINEERS.map(n => normalizeName(n)));
     const filtered = planningData.filter(e => allowed.has(normalizeName(e.konstrukter)));
     if (filtered.length === 0) return [];
+    const byMonth: Record<string, {
       total: number; project: number; vacation: number; sick: number;
       free: number; over: number;
       vacationEngineers: Set<string>;
       freeByEngineer: Record<string, number>;
       vacationByEngineer: Record<string, number>;
     }> = {};
-    for (const e of planningData) {
+    for (const e of filtered) {
       const m = e.mesic;
       if (!m) continue;
       if (!byMonth[m]) byMonth[m] = { total: 0, project: 0, vacation: 0, sick: 0, free: 0, over: 0, vacationEngineers: new Set(), freeByEngineer: {}, vacationByEngineer: {} };
