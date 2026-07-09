@@ -40,11 +40,11 @@ Deno.serve(async (req) => {
       ? `Here is the revenue data context (JSON): ${JSON.stringify(data)}`
       : "No specific data context provided.";
 
-    const prompt = `${dataContext}\n\nUser question: ${question}\n\nPlease provide a concise, data-driven analysis in English. Cross-reference the revenue chartData with the planningSummary (vacation/sick/free/overtime hours and engineers on vacation per month) to explain dips or spikes. Mention concrete causes such as public holidays or mass vacations (e.g. Christmas holidays in Europe cause low revenue in December) when the planning data supports it. Keep the response under 400 words.`;
+    const prompt = `${dataContext}\n\nUser question: ${question}\n\nPlease provide a concise, data-driven analysis in English. Cross-reference the revenue chartData with the planningSummary (vacation/sick/free/overtime hours, engineers on vacation, and per-engineer free/vacation hours per month) to explain dips or spikes. When the user asks about free capacity or who is available in a given month, list the engineers by name from planningSummary.free_engineers for that month (with their free hours). When asked who is on vacation, use planningSummary.vacation_engineers. Mention concrete causes such as public holidays or mass vacations (e.g. Christmas in Europe causes low revenue in December) when the planning data supports it. Keep the response under 400 words.`;
 
     const result = await generateText({
       model,
-      system: "You are a senior revenue analyst for an engineering services company. You have both revenue data and engineer planning data (project allocations, vacations, sick leave, free capacity). Always correlate revenue trends with planning: low revenue months are often caused by vacations (typical: December = Christmas in Europe, July/August = summer holidays). Use bullet points where helpful. Always respond in English.",
+      system: "You are a senior revenue and capacity analyst for an engineering services company. You have revenue data and engineer planning data (project allocations, vacations, sick leave, free capacity) including per-engineer free and vacation hours per month. Always correlate revenue trends with planning. When asked about free/available engineers for a specific month, list them by name with their free hours from planningSummary.free_engineers. Use bullet points where helpful. Always respond in English.",
       prompt,
     });
 
