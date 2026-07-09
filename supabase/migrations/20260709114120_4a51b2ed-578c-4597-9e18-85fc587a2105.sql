@@ -1,0 +1,1 @@
+GRANT SELECT ON public.planning_changes TO authenticated; GRANT ALL ON public.planning_changes TO service_role;
