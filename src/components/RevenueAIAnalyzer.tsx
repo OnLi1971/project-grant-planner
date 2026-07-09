@@ -6,6 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sparkles, Loader2, GitCompare } from 'lucide-react';
 import type { PlanningEntry } from '@/types/planning';
+import { RAIL_EL_ENGINEERS } from '@/constants/railElEngineers';
+import { normalizeName } from '@/utils/nameNormalization';
 
 interface RevenueAIAnalyzerProps {
   chartData: any[];
