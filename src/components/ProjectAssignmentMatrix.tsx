@@ -2050,7 +2050,11 @@ export const ProjectAssignmentMatrix = ({
             selectedQuarters={[]}
             selectedMonths={[]}
           />
-          <PlanningAIAnalyzer />
+          <PlanningAIAnalyzer
+            planningData={planningData}
+            visibleWeeks={weeks}
+            visibleEngineerNames={filteredEngineers.map(engineer => displayNameMap[engineer] || engineer)}
+          />
         </div>
       )}
     </div>

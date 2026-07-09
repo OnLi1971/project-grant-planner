@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,8 +7,22 @@ import { Sparkles, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { RAIL_EL_ENGINEERS } from '@/constants/railElEngineers';
 import { normalizeName } from '@/utils/nameNormalization';
+import type { PlanningEntry } from '@/types/planning';
 
-export const PlanningAIAnalyzer: React.FC = () => {
+interface PlanningAIAnalyzerProps {
+  planningData?: PlanningEntry[];
+  visibleWeeks?: string[];
+  visibleEngineerNames?: string[];
+}
+
+const PARTIAL_UTILIZATION_THRESHOLD = 35;
+const REGIME_PROJECTS = new Set(['FREE', 'DOVOLENÁ', 'DOVOLENA', 'NEMOC', 'OVER', 'DEPARTED']);
+
+export const PlanningAIAnalyzer: React.FC<PlanningAIAnalyzerProps> = ({
+  planningData = [],
+  visibleWeeks = [],
+  visibleEngineerNames = [],
+}) => {
   const [question, setQuestion] = useState('');
   const [analysis, setAnalysis] = useState('');
   const [loading, setLoading] = useState(false);
@@ -70,6 +84,133 @@ export const PlanningAIAnalyzer: React.FC = () => {
     })();
   }, []);
 
+  const planningSummary = useMemo(() => {
+    if (planningData.length === 0) {
+      return {
+        partial_definition: `Partially utilized = project allocation >0 and <=${PARTIAL_UTILIZATION_THRESHOLD} Mh/week. Example: 20Mh/week counts.`,
+        overall_partial_engineers: [],
+        months: [],
+      };
+    }
+
+    const visibleEngineerSet = visibleEngineerNames.length > 0
+      ? new Set(visibleEngineerNames.map(name => normalizeName(name)))
+      : new Set(RAIL_EL_ENGINEERS.map(name => normalizeName(name)));
+    const visibleWeekSet = visibleWeeks.length > 0 ? new Set(visibleWeeks) : null;
+
+    const filtered = planningData.filter(entry => {
+      const engineerKey = normalizeName(entry.konstrukter);
+      return visibleEngineerSet.has(engineerKey) && (!visibleWeekSet || visibleWeekSet.has(entry.cw));
+    });
+
+    const overallPartial: Record<string, {
+      weeks: number;
+      totalProjectHours: number;
+      minProjectHours: number;
+      maxFreeCapacity: number;
+      projects: Set<string>;
+      examples: { week: string; month: string; project: string; project_hours: number; free_capacity_hours: number }[];
+    }> = {};
+
+    const byMonth: Record<string, {
+      freeByEngineer: Record<string, number>;
+      partialByEngineer: Record<string, {
+        weeks: number;
+        totalProjectHours: number;
+        minProjectHours: number;
+        maxFreeCapacity: number;
+        projects: Set<string>;
+      }>;
+    }> = {};
+
+    for (const entry of filtered) {
+      const month = entry.mesic || 'Unknown';
+      const project = entry.projekt || 'FREE';
+      const normalizedProject = project.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+      const hours = Number(entry.mhTyden || 0);
+
+      if (!byMonth[month]) {
+        byMonth[month] = { freeByEngineer: {}, partialByEngineer: {} };
+      }
+
+      if (normalizedProject === 'FREE') {
+        byMonth[month].freeByEngineer[entry.konstrukter] = (byMonth[month].freeByEngineer[entry.konstrukter] || 0) + hours;
+        continue;
+      }
+
+      if (REGIME_PROJECTS.has(normalizedProject) || hours <= 0 || hours > PARTIAL_UTILIZATION_THRESHOLD) {
+        continue;
+      }
+
+      const freeCapacityHours = Math.max(0, 40 - hours);
+      const overall = overallPartial[entry.konstrukter] || {
+        weeks: 0,
+        totalProjectHours: 0,
+        minProjectHours: hours,
+        maxFreeCapacity: freeCapacityHours,
+        projects: new Set<string>(),
+        examples: [],
+      };
+      overall.weeks += 1;
+      overall.totalProjectHours += hours;
+      overall.minProjectHours = Math.min(overall.minProjectHours, hours);
+      overall.maxFreeCapacity = Math.max(overall.maxFreeCapacity, freeCapacityHours);
+      overall.projects.add(project);
+      if (overall.examples.length < 8) {
+        overall.examples.push({
+          week: entry.cw,
+          month,
+          project,
+          project_hours: hours,
+          free_capacity_hours: freeCapacityHours,
+        });
+      }
+      overallPartial[entry.konstrukter] = overall;
+
+      const monthly = byMonth[month].partialByEngineer[entry.konstrukter] || {
+        weeks: 0,
+        totalProjectHours: 0,
+        minProjectHours: hours,
+        maxFreeCapacity: freeCapacityHours,
+        projects: new Set<string>(),
+      };
+      monthly.weeks += 1;
+      monthly.totalProjectHours += hours;
+      monthly.minProjectHours = Math.min(monthly.minProjectHours, hours);
+      monthly.maxFreeCapacity = Math.max(monthly.maxFreeCapacity, freeCapacityHours);
+      monthly.projects.add(project);
+      byMonth[month].partialByEngineer[entry.konstrukter] = monthly;
+    }
+
+    const mapPartial = (items: typeof overallPartial) => Object.entries(items)
+      .map(([name, stats]) => ({
+        name,
+        weeks_partial: stats.weeks,
+        avg_project_hours_per_week: Math.round(stats.totalProjectHours / stats.weeks),
+        min_project_hours_per_week: stats.minProjectHours,
+        max_free_capacity_hours_per_week: stats.maxFreeCapacity,
+        projects: Array.from(stats.projects).sort(),
+        examples: 'examples' in stats ? stats.examples : undefined,
+      }))
+      .sort((a, b) => a.avg_project_hours_per_week - b.avg_project_hours_per_week || b.weeks_partial - a.weeks_partial);
+
+    const months = Object.entries(byMonth).map(([month, stats]) => ({
+      month,
+      partial_engineers: mapPartial(stats.partialByEngineer as typeof overallPartial),
+      free_engineers: Object.entries(stats.freeByEngineer)
+        .map(([name, hours]) => ({ name, free_hours: Math.round(hours) }))
+        .sort((a, b) => b.free_hours - a.free_hours),
+    }));
+
+    return {
+      partial_definition: `Partially utilized = project allocation >0 and <=${PARTIAL_UTILIZATION_THRESHOLD} Mh/week. Example: 20Mh/week counts.`,
+      visible_engineers_count: visibleEngineerSet.size,
+      visible_weeks_count: visibleWeekSet?.size || null,
+      overall_partial_engineers: mapPartial(overallPartial),
+      months,
+    };
+  }, [planningData, visibleEngineerNames, visibleWeeks]);
+
   const callAI = async (q: string) => {
     setLoading(true);
     setError('');
@@ -83,7 +224,7 @@ export const PlanningAIAnalyzer: React.FC = () => {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
-          body: JSON.stringify({ data: { planningHistoryStats: historyStats }, question: q }),
+          body: JSON.stringify({ data: { planningHistoryStats: historyStats, planningSummary }, question: q }),
         }
       );
       if (!res.ok) {
@@ -107,6 +248,10 @@ export const PlanningAIAnalyzer: React.FC = () => {
     {
       label: 'Team Stability',
       question: `Assess team stability using planningHistoryStats. Are we adding more work than we lose? Which engineers churn the most? Any warning signs?`,
+    },
+    {
+      label: 'Partial Capacity',
+      question: `List partially utilized engineers from planningSummary.overall_partial_engineers. Include engineers with 20Mh/week, 25Mh/week or any project allocation <=35Mh/week. Show name, avg_project_hours_per_week, weeks_partial, max_free_capacity_hours_per_week and example weeks/projects. Do not answer only with FREE engineers.`,
     },
   ];
 
