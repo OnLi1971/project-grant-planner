@@ -2042,6 +2042,17 @@ export const ProjectAssignmentMatrix = ({
           viewMode={viewMode}
         />
       </Card>
+
+      {!customerViewMode && (
+        <div className="mt-6 space-y-6">
+          <PlanningChangesTrendChart
+            viewType="mesic"
+            selectedQuarters={[]}
+            selectedMonths={[]}
+          />
+          <PlanningAIAnalyzer />
+        </div>
+      )}
     </div>
     </TooltipProvider>
   );
