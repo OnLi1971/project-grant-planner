@@ -296,9 +296,16 @@ export const PlanningEditor: React.FC = () => {
     });
   };
 
-  const updateCell = (konstrukter: string, cw: string, field: 'projekt' | 'mhTyden', value: string | number) => {
+  const REGIME_ACTIVITIES = ['FREE', 'DOVOLENÁ', 'NEMOC', 'OVER'];
+
+  const updateCell = async (konstrukter: string, cw: string, field: 'projekt' | 'mhTyden', value: string | number) => {
     if (field === 'projekt') {
-      updatePlanningEntry(konstrukter, cw, value as string);
+      const projekt = value as string;
+      await updatePlanningEntry(konstrukter, cw, projekt);
+      // Auto-normalize regime activities to 40h/week
+      if (REGIME_ACTIVITIES.includes(projekt)) {
+        await updatePlanningHours(konstrukter, cw, 40);
+      }
     } else if (field === 'mhTyden') {
       updatePlanningHours(konstrukter, cw, value as number);
     }
