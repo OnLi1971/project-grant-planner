@@ -9,6 +9,8 @@ import { ChevronDown, Filter, History, Save, Trash2, Users, X, Download } from '
 import * as XLSX from 'xlsx';
 import { PlanningHistoryDialog } from './PlanningHistoryDialog';
 import { ProjectAllocationDialog, AllocationEntry } from './ProjectAllocationDialog';
+import { PlanningChangesTrendChart } from './PlanningChangesTrendChart';
+import { PlanningAIAnalyzer } from './PlanningAIAnalyzer';
 import { usePlanning } from '@/contexts/PlanningContext';
 import { customers, projectManagers, programs, projects } from '@/data/projectsData';
 import { getWeek } from 'date-fns';
