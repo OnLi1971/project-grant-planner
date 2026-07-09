@@ -184,6 +184,7 @@ export const RevenueAIAnalyzer: React.FC<RevenueAIAnalyzerProps> = ({
         selectedQuarters,
         selectedMonths,
         planningSummary,
+        planningHistoryStats: historyStats,
       };
 
 
