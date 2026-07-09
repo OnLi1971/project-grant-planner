@@ -111,8 +111,9 @@ export const PlanningChangesTrendChart: React.FC<Props> = ({ viewType, selectedQ
                 labelFormatter={(l) => `Week ${l}`}
               />
               <Legend />
-              <Bar dataKey="Allocations" stackId="s" fill="hsl(var(--primary))" />
-              <Bar dataKey="Deallocations" stackId="s" fill="hsl(0 70% 55%)" />
+              <Bar dataKey="Allocations" stackId="s" fill="hsl(142 71% 45%)" />
+              <Bar dataKey="Deallocations" stackId="s" fill="hsl(0 72% 55%)" />
+
             </BarChart>
           </ResponsiveContainer>
         )}
