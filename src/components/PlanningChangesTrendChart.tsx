@@ -59,8 +59,11 @@ export const PlanningChangesTrendChart: React.FC<Props> = ({ viewType, selectedQ
       const cwKey = `${c.cw}-${c.year}`;
       const fractions = getWeekToMonthFractions(cwKey);
       if (fractions.length === 0) continue;
-      const inPeriod = fractions.some(f => targetMonths.has(f.monthKey));
-      if (!inPeriod) continue;
+      if (targetMonths.size > 0) {
+        const inPeriod = fractions.some(f => targetMonths.has(f.monthKey));
+        if (!inPeriod) continue;
+      }
+
 
       const alloc = isFreeish(c.old_value) && !isRegime(c.new_value);
       const dealloc = !isRegime(c.old_value) && isFreeish(c.new_value);
