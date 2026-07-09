@@ -1041,6 +1041,13 @@ export const RevenueOverview = ({
              planningData={planningData}
            />
 
+           <PlanningChangesTrendChart
+             viewType={viewType}
+             selectedQuarters={selectedQuarters}
+             selectedMonths={selectedMonths}
+           />
+
+
            {/* Celkový obrat */}
            <div className="mb-6">
               <div className="text-2xl font-bold text-primary">
