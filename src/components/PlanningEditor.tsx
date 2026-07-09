@@ -10,7 +10,20 @@ import { Label } from '@/components/ui/label';
 import { Calendar, Edit, Save, X, Plus, MousePointer, MousePointer2, FolderPlus, Copy } from 'lucide-react';
 import { usePlanning } from '@/contexts/PlanningContext';
 import { getProjectColor, getCustomerByProjectCode } from '@/utils/colorSystem';
-import { getWeek, getISOWeek } from 'date-fns';
+import { getWeek, getISOWeek, setISOWeek, setISOWeekYear, startOfISOWeek, endOfISOWeek, format } from 'date-fns';
+
+// Vrátí rozsah dat pro ISO týden ve formátu "6.7.–12.7."
+const getWeekDateRange = (cwString: string): string => {
+  const match = cwString.match(/CW(\d{1,2})-(\d{4})/);
+  if (!match) return '';
+  const week = parseInt(match[1], 10);
+  const year = parseInt(match[2], 10);
+  let d = setISOWeekYear(new Date(year, 0, 4), year);
+  d = setISOWeek(d, week);
+  const start = startOfISOWeek(d);
+  const end = endOfISOWeek(d);
+  return `${format(start, 'd.M.')}–${format(end, 'd.M.')}`;
+};
 import { supabase } from '@/integrations/supabase/client';
 import { normalizeName, findEngineerByName } from '@/utils/nameNormalization';
 import { isEngineerDepartedForWeek } from '@/utils/engineerDeparture';
@@ -705,7 +718,10 @@ export const PlanningEditor: React.FC = () => {
                 if (isDeparted) {
                   return (
                     <tr key={week.cw} className="border-b bg-gray-100 dark:bg-gray-900/50">
-                      <td className="p-3 font-mono font-medium text-muted-foreground">{week.cw}</td>
+                      <td className="p-3 font-mono font-medium text-muted-foreground">
+                        <div>{week.cw}</div>
+                        <div className="text-xs text-muted-foreground/70 font-sans">{getWeekDateRange(week.cw)}</div>
+                      </td>
                       <td className="p-3 text-muted-foreground">{week.mesic}</td>
                       <td className="p-3 text-center" colSpan={3}>
                         <div className="flex items-center justify-center gap-2 text-red-500">
@@ -734,7 +750,10 @@ export const PlanningEditor: React.FC = () => {
                     {isSelected && (
                       <div className="absolute inset-0 bg-primary/20 rounded" />
                     )}
-                    <span className="relative z-10">{week.cw}</span>
+                    <span className="relative z-10">
+                      {week.cw}
+                      <div className="text-xs text-muted-foreground/70 font-sans font-normal">{getWeekDateRange(week.cw)}</div>
+                    </span>
                   </td>
                   <td className="p-3 text-muted-foreground relative">
                     {isSelected && (
