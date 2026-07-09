@@ -113,9 +113,21 @@ export const PlanningChangesTrendChart: React.FC<Props> = ({ viewType, selectedQ
               <XAxis dataKey="week" angle={-45} textAnchor="end" height={60} tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 11 }} />
               <Tooltip
+                cursor={{ fill: 'hsl(var(--muted) / 0.3)' }}
+                contentStyle={{
+                  backgroundColor: 'hsl(var(--popover))',
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '0.75rem',
+                  boxShadow: '0 10px 30px -10px hsl(0 0% 0% / 0.4)',
+                  padding: '10px 12px',
+                  color: 'hsl(var(--popover-foreground))',
+                }}
+                labelStyle={{ color: 'hsl(var(--foreground))', fontWeight: 600, marginBottom: 4 }}
+                itemStyle={{ padding: '2px 0' }}
                 formatter={(value: number, name: string) => [Math.abs(value), name]}
-                labelFormatter={(l) => `Week ${l}`}
+                labelFormatter={(_l, payload: any) => payload?.[0]?.payload?.fullWeek ?? _l}
               />
+
               <Legend />
               <Bar dataKey="Allocations" stackId="s" fill="hsl(142 71% 45%)" />
               <Bar dataKey="Deallocations" stackId="s" fill="hsl(0 72% 55%)" />
