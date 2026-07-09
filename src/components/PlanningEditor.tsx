@@ -718,7 +718,10 @@ export const PlanningEditor: React.FC = () => {
                 if (isDeparted) {
                   return (
                     <tr key={week.cw} className="border-b bg-gray-100 dark:bg-gray-900/50">
-                      <td className="p-3 font-mono font-medium text-muted-foreground">{week.cw}</td>
+                      <td className="p-3 font-mono font-medium text-muted-foreground">
+                        <div>{week.cw}</div>
+                        <div className="text-xs text-muted-foreground/70 font-sans">{getWeekDateRange(week.cw)}</div>
+                      </td>
                       <td className="p-3 text-muted-foreground">{week.mesic}</td>
                       <td className="p-3 text-center" colSpan={3}>
                         <div className="flex items-center justify-center gap-2 text-red-500">
