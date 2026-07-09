@@ -301,11 +301,11 @@ export const PlanningEditor: React.FC = () => {
   const updateCell = async (konstrukter: string, cw: string, field: 'projekt' | 'mhTyden', value: string | number) => {
     if (field === 'projekt') {
       const projekt = value as string;
-      await updatePlanningEntry(konstrukter, cw, projekt);
-      // Auto-normalize regime activities to 40h/week
+      // Auto-normalize regime activities to 40h/week — set hours FIRST so realtime reload doesn't overwrite
       if (REGIME_ACTIVITIES.includes(projekt)) {
         await updatePlanningHours(konstrukter, cw, 40);
       }
+      await updatePlanningEntry(konstrukter, cw, projekt);
     } else if (field === 'mhTyden') {
       updatePlanningHours(konstrukter, cw, value as number);
     }
