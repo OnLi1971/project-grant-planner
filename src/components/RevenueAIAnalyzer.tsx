@@ -25,6 +25,7 @@ export const RevenueAIAnalyzer: React.FC<RevenueAIAnalyzerProps> = ({
   currency,
   selectedQuarters,
   selectedMonths,
+  planningData,
 }) => {
   const [question, setQuestion] = useState('');
   const [analysis, setAnalysis] = useState('');
