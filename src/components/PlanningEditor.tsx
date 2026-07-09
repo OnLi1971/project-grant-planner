@@ -750,7 +750,10 @@ export const PlanningEditor: React.FC = () => {
                     {isSelected && (
                       <div className="absolute inset-0 bg-primary/20 rounded" />
                     )}
-                    <span className="relative z-10">{week.cw}</span>
+                    <span className="relative z-10">
+                      {week.cw}
+                      <div className="text-xs text-muted-foreground/70 font-sans font-normal">{getWeekDateRange(week.cw)}</div>
+                    </span>
                   </td>
                   <td className="p-3 text-muted-foreground relative">
                     {isSelected && (
