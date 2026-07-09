@@ -70,20 +70,23 @@ export const PlanningChangesTrendChart: React.FC<Props> = ({ viewType, selectedQ
       if (!alloc && !dealloc) continue;
 
       const cwNum = parseInt(String(c.cw).replace('CW', ''), 10);
-      const key = `${c.cw}/${String(c.year).slice(-2)}`;
+      const key = `${c.cw}/${c.year}`;
+      const shortLabel = `${c.cw}/${String(c.year).slice(-2)}`;
       const sortKey = c.year * 100 + cwNum;
-      if (!byWeek[key]) byWeek[key] = { key, sortKey, allocated: 0, deallocated: 0 };
+      if (!byWeek[key]) byWeek[key] = { key, sortKey, allocated: 0, deallocated: 0, shortLabel } as any;
       if (alloc) byWeek[key].allocated += 1;
       if (dealloc) byWeek[key].deallocated += 1;
     }
     return Object.values(byWeek)
       .sort((a, b) => a.sortKey - b.sortKey)
-      .map(({ key, allocated, deallocated }) => ({
-        week: key,
+      .map(({ key, allocated, deallocated, shortLabel }: any) => ({
+        week: shortLabel,
+        fullWeek: key,
         Allocations: allocated,
         Deallocations: -deallocated,
         Net: allocated - deallocated,
       }));
+
   }, [rows, targetMonths]);
 
   return (
