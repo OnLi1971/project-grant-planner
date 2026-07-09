@@ -223,6 +223,10 @@ export const RevenueAIAnalyzer: React.FC<RevenueAIAnalyzerProps> = ({
       label: 'Trend Analysis',
       question: `Describe the revenue trend over the displayed periods. What patterns, risks, or opportunities do you see?`,
     },
+    {
+      label: 'Planning History (30d)',
+      question: `Summarize the last 30 days of planning changes from planningHistoryStats. Explain what allocations, deallocations, net change, net allocation ratio and stability index mean for team health. Highlight top engineers by net change and give a few concrete recent examples.`,
+    },
   ];
 
   const runCompare = () => {
