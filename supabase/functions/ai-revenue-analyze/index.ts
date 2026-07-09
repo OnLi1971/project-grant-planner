@@ -40,11 +40,11 @@ Deno.serve(async (req) => {
       ? `Here is the revenue data context (JSON): ${JSON.stringify(data)}`
       : "No specific data context provided.";
 
-    const prompt = `${dataContext}\n\nUser question: ${question}\n\nPlease provide a concise, data-driven analysis in English. Focus on actionable insights and key differences. Keep the response under 400 words.`;
+    const prompt = `${dataContext}\n\nUser question: ${question}\n\nPlease provide a concise, data-driven analysis in English. Cross-reference the revenue chartData with the planningSummary (vacation/sick/free/overtime hours and engineers on vacation per month) to explain dips or spikes. Mention concrete causes such as public holidays or mass vacations (e.g. Christmas holidays in Europe cause low revenue in December) when the planning data supports it. Keep the response under 400 words.`;
 
     const result = await generateText({
       model,
-      system: "You are a senior revenue analyst. Analyze the provided data and answer the user's question with clear, concise insights. Use bullet points where helpful. Always respond in English.",
+      system: "You are a senior revenue analyst for an engineering services company. You have both revenue data and engineer planning data (project allocations, vacations, sick leave, free capacity). Always correlate revenue trends with planning: low revenue months are often caused by vacations (typical: December = Christmas in Europe, July/August = summer holidays). Use bullet points where helpful. Always respond in English.",
       prompt,
     });
 
