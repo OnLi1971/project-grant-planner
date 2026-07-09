@@ -125,11 +125,13 @@ export const RevenueAIAnalyzer: React.FC<RevenueAIAnalyzerProps> = ({
       vacationEngineers: Set<string>;
       freeByEngineer: Record<string, number>;
       vacationByEngineer: Record<string, number>;
+      partialByEngineer: Record<string, { weeks: number; totalHours: number; minHours: number }>;
     }> = {};
+    const PARTIAL_THRESHOLD = 35;
     for (const e of filtered) {
       const m = e.mesic;
       if (!m) continue;
-      if (!byMonth[m]) byMonth[m] = { total: 0, project: 0, vacation: 0, sick: 0, free: 0, over: 0, vacationEngineers: new Set(), freeByEngineer: {}, vacationByEngineer: {} };
+      if (!byMonth[m]) byMonth[m] = { total: 0, project: 0, vacation: 0, sick: 0, free: 0, over: 0, vacationEngineers: new Set(), freeByEngineer: {}, vacationByEngineer: {}, partialByEngineer: {} };
       const h = e.mhTyden || 0;
       const p = (e.projekt || '').toUpperCase();
       byMonth[m].total += h;
@@ -144,7 +146,17 @@ export const RevenueAIAnalyzer: React.FC<RevenueAIAnalyzerProps> = ({
         byMonth[m].freeByEngineer[e.konstrukter] = (byMonth[m].freeByEngineer[e.konstrukter] || 0) + h;
       }
       else if (p === 'OVER') byMonth[m].over += h;
-      else byMonth[m].project += h;
+      else {
+        byMonth[m].project += h;
+        // Partially utilized = engineer with weekly project hours <= 35h
+        if (h > 0 && h <= PARTIAL_THRESHOLD) {
+          const cur = byMonth[m].partialByEngineer[e.konstrukter] || { weeks: 0, totalHours: 0, minHours: h };
+          cur.weeks += 1;
+          cur.totalHours += h;
+          cur.minHours = Math.min(cur.minHours, h);
+          byMonth[m].partialByEngineer[e.konstrukter] = cur;
+        }
+      }
     }
     return Object.entries(byMonth).map(([month, v]) => ({
       month,
@@ -161,8 +173,17 @@ export const RevenueAIAnalyzer: React.FC<RevenueAIAnalyzerProps> = ({
       vacation_engineers: Object.entries(v.vacationByEngineer)
         .map(([name, hours]) => ({ name, hours: Math.round(hours) }))
         .sort((a, b) => b.hours - a.hours),
+      partial_engineers: Object.entries(v.partialByEngineer)
+        .map(([name, s]) => ({
+          name,
+          weeks_partial: s.weeks,
+          avg_project_hours_per_week: Math.round(s.totalHours / s.weeks),
+          min_project_hours_per_week: s.minHours,
+        }))
+        .sort((a, b) => a.avg_project_hours_per_week - b.avg_project_hours_per_week),
     }));
   }, [planningData]);
+
 
   const callAI = async (q: string) => {
     setLoading(true);
