@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Sparkles, Loader2, GitCompare } from 'lucide-react';
 import type { PlanningEntry } from '@/types/planning';
 
 interface RevenueAIAnalyzerProps {
@@ -31,6 +32,14 @@ export const RevenueAIAnalyzer: React.FC<RevenueAIAnalyzerProps> = ({
   const [analysis, setAnalysis] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [compareA, setCompareA] = useState<string>('');
+  const [compareB, setCompareB] = useState<string>('');
+
+  const periodOptions = useMemo(
+    () => chartData.map((d: any) => d.month).filter(Boolean),
+    [chartData]
+  );
+  const periodLabel = viewType === 'kvartal' ? 'quarters' : 'months';
 
   // Aggregate planning data per month so AI can correlate revenue dips with
   // vacations/sick leave/free capacity (e.g. Christmas in December).
@@ -132,10 +141,6 @@ export const RevenueAIAnalyzer: React.FC<RevenueAIAnalyzerProps> = ({
 
   const presets = [
     {
-      label: 'Compare Q3 & Q4',
-      question: `Compare Q3 and Q4 revenue. Identify key differences, growth/decline drivers, and highlight top projects in each quarter.`,
-    },
-    {
       label: 'Top Projects',
       question: `Analyze the top projects by revenue. What are the main revenue drivers and which projects contribute most?`,
     },
@@ -144,6 +149,13 @@ export const RevenueAIAnalyzer: React.FC<RevenueAIAnalyzerProps> = ({
       question: `Describe the revenue trend over the displayed periods. What patterns, risks, or opportunities do you see?`,
     },
   ];
+
+  const runCompare = () => {
+    if (!compareA || !compareB) return;
+    callAI(
+      `Compare ${compareA} and ${compareB} revenue. Identify key differences, growth/decline drivers, and highlight top projects in each period. Correlate with planning data (vacations, sick leave, free capacity) if relevant.`
+    );
+  };
 
   return (
     <Card className="shadow-card-custom">
@@ -167,6 +179,40 @@ export const RevenueAIAnalyzer: React.FC<RevenueAIAnalyzerProps> = ({
             </Button>
           ))}
         </div>
+
+        <div className="flex flex-wrap items-center gap-2 p-3 rounded-md border bg-muted/30">
+          <GitCompare className="h-4 w-4 text-primary" />
+          <span className="text-sm font-medium">Compare {periodLabel}:</span>
+          <Select value={compareA} onValueChange={setCompareA} disabled={loading}>
+            <SelectTrigger className="w-[140px] h-8">
+              <SelectValue placeholder="Select A" />
+            </SelectTrigger>
+            <SelectContent>
+              {periodOptions.map((o) => (
+                <SelectItem key={`a-${o}`} value={o}>{o}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <span className="text-sm text-muted-foreground">vs</span>
+          <Select value={compareB} onValueChange={setCompareB} disabled={loading}>
+            <SelectTrigger className="w-[140px] h-8">
+              <SelectValue placeholder="Select B" />
+            </SelectTrigger>
+            <SelectContent>
+              {periodOptions.map((o) => (
+                <SelectItem key={`b-${o}`} value={o}>{o}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            size="sm"
+            onClick={runCompare}
+            disabled={loading || !compareA || !compareB || compareA === compareB}
+          >
+            Compare
+          </Button>
+        </div>
+
 
         <div className="flex gap-2">
           <Input
