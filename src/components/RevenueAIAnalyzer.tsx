@@ -32,6 +32,14 @@ export const RevenueAIAnalyzer: React.FC<RevenueAIAnalyzerProps> = ({
   const [analysis, setAnalysis] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [compareA, setCompareA] = useState<string>('');
+  const [compareB, setCompareB] = useState<string>('');
+
+  const periodOptions = useMemo(
+    () => chartData.map((d: any) => d.month).filter(Boolean),
+    [chartData]
+  );
+  const periodLabel = viewType === 'kvartal' ? 'quarters' : 'months';
 
   // Aggregate planning data per month so AI can correlate revenue dips with
   // vacations/sick leave/free capacity (e.g. Christmas in December).
