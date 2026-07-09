@@ -6,6 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sparkles, Loader2, GitCompare } from 'lucide-react';
 import type { PlanningEntry } from '@/types/planning';
+import { RAIL_EL_ENGINEERS } from '@/constants/railElEngineers';
+import { normalizeName } from '@/utils/nameNormalization';
 
 interface RevenueAIAnalyzerProps {
   chartData: any[];
@@ -45,6 +47,9 @@ export const RevenueAIAnalyzer: React.FC<RevenueAIAnalyzerProps> = ({
   // vacations/sick leave/free capacity (e.g. Christmas in December).
   const planningSummary = useMemo(() => {
     if (!planningData || planningData.length === 0) return [];
+    const allowed = new Set(RAIL_EL_ENGINEERS.map(n => normalizeName(n)));
+    const filtered = planningData.filter(e => allowed.has(normalizeName(e.konstrukter)));
+    if (filtered.length === 0) return [];
     const byMonth: Record<string, {
       total: number; project: number; vacation: number; sick: number;
       free: number; over: number;
@@ -52,7 +57,7 @@ export const RevenueAIAnalyzer: React.FC<RevenueAIAnalyzerProps> = ({
       freeByEngineer: Record<string, number>;
       vacationByEngineer: Record<string, number>;
     }> = {};
-    for (const e of planningData) {
+    for (const e of filtered) {
       const m = e.mesic;
       if (!m) continue;
       if (!byMonth[m]) byMonth[m] = { total: 0, project: 0, vacation: 0, sick: 0, free: 0, over: 0, vacationEngineers: new Set(), freeByEngineer: {}, vacationByEngineer: {} };
