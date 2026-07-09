@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList } from 'recharts';
 import { TrendingUp, Filter, RefreshCw, Sparkles } from 'lucide-react';
 import { RevenueAIAnalyzer } from './RevenueAIAnalyzer';
+import { PlanningChangesTrendChart } from './PlanningChangesTrendChart';
 import { Button } from '@/components/ui/button';
 import { getProjectColorWithIndex } from '@/utils/colorSystem';
 import { getWeekToMonthFractions, getWorkingDaysInMonth as getWorkingDaysInMonthFromUtils } from '@/utils/workingDays';
