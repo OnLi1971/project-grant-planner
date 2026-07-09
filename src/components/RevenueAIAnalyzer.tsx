@@ -47,7 +47,9 @@ export const RevenueAIAnalyzer: React.FC<RevenueAIAnalyzerProps> = ({
   // vacations/sick leave/free capacity (e.g. Christmas in December).
   const planningSummary = useMemo(() => {
     if (!planningData || planningData.length === 0) return [];
-    const byMonth: Record<string, {
+    const allowed = new Set(RAIL_EL_ENGINEERS.map(n => normalizeName(n)));
+    const filtered = planningData.filter(e => allowed.has(normalizeName(e.konstrukter)));
+    if (filtered.length === 0) return [];
       total: number; project: number; vacation: number; sick: number;
       free: number; over: number;
       vacationEngineers: Set<string>;
