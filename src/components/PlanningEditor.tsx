@@ -10,7 +10,20 @@ import { Label } from '@/components/ui/label';
 import { Calendar, Edit, Save, X, Plus, MousePointer, MousePointer2, FolderPlus, Copy } from 'lucide-react';
 import { usePlanning } from '@/contexts/PlanningContext';
 import { getProjectColor, getCustomerByProjectCode } from '@/utils/colorSystem';
-import { getWeek, getISOWeek } from 'date-fns';
+import { getWeek, getISOWeek, setISOWeek, setISOWeekYear, startOfISOWeek, endOfISOWeek, format } from 'date-fns';
+
+// Vrátí rozsah dat pro ISO týden ve formátu "6.7.–12.7."
+const getWeekDateRange = (cwString: string): string => {
+  const match = cwString.match(/CW(\d{1,2})-(\d{4})/);
+  if (!match) return '';
+  const week = parseInt(match[1], 10);
+  const year = parseInt(match[2], 10);
+  let d = setISOWeekYear(new Date(year, 0, 4), year);
+  d = setISOWeek(d, week);
+  const start = startOfISOWeek(d);
+  const end = endOfISOWeek(d);
+  return `${format(start, 'd.M.')}–${format(end, 'd.M.')}`;
+};
 import { supabase } from '@/integrations/supabase/client';
 import { normalizeName, findEngineerByName } from '@/utils/nameNormalization';
 import { isEngineerDepartedForWeek } from '@/utils/engineerDeparture';
