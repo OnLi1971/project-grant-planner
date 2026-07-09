@@ -1037,6 +1037,7 @@ export const RevenueOverview = ({
              currency={currency}
              selectedQuarters={selectedQuarters}
              selectedMonths={selectedMonths}
+             planningData={planningData}
            />
 
            {/* Celkový obrat */}
