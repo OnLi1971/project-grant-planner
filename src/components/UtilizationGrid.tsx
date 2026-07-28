@@ -205,7 +205,16 @@ export const UtilizationGrid: React.FC = () => {
     }
   };
 
-  // Build hours lookup: engineerSlug -> cwKey -> totalHours (only project hours)
+  // Activities where 100% = 40 Mh/week (instead of 36)
+  const FULL_WEEK_ACTIVITIES = ['DOVOLENÁ', 'DOVOLENA', 'NEMOC'];
+  const isFullWeekActivity = (projekt: string) =>
+    FULL_WEEK_ACTIVITIES.includes(
+      (projekt || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase()
+        === 'DOVOLENA' ? 'DOVOLENA' : (projekt || '').toUpperCase()
+    );
+
+  // Build hours lookup: engineerSlug -> cwKey -> effective hours (base 36)
+  // Vacation/sick hours are normalized against a 40h week (×36/40) so 40h = 100%.
   const hoursMap = useMemo(() => {
     const map = new Map<string, Map<string, number>>();
     for (const entry of planningData) {
@@ -213,7 +222,8 @@ export const UtilizationGrid: React.FC = () => {
       const slug = normalizeName(entry.konstrukter);
       if (!map.has(slug)) map.set(slug, new Map());
       const cwMap = map.get(slug)!;
-      const hours = entry.mhTyden ?? 0;
+      const raw = entry.mhTyden ?? 0;
+      const hours = isFullWeekActivity(entry.projekt) ? raw * (36 / 40) : raw;
       cwMap.set(entry.cw, (cwMap.get(entry.cw) || 0) + hours);
     }
     return map;
@@ -223,6 +233,7 @@ export const UtilizationGrid: React.FC = () => {
     const slug = normalizeName(engineer.jmeno);
     return hoursMap.get(slug)?.get(cwKey) || 0;
   };
+
 
   const isSlovak = (engineer: UIEngineer) => engineer.location === 'SK';
 
