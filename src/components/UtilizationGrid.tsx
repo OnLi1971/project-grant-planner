@@ -206,12 +206,11 @@ export const UtilizationGrid: React.FC = () => {
   };
 
   // Activities where 100% = 40 Mh/week (instead of 36)
-  const FULL_WEEK_ACTIVITIES = ['DOVOLENÁ', 'DOVOLENA', 'NEMOC'];
-  const isFullWeekActivity = (projekt: string) =>
-    FULL_WEEK_ACTIVITIES.includes(
-      (projekt || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase()
-        === 'DOVOLENA' ? 'DOVOLENA' : (projekt || '').toUpperCase()
-    );
+  const isFullWeekActivity = (projekt: string) => {
+    const norm = (projekt || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim();
+    return norm === 'DOVOLENA' || norm === 'NEMOC';
+  };
+
 
   // Build hours lookup: engineerSlug -> cwKey -> effective hours (base 36)
   // Vacation/sick hours are normalized against a 40h week (×36/40) so 40h = 100%.
