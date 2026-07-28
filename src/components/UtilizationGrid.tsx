@@ -558,6 +558,59 @@ export const UtilizationGrid: React.FC = () => {
                     );
                   })}
             </tr>
+            {/* Headcount row */}
+            <tr className="bg-muted/30 font-semibold">
+              <td className="sticky left-0 z-[5] bg-muted border px-3 py-1.5 font-semibold text-foreground whitespace-nowrap">
+                Počet konstruktérů
+              </td>
+              {viewMode === 'weekly'
+                ? displayedWeeks.map(cwKey => {
+                    const count = filteredEngineers.filter(eng => getWeeklyUtilization(eng, cwKey) !== null).length;
+                    return (
+                      <td key={cwKey} className="border px-1 py-1.5 text-center font-mono text-muted-foreground">
+                        {count}
+                      </td>
+                    );
+                  })
+                : displayedMonths.map(mi => {
+                    const count = filteredEngineers.filter(eng => getMonthlyUtilization(eng, mi) !== null).length;
+                    return (
+                      <td key={mi.label} className="border px-1 py-1.5 text-center font-mono text-muted-foreground">
+                        {count}
+                      </td>
+                    );
+                  })}
+            </tr>
+            {/* FTE row (100% = 36 Mh/week) */}
+            <tr className="bg-muted/30 font-semibold">
+              <td className="sticky left-0 z-[5] bg-muted border px-3 py-1.5 font-semibold text-foreground whitespace-nowrap">
+                FTE (36 Mh/týden)
+              </td>
+              {viewMode === 'weekly'
+                ? displayedWeeks.map(cwKey => {
+                    const fte = filteredEngineers
+                      .map(eng => getWeeklyUtilization(eng, cwKey))
+                      .filter((v): v is number => v !== null)
+                      .reduce((a, b) => a + b, 0) / 100;
+                    return (
+                      <td key={cwKey} className="border px-1 py-1.5 text-center font-mono text-muted-foreground">
+                        {fte.toFixed(1)}
+                      </td>
+                    );
+                  })
+                : displayedMonths.map(mi => {
+                    const fte = filteredEngineers
+                      .map(eng => getMonthlyUtilization(eng, mi))
+                      .filter((v): v is number => v !== null)
+                      .reduce((a, b) => a + b, 0) / 100;
+                    return (
+                      <td key={mi.label} className="border px-1 py-1.5 text-center font-mono text-muted-foreground">
+                        {fte.toFixed(1)}
+                      </td>
+                    );
+                  })}
+            </tr>
+
             </tbody>
           </table>
         </div>
