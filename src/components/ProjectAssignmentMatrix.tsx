@@ -1576,138 +1576,32 @@ export const ProjectAssignmentMatrix = ({
                     )}
                   </tr>
                 ))}
-                {/* Summary row for free capacity */}
+                {/* Free capacity [MH] = max productive - real productive */}
                 <tr className="bg-primary/5 border-t-2 border-primary/30">
                   <td className="border border-border p-2 font-bold sticky left-0 bg-primary/5 z-10 text-foreground text-sm">
-                    Free capacity min.
+                    Free capacity [MH]
                   </td>
                   {viewMode === 'weeks' ? (
                     months.map((month, monthIndex) => 
                       month.weeks.map((week, weekIndex) => {
-                        // Count FREE engineers for this week
-                        const freeCount = filteredEngineers.filter(engineer => {
-                          const projectData = matrixData[engineer][week];
-                          return projectData?.projekt === 'FREE';
-                        }).length;
-                        
-                        return (
-                          <td 
-                            key={week} 
-                            className={`border border-border p-1 text-center font-semibold ${
-                              monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
-                            }`}
-                          >
-                            <div className="text-sm text-foreground">
-                              {freeCount}
-                            </div>
-                          </td>
-                        );
-                      })
-                    )
-                  ) : (
-                    months.map((month, monthIndex) => {
-                      // Count engineers with FREE as dominant project for this month
-                      const freeCount = filteredEngineers.filter(engineer => {
-                        const monthData = monthlyData[engineer][month.name];
-                        return monthData?.dominantProject === 'FREE';
-                      }).length;
-                      
-                      return (
-                        <td 
-                          key={month.name} 
-                          className={`border border-border p-1.5 text-center font-semibold ${
-                            monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
-                          }`}
-                        >
-                          <div className="text-sm text-foreground">
-                            {freeCount}
-                          </div>
-                        </td>
-                      );
-                    })
-                  )}
-                </tr>
-                {/* Summary row for max free capacity (FREE + tentative) - hide in customer view */}
-                {!customerViewMode && (
-                <tr className="bg-primary/5 border-t border-primary/20">
-                  <td className="border border-border p-2 font-bold sticky left-0 bg-primary/5 z-10 text-foreground text-sm">
-                    Free capacity max.
-                  </td>
-                  {viewMode === 'weeks' ? (
-                    months.map((month, monthIndex) => 
-                      month.weeks.map((week, weekIndex) => {
-                        // Count FREE engineers + tentative engineers for this week
-                        const freeMaxCount = filteredEngineers.filter(engineer => {
-                          const projectData = matrixData[engineer][week];
-                          return projectData?.projekt === 'FREE' || projectData?.isTentative === true;
-                        }).length;
-                        
-                        return (
-                          <td 
-                            key={week} 
-                            className={`border border-border p-1 text-center font-semibold ${
-                              monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
-                            }`}
-                          >
-                            <div className="text-sm text-foreground">
-                              {freeMaxCount}
-                            </div>
-                          </td>
-                        );
-                      })
-                    )
-                  ) : (
-                    months.map((month, monthIndex) => {
-                      // Count engineers with FREE or tentative as dominant project for this month
-                      const freeMaxCount = filteredEngineers.filter(engineer => {
-                        const monthData = monthlyData[engineer][month.name];
-                        // Check if dominant project is FREE or if any week in month is tentative
-                        if (monthData?.dominantProject === 'FREE') return true;
-                        
-                        // Check if any week in this month has tentative planning
-                        return month.weeks.some(week => {
-                          const projectData = matrixData[engineer][week];
-                          return projectData?.isTentative === true;
-                        });
-                      }).length;
-                      
-                      return (
-                        <td 
-                          key={month.name} 
-                          className={`border border-border p-1.5 text-center font-semibold ${
-                            monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
-                          }`}
-                        >
-                          <div className="text-sm text-foreground">
-                            {freeMaxCount}
-                          </div>
-                        </td>
-                      );
-                    })
-                  )}
-                </tr>
-                )}
-                {/* Summary row for project hours - hide in customer view */}
-                {!customerViewMode && (
-                <tr className="bg-secondary/10 border-t-2 border-secondary/30">
-                  <td className="border border-border p-2 font-bold sticky left-0 bg-secondary/10 z-10 text-foreground text-sm">
-                    Hours
-                  </td>
-                  {viewMode === 'weeks' ? (
-                    months.map((month, monthIndex) =>
-                      month.weeks.map((week, weekIndex) => {
-                        const totalHours = filteredEngineers.reduce((sum, engineer) => {
+                        const realHours = filteredEngineers.reduce((sum, engineer) => {
                           const pd = matrixData[engineer][week];
-                          return sum + getEffectiveHours(pd?.projekt, pd?.hours);
+                          return sum + getProductiveHours(pd?.projekt, pd?.hours);
                         }, 0);
+                        const maxHours = filteredEngineers.reduce((sum, engineer) => {
+                          const pd = matrixData[engineer][week];
+                          if (!pd || normActivity(pd.projekt) === 'DEPARTED' || isFullWeekActivity(pd.projekt)) return sum;
+                          return sum + 36;
+                        }, 0);
+                        const freeMh = Math.max(0, maxHours - realHours);
                         return (
-                          <td
-                            key={week}
+                          <td 
+                            key={week} 
                             className={`border border-border p-1 text-center font-semibold ${
                               monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
                             }`}
                           >
-                            <div className="text-sm text-foreground">{Math.round(totalHours)}h</div>
+                            <div className="text-sm text-foreground">{Math.round(freeMh)}h</div>
                           </td>
                         );
                       })
@@ -1715,14 +1609,62 @@ export const ProjectAssignmentMatrix = ({
                   ) : (
                     months.map((month, monthIndex) => {
                       const stats = getMonthStats(month.name);
+                      const freeMh = Math.max(0, stats.maxProductive - stats.realProductive);
                       return (
-                        <td
-                          key={month.name}
+                        <td 
+                          key={month.name} 
                           className={`border border-border p-1.5 text-center font-semibold ${
                             monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                           }`}
                         >
-                          <div className="text-sm text-foreground">{Math.round(stats.hours)}h</div>
+                          <div className="text-sm text-foreground">{Math.round(freeMh)}h</div>
+                        </td>
+                      );
+                    })
+                  )}
+                </tr>
+                {/* Free capacity [FTE] = engineer count - total FTE */}
+                {!customerViewMode && (
+                <tr className="bg-primary/5 border-t border-primary/20">
+                  <td className="border border-border p-2 font-bold sticky left-0 bg-primary/5 z-10 text-foreground text-sm">
+                    Free capacity [FTE]
+                  </td>
+                  {viewMode === 'weeks' ? (
+                    months.map((month, monthIndex) => 
+                      month.weeks.map((week, weekIndex) => {
+                        const count = filteredEngineers.filter(engineer => {
+                          const pd = matrixData[engineer][week];
+                          return pd && pd.projekt !== 'DEPARTED';
+                        }).length;
+                        const totalHours = filteredEngineers.reduce((sum, engineer) => {
+                          const pd = matrixData[engineer][week];
+                          return sum + getEffectiveHours(pd?.projekt, pd?.hours);
+                        }, 0);
+                        const freeFte = Math.max(0, count - totalHours / 36);
+                        return (
+                          <td 
+                            key={week} 
+                            className={`border border-border p-1 text-center font-semibold ${
+                              monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
+                            }`}
+                          >
+                            <div className="text-sm text-foreground">{freeFte.toFixed(1)}</div>
+                          </td>
+                        );
+                      })
+                    )
+                  ) : (
+                    months.map((month, monthIndex) => {
+                      const stats = getMonthStats(month.name);
+                      const freeFte = Math.max(0, stats.engineerCount - stats.fte);
+                      return (
+                        <td 
+                          key={month.name} 
+                          className={`border border-border p-1.5 text-center font-semibold ${
+                            monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
+                          }`}
+                        >
+                          <div className="text-sm text-foreground">{freeFte.toFixed(1)}</div>
                         </td>
                       );
                     })
