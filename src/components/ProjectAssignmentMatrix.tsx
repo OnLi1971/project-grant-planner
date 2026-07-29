@@ -820,6 +820,8 @@ export const ProjectAssignmentMatrix = ({
     let fte = 0;
     let hours = 0;
     let engineerCount = 0;
+    let maxProductive = 0;
+    let realProductive = 0;
 
     filteredEngineers.forEach(engineer => {
       const endDate = endDateMap[engineer] || null;
@@ -841,6 +843,10 @@ export const ProjectAssignmentMatrix = ({
         const pd = matrixData[engineer]?.[week];
         const eff = getEffectiveHours(pd?.projekt, pd?.hours);
         if (eff > 0) engHours += eff * (daysInMonth / 5);
+        if (!isFullWeekActivity(pd?.projekt) && normActivity(pd?.projekt) !== 'DEPARTED') {
+          maxProductive += daysInMonth * 7.2;
+          realProductive += getProductiveHours(pd?.projekt, pd?.hours) * (daysInMonth / 5);
+        }
       });
 
       if (capacityDays === 0) return;
@@ -849,8 +855,9 @@ export const ProjectAssignmentMatrix = ({
       fte += engHours / (capacityDays * 7.2);
     });
 
-    return { fte, hours, engineerCount };
+    return { fte, hours, engineerCount, maxProductive, realProductive };
   }, [filteredEngineers, endDateMap, displayNameMap, weeks, matrixData]);
+
 
   return (
 
