@@ -23,6 +23,24 @@ import { useCustomEngineerViews } from '@/hooks/useCustomEngineerViews';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
+// ---- Shared utilization basis (must match UtilizationGrid) ----
+// 100% = 36 Mh/week (7.2h/day). Vacation/sick are planned as 40h weeks -> scaled by 36/40.
+const normActivity = (p?: string) => (p || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim();
+const isNonCountedActivity = (p?: string) => {
+  const a = normActivity(p);
+  return a === 'FREE' || a === 'OVER' || a === 'DEPARTED' || a === '';
+};
+const isFullWeekActivity = (p?: string) => {
+  const a = normActivity(p);
+  return a === 'DOVOLENA' || a === 'NEMOC';
+};
+const getEffectiveHours = (projekt?: string, hours?: number) => {
+  if (isNonCountedActivity(projekt)) return 0;
+  const h = hours || 0;
+  return isFullWeekActivity(projekt) ? h * (36 / 40) : h;
+};
+
+
 // Company mappings
 const spolocnosti = [
   'Všichni',
@@ -1617,253 +1635,120 @@ export const ProjectAssignmentMatrix = ({
                     Hours
                   </td>
                   {viewMode === 'weeks' ? (
-                    months.map((month, monthIndex) => 
+                    months.map((month, monthIndex) =>
                       month.weeks.map((week, weekIndex) => {
-                        // Sum project hours for this week (excluding FREE, DOVOLENÁ, OVER)
                         const totalHours = filteredEngineers.reduce((sum, engineer) => {
-                          const projectData = matrixData[engineer][week];
-                          const project = projectData?.projekt;
-                          const hours = projectData?.hours || 0;
-                          if (project === 'FREE' || project === 'DOVOLENÁ' || project === 'OVER') {
-                            return sum;
-                          }
-                          return sum + hours;
+                          const pd = matrixData[engineer][week];
+                          return sum + getEffectiveHours(pd?.projekt, pd?.hours);
                         }, 0);
-                        
                         return (
-                          <td 
-                            key={week} 
+                          <td
+                            key={week}
                             className={`border border-border p-1 text-center font-semibold ${
                               monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
                             }`}
                           >
-                            <div className="text-sm text-foreground">
-                              {totalHours}h
-                            </div>
+                            <div className="text-sm text-foreground">{Math.round(totalHours)}h</div>
                           </td>
                         );
                       })
                     )
                   ) : (
                     months.map((month, monthIndex) => {
-                      // Parse month info
-                      const monthMapLocal: { [key: string]: number } = {
-                        'leden': 1, 'únor': 2, 'březen': 3, 'duben': 4, 'květen': 5, 'červen': 6,
-                        'červenec': 7, 'srpen': 8, 'září': 9, 'říjen': 10, 'listopad': 11, 'prosinec': 12
-                      };
-                      const [mName, yStr] = month.name.toLowerCase().split(' ');
-                      const mNum = monthMapLocal[mName];
-                      const mYear = parseInt(yStr);
-                      
-                      // Proportional hours: for each week, split hours into this month
-                      let totalHours = 0;
-                      month.weeks.forEach(week => {
-                        const cwMatch = week.match(/CW(\d+)-(\d+)/);
-                        if (!cwMatch) return;
-                        const cwNum = parseInt(cwMatch[1]);
-                        const wYear = parseInt(cwMatch[2]);
-                        const weekMonday = getISOWeekMonday(cwNum, wYear);
-                        
-                        filteredEngineers.forEach(engineer => {
-                          const projectData = matrixData[engineer][week];
-                          const project = projectData?.projekt;
-                          const hours = projectData?.hours || 0;
-                          if (project === 'FREE' || project === 'DOVOLENÁ' || project === 'OVER') return;
-                          
-                          const isSlovak = getEngineerCompany(displayNameMap[engineer] || engineer) === 'MB Idea';
-                          const daysInMonth = getWorkingDaysInWeekForMonth(weekMonday, mYear, mNum, isSlovak);
-                          const totalWeekDays = getWorkingDaysInCW(cwNum, wYear, isSlovak);
-                          const proportion = totalWeekDays > 0 ? daysInMonth / totalWeekDays : 0;
-                          totalHours += hours * proportion;
-                        });
-                      });
-                      
+                      const stats = getMonthStats(month.name);
                       return (
-                        <td 
-                          key={month.name} 
+                        <td
+                          key={month.name}
                           className={`border border-border p-1.5 text-center font-semibold ${
                             monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                           }`}
                         >
-                          <div className="text-sm text-foreground">
-                            {Math.round(totalHours)}h
-                          </div>
+                          <div className="text-sm text-foreground">{Math.round(stats.hours)}h</div>
                         </td>
                       );
                     })
                   )}
-                 </tr>
-                 )}
-                 {/* Summary row for engineer count - hide in customer view */}
-                 {!customerViewMode && (
-                 <tr className="bg-secondary/10 border-t border-secondary/20">
-                   <td className="border border-border p-2 font-bold sticky left-0 bg-secondary/10 z-10 text-foreground text-sm">
-                     Engineer count
-                   </td>
-                   {viewMode === 'weeks' ? (
-                     months.map((month, monthIndex) =>
-                       month.weeks.map((week, weekIndex) => {
-                         const count = filteredEngineers.reduce((sum, engineer) => {
-                           const projectData = matrixData[engineer][week];
-                           const project = projectData?.projekt;
-                           if (project === 'FREE' || project === 'DOVOLENÁ' || project === 'OVER') {
-                             return sum;
-                           }
-                           return sum + 1;
-                         }, 0);
-                         return (
-                           <td
-                             key={week}
-                             className={`border border-border p-1 text-center font-semibold ${
-                               monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
-                             }`}
-                           >
-                             <div className="text-sm text-foreground">
-                               {count}
-                             </div>
-                           </td>
-                         );
-                       })
-                     )
-                   ) : (
-                     months.map((month, monthIndex) => {
-                       const monthMapLocal: { [key: string]: number } = {
-                         'leden': 1, 'únor': 2, 'březen': 3, 'duben': 4, 'květen': 5, 'červen': 6,
-                         'červenec': 7, 'srpen': 8, 'září': 9, 'říjen': 10, 'listopad': 11, 'prosinec': 12
-                       };
-                       const [mName, yStr] = month.name.toLowerCase().split(' ');
-                       const mNum = monthMapLocal[mName];
-                       const mYear = parseInt(yStr);
-                       let count = 0;
-                       filteredEngineers.forEach(engineer => {
-                         let hasProject = false;
-                         month.weeks.forEach(week => {
-                           const cwMatch = week.match(/CW(\d+)-(\d+)/);
-                           if (!cwMatch) return;
-                           const cwNum = parseInt(cwMatch[1]);
-                           const wYear = parseInt(cwMatch[2]);
-                           const weekMonday = getISOWeekMonday(cwNum, wYear);
-                           const isSlovak = getEngineerCompany(displayNameMap[engineer] || engineer) === 'MB Idea';
-                           const daysInMonth = getWorkingDaysInWeekForMonth(weekMonday, mYear, mNum, isSlovak);
-                           const totalWeekDays = getWorkingDaysInCW(cwNum, wYear, isSlovak);
-                           const proportion = totalWeekDays > 0 ? daysInMonth / totalWeekDays : 0;
-                           const projectData = matrixData[engineer][week];
-                           const project = projectData?.projekt;
-                           if (proportion > 0 && project !== 'FREE' && project !== 'DOVOLENÁ' && project !== 'OVER') {
-                             hasProject = true;
-                           }
-                         });
-                         if (hasProject) count++;
-                       });
-                       return (
-                         <td
-                           key={month.name}
-                           className={`border border-border p-1.5 text-center font-semibold ${
-                             monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
-                           }`}
-                         >
-                           <div className="text-sm text-foreground">
-                             {count}
-                           </div>
-                         </td>
-                       );
-                     })
-                   )}
-                 </tr>
-                 )}
-                 {/* Summary row for FTE - hide in customer view */}
+                </tr>
+                )}
+                {/* Summary row for engineer count - hide in customer view */}
+                {!customerViewMode && (
+                <tr className="bg-secondary/10 border-t border-secondary/20">
+                  <td className="border border-border p-2 font-bold sticky left-0 bg-secondary/10 z-10 text-foreground text-sm">
+                    Engineer count
+                  </td>
+                  {viewMode === 'weeks' ? (
+                    months.map((month, monthIndex) =>
+                      month.weeks.map((week, weekIndex) => {
+                        const count = filteredEngineers.filter(engineer => {
+                          const pd = matrixData[engineer][week];
+                          return pd && pd.projekt !== 'DEPARTED';
+                        }).length;
+                        return (
+                          <td
+                            key={week}
+                            className={`border border-border p-1 text-center font-semibold ${
+                              monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
+                            }`}
+                          >
+                            <div className="text-sm text-foreground">{count}</div>
+                          </td>
+                        );
+                      })
+                    )
+                  ) : (
+                    months.map((month, monthIndex) => {
+                      const stats = getMonthStats(month.name);
+                      return (
+                        <td
+                          key={month.name}
+                          className={`border border-border p-1.5 text-center font-semibold ${
+                            monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
+                          }`}
+                        >
+                          <div className="text-sm text-foreground">{stats.engineerCount}</div>
+                        </td>
+                      );
+                    })
+                  )}
+                </tr>
+                )}
+                {/* Summary row for FTE - hide in customer view */}
                 {!customerViewMode && (
                 <tr className="bg-secondary/10 border-t border-secondary/20">
                   <td className="border border-border p-2 font-bold sticky left-0 bg-secondary/10 z-10 text-foreground text-sm">
                     Total FTE
                   </td>
                   {viewMode === 'weeks' ? (
-                    months.map((month, monthIndex) => 
+                    months.map((month, monthIndex) =>
                       month.weeks.map((week, weekIndex) => {
-                        const cwMatch = week.match(/CW(\d+)/);
-                        const cwNum = cwMatch ? parseInt(cwMatch[1]) : 0;
-                        const weekYear = parseInt(week.split('-').pop() || String(new Date().getFullYear()));
-                        // Sum FTE per engineer using their own working-day count (CZ vs SK holidays differ)
-                        let totalFte = 0;
-                        filteredEngineers.forEach(engineer => {
-                          const projectData = matrixData[engineer][week];
-                          const project = projectData?.projekt;
-                          const hours = projectData?.hours || 0;
-                          if (!hours || project === 'FREE' || project === 'DOVOLENÁ' || project === 'OVER') return;
-                          const isSlovak = getEngineerCompany(displayNameMap[engineer] || engineer) === 'MB Idea';
-                          const workingDays = cwNum > 0 ? getWorkingDaysInCW(cwNum, weekYear, isSlovak) : 5;
-                          const capacity = workingDays * 8;
-                          if (capacity > 0) totalFte += hours / capacity;
-                        });
-                        const fte = totalFte.toFixed(1);
+                        const totalHours = filteredEngineers.reduce((sum, engineer) => {
+                          const pd = matrixData[engineer][week];
+                          return sum + getEffectiveHours(pd?.projekt, pd?.hours);
+                        }, 0);
+                        const fte = (totalHours / 36).toFixed(1);
                         return (
-                          <td 
-                            key={week} 
+                          <td
+                            key={week}
                             className={`border border-border p-1 text-center font-semibold ${
                               monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
                             }`}
                           >
-                            <div className="text-sm text-foreground">
-                              {fte}
-                            </div>
+                            <div className="text-sm text-foreground">{fte}</div>
                           </td>
                         );
                       })
                     )
-
                   ) : (
                     months.map((month, monthIndex) => {
-                      const monthMapLocal: { [key: string]: number } = {
-                        'leden': 1, 'únor': 2, 'březen': 3, 'duben': 4, 'květen': 5, 'červen': 6,
-                        'červenec': 7, 'srpen': 8, 'září': 9, 'říjen': 10, 'listopad': 11, 'prosinec': 12
-                      };
-                      const [mName, yStr] = month.name.toLowerCase().split(' ');
-                      const mNum = monthMapLocal[mName];
-                      const mYear = parseInt(yStr);
-                      
-                      // Proportional hours
-                      let totalHours = 0;
-                      let totalCapacity = 0;
-                      
-                      filteredEngineers.forEach(engineer => {
-                        const isSlovak = getEngineerCompany(displayNameMap[engineer] || engineer) === 'MB Idea';
-                        const workingDays = getWorkingDaysInMonth(mYear, mNum, isSlovak);
-                        totalCapacity += workingDays * 8;
-                      });
-                      
-                      month.weeks.forEach(week => {
-                        const cwMatch = week.match(/CW(\d+)-(\d+)/);
-                        if (!cwMatch) return;
-                        const cwNum = parseInt(cwMatch[1]);
-                        const wYear = parseInt(cwMatch[2]);
-                        const weekMonday = getISOWeekMonday(cwNum, wYear);
-                        
-                        filteredEngineers.forEach(engineer => {
-                          const projectData = matrixData[engineer][week];
-                          const project = projectData?.projekt;
-                          const hours = projectData?.hours || 0;
-                          if (project === 'FREE' || project === 'DOVOLENÁ' || project === 'OVER') return;
-                          
-                          const isSlovak = getEngineerCompany(displayNameMap[engineer] || engineer) === 'MB Idea';
-                          const daysInMonth = getWorkingDaysInWeekForMonth(weekMonday, mYear, mNum, isSlovak);
-                          const totalWeekDays = getWorkingDaysInCW(cwNum, wYear, isSlovak);
-                          const proportion = totalWeekDays > 0 ? daysInMonth / totalWeekDays : 0;
-                          totalHours += hours * proportion;
-                        });
-                      });
-                      
-                      const fte = totalCapacity > 0 ? (totalHours / totalCapacity * filteredEngineers.length).toFixed(1) : '0.0';
-                      
+                      const stats = getMonthStats(month.name);
                       return (
-                        <td 
-                          key={month.name} 
+                        <td
+                          key={month.name}
                           className={`border border-border p-1.5 text-center font-semibold ${
                             monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                           }`}
                         >
-                          <div className="text-sm text-foreground">
-                            {fte}
-                          </div>
+                          <div className="text-sm text-foreground">{stats.fte.toFixed(1)}</div>
                         </td>
                       );
                     })
@@ -1877,105 +1762,45 @@ export const ProjectAssignmentMatrix = ({
                     Utilization
                   </td>
                   {viewMode === 'weeks' ? (
-                    months.map((month, monthIndex) => 
+                    months.map((month, monthIndex) =>
                       month.weeks.map((week, weekIndex) => {
-                        // Calculate utilization percentage
-                        const maxCapacity = filteredEngineers.length * 40;
-                        const actualHours = filteredEngineers.reduce((sum, engineer) => {
-                          const projectData = matrixData[engineer][week];
-                          const project = projectData?.projekt;
-                          const hours = projectData?.hours || 0;
-                          // Don't count FREE, DOVOLENÁ, OVER
-                          if (project === 'FREE' || project === 'DOVOLENÁ' || project === 'OVER') {
-                            return sum;
-                          }
-                          return sum + hours;
+                        const activeEngineers = filteredEngineers.filter(engineer => {
+                          const pd = matrixData[engineer][week];
+                          return pd && pd.projekt !== 'DEPARTED';
+                        });
+                        const totalHours = activeEngineers.reduce((sum, engineer) => {
+                          const pd = matrixData[engineer][week];
+                          return sum + getEffectiveHours(pd?.projekt, pd?.hours);
                         }, 0);
-                        const utilization = maxCapacity > 0 ? Math.round((actualHours / maxCapacity) * 100) : 0;
-                        
+                        const capacity = activeEngineers.length * 36;
+                        const utilization = capacity > 0 ? Math.round((totalHours / capacity) * 100) : 0;
                         return (
-                          <td 
-                            key={week} 
+                          <td
+                            key={week}
                             className={`border border-border p-1 text-center font-semibold ${
                               monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
                             }`}
                           >
-                            <div className="text-sm text-foreground">
-                              {utilization}%
-                            </div>
+                            <div className="text-sm text-foreground">{utilization}%</div>
                           </td>
                         );
                       })
                     )
                   ) : (
                     months.map((month, monthIndex) => {
-                      // Parse month to get year and month number
-                      const monthMap: { [key: string]: number } = {
-                        'leden': 1, 'únor': 2, 'březen': 3, 'duben': 4, 'květen': 5, 'červen': 6,
-                        'červenec': 7, 'srpen': 8, 'září': 9, 'říjen': 10, 'listopad': 11, 'prosinec': 12
-                      };
-                      const [monthName, yearStr] = month.name.toLowerCase().split(' ');
-                      const monthNum = monthMap[monthName];
-                      const year = parseInt(yearStr);
-                      
-                      // Calculate proportional hours and capacity
-                      let totalMaxCapacity = 0;
-                      let totalActualHours = 0;
-                      
-                      filteredEngineers.forEach(engineer => {
-                        const engineerCompany = getEngineerCompany(engineer);
-                        const isSlovak = engineerCompany === 'MB Idea';
-                        
-                        // Calculate engineer's total capacity for the month
-                        const workingDays = getWorkingDaysFromMonthName(month.name, isSlovak);
-                        totalMaxCapacity += workingDays * 8; // 8 hours per day
-                        
-                        // Sum proportional hours from each week
-                        month.weeks.forEach(week => {
-                          const projectData = matrixData[engineer][week];
-                          const project = projectData?.projekt;
-                          const weeklyHours = projectData?.hours || 0;
-                          
-                          // Skip FREE, DOVOLENÁ, OVER
-                          if (project === 'FREE' || project === 'DOVOLENÁ' || project === 'OVER') {
-                            return;
-                          }
-                          
-                          // Get week_monday from planning data
-                          const planningEntry = planningData.find(
-                            p => normalizeName(p.konstrukter) === normalizeName(engineer) && p.cw === week
-                          );
-                          
-                          if (planningEntry?.week_monday) {
-                            const weekMonday = new Date(planningEntry.week_monday);
-                            
-                            // Calculate how many working days from this week fall into this month
-                            const daysInMonth = getWorkingDaysInWeekForMonth(weekMonday, year, monthNum, isSlovak);
-                            
-                            // Proportionally allocate weekly hours
-                            // Assume 5 working days per week
-                            const proportion = daysInMonth / 5;
-                            totalActualHours += weeklyHours * proportion;
-                          }
-                        });
-                      });
-                      
-                      const utilization = totalMaxCapacity > 0 
-                        ? Math.round((totalActualHours / totalMaxCapacity) * 100) 
+                      const stats = getMonthStats(month.name);
+                      const utilization = stats.engineerCount > 0
+                        ? Math.round((stats.fte / stats.engineerCount) * 100)
                         : 0;
-                      
-                      
                       return (
-                        <td 
-                          key={month.name} 
+                        <td
+                          key={month.name}
                           className={`border border-border p-1.5 text-center font-semibold ${
                             monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                           }`}
-                          >
-                            <div className="text-sm text-foreground">
-                              {utilization}%
-                            </div>
-                          </td>
+                        >
+                          <div className="text-sm text-foreground">{utilization}%</div>
+                        </td>
                       );
                     })
                   )}
