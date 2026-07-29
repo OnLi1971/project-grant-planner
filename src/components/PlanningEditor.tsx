@@ -27,6 +27,8 @@ const getWeekDateRange = (cwString: string): string => {
 import { supabase } from '@/integrations/supabase/client';
 import { normalizeName, findEngineerByName } from '@/utils/nameNormalization';
 import { isEngineerDepartedForWeek } from '@/utils/engineerDeparture';
+import { VacationImport } from '@/components/VacationImport';
+
 
 interface WeekPlan {
   cw: string;
@@ -658,7 +660,18 @@ export const PlanningEditor: React.FC = () => {
         </div>
       </Card>
 
+      {/* Import dovolených */}
+      <Card className="p-4 shadow-card-custom">
+        <div className="flex items-center gap-4 flex-wrap">
+          <VacationImport />
+          <div className="text-xs text-muted-foreground max-w-xl">
+            Načte XLS evidenci dovolených. Celý týden volna → <strong>DOVOLENÁ 40 MH</strong>, částečné volno sníží hodiny projektu (počítají se kódy D a O).
+          </div>
+        </div>
+      </Card>
+
       {/* Kopírování plánu */}
+
       <Card className="p-4 shadow-card-custom">
         <div className="flex items-center gap-4 flex-wrap">
           <div className="flex items-center gap-2">

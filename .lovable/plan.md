@@ -1,52 +1,40 @@
-# AI Revenue Analyst – plán implementace
-
 ## Cíl
-Přidat do `RevenueOverview` AI panel, který umožní srovnávat kvartály, analyzovat top projekty a klást vlastní dotazy na základě aktuálních revenue dat.
 
-## Backend – Supabase Edge Function
+Tlačítko **Import dovolených (XLS)** v editoru plánování, které načte firemní evidenci dovolených a aktualizuje plán vybraných týdnů.
 
-1. **Název:** `ai-revenue-analyze`
-2. **Závislosti:** `ai`, `@ai-sdk/openai-compatible` (npm install)
-3. **Setup:** Vytvořit `supabase/functions/_shared/ai-gateway.ts` s `createLovableAiGatewayProvider`
-4. **Logika funkce:**
-   - Přijme POST `{ data: serializedRevenueData, question: string }`
-   - Sestaví prompt: kontext revenue dat (kvartály, projekty, měsíce) + dotaz uživatele
-   - Zavolá `generateText` s modelem `google/gemini-3-flash-preview`
-   - Vrátí `{ analysis: string }`
-5. **CORS:** Použít `corsHeaders` z `@supabase/supabase-js`
-6. **Secrets:** `LOVABLE_API_KEY` (zajistit přes `ai_gateway--create` a `ai_gateway--enable`)
+## Formát vstupu
 
-## Frontend – AI Panel v RevenueOverview
+Podle nahraného souboru:
+- Řádky = konstruktéři ve tvaru `Příjmení Jméno (handle)`
+- Sloupce = týdny; hlavička obsahuje číslo týdne (28., 29., …) a datum pondělí (6.7., 13.7., …), nad tím měsíc
+- Buňka = 5 znaků za Po–Pá, např. `SDDDD`, `S————`, `DD—DD`, `———D—`
+- Legenda: `D` řádná dovolená, `O` osobní volno, `N`/`NN` náhradní volno, `S` svátek, `—` běžný pracovní den
 
-1. **Umístění:** Nová sekce pod existujícími filtry – skládací panel nebo card.
-2. **Komponenta:** `RevenueAIAnalyzer` (nový soubor)
-3. **Přednastavená tlačítka:**
-   - `Compare Q3 & Q4` – předvyplní dotaz a pošle data za Q3 a Q4
-   - `Top Projects Analysis` – analýza top projektů za vybrané období
-   - `Revenue Trend` – komentář k trendu revenue
-4. **Vlastní dotaz:** Text input s placeholderem „Ask anything about revenue…“
-5. **Seriálování dat:** Vybraná data z `RevenueOverview` (quarterly/monthly revenue by project) se zkomprimují do JSON a pošlou do edge function.
+## Pravidla převodu (dle domluvy)
 
-## Výstup – text + vizuální graf
+Počítají se jen kódy **D** a **O**. `N`, `NN` se ignorují. `S` (svátek) se ignoruje — svátky už řeší kalendář CZ/SK.
 
-1. **Textová část:** AI odpověď se zobrazí jako markdown (pomocí `react-markdown` nebo prostého `<pre>` – podle toho, co je v projektu).
-2. **Graf:** Vedle/pod textem se vykreslí **kontextový graf** z existujících dat, ke kterým se AI vyjadřuje.
-   - Pokud dotaz srovnává Q3 a Q4 → zobrazí se sloupcový graf Q3 vs Q4 revenue.
-   - Pokud dotaz analyzuje top projekty → zobrazí se Pie/Bar chart top projektů.
-   - Graf se vybere automaticky podle typu dotazu (frontend má přehled o datech, AI jen komentuje).
+Pro každý pár konstruktér × týden:
+- **5 dní volna** → týden se nastaví na `DOVOLENÁ`, 40 MH/týden (stávající pravidlo režimových aktivit)
+- **1–4 dny volna** → projekt zůstane beze změny, sníží se hodiny: `MH = round(7,2 × (5 − dny volna))`, tedy 4 dny→7 h, 3 dny→14 h, 2 dny→22 h, 1 den→29 h
+- **0 dní volna** → žádná změna (import nikdy nepřepisuje týden zpět na plnou kapacitu, aby nepřemazal ruční úpravy)
 
-## Flow příkladu „Compare Q3 & Q4“
+Pokud má konstruktér v daném týdnu už `NEMOC`/`FREE`/`OVER`, řádek se v náhledu označí jako konflikt a ve výchozím stavu se **neimportuje** (lze zaškrtnout).
 
-1. Uživatel klikne na tlačítko `Compare Q3 & Q4`.
-2. Frontend vezme aktuální quarterly data za Q3 a Q4, serializuje je.
-3. Pošle do edge function s dotazem: *"Compare Q3 and Q4 revenue. Identify key differences, growth/decline drivers, and highlight top projects in each quarter."*
-4. AI vrátí textovou analýzu.
-5. Frontend zobrazí text + pod ním sloupcový graf Q3 vs Q4 revenue (z existujících dat).
+## Průběh
+
+1. Uživatel klikne na Import dovolených v editoru plánování
+2. Vybere `.xlsx`/`.xls`
+3. Zobrazí se dialog s náhledem: konstruktér | CW | dny volna | akce (DOVOLENÁ 40 h / hodiny 36→22) | stav (OK, konflikt, nenalezený konstruktér)
+   - nahoře souhrn: X změn, Y konfliktů, Z nespárovaných jmen
+   - řádky lze odškrtnout
+4. Potvrzení uloží změny přes stávající `updatePlanningEntry` / `updatePlanningHours` (zůstane tak i historie změn v `planning_changes`)
 
 ## Technické detaily
 
-- **Model:** `google/gemini-3-flash-preview` (default, dostatečný pro analýzu strukturovaných dat)
-- **Knihovny:** `ai`, `@ai-sdk/openai-compatible`
-- **Stávající kód:** Znovu použijeme `recharts` grafy a filtry z `RevenueOverview.tsx`
-- **Supabase Edge Function:** Deploy automatický přes Lovable
-- **Auth:** Edge function může být `verify_jwt = false` (data jsou stejná jako na frontendu), JWT ověření není nutné pro čistě analytický endpoint
+- Nový soubor `src/components/VacationImport.tsx` (vzor: stávající `TrainingImport.tsx`, knihovna `xlsx` už je v projektu)
+- Parsování: hlavička – najít řádek s čísly týdnů a řádek s datem pondělí; z data pondělí + roku odvodit `CW{nn}-{yyyy}` přes existující ISO logiku (`getISOWeekMonday`), aby seděl přechod roku
+- Párování konstruktérů: primárně `handle` ze závorky proti `engineers.handle`, fallback normalizované jméno (`normalizeName`) proti `display_name`; nespárovaní se jen vypíšou, neimportují
+- Import se omezí na týdny, které v plánu existují; neexistující se přeskočí s hláškou
+- Žádné změny v databázi (nová tabulka není potřeba), zapisuje se do `planning_entries`
+- Zapojení do `src/components/PlanningEditor.tsx` vedle stávajících akčních tlačítek
