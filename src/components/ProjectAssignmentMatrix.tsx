@@ -822,6 +822,7 @@ export const ProjectAssignmentMatrix = ({
     let engineerCount = 0;
     let maxProductive = 0;
     let realProductive = 0;
+    let leaveFte = 0;
 
     filteredEngineers.forEach(engineer => {
       const endDate = endDateMap[engineer] || null;
@@ -829,6 +830,7 @@ export const ProjectAssignmentMatrix = ({
 
       let capacityDays = 0;
       let engHours = 0;
+      let leaveDays = 0;
 
       weeks.forEach(week => {
         if (endDate && isEngineerDepartedForWeek(endDate, week)) return;
@@ -843,6 +845,7 @@ export const ProjectAssignmentMatrix = ({
         const pd = matrixData[engineer]?.[week];
         const eff = getEffectiveHours(pd?.projekt, pd?.hours);
         if (eff > 0) engHours += eff * (daysInMonth / 5);
+        if (isFullWeekActivity(pd?.projekt)) leaveDays += daysInMonth;
         if (!isFullWeekActivity(pd?.projekt) && normActivity(pd?.projekt) !== 'DEPARTED') {
           maxProductive += daysInMonth * 7.2;
           realProductive += getProductiveHours(pd?.projekt, pd?.hours) * (daysInMonth / 5);
@@ -851,11 +854,12 @@ export const ProjectAssignmentMatrix = ({
 
       if (capacityDays === 0) return;
       engineerCount += 1;
+      leaveFte += leaveDays / capacityDays;
       hours += engHours;
       fte += engHours / (capacityDays * 7.2);
     });
 
-    return { fte, hours, engineerCount, maxProductive, realProductive };
+    return { fte, hours, engineerCount, maxProductive, realProductive, leaveFte };
   }, [filteredEngineers, endDateMap, displayNameMap, weeks, matrixData]);
 
 
@@ -1665,6 +1669,48 @@ export const ProjectAssignmentMatrix = ({
                           }`}
                         >
                           <div className="text-sm text-foreground">{freeFte.toFixed(1)}</div>
+                        </td>
+                      );
+                    })
+                  )}
+                </tr>
+                )}
+                {/* Leave [FTE] = engineers on vacation/sick leave */}
+                {!customerViewMode && (
+                <tr className="bg-primary/5 border-t border-primary/20">
+                  <td className="border border-border p-2 font-bold sticky left-0 bg-primary/5 z-10 text-foreground text-sm">
+                    Leave [FTE]
+                  </td>
+                  {viewMode === 'weeks' ? (
+                    months.map((month, monthIndex) => 
+                      month.weeks.map((week, weekIndex) => {
+                        const leave = filteredEngineers.filter(engineer => {
+                          const pd = matrixData[engineer][week];
+                          return pd && isFullWeekActivity(pd.projekt);
+                        }).length;
+                        return (
+                          <td 
+                            key={week} 
+                            className={`border border-border p-1 text-center font-semibold ${
+                              monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
+                            }`}
+                          >
+                            <div className="text-sm text-foreground">{leave.toFixed(1)}</div>
+                          </td>
+                        );
+                      })
+                    )
+                  ) : (
+                    months.map((month, monthIndex) => {
+                      const stats = getMonthStats(month.name);
+                      return (
+                        <td 
+                          key={month.name} 
+                          className={`border border-border p-1.5 text-center font-semibold ${
+                            monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
+                          }`}
+                        >
+                          <div className="text-sm text-foreground">{stats.leaveFte.toFixed(1)}</div>
                         </td>
                       );
                     })
