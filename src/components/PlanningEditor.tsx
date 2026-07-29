@@ -27,6 +27,8 @@ const getWeekDateRange = (cwString: string): string => {
 import { supabase } from '@/integrations/supabase/client';
 import { normalizeName, findEngineerByName } from '@/utils/nameNormalization';
 import { isEngineerDepartedForWeek } from '@/utils/engineerDeparture';
+import { VacationImport } from '@/components/VacationImport';
+
 
 interface WeekPlan {
   cw: string;
