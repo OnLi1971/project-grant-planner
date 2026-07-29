@@ -801,7 +801,53 @@ export const ProjectAssignmentMatrix = ({
     setProjectDialogOpen(true);
   }, []);
 
+  // Monthly aggregation identical to UtilizationGrid (100% = 36 Mh/week, vacation/sick scaled 36/40)
+  const getMonthStats = useCallback((monthName: string) => {
+    const monthMapLocal: { [key: string]: number } = {
+      'leden': 1, 'únor': 2, 'březen': 3, 'duben': 4, 'květen': 5, 'červen': 6,
+      'červenec': 7, 'srpen': 8, 'září': 9, 'říjen': 10, 'listopad': 11, 'prosinec': 12
+    };
+    const [mName, yStr] = monthName.toLowerCase().split(' ');
+    const mNum = monthMapLocal[mName];
+    const mYear = parseInt(yStr);
+
+    let fte = 0;
+    let hours = 0;
+    let engineerCount = 0;
+
+    filteredEngineers.forEach(engineer => {
+      const endDate = endDateMap[engineer] || null;
+      const isSlovak = getEngineerCompany(displayNameMap[engineer] || engineer) === 'MB Idea';
+
+      let capacityDays = 0;
+      let engHours = 0;
+
+      weeks.forEach(week => {
+        if (endDate && isEngineerDepartedForWeek(endDate, week)) return;
+        const cwMatch = week.match(/CW(\d+)-(\d+)/);
+        if (!cwMatch) return;
+        const cwNum = parseInt(cwMatch[1]);
+        const wYear = parseInt(cwMatch[2]);
+        const monday = getISOWeekMonday(cwNum, wYear);
+        const daysInMonth = getWorkingDaysInWeekForMonth(monday, mYear, mNum, isSlovak);
+        capacityDays += daysInMonth;
+        if (daysInMonth === 0) return;
+        const pd = matrixData[engineer]?.[week];
+        const eff = getEffectiveHours(pd?.projekt, pd?.hours);
+        if (eff > 0) engHours += eff * (daysInMonth / 5);
+      });
+
+      if (capacityDays === 0) return;
+      engineerCount += 1;
+      hours += engHours;
+      fte += engHours / (capacityDays * 7.2);
+    });
+
+    return { fte, hours, engineerCount };
+  }, [filteredEngineers, endDateMap, displayNameMap, weeks, matrixData]);
+
   return (
+
     <TooltipProvider delayDuration={200}>
     <div className="p-6 space-y-6">
       <Card>
