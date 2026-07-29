@@ -1742,7 +1742,6 @@ export const ProjectAssignmentMatrix = ({
                   ) : (
                     months.map((month, monthIndex) => {
                       const stats = getMonthStats(month.name);
-                      const pct = stats.maxProductive > 0 ? Math.round((stats.realProductive / stats.maxProductive) * 100) : 0;
                       return (
                         <td
                           key={month.name}
@@ -1751,7 +1750,7 @@ export const ProjectAssignmentMatrix = ({
                           }`}
                         >
                           <div className="text-sm text-foreground">{Math.round(stats.realProductive)}h</div>
-                          <div className="text-[10px] text-muted-foreground">{pct}%</div>
+
                         </td>
                       );
                     })
