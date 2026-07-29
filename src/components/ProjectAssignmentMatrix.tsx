@@ -39,6 +39,12 @@ const getEffectiveHours = (projekt?: string, hours?: number) => {
   const h = hours || 0;
   return isFullWeekActivity(projekt) ? h * (36 / 40) : h;
 };
+// Productive = real project work only (vacation/sick/free/over excluded)
+const getProductiveHours = (projekt?: string, hours?: number) => {
+  if (isNonCountedActivity(projekt) || isFullWeekActivity(projekt)) return 0;
+  return hours || 0;
+};
+
 
 
 // Company mappings
@@ -814,6 +820,8 @@ export const ProjectAssignmentMatrix = ({
     let fte = 0;
     let hours = 0;
     let engineerCount = 0;
+    let maxProductive = 0;
+    let realProductive = 0;
 
     filteredEngineers.forEach(engineer => {
       const endDate = endDateMap[engineer] || null;
@@ -835,6 +843,10 @@ export const ProjectAssignmentMatrix = ({
         const pd = matrixData[engineer]?.[week];
         const eff = getEffectiveHours(pd?.projekt, pd?.hours);
         if (eff > 0) engHours += eff * (daysInMonth / 5);
+        if (!isFullWeekActivity(pd?.projekt) && normActivity(pd?.projekt) !== 'DEPARTED') {
+          maxProductive += daysInMonth * 7.2;
+          realProductive += getProductiveHours(pd?.projekt, pd?.hours) * (daysInMonth / 5);
+        }
       });
 
       if (capacityDays === 0) return;
@@ -843,8 +855,9 @@ export const ProjectAssignmentMatrix = ({
       fte += engHours / (capacityDays * 7.2);
     });
 
-    return { fte, hours, engineerCount };
+    return { fte, hours, engineerCount, maxProductive, realProductive };
   }, [filteredEngineers, endDateMap, displayNameMap, weeks, matrixData]);
+
 
   return (
 
@@ -1710,6 +1723,100 @@ export const ProjectAssignmentMatrix = ({
                           }`}
                         >
                           <div className="text-sm text-foreground">{Math.round(stats.hours)}h</div>
+                        </td>
+                      );
+                    })
+                  )}
+                </tr>
+                )}
+                {/* Max productive hours */}
+                {!customerViewMode && (
+                <tr className="bg-secondary/10 border-t border-secondary/20">
+                  <td className="border border-border p-2 font-bold sticky left-0 bg-secondary/10 z-10 text-foreground text-sm">
+                    Max productive hours
+                  </td>
+                  {viewMode === 'weeks' ? (
+                    months.map((month, monthIndex) =>
+                      month.weeks.map((week, weekIndex) => {
+                        const maxHours = filteredEngineers.reduce((sum, engineer) => {
+                          const pd = matrixData[engineer][week];
+                          if (!pd || normActivity(pd.projekt) === 'DEPARTED' || isFullWeekActivity(pd.projekt)) return sum;
+                          return sum + 36;
+                        }, 0);
+                        return (
+                          <td
+                            key={week}
+                            className={`border border-border p-1 text-center font-semibold ${
+                              monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
+                            }`}
+                          >
+                            <div className="text-sm text-foreground">{Math.round(maxHours)}h</div>
+                          </td>
+                        );
+                      })
+                    )
+                  ) : (
+                    months.map((month, monthIndex) => {
+                      const stats = getMonthStats(month.name);
+                      return (
+                        <td
+                          key={month.name}
+                          className={`border border-border p-1.5 text-center font-semibold ${
+                            monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
+                          }`}
+                        >
+                          <div className="text-sm text-foreground">{Math.round(stats.maxProductive)}h</div>
+                        </td>
+                      );
+                    })
+                  )}
+                </tr>
+                )}
+                {/* Real productive hours */}
+                {!customerViewMode && (
+                <tr className="bg-secondary/10 border-t border-secondary/20">
+                  <td className="border border-border p-2 font-bold sticky left-0 bg-secondary/10 z-10 text-foreground text-sm">
+                    Real productive hours
+                  </td>
+                  {viewMode === 'weeks' ? (
+                    months.map((month, monthIndex) =>
+                      month.weeks.map((week, weekIndex) => {
+                        const realHours = filteredEngineers.reduce((sum, engineer) => {
+                          const pd = matrixData[engineer][week];
+                          return sum + getProductiveHours(pd?.projekt, pd?.hours);
+                        }, 0);
+                        const maxHours = filteredEngineers.reduce((sum, engineer) => {
+                          const pd = matrixData[engineer][week];
+                          if (!pd || normActivity(pd.projekt) === 'DEPARTED' || isFullWeekActivity(pd.projekt)) return sum;
+                          return sum + 36;
+                        }, 0);
+                        const pct = maxHours > 0 ? Math.round((realHours / maxHours) * 100) : 0;
+                        return (
+                          <td
+                            key={week}
+                            className={`border border-border p-1 text-center font-semibold ${
+                              monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
+                            }`}
+                          >
+                            <div className="text-sm text-foreground">{Math.round(realHours)}h</div>
+                            <div className="text-[10px] text-muted-foreground">{pct}%</div>
+                          </td>
+                        );
+                      })
+                    )
+                  ) : (
+                    months.map((month, monthIndex) => {
+                      const stats = getMonthStats(month.name);
+                      const pct = stats.maxProductive > 0 ? Math.round((stats.realProductive / stats.maxProductive) * 100) : 0;
+                      return (
+                        <td
+                          key={month.name}
+                          className={`border border-border p-1.5 text-center font-semibold ${
+                            monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
+                          }`}
+                        >
+                          <div className="text-sm text-foreground">{Math.round(stats.realProductive)}h</div>
+                          <div className="text-[10px] text-muted-foreground">{pct}%</div>
                         </td>
                       );
                     })
