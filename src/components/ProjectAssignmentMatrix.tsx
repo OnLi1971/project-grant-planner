@@ -1727,12 +1727,6 @@ export const ProjectAssignmentMatrix = ({
                           const pd = matrixData[engineer][week];
                           return sum + getProductiveHours(pd?.projekt, pd?.hours);
                         }, 0);
-                        const maxHours = filteredEngineers.reduce((sum, engineer) => {
-                          const pd = matrixData[engineer][week];
-                          if (!pd || normActivity(pd.projekt) === 'DEPARTED' || isFullWeekActivity(pd.projekt)) return sum;
-                          return sum + 36;
-                        }, 0);
-                        const pct = maxHours > 0 ? Math.round((realHours / maxHours) * 100) : 0;
                         return (
                           <td
                             key={week}
@@ -1741,7 +1735,6 @@ export const ProjectAssignmentMatrix = ({
                             }`}
                           >
                             <div className="text-sm text-foreground">{Math.round(realHours)}h</div>
-                            <div className="text-[10px] text-muted-foreground">{pct}%</div>
                           </td>
                         );
                       })
