@@ -39,6 +39,12 @@ const getEffectiveHours = (projekt?: string, hours?: number) => {
   const h = hours || 0;
   return isFullWeekActivity(projekt) ? h * (36 / 40) : h;
 };
+// Productive = real project work only (vacation/sick/free/over excluded)
+const getProductiveHours = (projekt?: string, hours?: number) => {
+  if (isNonCountedActivity(projekt) || isFullWeekActivity(projekt)) return 0;
+  return hours || 0;
+};
+
 
 
 // Company mappings
