@@ -1253,7 +1253,7 @@ export const RevenueOverview = ({
                             </p>
                             <div className="flex justify-between text-sm gap-4 items-center pl-2">
                               <div className="flex items-center gap-1.5">
-                                <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: 'hsl(var(--muted-foreground))' }} />
+                                <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: 'hsl(var(--destructive))' }} />
                                 <span>Leave equivalent</span>
                               </div>
                               <span className="font-mono">{formatValue(data[LEAVE_KEY])}</span>
@@ -1309,8 +1309,8 @@ export const RevenueOverview = ({
                    <Bar
                      dataKey={LEAVE_KEY}
                      stackId="combined"
-                     fill="hsl(var(--muted-foreground))"
-                     fillOpacity={0.55}
+                      fill="hsl(var(--destructive))"
+                      fillOpacity={0.75}
                      name="Leave (vacation / sick)"
                    >
                      <LabelList
