@@ -902,6 +902,19 @@ export const RevenueOverview = ({
                 </Select>
               </div>
 
+              <div className="min-w-[140px]">
+                <Label className="text-xs text-muted-foreground">Chart view</Label>
+                <Select value={showLeave ? 'leave' : 'revenue'} onValueChange={(v) => setShowLeave(v === 'leave')}>
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border z-50">
+                    <SelectItem value="revenue">Revenue only</SelectItem>
+                    <SelectItem value="leave">Revenue + Leave</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               {displayUnit === 'kc' && (
                 <div className="min-w-[100px]">
                   <Label htmlFor="currency" className="text-xs text-muted-foreground">Currency</Label>
