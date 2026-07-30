@@ -573,10 +573,54 @@ export const RevenueOverview = ({
     return result;
   }, [planningData]);
 
+  // Volná kapacita (hodiny) po měsících – jen RAIL+EL, báze 36 MH/týden
+  const freeByMonth = useMemo(() => {
+    const norm = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+    const allowed = new Set(RAIL_EL_ENGINEERS.map(norm));
+    // engineer -> cw -> { productive, leave }
+    const perWeek: Record<string, Record<string, { productive: number; leave: number }>> = {};
+    planningData.forEach(entry => {
+      const eng = norm(entry.konstrukter || '');
+      if (!allowed.has(eng)) return;
+      const p = norm(entry.projekt || '');
+      const hours = entry.mhTyden || 0;
+      if (!perWeek[eng]) perWeek[eng] = {};
+      if (!perWeek[eng][entry.cw]) perWeek[eng][entry.cw] = { productive: 0, leave: 0 };
+      if (p === 'dovolena' || p === 'nemoc') {
+        perWeek[eng][entry.cw].leave += hours;
+      } else if (p === 'free' || p === 'over') {
+        // volná kapacita – neproduktivní, nepočítá se do productive
+      } else {
+        perWeek[eng][entry.cw].productive += hours;
+      }
+    });
+
+    const result: Record<string, number> = {};
+    Object.values(perWeek).forEach(weeks => {
+      Object.entries(weeks).forEach(([cw, v]) => {
+        const cwKey = cw.includes('-2026') ? cw.replace('-', '_') : cw.split('-')[0];
+        const weekMapping = getWeekMapping(cwKey);
+        if (!weekMapping) return;
+        const free = Math.max(0, 36 - v.productive - Math.min(v.leave, 36));
+        if (free <= 0) return;
+        Object.entries(weekMapping).forEach(([month, ratio]) => {
+          result[month] = (result[month] || 0) + free * (ratio as number);
+        });
+      });
+    });
+    return result;
+  }, [planningData]);
+
   const getLeaveValue = (month: string) => {
     const hours = leaveByMonth[month] || 0;
     return displayUnit === 'kc' ? hours * avgHourlyRate : hours;
   };
+
+  const getFreeValue = (month: string) => {
+    const hours = freeByMonth[month] || 0;
+    return displayUnit === 'kc' ? hours * 1100 : hours;
+  };
+
 
   const months = viewType === 'mesic' ? 
     [
