@@ -1245,12 +1245,34 @@ export const RevenueOverview = ({
                           </div>
                         )}
                         
+                        {/* Dovolená / nemoc */}
+                        {showLeave && (data[LEAVE_KEY] || 0) > 0 && (
+                          <div className="mb-3">
+                            <p className="text-xs font-semibold text-muted-foreground mb-1">
+                              LEAVE (vacation / sick)
+                            </p>
+                            <div className="flex justify-between text-sm gap-4 items-center pl-2">
+                              <div className="flex items-center gap-1.5">
+                                <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: 'hsl(var(--muted-foreground))' }} />
+                                <span>Leave equivalent</span>
+                              </div>
+                              <span className="font-mono">{formatValue(data[LEAVE_KEY])}</span>
+                            </div>
+                          </div>
+                        )}
+
                         {/* Celkem */}
                         <div className="border-t pt-2 mt-2">
                           <div className="flex justify-between font-semibold">
                             <span>Total:</span>
                             <span>{formatValue(total)}</span>
                           </div>
+                          {showLeave && (data[LEAVE_KEY] || 0) > 0 && (
+                            <div className="flex justify-between text-xs text-muted-foreground">
+                              <span>Total incl. leave:</span>
+                              <span>{formatValue(total + data[LEAVE_KEY])}</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
@@ -1274,7 +1296,7 @@ export const RevenueOverview = ({
                        strokeWidth={isPresales ? 1 : 0}
                        strokeDasharray={isPresales ? "3 3" : undefined}
                      >
-                       {index === filteredProjectList.length - 1 && (
+                       {!showLeave && index === filteredProjectList.length - 1 && (
                          <LabelList 
                            dataKey="total"
                            content={(props: any) => renderTotalLabel(props)}
@@ -1283,6 +1305,20 @@ export const RevenueOverview = ({
                      </Bar>
                    );
                  })}
+                 {showLeave && (
+                   <Bar
+                     dataKey={LEAVE_KEY}
+                     stackId="combined"
+                     fill="hsl(var(--muted-foreground))"
+                     fillOpacity={0.55}
+                     name="Leave (vacation / sick)"
+                   >
+                     <LabelList
+                       dataKey="totalWithLeave"
+                       content={(props: any) => renderTotalLabel(props)}
+                     />
+                   </Bar>
+                 )}
               </BarChart>
             </ResponsiveContainer>
           </div>
