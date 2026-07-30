@@ -13,6 +13,9 @@ import { Button } from '@/components/ui/button';
 import { getProjectColorWithIndex } from '@/utils/colorSystem';
 import { getWeekToMonthFractions, getWorkingDaysInMonth as getWorkingDaysInMonthFromUtils } from '@/utils/workingDays';
 import { getEffectiveRate, RateHistoryEntry } from '@/utils/projectRates';
+import { RAIL_EL_ENGINEERS } from '@/constants/railElEngineers';
+
+export const LEAVE_KEY = '__LEAVE__';
 
 interface DatabaseProject {
   id: string;
