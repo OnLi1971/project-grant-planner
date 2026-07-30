@@ -13,6 +13,9 @@ import { Button } from '@/components/ui/button';
 import { getProjectColorWithIndex } from '@/utils/colorSystem';
 import { getWeekToMonthFractions, getWorkingDaysInMonth as getWorkingDaysInMonthFromUtils } from '@/utils/workingDays';
 import { getEffectiveRate, RateHistoryEntry } from '@/utils/projectRates';
+import { RAIL_EL_ENGINEERS } from '@/constants/railElEngineers';
+
+export const LEAVE_KEY = '__LEAVE__';
 
 interface DatabaseProject {
   id: string;
@@ -78,6 +81,7 @@ export const RevenueOverview = ({
   ]);
   const [currency, setCurrency] = useState<'CZK' | 'USD'>(defaultCurrency);
   const [displayUnit, setDisplayUnit] = useState<'kc' | 'hodiny'>('kc');
+  const [showLeave, setShowLeave] = useState(false);
   const [projectStatusFilter, setProjectStatusFilter] = useState<'all' | 'realizace' | 'presales' | 'P0' | 'P1' | 'P2' | 'P3'>(defaultStatusFilter);
   const [projects, setProjects] = useState<DatabaseProject[]>([]);
   const [customers, setCustomers] = useState<DatabaseCustomer[]>([]);
@@ -541,6 +545,39 @@ export const RevenueOverview = ({
     });
     return result;
   }, [rawActiveData, monthCoefficients]);
+
+  // Průměrná sazba (pro převod hodin dovolené na peněžní ekvivalent)
+  const avgHourlyRate = useMemo(() => {
+    let rev = 0, hrs = 0;
+    Object.values(monthlyRevenueByProject).forEach(m => Object.values(m).forEach(v => rev += v as number));
+    Object.values(monthlyHoursByProject).forEach(m => Object.values(m).forEach(v => hrs += v as number));
+    return hrs > 0 ? rev / hrs : 0;
+  }, [monthlyRevenueByProject, monthlyHoursByProject]);
+
+  // Hodiny dovolené / nemoci po měsících (jen RAIL+EL konstruktéři)
+  const leaveByMonth = useMemo(() => {
+    const norm = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+    const allowed = new Set(RAIL_EL_ENGINEERS.map(norm));
+    const result: Record<string, number> = {};
+    planningData.forEach(entry => {
+      const p = norm(entry.projekt || '');
+      if (p !== 'dovolena' && p !== 'nemoc') return;
+      if (!allowed.has(norm(entry.konstrukter || ''))) return;
+      const cwKey = entry.cw.includes('-2026') ? entry.cw.replace('-', '_') : entry.cw.split('-')[0];
+      const weekMapping = getWeekMapping(cwKey);
+      if (!weekMapping || !entry.mhTyden) return;
+      Object.entries(weekMapping).forEach(([month, ratio]) => {
+        result[month] = (result[month] || 0) + entry.mhTyden * (ratio as number);
+      });
+    });
+    return result;
+  }, [planningData]);
+
+  const getLeaveValue = (month: string) => {
+    const hours = leaveByMonth[month] || 0;
+    return displayUnit === 'kc' ? hours * avgHourlyRate : hours;
+  };
+
   const months = viewType === 'mesic' ? 
     [
       'leden_2026', 'únor_2026', 'březen_2026', 'duben_2026', 'květen_2026', 'červen_2026',
@@ -628,13 +665,15 @@ export const RevenueOverview = ({
         const data: any = {
           month: label,
           total: 0,
-          dateRange
+          dateRange,
+          [LEAVE_KEY]: 0
         };
         
         // Sečteme data za všechny měsíce v kvartálu (pouze filtrované projekty)
         months.forEach(month => {
           const monthData = activeData[month] || {};
           data.total += filteredProjectList.reduce((sum: number, projectCode) => sum + (monthData[projectCode] || 0), 0);
+          data[LEAVE_KEY] += getLeaveValue(month);
           
           // Přidáme data pouze pro filtrované projekty
           filteredProjectList.forEach(projectCode => {
@@ -642,6 +681,7 @@ export const RevenueOverview = ({
             data[projectCode] += monthData[projectCode] || 0;
           });
         });
+        data.totalWithLeave = data.total + data[LEAVE_KEY];
         
         return data;
       });
@@ -660,18 +700,20 @@ export const RevenueOverview = ({
         const monthNameForDisplay = monthLabels[month] || month;
         const data: any = {
           month: monthNameForDisplay,
-          total: filteredProjectList.reduce((sum: number, projectCode) => sum + (monthData[projectCode] || 0), 0)
+          total: filteredProjectList.reduce((sum: number, projectCode) => sum + (monthData[projectCode] || 0), 0),
+          [LEAVE_KEY]: getLeaveValue(month)
         };
         
         // Přidáme data pouze pro filtrované projekty
         filteredProjectList.forEach(projectCode => {
           data[projectCode] = monthData[projectCode] || 0;
         });
+        data.totalWithLeave = data.total + data[LEAVE_KEY];
         
         return data;
       });
     }
-  }, [activeData, filteredProjectList, viewType, months]);
+  }, [activeData, filteredProjectList, viewType, months, leaveByMonth, displayUnit, avgHourlyRate]);
 
   // Možnosti pro filtrování
   const getFilterOptions = () => {
@@ -856,6 +898,19 @@ export const RevenueOverview = ({
                   <SelectContent className="bg-background border z-50">
                     <SelectItem value="kc">Currency</SelectItem>
                     <SelectItem value="hodiny">Hours</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="min-w-[140px]">
+                <Label className="text-xs text-muted-foreground">Chart view</Label>
+                <Select value={showLeave ? 'leave' : 'revenue'} onValueChange={(v) => setShowLeave(v === 'leave')}>
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border z-50">
+                    <SelectItem value="revenue">Revenue only</SelectItem>
+                    <SelectItem value="leave">Revenue + Leave</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1190,12 +1245,34 @@ export const RevenueOverview = ({
                           </div>
                         )}
                         
+                        {/* Dovolená / nemoc */}
+                        {showLeave && (data[LEAVE_KEY] || 0) > 0 && (
+                          <div className="mb-3">
+                            <p className="text-xs font-semibold text-muted-foreground mb-1">
+                              LEAVE (vacation / sick)
+                            </p>
+                            <div className="flex justify-between text-sm gap-4 items-center pl-2">
+                              <div className="flex items-center gap-1.5">
+                                <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: 'hsl(var(--muted-foreground))' }} />
+                                <span>Leave equivalent</span>
+                              </div>
+                              <span className="font-mono">{formatValue(data[LEAVE_KEY])}</span>
+                            </div>
+                          </div>
+                        )}
+
                         {/* Celkem */}
                         <div className="border-t pt-2 mt-2">
                           <div className="flex justify-between font-semibold">
                             <span>Total:</span>
                             <span>{formatValue(total)}</span>
                           </div>
+                          {showLeave && (data[LEAVE_KEY] || 0) > 0 && (
+                            <div className="flex justify-between text-xs text-muted-foreground">
+                              <span>Total incl. leave:</span>
+                              <span>{formatValue(total + data[LEAVE_KEY])}</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
@@ -1219,7 +1296,7 @@ export const RevenueOverview = ({
                        strokeWidth={isPresales ? 1 : 0}
                        strokeDasharray={isPresales ? "3 3" : undefined}
                      >
-                       {index === filteredProjectList.length - 1 && (
+                       {!showLeave && index === filteredProjectList.length - 1 && (
                          <LabelList 
                            dataKey="total"
                            content={(props: any) => renderTotalLabel(props)}
@@ -1228,6 +1305,20 @@ export const RevenueOverview = ({
                      </Bar>
                    );
                  })}
+                 {showLeave && (
+                   <Bar
+                     dataKey={LEAVE_KEY}
+                     stackId="combined"
+                     fill="hsl(var(--muted-foreground))"
+                     fillOpacity={0.55}
+                     name="Leave (vacation / sick)"
+                   >
+                     <LabelList
+                       dataKey="totalWithLeave"
+                       content={(props: any) => renderTotalLabel(props)}
+                     />
+                   </Bar>
+                 )}
               </BarChart>
             </ResponsiveContainer>
           </div>
