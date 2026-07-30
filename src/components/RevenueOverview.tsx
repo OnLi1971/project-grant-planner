@@ -16,6 +16,7 @@ import { getEffectiveRate, RateHistoryEntry } from '@/utils/projectRates';
 import { RAIL_EL_ENGINEERS } from '@/constants/railElEngineers';
 
 export const LEAVE_KEY = '__LEAVE__';
+export const FREE_KEY = '__FREE__';
 
 interface DatabaseProject {
   id: string;
@@ -81,7 +82,9 @@ export const RevenueOverview = ({
   ]);
   const [currency, setCurrency] = useState<'CZK' | 'USD'>(defaultCurrency);
   const [displayUnit, setDisplayUnit] = useState<'kc' | 'hodiny'>('kc');
-  const [showLeave, setShowLeave] = useState(false);
+  const [chartMode, setChartMode] = useState<'revenue' | 'leave' | 'max'>('revenue');
+  const showLeave = chartMode !== 'revenue';
+  const showFree = chartMode === 'max';
   const [projectStatusFilter, setProjectStatusFilter] = useState<'all' | 'realizace' | 'presales' | 'P0' | 'P1' | 'P2' | 'P3'>(defaultStatusFilter);
   const [projects, setProjects] = useState<DatabaseProject[]>([]);
   const [customers, setCustomers] = useState<DatabaseCustomer[]>([]);
@@ -573,10 +576,54 @@ export const RevenueOverview = ({
     return result;
   }, [planningData]);
 
+  // Volná kapacita (hodiny) po měsících – jen RAIL+EL, báze 36 MH/týden
+  const freeByMonth = useMemo(() => {
+    const norm = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+    const allowed = new Set(RAIL_EL_ENGINEERS.map(norm));
+    // engineer -> cw -> { productive, leave }
+    const perWeek: Record<string, Record<string, { productive: number; leave: number }>> = {};
+    planningData.forEach(entry => {
+      const eng = norm(entry.konstrukter || '');
+      if (!allowed.has(eng)) return;
+      const p = norm(entry.projekt || '');
+      const hours = entry.mhTyden || 0;
+      if (!perWeek[eng]) perWeek[eng] = {};
+      if (!perWeek[eng][entry.cw]) perWeek[eng][entry.cw] = { productive: 0, leave: 0 };
+      if (p === 'dovolena' || p === 'nemoc') {
+        perWeek[eng][entry.cw].leave += hours;
+      } else if (p === 'free' || p === 'over') {
+        // volná kapacita – neproduktivní, nepočítá se do productive
+      } else {
+        perWeek[eng][entry.cw].productive += hours;
+      }
+    });
+
+    const result: Record<string, number> = {};
+    Object.values(perWeek).forEach(weeks => {
+      Object.entries(weeks).forEach(([cw, v]) => {
+        const cwKey = cw.includes('-2026') ? cw.replace('-', '_') : cw.split('-')[0];
+        const weekMapping = getWeekMapping(cwKey);
+        if (!weekMapping) return;
+        const free = Math.max(0, 36 - v.productive - Math.min(v.leave, 36));
+        if (free <= 0) return;
+        Object.entries(weekMapping).forEach(([month, ratio]) => {
+          result[month] = (result[month] || 0) + free * (ratio as number);
+        });
+      });
+    });
+    return result;
+  }, [planningData]);
+
   const getLeaveValue = (month: string) => {
     const hours = leaveByMonth[month] || 0;
     return displayUnit === 'kc' ? hours * avgHourlyRate : hours;
   };
+
+  const getFreeValue = (month: string) => {
+    const hours = freeByMonth[month] || 0;
+    return displayUnit === 'kc' ? hours * 1100 : hours;
+  };
+
 
   const months = viewType === 'mesic' ? 
     [
@@ -666,7 +713,8 @@ export const RevenueOverview = ({
           month: label,
           total: 0,
           dateRange,
-          [LEAVE_KEY]: 0
+          [LEAVE_KEY]: 0,
+          [FREE_KEY]: 0
         };
         
         // Sečteme data za všechny měsíce v kvartálu (pouze filtrované projekty)
@@ -674,6 +722,7 @@ export const RevenueOverview = ({
           const monthData = activeData[month] || {};
           data.total += filteredProjectList.reduce((sum: number, projectCode) => sum + (monthData[projectCode] || 0), 0);
           data[LEAVE_KEY] += getLeaveValue(month);
+          data[FREE_KEY] += getFreeValue(month);
           
           // Přidáme data pouze pro filtrované projekty
           filteredProjectList.forEach(projectCode => {
@@ -682,6 +731,7 @@ export const RevenueOverview = ({
           });
         });
         data.totalWithLeave = data.total + data[LEAVE_KEY];
+        data.totalMax = data.totalWithLeave + data[FREE_KEY];
         
         return data;
       });
@@ -701,7 +751,8 @@ export const RevenueOverview = ({
         const data: any = {
           month: monthNameForDisplay,
           total: filteredProjectList.reduce((sum: number, projectCode) => sum + (monthData[projectCode] || 0), 0),
-          [LEAVE_KEY]: getLeaveValue(month)
+          [LEAVE_KEY]: getLeaveValue(month),
+          [FREE_KEY]: getFreeValue(month)
         };
         
         // Přidáme data pouze pro filtrované projekty
@@ -709,11 +760,12 @@ export const RevenueOverview = ({
           data[projectCode] = monthData[projectCode] || 0;
         });
         data.totalWithLeave = data.total + data[LEAVE_KEY];
+        data.totalMax = data.totalWithLeave + data[FREE_KEY];
         
         return data;
       });
     }
-  }, [activeData, filteredProjectList, viewType, months, leaveByMonth, displayUnit, avgHourlyRate]);
+  }, [activeData, filteredProjectList, viewType, months, leaveByMonth, freeByMonth, displayUnit, avgHourlyRate]);
 
   // Možnosti pro filtrování
   const getFilterOptions = () => {
@@ -904,13 +956,14 @@ export const RevenueOverview = ({
 
               <div className="min-w-[140px]">
                 <Label className="text-xs text-muted-foreground">Chart view</Label>
-                <Select value={showLeave ? 'leave' : 'revenue'} onValueChange={(v) => setShowLeave(v === 'leave')}>
+                <Select value={chartMode} onValueChange={(v: 'revenue' | 'leave' | 'max') => setChartMode(v)}>
                   <SelectTrigger className="h-8 text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-background border z-50">
                     <SelectItem value="revenue">Revenue only</SelectItem>
                     <SelectItem value="leave">Revenue + Leave</SelectItem>
+                    <SelectItem value="max">Max potential (incl. free capacity)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1261,6 +1314,21 @@ export const RevenueOverview = ({
                           </div>
                         )}
 
+                        {showFree && (data[FREE_KEY] || 0) > 0 && (
+                          <div className="mb-3">
+                            <p className="text-xs font-semibold text-muted-foreground mb-1">
+                              FREE CAPACITY (36 MH/week @ 1100 Kč)
+                            </p>
+                            <div className="flex justify-between text-sm gap-4 items-center pl-2">
+                              <div className="flex items-center gap-1.5">
+                                <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: 'hsl(var(--chart-2, 142 71% 45%))' }} />
+                                <span>Free capacity potential</span>
+                              </div>
+                              <span className="font-mono">{formatValue(data[FREE_KEY])}</span>
+                            </div>
+                          </div>
+                        )}
+
                         {/* Celkem */}
                         <div className="border-t pt-2 mt-2">
                           <div className="flex justify-between font-semibold">
@@ -1271,6 +1339,12 @@ export const RevenueOverview = ({
                             <div className="flex justify-between text-xs text-muted-foreground">
                               <span>Total incl. leave:</span>
                               <span>{formatValue(total + data[LEAVE_KEY])}</span>
+                            </div>
+                          )}
+                          {showFree && (
+                            <div className="flex justify-between text-xs font-semibold">
+                              <span>Max potential:</span>
+                              <span>{formatValue(total + (data[LEAVE_KEY] || 0) + (data[FREE_KEY] || 0))}</span>
                             </div>
                           )}
                         </div>
@@ -1313,8 +1387,24 @@ export const RevenueOverview = ({
                       fillOpacity={0.75}
                      name="Leave (vacation / sick)"
                    >
+                     {!showFree && (
+                       <LabelList
+                         dataKey="totalWithLeave"
+                         content={(props: any) => renderTotalLabel(props)}
+                       />
+                     )}
+                   </Bar>
+                 )}
+                 {showFree && (
+                   <Bar
+                     dataKey={FREE_KEY}
+                     stackId="combined"
+                     fill="hsl(var(--chart-2, 142 71% 45%))"
+                     fillOpacity={0.6}
+                     name="Free capacity (36 MH/week @ 1100)"
+                   >
                      <LabelList
-                       dataKey="totalWithLeave"
+                       dataKey="totalMax"
                        content={(props: any) => renderTotalLabel(props)}
                      />
                    </Bar>
