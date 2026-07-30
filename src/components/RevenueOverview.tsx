@@ -545,6 +545,39 @@ export const RevenueOverview = ({
     });
     return result;
   }, [rawActiveData, monthCoefficients]);
+
+  // Průměrná sazba (pro převod hodin dovolené na peněžní ekvivalent)
+  const avgHourlyRate = useMemo(() => {
+    let rev = 0, hrs = 0;
+    Object.values(monthlyRevenueByProject).forEach(m => Object.values(m).forEach(v => rev += v as number));
+    Object.values(monthlyHoursByProject).forEach(m => Object.values(m).forEach(v => hrs += v as number));
+    return hrs > 0 ? rev / hrs : 0;
+  }, [monthlyRevenueByProject, monthlyHoursByProject]);
+
+  // Hodiny dovolené / nemoci po měsících (jen RAIL+EL konstruktéři)
+  const leaveByMonth = useMemo(() => {
+    const norm = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+    const allowed = new Set(RAIL_EL_ENGINEERS.map(norm));
+    const result: Record<string, number> = {};
+    planningData.forEach(entry => {
+      const p = norm(entry.projekt || '');
+      if (p !== 'dovolena' && p !== 'nemoc') return;
+      if (!allowed.has(norm(entry.konstrukter || ''))) return;
+      const cwKey = entry.cw.includes('-2026') ? entry.cw.replace('-', '_') : entry.cw.split('-')[0];
+      const weekMapping = getWeekMapping(cwKey);
+      if (!weekMapping || !entry.mhTyden) return;
+      Object.entries(weekMapping).forEach(([month, ratio]) => {
+        result[month] = (result[month] || 0) + entry.mhTyden * (ratio as number);
+      });
+    });
+    return result;
+  }, [planningData]);
+
+  const getLeaveValue = (month: string) => {
+    const hours = leaveByMonth[month] || 0;
+    return displayUnit === 'kc' ? hours * avgHourlyRate : hours;
+  };
+
   const months = viewType === 'mesic' ? 
     [
       'leden_2026', 'únor_2026', 'březen_2026', 'duben_2026', 'květen_2026', 'červen_2026',
