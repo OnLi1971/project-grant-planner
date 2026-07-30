@@ -81,6 +81,7 @@ export const RevenueOverview = ({
   ]);
   const [currency, setCurrency] = useState<'CZK' | 'USD'>(defaultCurrency);
   const [displayUnit, setDisplayUnit] = useState<'kc' | 'hodiny'>('kc');
+  const [showLeave, setShowLeave] = useState(false);
   const [projectStatusFilter, setProjectStatusFilter] = useState<'all' | 'realizace' | 'presales' | 'P0' | 'P1' | 'P2' | 'P3'>(defaultStatusFilter);
   const [projects, setProjects] = useState<DatabaseProject[]>([]);
   const [customers, setCustomers] = useState<DatabaseCustomer[]>([]);
