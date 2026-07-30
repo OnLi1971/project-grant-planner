@@ -665,13 +665,15 @@ export const RevenueOverview = ({
         const data: any = {
           month: label,
           total: 0,
-          dateRange
+          dateRange,
+          [LEAVE_KEY]: 0
         };
         
         // Sečteme data za všechny měsíce v kvartálu (pouze filtrované projekty)
         months.forEach(month => {
           const monthData = activeData[month] || {};
           data.total += filteredProjectList.reduce((sum: number, projectCode) => sum + (monthData[projectCode] || 0), 0);
+          data[LEAVE_KEY] += getLeaveValue(month);
           
           // Přidáme data pouze pro filtrované projekty
           filteredProjectList.forEach(projectCode => {
@@ -679,6 +681,7 @@ export const RevenueOverview = ({
             data[projectCode] += monthData[projectCode] || 0;
           });
         });
+        data.totalWithLeave = data.total + data[LEAVE_KEY];
         
         return data;
       });
