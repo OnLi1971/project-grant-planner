@@ -700,18 +700,20 @@ export const RevenueOverview = ({
         const monthNameForDisplay = monthLabels[month] || month;
         const data: any = {
           month: monthNameForDisplay,
-          total: filteredProjectList.reduce((sum: number, projectCode) => sum + (monthData[projectCode] || 0), 0)
+          total: filteredProjectList.reduce((sum: number, projectCode) => sum + (monthData[projectCode] || 0), 0),
+          [LEAVE_KEY]: getLeaveValue(month)
         };
         
         // Přidáme data pouze pro filtrované projekty
         filteredProjectList.forEach(projectCode => {
           data[projectCode] = monthData[projectCode] || 0;
         });
+        data.totalWithLeave = data.total + data[LEAVE_KEY];
         
         return data;
       });
     }
-  }, [activeData, filteredProjectList, viewType, months]);
+  }, [activeData, filteredProjectList, viewType, months, leaveByMonth, displayUnit, avgHourlyRate]);
 
   // Možnosti pro filtrování
   const getFilterOptions = () => {
