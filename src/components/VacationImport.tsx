@@ -368,7 +368,14 @@ export function VacationImport() {
                       {r.fullWeek ? 'DOVOLENÁ, 40 h' : `hodiny ${r.currentHours} → ${r.newHours} h`}
                     </TableCell>
                     <TableCell className="text-xs">
-                      {r.conflict ? <Badge variant="destructive">konflikt</Badge> : <Badge variant="secondary">OK</Badge>}
+                      <div className="flex flex-col gap-1">
+                        {r.conflict ? <Badge variant="destructive">konflikt</Badge> : <Badge variant="secondary">OK</Badge>}
+                        {r.status && (
+                          <Badge variant="outline" className={r.tentative ? 'bg-success/10 text-success border-success/40' : 'bg-success/30 border-success'}>
+                            {r.status}
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
