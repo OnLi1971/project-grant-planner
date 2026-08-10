@@ -187,13 +187,15 @@ const getWeekDateRange = (cwKey: string): string => {
   return `${format(monday, 'd.M.')}\u2013${format(friday, 'd.M.')}`;
 };
 
-const getProjectBadgeStyle = (projekt: string) => {
+const getProjectBadgeStyle = (projekt: string, isTentative?: boolean) => {
   // Departed engineer
   if (projekt === 'DEPARTED') return 'bg-gray-200 text-red-500 border-gray-300 dark:bg-gray-800 dark:text-red-400 dark:border-gray-700';
   
   // Free, vacation, sick leave and overtime
   if (projekt === 'FREE') return 'bg-destructive/20 text-destructive border-destructive/30 font-semibold dark:bg-destructive/30 dark:text-destructive-foreground';
-  if (projekt === 'DOVOLENÁ') return 'bg-success/30 text-success-foreground border-success dark:bg-success/40 dark:text-success-foreground';
+  if (projekt === 'DOVOLENÁ') return isTentative
+    ? 'bg-success/10 text-success border-success/40 dark:bg-success/15 dark:text-success'
+    : 'bg-success/30 text-success-foreground border-success dark:bg-success/40 dark:text-success-foreground';
   if (projekt === 'NEMOC') return 'bg-destructive/30 text-destructive-foreground border-destructive dark:bg-destructive/40 dark:text-destructive-foreground';  
   if (projekt === 'OVER') return 'bg-warning/30 text-warning-foreground border-warning dark:bg-warning/40 dark:text-warning-foreground';
   
