@@ -187,13 +187,15 @@ const getWeekDateRange = (cwKey: string): string => {
   return `${format(monday, 'd.M.')}\u2013${format(friday, 'd.M.')}`;
 };
 
-const getProjectBadgeStyle = (projekt: string) => {
+const getProjectBadgeStyle = (projekt: string, isTentative?: boolean) => {
   // Departed engineer
   if (projekt === 'DEPARTED') return 'bg-gray-200 text-red-500 border-gray-300 dark:bg-gray-800 dark:text-red-400 dark:border-gray-700';
   
   // Free, vacation, sick leave and overtime
   if (projekt === 'FREE') return 'bg-destructive/20 text-destructive border-destructive/30 font-semibold dark:bg-destructive/30 dark:text-destructive-foreground';
-  if (projekt === 'DOVOLENÁ') return 'bg-success/30 text-success-foreground border-success dark:bg-success/40 dark:text-success-foreground';
+  if (projekt === 'DOVOLENÁ') return isTentative
+    ? 'bg-success/10 text-success border-success/40 dark:bg-success/15 dark:text-success'
+    : 'bg-success/30 text-success-foreground border-success dark:bg-success/40 dark:text-success-foreground';
   if (projekt === 'NEMOC') return 'bg-destructive/30 text-destructive-foreground border-destructive dark:bg-destructive/40 dark:text-destructive-foreground';  
   if (projekt === 'OVER') return 'bg-warning/30 text-warning-foreground border-warning dark:bg-warning/40 dark:text-warning-foreground';
   
@@ -1317,8 +1319,8 @@ export const ProjectAssignmentMatrix = ({
                                   <TooltipTrigger asChild>
                                     <div 
                                       onClick={(e) => handleProjectClick(project, e)}
-                                      className={`text-xs px-1.5 py-0.5 w-full justify-center font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-md inline-flex items-center cursor-pointer ${getProjectBadgeStyle(project)} ${
-                                        isTentative ? 'border-[3px] border-dashed !border-yellow-400' : (isLowCapacity ? 'border-[3px] border-dashed !border-red-500' : '')
+                                      className={`text-xs px-1.5 py-0.5 w-full justify-center font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-md inline-flex items-center cursor-pointer ${getProjectBadgeStyle(project, isTentative)} ${
+                                        isTentative && project !== 'DOVOLENÁ' ? 'border-[3px] border-dashed !border-yellow-400' : (isLowCapacity ? 'border-[3px] border-dashed !border-red-500' : '')
                                       }`}
                                     >
                                       <span className="truncate max-w-[65px]" title={getProjectDisplayName(project)}>

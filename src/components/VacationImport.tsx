@@ -23,6 +23,8 @@ type Row = {
   fullWeek: boolean;
   conflict: boolean;
   selected: boolean;
+  status?: string;
+  tentative?: boolean;
 };
 
 const normalizeProject = (p: string) =>
@@ -48,6 +50,24 @@ const parseDayMonth = (val: any): { d: number; m: number } | null => {
   return m ? { d: parseInt(m[1], 10), m: parseInt(m[2], 10) } : null;
 };
 
+// Plné datum (d.m.yyyy / Date / Excel serial)
+const parseFullDate = (val: any): Date | null => {
+  if (val === null || val === undefined || val === '') return null;
+  if (val instanceof Date) return new Date(val.getFullYear(), val.getMonth(), val.getDate());
+  if (typeof val === 'number') {
+    const p = XLSX.SSF.parse_date_code(val);
+    return p ? new Date(p.y, p.m - 1, p.d) : null;
+  }
+  const m = String(val).trim().match(/^(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})$/);
+  return m ? new Date(parseInt(m[3], 10), parseInt(m[2], 10) - 1, parseInt(m[1], 10)) : null;
+};
+
+const isTentativeStatus = (stav: string) => {
+  const s = normalizeName(stav || '');
+  return s.includes('nova') || s.includes('nove') || s.includes('predschvalena') || s.includes('predschvalene');
+};
+
+
 export function VacationImport() {
   const fileRef = useRef<HTMLInputElement>(null);
   const { planningData, updatePlanningEntry, updatePlanningHours } = usePlanning();
@@ -66,6 +86,107 @@ export function VacationImport() {
       const wb = XLSX.read(await file.arrayBuffer(), { cellDates: true });
       const ws = wb.Sheets[wb.SheetNames[0]];
       const grid: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: true });
+
+      // === Nový formulář: seznam Uživatel / Datum od / Datum do / Počet dní / Typ / Aktuální stav ===
+      let listHeaderIdx = -1;
+      for (let i = 0; i < Math.min(grid.length, 20); i++) {
+        const cells = (grid[i] || []).map(c => normalizeName(String(c ?? '')));
+        if (cells.some(c => c.startsWith('uzivatel')) && cells.some(c => c.startsWith('datum od'))) {
+          listHeaderIdx = i;
+          break;
+        }
+      }
+
+      if (listHeaderIdx !== -1) {
+        const header = (grid[listHeaderIdx] || []).map(c => normalizeName(String(c ?? '')));
+        const findCol = (pred: (c: string) => boolean) => header.findIndex(pred);
+        const cUser = findCol(c => c.startsWith('uzivatel'));
+        const cFrom = findCol(c => c.startsWith('datum od'));
+        const cTo = findCol(c => c.startsWith('datum do'));
+        const cTyp = findCol(c => c === 'typ');
+        const cStav = findCol(c => c.includes('stav'));
+
+        // Aktuální plán + mapa jmen
+        const planMapL = new Map<string, { projekt: string; hours: number }>();
+        planningData.forEach(p => {
+          planMapL.set(`${normalizeName(p.konstrukter)}|${p.cw}`, {
+            projekt: p.projekt || 'FREE',
+            hours: p.mhTyden || 0,
+          });
+        });
+        const nameByNormL = new Map<string, string>();
+        planningData.forEach(p => nameByNormL.set(normalizeName(p.konstrukter), p.konstrukter));
+
+        // agregace: jméno|cw -> { dny, tentative }
+        const agg = new Map<string, { konstrukter: string; norm: string; cw: string; days: number; tentative: boolean; statuses: Set<string> }>();
+        const missingL = new Set<string>();
+
+        for (let i = listHeaderIdx + 1; i < grid.length; i++) {
+          const row = grid[i] || [];
+          const rawUser = String(row[cUser] ?? '').trim();
+          if (!rawUser) continue;
+          const nameMatch = rawUser.match(/^(.+?)\s*\(([^)]+)\)\s*$/);
+          const rawName = (nameMatch ? nameMatch[1] : rawUser).trim();
+          const from = parseFullDate(row[cFrom]);
+          const to = parseFullDate(row[cTo]) || from;
+          if (!from || !to) continue;
+
+          const stav = cStav >= 0 ? String(row[cStav] ?? '').trim() : '';
+          const tentative = isTentativeStatus(stav);
+
+          const norm = normalizeName(rawName);
+          const konstrukter = nameByNormL.get(norm);
+          if (!konstrukter) { missingL.add(rawName); continue; }
+
+          for (let d = new Date(from); d <= to; d.setDate(d.getDate() + 1)) {
+            const dow = d.getDay();
+            if (dow === 0 || dow === 6) continue; // jen pracovní dny
+            const cw = `CW${String(getISOWeek(d)).padStart(2, '0')}-${getISOWeekYear(d)}`;
+            const key = `${norm}|${cw}`;
+            const cur = agg.get(key);
+            if (cur) {
+              cur.days = Math.min(5, cur.days + 1);
+              cur.tentative = cur.tentative || tentative;
+              if (stav) cur.statuses.add(stav);
+            } else {
+              agg.set(key, { konstrukter, norm, cw, days: 1, tentative, statuses: new Set(stav ? [stav] : []) });
+            }
+          }
+        }
+
+        const parsedL: Row[] = [];
+        agg.forEach(a => {
+          const current = planMapL.get(`${a.norm}|${a.cw}`);
+          if (!current) return;
+          const fullWeek = a.days >= 5;
+          const newHours = fullWeek ? 40 : Math.round(7.2 * (5 - a.days));
+          const conflict = NON_PROJECT.includes(normalizeProject(current.projekt).toUpperCase());
+          parsedL.push({
+            konstrukter: a.konstrukter,
+            cw: a.cw,
+            leaveDays: a.days,
+            currentProject: current.projekt,
+            currentHours: current.hours,
+            newHours,
+            fullWeek,
+            conflict,
+            selected: !conflict,
+            status: Array.from(a.statuses).join(', '),
+            tentative: a.tentative,
+          });
+        });
+
+        if (parsedL.length === 0 && missingL.size === 0) {
+          toast({ title: 'Žádné změny', description: 'V souboru nebyly nalezeny dovolené pro existující týdny', variant: 'destructive' });
+          return;
+        }
+
+        parsedL.sort((a, b) => a.konstrukter.localeCompare(b.konstrukter) || a.cw.localeCompare(b.cw));
+        setRows(parsedL);
+        setUnmatched(Array.from(missingL));
+        setOpen(true);
+        return;
+      }
 
       // Najdi řádek s datem pondělí (min. 3 buňky ve tvaru d.m.)
       let dateRowIdx = -1;
@@ -172,7 +293,7 @@ export function VacationImport() {
     try {
       for (const r of rows.filter(x => x.selected)) {
         if (r.fullWeek) {
-          await updatePlanningEntry(r.konstrukter, r.cw, 'DOVOLENÁ');
+          await updatePlanningEntry(r.konstrukter, r.cw, 'DOVOLENÁ', !!r.tentative);
           await updatePlanningHours(r.konstrukter, r.cw, 40);
         } else {
           await updatePlanningHours(r.konstrukter, r.cw, r.newHours);
@@ -247,7 +368,14 @@ export function VacationImport() {
                       {r.fullWeek ? 'DOVOLENÁ, 40 h' : `hodiny ${r.currentHours} → ${r.newHours} h`}
                     </TableCell>
                     <TableCell className="text-xs">
-                      {r.conflict ? <Badge variant="destructive">konflikt</Badge> : <Badge variant="secondary">OK</Badge>}
+                      <div className="flex flex-col gap-1">
+                        {r.conflict ? <Badge variant="destructive">konflikt</Badge> : <Badge variant="secondary">OK</Badge>}
+                        {r.status && (
+                          <Badge variant="outline" className={r.tentative ? 'bg-success/10 text-success border-success/40' : 'bg-success/30 border-success'}>
+                            {r.status}
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
