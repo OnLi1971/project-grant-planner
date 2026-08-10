@@ -1322,7 +1322,7 @@ export const ProjectAssignmentMatrix = ({
                                     <div 
                                       onClick={(e) => handleProjectClick(project, e)}
                                       className={`text-xs px-1.5 py-0.5 w-full justify-center font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-md inline-flex items-center cursor-pointer ${getProjectBadgeStyle(project, isTentative)} ${
-                                        isTentative && project !== 'DOVOLENÁ' ? 'border-[3px] border-dashed !border-yellow-400' : (isLowCapacity ? 'border-[3px] border-dashed !border-green-500' : '')
+                                        isTentative && project !== 'DOVOLENÁ' ? 'border-[3px] border-dashed !border-yellow-400' : (isLowCapacity ? `border-[3px] border-dashed ${isLeaveReduced ? '!border-green-500' : '!border-red-500'}` : '')
                                       }`}
                                     >
                                       <span className="truncate max-w-[65px]" title={getProjectDisplayName(project)}>
