@@ -293,7 +293,7 @@ export function VacationImport() {
     try {
       for (const r of rows.filter(x => x.selected)) {
         if (r.fullWeek) {
-          await updatePlanningEntry(r.konstrukter, r.cw, 'DOVOLENÁ');
+          await updatePlanningEntry(r.konstrukter, r.cw, 'DOVOLENÁ', !!r.tentative);
           await updatePlanningHours(r.konstrukter, r.cw, 40);
         } else {
           await updatePlanningHours(r.konstrukter, r.cw, r.newHours);
