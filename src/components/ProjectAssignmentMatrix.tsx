@@ -1438,7 +1438,7 @@ export const ProjectAssignmentMatrix = ({
                                        <div 
                                          onClick={customerViewMode ? undefined : (e) => handleProjectClick(mainProject, e)}
                                          className={`text-xs px-1.5 py-0.5 w-full justify-center font-medium shadow-sm ${!customerViewMode ? 'hover:shadow-md cursor-pointer' : ''} transition-all duration-200 rounded-md inline-flex items-center ${getProjectBadgeStyle(mainProject)} ${
-                                           mainTentative ? 'border-[3px] border-dashed !border-yellow-400' : (isLowCapacity ? 'border-[3px] border-dashed !border-green-500' : '')
+                                           mainTentative ? 'border-[3px] border-dashed !border-yellow-400' : (isLowCapacity ? 'border-[3px] border-dashed !border-red-500' : '')
                                          }`}
                                        >
                                          {showText ? (
@@ -1980,7 +1980,7 @@ export const ProjectAssignmentMatrix = ({
                         <span className="text-muted-foreground">Fully allocated</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="px-3 py-1 bg-primary/20 text-primary rounded-md border-[3px] border-dashed border-green-500">
+                        <div className="px-3 py-1 bg-primary/20 text-primary rounded-md border-[3px] border-dashed border-red-500">
                           Project
                         </div>
                         <span className="text-muted-foreground">Partially allocated</span>
