@@ -13,7 +13,7 @@ import { PlanningChangesTrendChart } from './PlanningChangesTrendChart';
 import { PlanningAIAnalyzer } from './PlanningAIAnalyzer';
 import { usePlanning } from '@/contexts/PlanningContext';
 import { customers, projectManagers, programs, projects } from '@/data/projectsData';
-import { getWeek } from 'date-fns';
+import { getWeek, format } from 'date-fns';
 import { normalizeName, createNameMapping } from '@/utils/nameNormalization';
 import { getWorkingDaysFromMonthName, getWorkingDaysInWeekForMonth, getWorkingDaysInCW, getISOWeekMonday, getWorkingDaysInMonth, isHoliday } from '@/utils/workingDays';
 import { isEngineerDepartedForWeek } from '@/utils/engineerDeparture';
@@ -176,6 +176,15 @@ const getProjectDisplayName = (project: string): string => {
   if (normalized === 'DOVOLENA') return 'VACATION';
   if (normalized === 'NEMOC') return 'SICK LEAVE';
   return project;
+};
+
+const getWeekDateRange = (cwKey: string): string => {
+  const match = cwKey.match(/CW(\d+)-(\d+)/);
+  if (!match) return '';
+  const monday = getISOWeekMonday(parseInt(match[1]), parseInt(match[2]));
+  const friday = new Date(monday);
+  friday.setDate(monday.getDate() + 4);
+  return `${format(monday, 'd.M.')}\u2013${format(friday, 'd.M.')}`;
 };
 
 const getProjectBadgeStyle = (projekt: string) => {
@@ -1176,12 +1185,14 @@ export const ProjectAssignmentMatrix = ({
                               monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
                             }`}
                           >
-                            <div className="flex items-center justify-center gap-1">
+                            <div className="flex flex-col items-center">
                               {(() => {
                                 const m = week.match(/CW(\d+)-(\d+)/);
                                 if (!m) return <span className="text-muted-foreground">{week}</span>;
                                 const cwN = parseInt(m[1]);
                                 const yN = parseInt(m[2]);
+                                const cwLabel = `CW${cwN.toString().padStart(2, '0')}`;
+                                const dateRange = getWeekDateRange(week);
                                 const monday = getISOWeekMonday(cwN, yN);
                                 const holidays: string[] = [];
                                 for (let i = 0; i < 5; i++) {
@@ -1195,12 +1206,13 @@ export const ProjectAssignmentMatrix = ({
                                     holidays.push(`${dayName} ${d.getDate()}.${d.getMonth()+1}. (${tags})`);
                                   }
                                 }
-                                if (holidays.length === 0) return <span className="text-muted-foreground">{week}</span>;
-                                return (
+                                const label = holidays.length === 0 ? (
+                                  <span className="text-muted-foreground">{cwLabel}</span>
+                                ) : (
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <span className="text-muted-foreground cursor-help">
-                                        {week} <span className="text-red-500">🎌</span>
+                                        {cwLabel} <span className="text-red-500">🎌</span>
                                       </span>
                                     </TooltipTrigger>
                                     <TooltipContent side="top">
@@ -1209,39 +1221,46 @@ export const ProjectAssignmentMatrix = ({
                                     </TooltipContent>
                                   </Tooltip>
                                 );
+                                return (
+                                  <>
+                                    <div className="flex items-center gap-1">
+                                      {label}
+                                      <Popover>
+                                        <PopoverTrigger asChild>
+                                          <Button 
+                                            variant="ghost" 
+                                            size="sm" 
+                                            className={`h-5 w-5 p-0 ${hasActiveWeekFilter(week) ? 'text-primary' : 'text-muted-foreground'}`}
+                                          >
+                                            <Filter className="h-3 w-3" />
+                                          </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-60 p-0" align="start">
+                                          <div className="p-2 max-h-64 overflow-y-auto">
+                                            <div className="font-medium text-sm mb-2 px-2">{cwLabel}</div>
+                                            {getProjectsForWeek(week).map(project => (
+                                              <div key={project} className="flex items-center space-x-2 py-2 px-2 rounded hover:bg-muted/50">
+                                                <Checkbox
+                                                  id={`week-${week}-project-${project}`}
+                                                  checked={isWeekFilterActive(week, project)}
+                                                  onCheckedChange={() => toggleWeekFilter(week, project)}
+                                                />
+                                                <label 
+                                                  htmlFor={`week-${week}-project-${project}`} 
+                                                  className="text-sm cursor-pointer flex-1"
+                                                >
+                                                  {project === 'Všechny' ? 'All' : getProjectDisplayName(project)}
+                                                </label>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </PopoverContent>
+                                      </Popover>
+                                    </div>
+                                    <span className="text-[10px] leading-none text-muted-foreground mt-0.5">{dateRange}</span>
+                                  </>
+                                );
                               })()}
-
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    className={`h-5 w-5 p-0 ${hasActiveWeekFilter(week) ? 'text-primary' : 'text-muted-foreground'}`}
-                                  >
-                                    <Filter className="h-3 w-3" />
-                                  </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-60 p-0" align="start">
-                                  <div className="p-2 max-h-64 overflow-y-auto">
-                                    <div className="font-medium text-sm mb-2 px-2">{week}</div>
-                                    {getProjectsForWeek(week).map(project => (
-                                      <div key={project} className="flex items-center space-x-2 py-2 px-2 rounded hover:bg-muted/50">
-                                        <Checkbox
-                                          id={`week-${week}-project-${project}`}
-                                          checked={isWeekFilterActive(week, project)}
-                                          onCheckedChange={() => toggleWeekFilter(week, project)}
-                                        />
-                                        <label 
-                                          htmlFor={`week-${week}-project-${project}`} 
-                                          className="text-sm cursor-pointer flex-1"
-                                        >
-                                          {project === 'Všechny' ? 'All' : getProjectDisplayName(project)}
-                                        </label>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </PopoverContent>
-                              </Popover>
                             </div>
                           </th>
                         ))
