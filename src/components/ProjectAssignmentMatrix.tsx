@@ -13,7 +13,7 @@ import { PlanningChangesTrendChart } from './PlanningChangesTrendChart';
 import { PlanningAIAnalyzer } from './PlanningAIAnalyzer';
 import { usePlanning } from '@/contexts/PlanningContext';
 import { customers, projectManagers, programs, projects } from '@/data/projectsData';
-import { getWeek } from 'date-fns';
+import { getWeek, format } from 'date-fns';
 import { normalizeName, createNameMapping } from '@/utils/nameNormalization';
 import { getWorkingDaysFromMonthName, getWorkingDaysInWeekForMonth, getWorkingDaysInCW, getISOWeekMonday, getWorkingDaysInMonth, isHoliday } from '@/utils/workingDays';
 import { isEngineerDepartedForWeek } from '@/utils/engineerDeparture';
@@ -176,6 +176,15 @@ const getProjectDisplayName = (project: string): string => {
   if (normalized === 'DOVOLENA') return 'VACATION';
   if (normalized === 'NEMOC') return 'SICK LEAVE';
   return project;
+};
+
+const getWeekDateRange = (cwKey: string): string => {
+  const match = cwKey.match(/CW(\d+)-(\d+)/);
+  if (!match) return '';
+  const monday = getISOWeekMonday(parseInt(match[1]), parseInt(match[2]));
+  const friday = new Date(monday);
+  friday.setDate(monday.getDate() + 4);
+  return `${format(monday, 'd.M.')}\u2013${format(friday, 'd.M.')}`;
 };
 
 const getProjectBadgeStyle = (projekt: string) => {
