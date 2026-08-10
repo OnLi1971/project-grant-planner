@@ -23,6 +23,8 @@ type Row = {
   fullWeek: boolean;
   conflict: boolean;
   selected: boolean;
+  status?: string;
+  tentative?: boolean;
 };
 
 const normalizeProject = (p: string) =>
@@ -47,6 +49,24 @@ const parseDayMonth = (val: any): { d: number; m: number } | null => {
   const m = String(val).trim().match(/^(\d{1,2})\.\s*(\d{1,2})\.?$/);
   return m ? { d: parseInt(m[1], 10), m: parseInt(m[2], 10) } : null;
 };
+
+// Plné datum (d.m.yyyy / Date / Excel serial)
+const parseFullDate = (val: any): Date | null => {
+  if (val === null || val === undefined || val === '') return null;
+  if (val instanceof Date) return new Date(val.getFullYear(), val.getMonth(), val.getDate());
+  if (typeof val === 'number') {
+    const p = XLSX.SSF.parse_date_code(val);
+    return p ? new Date(p.y, p.m - 1, p.d) : null;
+  }
+  const m = String(val).trim().match(/^(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})$/);
+  return m ? new Date(parseInt(m[3], 10), parseInt(m[2], 10) - 1, parseInt(m[1], 10)) : null;
+};
+
+const isTentativeStatus = (stav: string) => {
+  const s = normalizeName(stav || '');
+  return s.includes('nova') || s.includes('nove') || s.includes('predschvalena') || s.includes('predschvalene');
+};
+
 
 export function VacationImport() {
   const fileRef = useRef<HTMLInputElement>(null);
