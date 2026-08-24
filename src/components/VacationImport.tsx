@@ -294,9 +294,9 @@ export function VacationImport() {
       for (const r of rows.filter(x => x.selected)) {
         if (r.fullWeek) {
           await updatePlanningEntry(r.konstrukter, r.cw, 'DOVOLENÁ', !!r.tentative);
-          await updatePlanningHours(r.konstrukter, r.cw, 40);
+          await updatePlanningHours(r.konstrukter, r.cw, 40, 5);
         } else {
-          await updatePlanningHours(r.konstrukter, r.cw, r.newHours);
+          await updatePlanningHours(r.konstrukter, r.cw, r.newHours, r.leaveDays);
         }
         ok++;
       }

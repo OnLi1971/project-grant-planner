@@ -438,7 +438,7 @@ export const ProjectAssignmentMatrix = ({
     engineers.forEach(e => {
       isSlovakMap[normalizeName(e.display_name)] = getEngineerCompany(e.display_name) === 'MB Idea';
     });
-    const matrix: { [engineer: string]: { [week: string]: { projekt: string; isTentative: boolean; hours: number } } } = {};
+    const matrix: { [engineer: string]: { [week: string]: { projekt: string; isTentative: boolean; hours: number; leaveDays: number } } } = {};
     
     engineerKeys.forEach(engineerKey => {
       matrix[engineerKey] = {};
@@ -450,7 +450,8 @@ export const ProjectAssignmentMatrix = ({
           matrix[engineerKey][week] = {
             projekt: 'DEPARTED',
             isTentative: false,
-            hours: 0
+            hours: 0,
+            leaveDays: 0
           };
           return;
         }
@@ -471,7 +472,8 @@ export const ProjectAssignmentMatrix = ({
         matrix[engineerKey][week] = {
           projekt,
           isTentative: entry?.is_tentative || false,
-          hours
+          hours,
+          leaveDays: entry?.leaveDays || 0
         };
       });
     });
@@ -1304,7 +1306,7 @@ export const ProjectAssignmentMatrix = ({
                           const hours = projectData?.hours || 0;
                           const isLowCapacity = hours > 0 && hours <= 35;
                           // hodiny odpovídající 1–4 dnům dovolené (round(7.2 * zbylé dny))
-                          const isLeaveReduced = [7, 14, 22, 29].includes(hours);
+                          const isLeaveReduced = (projectData?.leaveDays || 0) > 0 || [7, 14, 22, 29].includes(hours);
                           return (
                             <td 
                               key={week} 
