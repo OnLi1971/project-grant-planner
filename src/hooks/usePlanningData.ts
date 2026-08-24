@@ -145,7 +145,8 @@ export function usePlanningData() {
           mesic: row.mesic || '',
           mhTyden: row.mh_tyden || 0,
           projekt: row.projekt || 'FREE',
-          is_tentative: row.is_tentative || false
+          is_tentative: row.is_tentative || false,
+          leaveDays: row.leave_days || 0
         };
       });
 

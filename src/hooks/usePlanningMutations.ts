@@ -113,10 +113,11 @@ export function usePlanningMutations({ setPlanningData, engineers }: UsePlanning
     engineerId: string,
     konstrukter: string,
     cw: string,
-    hours: number
+    hours: number,
+    leaveDays?: number
   ): Promise<void> => {
     try {
-      console.log('CLEAN_UPDATE_HOURS:', { engineerId, konstrukter, cw, hours });
+      console.log('CLEAN_UPDATE_HOURS:', { engineerId, konstrukter, cw, hours, leaveDays });
 
       // Extract year from CW
       const [cwBase, yearStr] = cw.includes('-') ? cw.split('-') : [cw, new Date().getFullYear().toString()];
@@ -127,6 +128,7 @@ export function usePlanningMutations({ setPlanningData, engineers }: UsePlanning
         .from('planning_entries')
         .update({ 
           mh_tyden: hours,
+          ...(leaveDays !== undefined ? { leave_days: leaveDays } : {}),
           updated_at: new Date().toISOString()
         })
         .eq('engineer_id', engineerId)
@@ -149,7 +151,7 @@ export function usePlanningMutations({ setPlanningData, engineers }: UsePlanning
       setPlanningData(prev => prev.map(entry => {
         // Match by engineer_id and cw (both include year format)
         if (entry.engineer_id === engineerId && entry.cw === cw) {
-          return { ...entry, mhTyden: verifiedData.mh_tyden };
+          return { ...entry, mhTyden: verifiedData.mh_tyden, ...(leaveDays !== undefined ? { leaveDays } : {}) };
         }
         return entry;
       }));

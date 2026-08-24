@@ -438,7 +438,7 @@ export const ProjectAssignmentMatrix = ({
     engineers.forEach(e => {
       isSlovakMap[normalizeName(e.display_name)] = getEngineerCompany(e.display_name) === 'MB Idea';
     });
-    const matrix: { [engineer: string]: { [week: string]: { projekt: string; isTentative: boolean; hours: number } } } = {};
+    const matrix: { [engineer: string]: { [week: string]: { projekt: string; isTentative: boolean; hours: number; leaveDays: number } } } = {};
     
     engineerKeys.forEach(engineerKey => {
       matrix[engineerKey] = {};
@@ -450,7 +450,8 @@ export const ProjectAssignmentMatrix = ({
           matrix[engineerKey][week] = {
             projekt: 'DEPARTED',
             isTentative: false,
-            hours: 0
+            hours: 0,
+            leaveDays: 0
           };
           return;
         }
@@ -471,7 +472,8 @@ export const ProjectAssignmentMatrix = ({
         matrix[engineerKey][week] = {
           projekt,
           isTentative: entry?.is_tentative || false,
-          hours
+          hours,
+          leaveDays: entry?.leaveDays || 0
         };
       });
     });
@@ -768,7 +770,8 @@ export const ProjectAssignmentMatrix = ({
       filteredEngineers.forEach(engineer => {
         weeks.forEach(week => {
           const projectData = matrixData[engineer][week];
-          if (projectData?.projekt && !regimeProjects.includes(projectData.projekt) && projectData.hours > 0 && projectData.hours < 30) {
+          const leaveH = (projectData?.leaveDays || 0) * 7.2;
+          if (projectData?.projekt && !regimeProjects.includes(projectData.projekt) && projectData.hours > 0 && projectData.hours < 30 && (40 - projectData.hours - leaveH) >= 4) {
             engineersOnProject.add(engineer);
           }
         });
@@ -786,12 +789,12 @@ export const ProjectAssignmentMatrix = ({
             hours: projectData.hours,
             isTentative: projectData.isTentative || false
           });
-        } else if (projectName === 'FREE' && projectData?.projekt && !regimeProjects.includes(projectData.projekt) && projectData.hours > 0 && projectData.hours < 30) {
-          // Add partial free capacity entry
+        } else if (projectName === 'FREE' && projectData?.projekt && !regimeProjects.includes(projectData.projekt) && projectData.hours > 0 && projectData.hours < 30 && (40 - projectData.hours - (projectData.leaveDays || 0) * 7.2) >= 4) {
+          // Add partial free capacity entry (excluding hours covered by leave)
           allocations.push({
             engineer: displayNameMap[engineer] || engineer,
             week,
-            hours: 40 - projectData.hours,
+            hours: Math.round(40 - projectData.hours - (projectData.leaveDays || 0) * 7.2),
             isTentative: false,
             isPartialFree: true
           });
@@ -856,9 +859,11 @@ export const ProjectAssignmentMatrix = ({
         const pd = matrixData[engineer]?.[week];
         const eff = getEffectiveHours(pd?.projekt, pd?.hours);
         if (eff > 0) engHours += eff * (daysInMonth / 5);
+        const partialLeave = isFullWeekActivity(pd?.projekt) ? 0 : Math.min(daysInMonth, (pd?.leaveDays || 0) * (daysInMonth / 5));
         if (isFullWeekActivity(pd?.projekt)) leaveDays += daysInMonth;
+        else leaveDays += partialLeave;
         if (!isFullWeekActivity(pd?.projekt) && normActivity(pd?.projekt) !== 'DEPARTED') {
-          maxProductive += daysInMonth * 7.2;
+          maxProductive += (daysInMonth - partialLeave) * 7.2;
           realProductive += getProductiveHours(pd?.projekt, pd?.hours) * (daysInMonth / 5);
         }
       });
@@ -1304,7 +1309,7 @@ export const ProjectAssignmentMatrix = ({
                           const hours = projectData?.hours || 0;
                           const isLowCapacity = hours > 0 && hours <= 35;
                           // hodiny odpovídající 1–4 dnům dovolené (round(7.2 * zbylé dny))
-                          const isLeaveReduced = [7, 14, 22, 29].includes(hours);
+                          const isLeaveReduced = (projectData?.leaveDays || 0) > 0 || [7, 14, 22, 29].includes(hours);
                           return (
                             <td 
                               key={week} 

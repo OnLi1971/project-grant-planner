@@ -59,7 +59,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     await updateEntry(engineer.id, konstrukter, cw, projekt, isTentative);
   }, [updateEntry, engineers]);
 
-  const updatePlanningHours = useCallback(async (konstrukter: string, cw: string, hours: number) => {
+  const updatePlanningHours = useCallback(async (konstrukter: string, cw: string, hours: number, leaveDays?: number) => {
     // Find engineer_id from konstrukter name using normalization to handle diacritics
     const normalizedKonstrukter = normalizeName(konstrukter);
     const engineer = engineers.find(e => 
@@ -72,7 +72,7 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       throw new Error(`Engineer not found: ${konstrukter}`);
     }
     
-    await updateHours(engineer.id, konstrukter, cw, hours);
+    await updateHours(engineer.id, konstrukter, cw, hours, leaveDays);
   }, [updateHours, engineers]);
 
   return (
