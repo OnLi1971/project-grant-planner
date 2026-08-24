@@ -770,7 +770,8 @@ export const ProjectAssignmentMatrix = ({
       filteredEngineers.forEach(engineer => {
         weeks.forEach(week => {
           const projectData = matrixData[engineer][week];
-          if (projectData?.projekt && !regimeProjects.includes(projectData.projekt) && projectData.hours > 0 && projectData.hours < 30) {
+          const leaveH = (projectData?.leaveDays || 0) * 7.2;
+          if (projectData?.projekt && !regimeProjects.includes(projectData.projekt) && projectData.hours > 0 && projectData.hours < 30 && (40 - projectData.hours - leaveH) >= 4) {
             engineersOnProject.add(engineer);
           }
         });
@@ -788,12 +789,12 @@ export const ProjectAssignmentMatrix = ({
             hours: projectData.hours,
             isTentative: projectData.isTentative || false
           });
-        } else if (projectName === 'FREE' && projectData?.projekt && !regimeProjects.includes(projectData.projekt) && projectData.hours > 0 && projectData.hours < 30) {
-          // Add partial free capacity entry
+        } else if (projectName === 'FREE' && projectData?.projekt && !regimeProjects.includes(projectData.projekt) && projectData.hours > 0 && projectData.hours < 30 && (40 - projectData.hours - (projectData.leaveDays || 0) * 7.2) >= 4) {
+          // Add partial free capacity entry (excluding hours covered by leave)
           allocations.push({
             engineer: displayNameMap[engineer] || engineer,
             week,
-            hours: 40 - projectData.hours,
+            hours: Math.round(40 - projectData.hours - (projectData.leaveDays || 0) * 7.2),
             isTentative: false,
             isPartialFree: true
           });
@@ -858,9 +859,11 @@ export const ProjectAssignmentMatrix = ({
         const pd = matrixData[engineer]?.[week];
         const eff = getEffectiveHours(pd?.projekt, pd?.hours);
         if (eff > 0) engHours += eff * (daysInMonth / 5);
+        const partialLeave = isFullWeekActivity(pd?.projekt) ? 0 : Math.min(daysInMonth, (pd?.leaveDays || 0) * (daysInMonth / 5));
         if (isFullWeekActivity(pd?.projekt)) leaveDays += daysInMonth;
+        else leaveDays += partialLeave;
         if (!isFullWeekActivity(pd?.projekt) && normActivity(pd?.projekt) !== 'DEPARTED') {
-          maxProductive += daysInMonth * 7.2;
+          maxProductive += (daysInMonth - partialLeave) * 7.2;
           realProductive += getProductiveHours(pd?.projekt, pd?.hours) * (daysInMonth / 5);
         }
       });
