@@ -872,11 +872,12 @@ export const ProjectAssignmentMatrix = ({
       if (capacityDays === 0) return;
       engineerCount += 1;
       leaveFte += leaveDays / capacityDays;
+      leaveMh += leaveDays * 7.2;
       hours += engHours;
       fte += engHours / (capacityDays * 7.2);
     });
 
-    return { fte, hours, engineerCount, maxProductive, realProductive, leaveFte };
+    return { fte, hours, engineerCount, maxProductive, realProductive, leaveFte, leaveMh };
   }, [filteredEngineers, endDateMap, displayNameMap, weeks, matrixData]);
 
 
