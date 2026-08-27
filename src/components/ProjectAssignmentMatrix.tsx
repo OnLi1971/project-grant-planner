@@ -837,6 +837,7 @@ export const ProjectAssignmentMatrix = ({
     let maxProductive = 0;
     let realProductive = 0;
     let leaveFte = 0;
+    let leaveMh = 0;
 
     filteredEngineers.forEach(engineer => {
       const endDate = endDateMap[engineer] || null;
