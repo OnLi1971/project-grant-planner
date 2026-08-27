@@ -837,6 +837,7 @@ export const ProjectAssignmentMatrix = ({
     let maxProductive = 0;
     let realProductive = 0;
     let leaveFte = 0;
+    let leaveMh = 0;
 
     filteredEngineers.forEach(engineer => {
       const endDate = endDateMap[engineer] || null;
@@ -871,11 +872,12 @@ export const ProjectAssignmentMatrix = ({
       if (capacityDays === 0) return;
       engineerCount += 1;
       leaveFte += leaveDays / capacityDays;
+      leaveMh += leaveDays * 7.2;
       hours += engHours;
       fte += engHours / (capacityDays * 7.2);
     });
 
-    return { fte, hours, engineerCount, maxProductive, realProductive, leaveFte };
+    return { fte, hours, engineerCount, maxProductive, realProductive, leaveFte, leaveMh };
   }, [filteredEngineers, endDateMap, displayNameMap, weeks, matrixData]);
 
 
@@ -1739,6 +1741,50 @@ export const ProjectAssignmentMatrix = ({
                           }`}
                         >
                           <div className="text-sm text-foreground">{stats.leaveFte.toFixed(1)}</div>
+                        </td>
+                      );
+                    })
+                  )}
+                </tr>
+                )}
+                {/* Leave [MH] = hours spent on vacation/sick leave */}
+                {!customerViewMode && (
+                <tr className="bg-primary/5 border-t border-primary/20">
+                  <td className="border border-border p-2 font-bold sticky left-0 bg-primary/5 z-10 text-foreground text-sm">
+                    Leave [MH]
+                  </td>
+                  {viewMode === 'weeks' ? (
+                    months.map((month, monthIndex) =>
+                      month.weeks.map((week, weekIndex) => {
+                        const leaveMh = filteredEngineers.reduce((sum, engineer) => {
+                          const pd = matrixData[engineer][week];
+                          if (!pd) return sum;
+                          if (isFullWeekActivity(pd.projekt)) return sum + 36;
+                          return sum + (pd.leaveDays || 0) * 7.2;
+                        }, 0);
+                        return (
+                          <td
+                            key={week}
+                            className={`border border-border p-1 text-center font-semibold ${
+                              monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
+                            }`}
+                          >
+                            <div className="text-sm text-foreground">{Math.round(leaveMh)}h</div>
+                          </td>
+                        );
+                      })
+                    )
+                  ) : (
+                    months.map((month, monthIndex) => {
+                      const stats = getMonthStats(month.name);
+                      return (
+                        <td
+                          key={month.name}
+                          className={`border border-border p-1.5 text-center font-semibold ${
+                            monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
+                          }`}
+                        >
+                          <div className="text-sm text-foreground">{Math.round(stats.leaveMh)}h</div>
                         </td>
                       );
                     })
