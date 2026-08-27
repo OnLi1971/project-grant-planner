@@ -86,16 +86,24 @@ const getCurrentWeekAndYear = (): { week: number; year: number } => {
   };
 };
 
-// Funkce pro generování týdnů od aktuálního týdne na 52 týdnů dopředu
+// Funkce pro generování týdnů: 2 měsíce (~9 týdnů) zpět + 52 týdnů dopředu
 const getAllWeeks = (): string[] => {
   const { week: currentWeek, year: currentYear } = getCurrentWeekAndYear();
   
   const weeks = [];
-  let week = currentWeek;
-  let year = currentYear;
+  const weeksBack = 9; // ~2 měsíce nazpět
+  const weeksForward = 52;
   
-  // Generujeme 52 týdnů od aktuálního
-  for (let i = 0; i < 52; i++) {
+  // Posunout se zpět o weeksBack týdnů
+  let week = currentWeek - weeksBack;
+  let year = currentYear;
+  while (week < 1) {
+    week += 52;
+    year--;
+  }
+  
+  // Generujeme weeksBack + weeksForward týdnů
+  for (let i = 0; i < weeksBack + weeksForward; i++) {
     weeks.push(`CW${week.toString().padStart(2, '0')}-${year}`);
     week++;
     if (week > 52) {
