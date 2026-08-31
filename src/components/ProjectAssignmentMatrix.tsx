@@ -1209,7 +1209,7 @@ export const ProjectAssignmentMatrix = ({
                         month.weeks.map((week, weekIndex) => (
                           <th 
                             key={week} 
-                            className={`border border-border p-1.5 ${isCurrentWeekKey(week) ? 'bg-primary/10' : 'bg-background'} text-xs min-w-[90px] font-medium sticky top-[48px] z-20 ${
+                            className={`border border-border p-1.5 ${isCurrentWeekKey(week) ? 'bg-warning/30 border-warning' : 'bg-background'} text-xs min-w-[90px] font-medium sticky top-[48px] z-20 ${
                               (monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : '') + (isCurrentWeekKey(week) ? ' bg-warning/30 border-warning' : '')
                             }`}
                           >
