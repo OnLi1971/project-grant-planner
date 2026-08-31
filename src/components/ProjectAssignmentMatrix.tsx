@@ -1210,7 +1210,7 @@ export const ProjectAssignmentMatrix = ({
                         <th 
                           key={month.name} 
                           className={`border-2 border-border p-2 bg-background text-center font-bold text-base sticky top-0 z-20 ${
-                            (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + ((showHistory && isCurrentMonth(month.name)) ? ' bg-warning/30 border-warning' : '')
+                            (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + ((showHistory && viewMode === 'months' && isCurrentMonth(month.name)) ? ' bg-warning/30 border-warning' : '')
                           }`} 
                           colSpan={month.weeks.length}
                         >
@@ -1321,7 +1321,7 @@ export const ProjectAssignmentMatrix = ({
                       <th 
                         key={month.name} 
                         className={`border-2 border-border p-1 bg-background text-center font-bold text-xs min-w-[70px] sticky top-0 z-20 ${
-                          (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + ((showHistory && isCurrentMonth(month.name)) ? ' bg-warning/30 border-warning' : '')
+                          (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + ((showHistory && viewMode === 'months' && isCurrentMonth(month.name)) ? ' bg-warning/30 border-warning' : '')
                         }`}
                       >
                         <div className="flex items-center justify-center">
@@ -1444,7 +1444,7 @@ export const ProjectAssignmentMatrix = ({
                            <td 
                              key={month.name} 
                              className={`border border-border p-0.5 text-center align-top ${
-                               (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + ((showHistory && isCurrentMonth(month.name)) ? ' bg-warning/30 border-warning' : '')
+                               (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + ((showHistory && viewMode === 'months' && isCurrentMonth(month.name)) ? ' bg-warning/30 border-warning' : '')
                              }`}
                            >
                               {hasProjects && (
@@ -1684,7 +1684,7 @@ export const ProjectAssignmentMatrix = ({
                         <td 
                           key={month.name} 
                           className={`border border-border p-1.5 text-center font-semibold ${
-                            (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + ((showHistory && isCurrentMonth(month.name)) ? ' bg-warning/30 border-warning' : '')
+                            (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + ((showHistory && viewMode === 'months' && isCurrentMonth(month.name)) ? ' bg-warning/30 border-warning' : '')
                           }`}
                         >
                           <div className="text-sm text-foreground">{Math.round(freeMh)}h</div>
@@ -1731,7 +1731,7 @@ export const ProjectAssignmentMatrix = ({
                         <td 
                           key={month.name} 
                           className={`border border-border p-1.5 text-center font-semibold ${
-                            (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + ((showHistory && isCurrentMonth(month.name)) ? ' bg-warning/30 border-warning' : '')
+                            (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + ((showHistory && viewMode === 'months' && isCurrentMonth(month.name)) ? ' bg-warning/30 border-warning' : '')
                           }`}
                         >
                           <div className="text-sm text-foreground">{freeFte.toFixed(1)}</div>
@@ -1773,7 +1773,7 @@ export const ProjectAssignmentMatrix = ({
                         <td 
                           key={month.name} 
                           className={`border border-border p-1.5 text-center font-semibold ${
-                            (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + ((showHistory && isCurrentMonth(month.name)) ? ' bg-warning/30 border-warning' : '')
+                            (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + ((showHistory && viewMode === 'months' && isCurrentMonth(month.name)) ? ' bg-warning/30 border-warning' : '')
                           }`}
                         >
                           <div className="text-sm text-foreground">{stats.leaveFte.toFixed(1)}</div>
@@ -1817,7 +1817,7 @@ export const ProjectAssignmentMatrix = ({
                         <td
                           key={month.name}
                           className={`border border-border p-1.5 text-center font-semibold ${
-                            (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + ((showHistory && isCurrentMonth(month.name)) ? ' bg-warning/30 border-warning' : '')
+                            (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + ((showHistory && viewMode === 'months' && isCurrentMonth(month.name)) ? ' bg-warning/30 border-warning' : '')
                           }`}
                         >
                           <div className="text-sm text-foreground">{Math.round(stats.leaveMh)}h</div>
@@ -1860,7 +1860,7 @@ export const ProjectAssignmentMatrix = ({
                         <td
                           key={month.name}
                           className={`border border-border p-1.5 text-center font-semibold ${
-                            (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + ((showHistory && isCurrentMonth(month.name)) ? ' bg-warning/30 border-warning' : '')
+                            (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + ((showHistory && viewMode === 'months' && isCurrentMonth(month.name)) ? ' bg-warning/30 border-warning' : '')
                           }`}
                         >
                           <div className="text-sm text-foreground">{Math.round(stats.maxProductive)}h</div>
@@ -1902,7 +1902,7 @@ export const ProjectAssignmentMatrix = ({
                         <td
                           key={month.name}
                           className={`border border-border p-1.5 text-center font-semibold ${
-                            (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + ((showHistory && isCurrentMonth(month.name)) ? ' bg-warning/30 border-warning' : '')
+                            (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + ((showHistory && viewMode === 'months' && isCurrentMonth(month.name)) ? ' bg-warning/30 border-warning' : '')
                           }`}
                         >
                           <div className="text-sm text-foreground">{Math.round(stats.realProductive)}h</div>
@@ -1945,7 +1945,7 @@ export const ProjectAssignmentMatrix = ({
                         <td
                           key={month.name}
                           className={`border border-border p-1.5 text-center font-semibold ${
-                            (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + ((showHistory && isCurrentMonth(month.name)) ? ' bg-warning/30 border-warning' : '')
+                            (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + ((showHistory && viewMode === 'months' && isCurrentMonth(month.name)) ? ' bg-warning/30 border-warning' : '')
                           }`}
                         >
                           <div className="text-sm text-foreground">{stats.engineerCount}</div>
@@ -1988,7 +1988,7 @@ export const ProjectAssignmentMatrix = ({
                         <td
                           key={month.name}
                           className={`border border-border p-1.5 text-center font-semibold ${
-                            (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + ((showHistory && isCurrentMonth(month.name)) ? ' bg-warning/30 border-warning' : '')
+                            (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + ((showHistory && viewMode === 'months' && isCurrentMonth(month.name)) ? ' bg-warning/30 border-warning' : '')
                           }`}
                         >
                           <div className="text-sm text-foreground">{stats.fte.toFixed(1)}</div>
@@ -2039,7 +2039,7 @@ export const ProjectAssignmentMatrix = ({
                         <td
                           key={month.name}
                           className={`border border-border p-1.5 text-center font-semibold ${
-                            (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + ((showHistory && isCurrentMonth(month.name)) ? ' bg-warning/30 border-warning' : '')
+                            (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + ((showHistory && viewMode === 'months' && isCurrentMonth(month.name)) ? ' bg-warning/30 border-warning' : '')
                           }`}
                         >
                           <div className="text-sm text-foreground">{utilization}%</div>
