@@ -561,7 +561,7 @@ export const ProjectAssignmentMatrix = ({
     });
     
     return monthlyMatrix;
-  }, [planningData, endDateMap]);
+  }, [planningData, endDateMap, months]);
 
   // Get display data based on view mode
   const displayData = viewMode === 'weeks' ? matrixData : monthlyData;
@@ -1424,8 +1424,8 @@ export const ProjectAssignmentMatrix = ({
                       )
                     ) : (
                       months.map((month, monthIndex) => {
-                        const monthData = monthlyData[engineer][month.name];
-                        const hasProjects = monthData.projects.length > 0;
+                        const monthData = monthlyData[engineer]?.[month.name];
+                        const hasProjects = (monthData?.projects?.length ?? 0) > 0;
                         
                         // Sort projects by hours descending
                         const sortedProjects = monthData.projects.sort((a, b) => {
