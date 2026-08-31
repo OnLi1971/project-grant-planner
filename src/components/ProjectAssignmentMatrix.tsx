@@ -117,6 +117,17 @@ const getAllWeeks = (): string[] => {
 
 const allWeeks = getAllWeeks();
 
+// Aktuální týden / měsíc pro zvýraznění sloupce
+const CURRENT_WEEK_KEY = (() => {
+  const { week, year } = getCurrentWeekAndYear();
+  return `CW${week.toString().padStart(2, '0')}-${year}`;
+})();
+const isCurrentWeekKey = (weekKey: string): boolean => weekKey === CURRENT_WEEK_KEY;
+const isCurrentMonth = (monthName: string): boolean => {
+  const info = getMonthForWeek(CURRENT_WEEK_KEY);
+  return info ? monthName === `${info.name} ${info.year}` : false;
+};
+
 // Czech month names by number
 const monthNumberToNameCZ: { [key: number]: string } = {
   1: 'leden', 2: 'únor', 3: 'březen', 4: 'duben', 5: 'květen', 6: 'červen',
@@ -1182,7 +1193,7 @@ export const ProjectAssignmentMatrix = ({
                         <th 
                           key={month.name} 
                           className={`border-2 border-border p-2 bg-background text-center font-bold text-base sticky top-0 z-20 ${
-                            monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
+                            (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + (isCurrentMonth(month.name) ? ' bg-primary/10' : '')
                           }`} 
                           colSpan={month.weeks.length}
                         >
@@ -1198,8 +1209,8 @@ export const ProjectAssignmentMatrix = ({
                         month.weeks.map((week, weekIndex) => (
                           <th 
                             key={week} 
-                            className={`border border-border p-1.5 bg-background text-xs min-w-[90px] font-medium sticky top-[48px] z-20 ${
-                              monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
+                            className={`border border-border p-1.5 ${isCurrentWeekKey(week) ? 'bg-primary/10' : 'bg-background'} text-xs min-w-[90px] font-medium sticky top-[48px] z-20 ${
+                              (monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : '') + (isCurrentWeekKey(week) ? ' bg-primary/10' : '')
                             }`}
                           >
                             <div className="flex flex-col items-center">
@@ -1293,7 +1304,7 @@ export const ProjectAssignmentMatrix = ({
                       <th 
                         key={month.name} 
                         className={`border-2 border-border p-1 bg-background text-center font-bold text-xs min-w-[70px] sticky top-0 z-20 ${
-                          monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
+                          (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + (isCurrentMonth(month.name) ? ' bg-primary/10' : '')
                         }`}
                       >
                         <div className="flex items-center justify-center">
@@ -1324,7 +1335,7 @@ export const ProjectAssignmentMatrix = ({
                             <td 
                               key={week} 
                               className={`border border-border p-1 text-center ${
-                                monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
+                                (monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : '') + (isCurrentWeekKey(week) ? ' bg-primary/10' : '')
                               }`}
                             >
                             {project === 'DEPARTED' ? (
@@ -1416,7 +1427,7 @@ export const ProjectAssignmentMatrix = ({
                            <td 
                              key={month.name} 
                              className={`border border-border p-0.5 text-center align-top ${
-                               monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
+                               (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + (isCurrentMonth(month.name) ? ' bg-primary/10' : '')
                              }`}
                            >
                               {hasProjects && (
@@ -1640,7 +1651,7 @@ export const ProjectAssignmentMatrix = ({
                           <td 
                             key={week} 
                             className={`border border-border p-1 text-center font-semibold ${
-                              monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
+                              (monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : '') + (isCurrentWeekKey(week) ? ' bg-primary/10' : '')
                             }`}
                           >
                             <div className="text-sm text-foreground">{Math.round(freeMh)}h</div>
@@ -1656,7 +1667,7 @@ export const ProjectAssignmentMatrix = ({
                         <td 
                           key={month.name} 
                           className={`border border-border p-1.5 text-center font-semibold ${
-                            monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
+                            (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + (isCurrentMonth(month.name) ? ' bg-primary/10' : '')
                           }`}
                         >
                           <div className="text-sm text-foreground">{Math.round(freeMh)}h</div>
@@ -1687,7 +1698,7 @@ export const ProjectAssignmentMatrix = ({
                           <td 
                             key={week} 
                             className={`border border-border p-1 text-center font-semibold ${
-                              monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
+                              (monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : '') + (isCurrentWeekKey(week) ? ' bg-primary/10' : '')
                             }`}
                           >
                             <div className="text-sm text-foreground">{freeFte.toFixed(1)}</div>
@@ -1703,7 +1714,7 @@ export const ProjectAssignmentMatrix = ({
                         <td 
                           key={month.name} 
                           className={`border border-border p-1.5 text-center font-semibold ${
-                            monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
+                            (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + (isCurrentMonth(month.name) ? ' bg-primary/10' : '')
                           }`}
                         >
                           <div className="text-sm text-foreground">{freeFte.toFixed(1)}</div>
@@ -1730,7 +1741,7 @@ export const ProjectAssignmentMatrix = ({
                           <td 
                             key={week} 
                             className={`border border-border p-1 text-center font-semibold ${
-                              monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
+                              (monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : '') + (isCurrentWeekKey(week) ? ' bg-primary/10' : '')
                             }`}
                           >
                             <div className="text-sm text-foreground">{leave.toFixed(1)}</div>
@@ -1745,7 +1756,7 @@ export const ProjectAssignmentMatrix = ({
                         <td 
                           key={month.name} 
                           className={`border border-border p-1.5 text-center font-semibold ${
-                            monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
+                            (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + (isCurrentMonth(month.name) ? ' bg-primary/10' : '')
                           }`}
                         >
                           <div className="text-sm text-foreground">{stats.leaveFte.toFixed(1)}</div>
@@ -1774,7 +1785,7 @@ export const ProjectAssignmentMatrix = ({
                           <td
                             key={week}
                             className={`border border-border p-1 text-center font-semibold ${
-                              monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
+                              (monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : '') + (isCurrentWeekKey(week) ? ' bg-primary/10' : '')
                             }`}
                           >
                             <div className="text-sm text-foreground">{Math.round(leaveMh)}h</div>
@@ -1789,7 +1800,7 @@ export const ProjectAssignmentMatrix = ({
                         <td
                           key={month.name}
                           className={`border border-border p-1.5 text-center font-semibold ${
-                            monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
+                            (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + (isCurrentMonth(month.name) ? ' bg-primary/10' : '')
                           }`}
                         >
                           <div className="text-sm text-foreground">{Math.round(stats.leaveMh)}h</div>
@@ -1817,7 +1828,7 @@ export const ProjectAssignmentMatrix = ({
                           <td
                             key={week}
                             className={`border border-border p-1 text-center font-semibold ${
-                              monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
+                              (monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : '') + (isCurrentWeekKey(week) ? ' bg-primary/10' : '')
                             }`}
                           >
                             <div className="text-sm text-foreground">{Math.round(maxHours)}h</div>
@@ -1832,7 +1843,7 @@ export const ProjectAssignmentMatrix = ({
                         <td
                           key={month.name}
                           className={`border border-border p-1.5 text-center font-semibold ${
-                            monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
+                            (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + (isCurrentMonth(month.name) ? ' bg-primary/10' : '')
                           }`}
                         >
                           <div className="text-sm text-foreground">{Math.round(stats.maxProductive)}h</div>
@@ -1859,7 +1870,7 @@ export const ProjectAssignmentMatrix = ({
                           <td
                             key={week}
                             className={`border border-border p-1 text-center font-semibold ${
-                              monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
+                              (monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : '') + (isCurrentWeekKey(week) ? ' bg-primary/10' : '')
                             }`}
                           >
                             <div className="text-sm text-foreground">{Math.round(realHours)}h</div>
@@ -1874,7 +1885,7 @@ export const ProjectAssignmentMatrix = ({
                         <td
                           key={month.name}
                           className={`border border-border p-1.5 text-center font-semibold ${
-                            monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
+                            (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + (isCurrentMonth(month.name) ? ' bg-primary/10' : '')
                           }`}
                         >
                           <div className="text-sm text-foreground">{Math.round(stats.realProductive)}h</div>
@@ -1902,7 +1913,7 @@ export const ProjectAssignmentMatrix = ({
                           <td
                             key={week}
                             className={`border border-border p-1 text-center font-semibold ${
-                              monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
+                              (monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : '') + (isCurrentWeekKey(week) ? ' bg-primary/10' : '')
                             }`}
                           >
                             <div className="text-sm text-foreground">{count}</div>
@@ -1917,7 +1928,7 @@ export const ProjectAssignmentMatrix = ({
                         <td
                           key={month.name}
                           className={`border border-border p-1.5 text-center font-semibold ${
-                            monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
+                            (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + (isCurrentMonth(month.name) ? ' bg-primary/10' : '')
                           }`}
                         >
                           <div className="text-sm text-foreground">{stats.engineerCount}</div>
@@ -1945,7 +1956,7 @@ export const ProjectAssignmentMatrix = ({
                           <td
                             key={week}
                             className={`border border-border p-1 text-center font-semibold ${
-                              monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
+                              (monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : '') + (isCurrentWeekKey(week) ? ' bg-primary/10' : '')
                             }`}
                           >
                             <div className="text-sm text-foreground">{fte}</div>
@@ -1960,7 +1971,7 @@ export const ProjectAssignmentMatrix = ({
                         <td
                           key={month.name}
                           className={`border border-border p-1.5 text-center font-semibold ${
-                            monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
+                            (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + (isCurrentMonth(month.name) ? ' bg-primary/10' : '')
                           }`}
                         >
                           <div className="text-sm text-foreground">{stats.fte.toFixed(1)}</div>
@@ -1993,7 +2004,7 @@ export const ProjectAssignmentMatrix = ({
                           <td
                             key={week}
                             className={`border border-border p-1 text-center font-semibold ${
-                              monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''
+                              (monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : '') + (isCurrentWeekKey(week) ? ' bg-primary/10' : '')
                             }`}
                           >
                             <div className="text-sm text-foreground">{utilization}%</div>
@@ -2011,7 +2022,7 @@ export const ProjectAssignmentMatrix = ({
                         <td
                           key={month.name}
                           className={`border border-border p-1.5 text-center font-semibold ${
-                            monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
+                            (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + (isCurrentMonth(month.name) ? ' bg-primary/10' : '')
                           }`}
                         >
                           <div className="text-sm text-foreground">{utilization}%</div>
