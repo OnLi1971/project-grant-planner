@@ -331,8 +331,16 @@ export const ProjectAssignmentMatrix = ({
   const [selectedViewId, setSelectedViewId] = useState<string | null>(null);
   const { customViews, saveView, deleteView, isLoading: isLoadingViews } = useCustomEngineerViews();
 
+  // History toggle: default shows current week first; toggle shows ~2 months back
+  const [showHistory, setShowHistory] = useState(false);
+
   // Filter weeks and months based on maxEndDate
-  const weeks = useMemo(() => filterWeeksByMaxDate(allWeeks, maxEndDate), [maxEndDate]);
+  const weeks = useMemo(() => {
+    const base = showHistory
+      ? allWeeks
+      : allWeeks.slice(Math.max(0, allWeeks.indexOf(CURRENT_WEEK_KEY)));
+    return filterWeeksByMaxDate(base, maxEndDate);
+  }, [maxEndDate, showHistory]);
   const months = useMemo(() => generateMonths(weeks), [weeks]);
 
   // Auto-load default selected engineers (hardcoded list for public pages)
@@ -952,6 +960,15 @@ export const ProjectAssignmentMatrix = ({
               >
                 <Download className="h-4 w-4" />
                 Export to Excel
+              </Button>
+              <Button
+                variant={showHistory ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setShowHistory(v => !v)}
+                className="gap-2"
+              >
+                <History className="h-4 w-4" />
+                {showHistory ? 'Hide history' : 'Show history'}
               </Button>
               {!customerViewMode && (
                 <Button 
