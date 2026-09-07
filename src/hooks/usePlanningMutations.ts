@@ -2,6 +2,36 @@ import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { PlanningEntry, EngineerInfo } from '@/types/planning';
 import { useToast } from '@/hooks/use-toast';
+import { getISOWeekMonday } from '@/utils/workingDays';
+import { format } from 'date-fns';
+
+const CZECH_MONTHS = [
+  'leden', 'únor', 'březen', 'duben', 'květen', 'červen',
+  'červenec', 'srpen', 'září', 'říjen', 'listopad', 'prosinec'
+];
+
+// Helper pro sestavení řádku pro upsert (vytvoří záznam i pro roky bez dat, např. 2027)
+const buildUpsertRow = (
+  engineerId: string,
+  konstrukter: string,
+  cwBase: string,
+  year: number,
+  fields: Record<string, unknown>
+) => {
+  const cwNumber = parseInt(cwBase.replace('CW', ''), 10);
+  const monday = getISOWeekMonday(cwNumber, year);
+  const mesic = `${CZECH_MONTHS[monday.getMonth()]} ${monday.getFullYear()}`;
+  return {
+    engineer_id: engineerId,
+    konstrukter,
+    cw: cwBase,
+    year,
+    mesic,
+    week_monday: format(monday, 'yyyy-MM-dd'),
+    ...fields,
+    updated_at: new Date().toISOString(),
+  };
+};
 
 interface UsePlanningMutationsProps {
   setPlanningData: React.Dispatch<React.SetStateAction<PlanningEntry[]>>;

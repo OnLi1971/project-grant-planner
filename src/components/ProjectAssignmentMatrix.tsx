@@ -1210,7 +1210,7 @@ export const ProjectAssignmentMatrix = ({
                         <th 
                           key={month.name} 
                           className={`border-2 border-border p-2 bg-background text-center font-bold text-base sticky top-0 z-20 ${
-                            (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + ((showHistory && viewMode === 'months' && isCurrentMonth(month.name)) ? ' bg-warning/30 border-warning' : '')
+monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                           }`} 
                           colSpan={month.weeks.length}
                         >
