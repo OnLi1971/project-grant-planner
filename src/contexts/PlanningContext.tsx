@@ -17,7 +17,7 @@ export const usePlanning = () => {
 
 export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { planningData, engineers, setPlanningData, loadPlanningData } = usePlanningData();
-  const { updatePlanningEntry: updateEntry, updatePlanningHours: updateHours } = usePlanningMutations({ setPlanningData, engineers });
+  const { updatePlanningEntry: updateEntry, updatePlanningHours: updateHours, updatePlanningSecondary: updateSecondary } = usePlanningMutations({ setPlanningData, engineers });
 
   // Initial data load
   useEffect(() => {
@@ -75,15 +75,31 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     await updateHours(engineer.id, konstrukter, cw, hours, leaveDays);
   }, [updateHours, engineers]);
 
+  const updatePlanningSecondary = useCallback(async (konstrukter: string, cw: string, projekt2: string | null, hours2: number, isTentative2?: boolean) => {
+    const normalizedKonstrukter = normalizeName(konstrukter);
+    const engineer = engineers.find(e =>
+      normalizeName(e.display_name) === normalizedKonstrukter ||
+      e.slug === normalizedKonstrukter
+    );
+
+    if (!engineer) {
+      throw new Error(`Engineer not found: ${konstrukter}`);
+    }
+
+    await updateSecondary(engineer.id, konstrukter, cw, projekt2, hours2, isTentative2);
+  }, [updateSecondary, engineers]);
+
   return (
     <PlanningContext.Provider
       value={{
         planningData,
         engineers,
         updatePlanningEntry,
-        updatePlanningHours
+        updatePlanningHours,
+        updatePlanningSecondary
       }}
     >
+
       {children}
     </PlanningContext.Provider>
   );

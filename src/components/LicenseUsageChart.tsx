@@ -202,6 +202,7 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
     // Get engineers for this week (excluding MB Idea contractors and non-license consuming projects)
     // Now comparing full week string including year (e.g., "CW35-2025")
     const engineersThisWeek = planningData.filter(entry => {
+      if (entry.isSecondary) return false;
       return entry.cw === weekFull && 
         entry.projekt !== 'FREE' && 
         entry.projekt !== 'DOVOLENÁ' &&
@@ -368,6 +369,7 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
         
         // Get all engineers working this week - now comparing full week string with year
         const engineersThisWeek = planningData.filter(entry => {
+          if (entry.isSecondary) return false;
           return entry.cw === weekFull && isValidEntry(entry);
         });
         
@@ -405,6 +407,7 @@ export const LicenseUsageChart: React.FC<LicenseUsageChartProps> = ({ licenses }
           const uniqueEngineers = new Set<string>();
           
           const engineersThisWeek = planningData.filter(entry => {
+            if (entry.isSecondary) return false;
             return entry.cw === weekFull && isValidEntry(entry);
           });
           

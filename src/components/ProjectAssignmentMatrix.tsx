@@ -465,7 +465,7 @@ export const ProjectAssignmentMatrix = ({
     engineers.forEach(e => {
       isSlovakMap[normalizeName(e.display_name)] = getEngineerCompany(e.display_name) === 'MB Idea';
     });
-    const matrix: { [engineer: string]: { [week: string]: { projekt: string; isTentative: boolean; hours: number; leaveDays: number } } } = {};
+    const matrix: { [engineer: string]: { [week: string]: { projekt: string; isTentative: boolean; hours: number; leaveDays: number; projekt2?: string | null; isTentative2?: boolean; hours2?: number } } } = {};
     
     engineerKeys.forEach(engineerKey => {
       matrix[engineerKey] = {};
@@ -482,9 +482,11 @@ export const ProjectAssignmentMatrix = ({
           };
           return;
         }
-        const entry = planningData.find(e => normalizeName(e.konstrukter) === engineerKey && e.cw === week);
+        const entry = planningData.find(e => !e.isSecondary && normalizeName(e.konstrukter) === engineerKey && e.cw === week);
         const projekt = entry?.projekt || (week.includes('CW52') ? 'DOVOLENÁ' : 'FREE');
         let hours = typeof entry?.mhTyden === 'number' ? entry.mhTyden : 0;
+        const projekt2 = entry?.projekt2 || null;
+        let hours2 = projekt2 ? (entry?.mhTyden2 || 0) : 0;
         // Auto-reduce project hours for holiday weeks (cap at engineer's actual capacity)
         const isRegime = projekt === 'DOVOLENÁ' || projekt === 'NEMOC' || projekt === 'OVER' || projekt === 'FREE';
         if (!isRegime && hours > 0) {
@@ -493,17 +495,27 @@ export const ProjectAssignmentMatrix = ({
             const cwN = parseInt(cwMatch[1]);
             const yN = parseInt(cwMatch[2]);
             const capacity = getWorkingDaysInCW(cwN, yN, isSlovak) * 8;
-            if (capacity > 0 && hours > capacity) hours = capacity;
+            if (capacity > 0 && hours + hours2 > capacity) {
+              // Cap the total of both projects at the real capacity of the week
+              const overflow = hours + hours2 - capacity;
+              const reduce2 = Math.min(hours2, overflow);
+              hours2 -= reduce2;
+              hours -= (overflow - reduce2);
+            }
           }
         }
         matrix[engineerKey][week] = {
           projekt,
           isTentative: entry?.is_tentative || false,
           hours,
-          leaveDays: entry?.leaveDays || 0
+          leaveDays: entry?.leaveDays || 0,
+          projekt2,
+          isTentative2: entry?.is_tentative2 || false,
+          hours2
         };
       });
     });
+
     
     return matrix;
   }, [planningData, engineers, weeks, endDateMap]);
@@ -530,7 +542,7 @@ export const ProjectAssignmentMatrix = ({
             monthProjects['DEPARTED'] = (monthProjects['DEPARTED'] || 0) + 0;
             return;
           }
-          const entry = planningData.find(e => normalizeName(e.konstrukter) === engineerKey && e.cw === week);
+          const entry = planningData.find(e => !e.isSecondary && normalizeName(e.konstrukter) === engineerKey && e.cw === week);
           let projekt: string;
           let hours: number;
           
@@ -545,7 +557,14 @@ export const ProjectAssignmentMatrix = ({
           
           monthProjects[projekt] = (monthProjects[projekt] || 0) + hours;
           totalHours += hours;
+
+          // Second project of a split week
+          if (entry?.projekt2 && (entry.mhTyden2 || 0) > 0) {
+            monthProjects[entry.projekt2] = (monthProjects[entry.projekt2] || 0) + (entry.mhTyden2 || 0);
+            totalHours += entry.mhTyden2 || 0;
+          }
         });
+
         
         const projects = Object.keys(monthProjects);
         const dominantProject = projects.reduce((a, b) => 
@@ -1345,7 +1364,7 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                           const project = projectData?.projekt;
                           const isTentative = projectData?.isTentative;
                           const hours = projectData?.hours || 0;
-                          const isLowCapacity = hours > 0 && hours <= 35;
+                          const isLowCapacity = hours > 0 && (hours + (projectData?.hours2 || 0)) <= 35;
                           // hodiny odpovídající 1–4 dnům dovolené (round(7.2 * zbylé dny))
                           const isLeaveReduced = (projectData?.leaveDays || 0) > 0 || [7, 14, 22, 29].includes(hours);
                           return (
@@ -1418,7 +1437,32 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                                   </TooltipContent>
                                 </Tooltip>
                               )}
+                              {project !== 'DEPARTED' && projectData?.projekt2 && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div
+                                      onClick={(e) => handleProjectClick(projectData.projekt2 as string, e)}
+                                      className={`mt-0.5 text-xs px-1.5 py-0.5 w-full justify-center font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-md inline-flex items-center cursor-pointer ${getProjectBadgeStyle(projectData.projekt2 as string, projectData.isTentative2)} ${
+                                        projectData.isTentative2 ? 'border-[3px] border-dashed !border-yellow-400' : ''
+                                      }`}
+                                    >
+                                      <span className="truncate max-w-[65px]" title={getProjectDisplayName(projectData.projekt2 as string)}>
+                                        {getProjectDisplayName(projectData.projekt2 as string)}
+                                      </span>
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top">
+                                    <div className="text-sm">
+                                      <div className="font-semibold">{getProjectDisplayName(projectData.projekt2 as string)} - {week}</div>
+                                      <div className="text-xs text-muted-foreground">
+                                        Split week: {hours}h {getProjectDisplayName(project)} + {projectData.hours2 || 0}h {getProjectDisplayName(projectData.projekt2 as string)}
+                                      </div>
+                                    </div>
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
                             </td>
+
                           );
                         })
                       )

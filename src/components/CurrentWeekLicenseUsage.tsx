@@ -171,6 +171,7 @@ export const CurrentWeekLicenseUsage: React.FC<CurrentWeekLicenseUsageProps> = (
     
     // Get all engineers working this week (excluding MB Idea contractors and non-license consuming projects)
     const engineersThisWeek = planningData.filter(entry => {
+      if (entry.isSecondary) return false;
       // Extract week without year for comparison (e.g., "CW35-2025" -> "CW35")
       const cwWithoutYear = entry.cw.split('-')[0];
       return cwWithoutYear === currentWeek && 
