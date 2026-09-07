@@ -15,7 +15,7 @@ import { usePlanning } from '@/contexts/PlanningContext';
 import { customers, projectManagers, programs, projects } from '@/data/projectsData';
 import { getWeek, format } from 'date-fns';
 import { normalizeName, createNameMapping } from '@/utils/nameNormalization';
-import { getWorkingDaysFromMonthName, getWorkingDaysInWeekForMonth, getWorkingDaysInCW, getISOWeekMonday, getWorkingDaysInMonth, isHoliday } from '@/utils/workingDays';
+import { getWorkingDaysFromMonthName, getWorkingDaysInWeekForMonth, getWorkingDaysInCW, getISOWeekMonday, getWorkingDaysInMonth, isHoliday, getISOWeeksInYear } from '@/utils/workingDays';
 import { isEngineerDepartedForWeek } from '@/utils/engineerDeparture';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
@@ -94,19 +94,19 @@ const getAllWeeks = (): string[] => {
   const weeksBack = 9; // ~2 měsíce nazpět
   const weeksForward = 52;
   
-  // Posunout se zpět o weeksBack týdnů
+  // Posunout se zpět o weeksBack týdnů (respektuje roky s 53 ISO týdny)
   let week = currentWeek - weeksBack;
   let year = currentYear;
   while (week < 1) {
-    week += 52;
     year--;
+    week += getISOWeeksInYear(year);
   }
   
   // Generujeme weeksBack + weeksForward týdnů
   for (let i = 0; i < weeksBack + weeksForward; i++) {
     weeks.push(`CW${week.toString().padStart(2, '0')}-${year}`);
     week++;
-    if (week > 52) {
+    if (week > getISOWeeksInYear(year)) {
       week = 1;
       year++;
     }
