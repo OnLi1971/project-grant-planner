@@ -90,17 +90,16 @@ export function usePlanningMutations({ setPlanningData, engineers }: UsePlanning
       const [cwBase, yearStr] = cw.includes('-') ? cw.split('-') : [cw, new Date().getFullYear().toString()];
       const year = parseInt(yearStr);
 
-      // Single update using engineer_id only (no fallbacks)
+      // Upsert using engineer_id (vytvoří záznam i když pro daný rok ještě neexistuje, např. 2027)
       const { data, error } = await supabase
         .from('planning_entries')
-        .update({ 
-          projekt,
-          is_tentative: isTentative ?? false,
-          updated_at: new Date().toISOString()
-        })
-        .eq('engineer_id', engineerId)
-        .eq('cw', cwBase)
-        .eq('year', year)
+        .upsert(
+          buildUpsertRow(engineerId, konstrukter, cwBase, year, {
+            projekt,
+            is_tentative: isTentative ?? false,
+          }),
+          { onConflict: 'engineer_id,cw,year' }
+        )
         .select();
 
       if (error) throw error;
@@ -153,17 +152,16 @@ export function usePlanningMutations({ setPlanningData, engineers }: UsePlanning
       const [cwBase, yearStr] = cw.includes('-') ? cw.split('-') : [cw, new Date().getFullYear().toString()];
       const year = parseInt(yearStr);
 
-      // Single update using engineer_id only (no fallbacks)
+      // Upsert using engineer_id (vytvoří záznam i když pro daný rok ještě neexistuje, např. 2027)
       const { data, error } = await supabase
         .from('planning_entries')
-        .update({ 
-          mh_tyden: hours,
-          ...(leaveDays !== undefined ? { leave_days: leaveDays } : {}),
-          updated_at: new Date().toISOString()
-        })
-        .eq('engineer_id', engineerId)
-        .eq('cw', cwBase)
-        .eq('year', year)
+        .upsert(
+          buildUpsertRow(engineerId, konstrukter, cwBase, year, {
+            mh_tyden: hours,
+            ...(leaveDays !== undefined ? { leave_days: leaveDays } : {}),
+          }),
+          { onConflict: 'engineer_id,cw,year' }
+        )
         .select();
 
       if (error) throw error;
