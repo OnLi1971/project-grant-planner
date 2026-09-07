@@ -17,7 +17,7 @@ export const usePlanning = () => {
 
 export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { planningData, engineers, setPlanningData, loadPlanningData } = usePlanningData();
-  const { updatePlanningEntry: updateEntry, updatePlanningHours: updateHours } = usePlanningMutations({ setPlanningData, engineers });
+  const { updatePlanningEntry: updateEntry, updatePlanningHours: updateHours, updatePlanningSecondary: updateSecondary } = usePlanningMutations({ setPlanningData, engineers });
 
   // Initial data load
   useEffect(() => {
