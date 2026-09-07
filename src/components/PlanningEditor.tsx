@@ -481,7 +481,7 @@ export const PlanningEditor: React.FC = () => {
     
     // Find all weeks for the source constructor
     const sourceWeeks = planningData.filter(entry => 
-      normalizeName(entry.konstrukter) === normalizeName(from)
+      !entry.isSecondary && normalizeName(entry.konstrukter) === normalizeName(from)
     );
     
     if (sourceWeeks.length === 0) {
@@ -494,10 +494,18 @@ export const PlanningEditor: React.FC = () => {
       try {
         await updatePlanningEntry(to, sourceWeek.cw, sourceWeek.projekt || 'FREE', sourceWeek.is_tentative || false);
         await updatePlanningHours(to, sourceWeek.cw, sourceWeek.mhTyden || 0);
+        await updatePlanningSecondary(
+          to,
+          sourceWeek.cw,
+          sourceWeek.projekt2 || null,
+          sourceWeek.mhTyden2 || 0,
+          sourceWeek.is_tentative2 || false
+        );
       } catch (error) {
         console.error('Error copying week:', sourceWeek.cw, error);
       }
     }
+
     
     console.log('Plan copy completed');
     alert(`Plán byl úspěšně zkopírován z ${from} do ${to}`);
