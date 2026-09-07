@@ -237,3 +237,15 @@ export const getWorkingDaysInWeekForMonth = (
     return true;
   }).length;
 };
+
+/**
+ * Počet ISO týdnů v daném roce (52 nebo 53)
+ */
+export const getISOWeeksInYear = (year: number): number => {
+  const dec28 = new Date(year, 11, 28);
+  const dayOfWeek = dec28.getDay() || 7;
+  const thursday = new Date(dec28);
+  thursday.setDate(dec28.getDate() - dayOfWeek + 4);
+  const jan1 = new Date(thursday.getFullYear(), 0, 1);
+  return Math.ceil(((thursday.getTime() - jan1.getTime()) / 86400000 + 1) / 7);
+};
