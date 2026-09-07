@@ -284,6 +284,9 @@ export const PlanningEditor: React.FC = () => {
   const [bulkProject, setBulkProject] = useState<string>('');  // vybraný projekt (čeká na potvrzení)
   const [bulkHours, setBulkHours] = useState<string>('');      // hodiny v textu (kvůli prázdné hodnotě)
   const [bulkIsTentative, setBulkIsTentative] = useState<boolean>(false);  // předběžná rezervace
+  const [bulkProject2, setBulkProject2] = useState<string>('');            // druhý projekt (rozdělený týden)
+  const [bulkHours2, setBulkHours2] = useState<string>('');
+  const [bulkIsTentative2, setBulkIsTentative2] = useState<boolean>(false);
 
   // Načteme projekty z databáze
   useEffect(() => {
