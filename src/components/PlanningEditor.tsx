@@ -284,6 +284,9 @@ export const PlanningEditor: React.FC = () => {
   const [bulkProject, setBulkProject] = useState<string>('');  // vybraný projekt (čeká na potvrzení)
   const [bulkHours, setBulkHours] = useState<string>('');      // hodiny v textu (kvůli prázdné hodnotě)
   const [bulkIsTentative, setBulkIsTentative] = useState<boolean>(false);  // předběžná rezervace
+  const [bulkProject2, setBulkProject2] = useState<string>('');            // druhý projekt (rozdělený týden)
+  const [bulkHours2, setBulkHours2] = useState<string>('');
+  const [bulkIsTentative2, setBulkIsTentative2] = useState<boolean>(false);
 
   // Načteme projekty z databáze
   useEffect(() => {
@@ -387,28 +390,54 @@ export const PlanningEditor: React.FC = () => {
       alert('Nejsou vybrané žádné týdny.');
       return;
     }
-    if (!bulkProject) {
+    if (!bulkProject && !bulkProject2) {
       alert('Vyber projekt.');
       return;
     }
-    const hoursNum = parseInt(bulkHours, 10);
-    if (Number.isNaN(hoursNum)) {
-      alert('Zadej počet hodin na týden (číslo).');
-      return;
+
+    let hoursNum = NaN;
+    if (bulkProject) {
+      hoursNum = parseInt(bulkHours, 10);
+      if (Number.isNaN(hoursNum)) {
+        alert('Zadej počet hodin na týden (číslo).');
+        return;
+      }
+    }
+
+    let hours2Num = 0;
+    if (bulkProject2 && bulkProject2 !== 'NONE') {
+      hours2Num = parseInt(bulkHours2, 10);
+      if (Number.isNaN(hours2Num)) {
+        alert('Zadej počet hodin pro druhý projekt (číslo).');
+        return;
+      }
     }
 
     // Zapisuj pro každý vybraný týden – nejdřív projekt s tentative flagem, pak hodiny
     for (const cw of selectedWeeks) {
-      await updatePlanningEntry(selectedKonstrukter, cw, bulkProject, bulkIsTentative);
-      await updatePlanningHours(selectedKonstrukter, cw, hoursNum);
+      if (bulkProject) {
+        await updatePlanningEntry(selectedKonstrukter, cw, bulkProject, bulkIsTentative);
+        await updatePlanningHours(selectedKonstrukter, cw, hoursNum);
+      }
+      if (bulkProject2) {
+        if (bulkProject2 === 'NONE') {
+          await updatePlanningSecondary(selectedKonstrukter, cw, null, 0, false);
+        } else {
+          await updatePlanningSecondary(selectedKonstrukter, cw, bulkProject2, hours2Num, bulkIsTentative2);
+        }
+      }
     }
 
     // úklid
     setBulkProject('');
     setBulkHours('');
     setBulkIsTentative(false);
+    setBulkProject2('');
+    setBulkHours2('');
+    setBulkIsTentative2(false);
     clearSelection();
   };
+
 
   const handleConfirmReservations = async () => {
     if (selectedWeeks.size === 0) {
@@ -617,10 +646,57 @@ export const PlanningEditor: React.FC = () => {
                 </Label>
               </div>
 
+              {/* 2. projekt – rozdělený týden */}
+              <Select value={bulkProject2} onValueChange={setBulkProject2}>
+                <SelectTrigger className="w-52">
+                  <SelectValue placeholder="2. projekt (volitelné)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="NONE">— odebrat 2. projekt —</SelectItem>
+                  {allProjectCodes.map((projekt) => (
+                    <SelectItem key={`b2-${projekt}`} value={projekt}>
+                      {projekt}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Input
+                type="number"
+                inputMode="numeric"
+                placeholder="Hodiny 2. projekt"
+                className="w-32"
+                value={bulkHours2}
+                disabled={!bulkProject2 || bulkProject2 === 'NONE'}
+                onChange={(e) => setBulkHours2(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    applyBulkChanges();
+                  }
+                }}
+              />
+
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="tentative2"
+                  checked={bulkIsTentative2}
+                  disabled={!bulkProject2 || bulkProject2 === 'NONE'}
+                  onCheckedChange={(checked) => setBulkIsTentative2(checked as boolean)}
+                />
+                <Label htmlFor="tentative2" className="cursor-pointer">
+                  Předběžná rezervace (2. projekt)
+                </Label>
+              </div>
+
               {/* 3) Tlačítka – POTVRDIT / ZRUŠIT */}
               <Button
                 onClick={applyBulkChanges}
-                disabled={!bulkProject || bulkHours.trim() === '' || selectedWeeks.size === 0}
+                disabled={
+                  selectedWeeks.size === 0 ||
+                  ((!bulkProject || bulkHours.trim() === '') &&
+                    (!bulkProject2 || (bulkProject2 !== 'NONE' && bulkHours2.trim() === '')))
+                }
               >
                 Použít
               </Button>
@@ -640,6 +716,9 @@ export const PlanningEditor: React.FC = () => {
                   setBulkProject('');
                   setBulkHours('');
                   setBulkIsTentative(false);
+                  setBulkProject2('');
+                  setBulkHours2('');
+                  setBulkIsTentative2(false);
                   clearSelection();
                 }}
               >
