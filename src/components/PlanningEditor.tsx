@@ -24,6 +24,30 @@ const getWeekDateRange = (cwString: string): string => {
   const end = endOfISOWeek(d);
   return `${format(start, 'd.M.')}–${format(end, 'd.M.')}`;
 };
+
+const CZ_MONTHS = ['leden','únor','březen','duben','květen','červen','červenec','srpen','září','říjen','listopad','prosinec'];
+
+// Vrátí název měsíce/měsíců, do kterých spadá pracovní týden (po–pá), např. "září/říjen 2026"
+const getWeekMonthLabel = (cwString: string, fallback: string): string => {
+  const match = cwString.match(/CW(\d{1,2})-(\d{4})/);
+  if (!match) return fallback;
+  const week = parseInt(match[1], 10);
+  const year = parseInt(match[2], 10);
+  let d = setISOWeekYear(new Date(year, 0, 4), year);
+  d = setISOWeek(d, week);
+  const monday = startOfISOWeek(d);
+  const friday = new Date(monday);
+  friday.setDate(monday.getDate() + 4);
+
+  const m1 = CZ_MONTHS[monday.getMonth()];
+  const m2 = CZ_MONTHS[friday.getMonth()];
+  const y1 = monday.getFullYear();
+  const y2 = friday.getFullYear();
+
+  if (m1 === m2 && y1 === y2) return `${m1} ${y1}`;
+  if (y1 !== y2) return `${m1} ${y1}/${m2} ${y2}`;
+  return `${m1}/${m2} ${y1}`;
+};
 import { supabase } from '@/integrations/supabase/client';
 import { normalizeName, findEngineerByName } from '@/utils/nameNormalization';
 import { isEngineerDepartedForWeek } from '@/utils/engineerDeparture';
@@ -743,7 +767,7 @@ export const PlanningEditor: React.FC = () => {
                         <div>{week.cw}</div>
                         <div className="text-xs text-muted-foreground/70 font-sans">{getWeekDateRange(week.cw)}</div>
                       </td>
-                      <td className="p-3 text-muted-foreground">{week.mesic}</td>
+                      <td className="p-3 text-muted-foreground">{getWeekMonthLabel(week.cw, week.mesic)}</td>
                       <td className="p-3 text-center" colSpan={3}>
                         <div className="flex items-center justify-center gap-2 text-red-500">
                           <X className="h-4 w-4" />
@@ -780,7 +804,7 @@ export const PlanningEditor: React.FC = () => {
                     {isSelected && (
                       <div className="absolute inset-0 bg-primary/20 rounded" />
                     )}
-                    <span className="relative z-10">{week.mesic}</span>
+                    <span className="relative z-10">{getWeekMonthLabel(week.cw, week.mesic)}</span>
                   </td>
                   
                   {/* Editovatelné MH/týden */}
