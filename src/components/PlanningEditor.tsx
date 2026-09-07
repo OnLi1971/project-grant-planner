@@ -24,6 +24,30 @@ const getWeekDateRange = (cwString: string): string => {
   const end = endOfISOWeek(d);
   return `${format(start, 'd.M.')}–${format(end, 'd.M.')}`;
 };
+
+const CZ_MONTHS = ['leden','únor','březen','duben','květen','červen','červenec','srpen','září','říjen','listopad','prosinec'];
+
+// Vrátí název měsíce/měsíců, do kterých spadá pracovní týden (po–pá), např. "září/říjen 2026"
+const getWeekMonthLabel = (cwString: string, fallback: string): string => {
+  const match = cwString.match(/CW(\d{1,2})-(\d{4})/);
+  if (!match) return fallback;
+  const week = parseInt(match[1], 10);
+  const year = parseInt(match[2], 10);
+  let d = setISOWeekYear(new Date(year, 0, 4), year);
+  d = setISOWeek(d, week);
+  const monday = startOfISOWeek(d);
+  const friday = new Date(monday);
+  friday.setDate(monday.getDate() + 4);
+
+  const m1 = CZ_MONTHS[monday.getMonth()];
+  const m2 = CZ_MONTHS[friday.getMonth()];
+  const y1 = monday.getFullYear();
+  const y2 = friday.getFullYear();
+
+  if (m1 === m2 && y1 === y2) return `${m1} ${y1}`;
+  if (y1 !== y2) return `${m1} ${y1}/${m2} ${y2}`;
+  return `${m1}/${m2} ${y1}`;
+};
 import { supabase } from '@/integrations/supabase/client';
 import { normalizeName, findEngineerByName } from '@/utils/nameNormalization';
 import { isEngineerDepartedForWeek } from '@/utils/engineerDeparture';
