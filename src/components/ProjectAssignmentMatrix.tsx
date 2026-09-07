@@ -542,7 +542,7 @@ export const ProjectAssignmentMatrix = ({
             monthProjects['DEPARTED'] = (monthProjects['DEPARTED'] || 0) + 0;
             return;
           }
-          const entry = planningData.find(e => normalizeName(e.konstrukter) === engineerKey && e.cw === week);
+          const entry = planningData.find(e => !e.isSecondary && normalizeName(e.konstrukter) === engineerKey && e.cw === week);
           let projekt: string;
           let hours: number;
           
@@ -557,7 +557,14 @@ export const ProjectAssignmentMatrix = ({
           
           monthProjects[projekt] = (monthProjects[projekt] || 0) + hours;
           totalHours += hours;
+
+          // Second project of a split week
+          if (entry?.projekt2 && (entry.mhTyden2 || 0) > 0) {
+            monthProjects[entry.projekt2] = (monthProjects[entry.projekt2] || 0) + (entry.mhTyden2 || 0);
+            totalHours += entry.mhTyden2 || 0;
+          }
         });
+
         
         const projects = Object.keys(monthProjects);
         const dominantProject = projects.reduce((a, b) => 
