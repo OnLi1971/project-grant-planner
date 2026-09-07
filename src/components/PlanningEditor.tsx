@@ -390,28 +390,54 @@ export const PlanningEditor: React.FC = () => {
       alert('Nejsou vybrané žádné týdny.');
       return;
     }
-    if (!bulkProject) {
+    if (!bulkProject && !bulkProject2) {
       alert('Vyber projekt.');
       return;
     }
-    const hoursNum = parseInt(bulkHours, 10);
-    if (Number.isNaN(hoursNum)) {
-      alert('Zadej počet hodin na týden (číslo).');
-      return;
+
+    let hoursNum = NaN;
+    if (bulkProject) {
+      hoursNum = parseInt(bulkHours, 10);
+      if (Number.isNaN(hoursNum)) {
+        alert('Zadej počet hodin na týden (číslo).');
+        return;
+      }
+    }
+
+    let hours2Num = 0;
+    if (bulkProject2 && bulkProject2 !== 'NONE') {
+      hours2Num = parseInt(bulkHours2, 10);
+      if (Number.isNaN(hours2Num)) {
+        alert('Zadej počet hodin pro druhý projekt (číslo).');
+        return;
+      }
     }
 
     // Zapisuj pro každý vybraný týden – nejdřív projekt s tentative flagem, pak hodiny
     for (const cw of selectedWeeks) {
-      await updatePlanningEntry(selectedKonstrukter, cw, bulkProject, bulkIsTentative);
-      await updatePlanningHours(selectedKonstrukter, cw, hoursNum);
+      if (bulkProject) {
+        await updatePlanningEntry(selectedKonstrukter, cw, bulkProject, bulkIsTentative);
+        await updatePlanningHours(selectedKonstrukter, cw, hoursNum);
+      }
+      if (bulkProject2) {
+        if (bulkProject2 === 'NONE') {
+          await updatePlanningSecondary(selectedKonstrukter, cw, null, 0, false);
+        } else {
+          await updatePlanningSecondary(selectedKonstrukter, cw, bulkProject2, hours2Num, bulkIsTentative2);
+        }
+      }
     }
 
     // úklid
     setBulkProject('');
     setBulkHours('');
     setBulkIsTentative(false);
+    setBulkProject2('');
+    setBulkHours2('');
+    setBulkIsTentative2(false);
     clearSelection();
   };
+
 
   const handleConfirmReservations = async () => {
     if (selectedWeeks.size === 0) {
