@@ -62,9 +62,11 @@ export const PlanningTable: React.FC = () => {
           
           // Najdeme záznam v planningData podle normalizovaného jména a CW
           const entry = planningData.find(p => 
+            !p.isSecondary &&
             normalizeName(p.konstrukter) === normalizedKonstrukter && 
             p.cw === cw  // Přímé porovnání - data už přicházejí s plným CW formátem
           );
+
           
           return {
             cw,
