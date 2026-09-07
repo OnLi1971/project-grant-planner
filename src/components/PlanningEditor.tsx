@@ -789,7 +789,7 @@ export const PlanningEditor: React.FC = () => {
                         <div className="text-xs text-muted-foreground/70 font-sans">{getWeekDateRange(week.cw)}</div>
                       </td>
                       <td className="p-3 text-muted-foreground">{getWeekMonthLabel(week.cw, week.mesic)}</td>
-                      <td className="p-3 text-center" colSpan={3}>
+                      <td className="p-3 text-center" colSpan={4}>
                         <div className="flex items-center justify-center gap-2 text-red-500">
                           <X className="h-4 w-4" />
                           <span className="text-sm font-medium">Odešel/Odešla</span>
