@@ -1050,13 +1050,16 @@ export type Database = {
           cw_full: string | null
           engineer_id: string | null
           is_tentative: boolean | null
+          is_tentative_2: boolean | null
           konstrukter: string | null
           leave_days: number | null
           mesic: string | null
           mh_tyden: number | null
+          mh_tyden_2: number | null
           normalized_name: string | null
           planning_entry_id: string | null
           projekt: string | null
+          projekt_2: string | null
           updated_at: string | null
           year: number | null
         }
