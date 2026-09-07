@@ -199,9 +199,64 @@ export function usePlanningMutations({ setPlanningData, engineers }: UsePlanning
     }
   }, [setPlanningData, toast, verifyUpdate]);
 
+  // Update second project of the week (split week)
+  const updatePlanningSecondary = useCallback(async (
+    engineerId: string,
+    konstrukter: string,
+    cw: string,
+    projekt2: string | null,
+    hours2: number,
+    isTentative2?: boolean
+  ): Promise<void> => {
+    try {
+      const [cwBase, yearStr] = cw.includes('-') ? cw.split('-') : [cw, new Date().getFullYear().toString()];
+      const year = parseInt(yearStr);
+
+      const { error } = await supabase
+        .from('planning_entries')
+        .upsert(
+          buildUpsertRow(engineerId, konstrukter, cwBase, year, {
+            projekt_2: projekt2,
+            mh_tyden_2: projekt2 ? hours2 : 0,
+            is_tentative_2: projekt2 ? (isTentative2 ?? false) : false,
+          }),
+          { onConflict: 'engineer_id,cw,year' }
+        )
+        .select();
+
+      if (error) throw error;
+
+      setPlanningData(prev => prev.map(entry => {
+        if (entry.engineer_id === engineerId && entry.cw === cw && !entry.isSecondary) {
+          return {
+            ...entry,
+            projekt2: projekt2,
+            mhTyden2: projekt2 ? hours2 : 0,
+            is_tentative2: projekt2 ? (isTentative2 ?? false) : false,
+          };
+        }
+        return entry;
+      }));
+
+      toast({
+        title: projekt2 ? "Druhý projekt uložen" : "Druhý projekt odebrán",
+        description: projekt2 ? `${konstrukter}: ${cw} → ${projekt2} ${hours2}h` : `${konstrukter}: ${cw}`,
+      });
+    } catch (error) {
+      console.error('Error updating secondary project:', error);
+      toast({
+        title: "Chyba při ukládání druhého projektu",
+        description: error instanceof Error ? error.message : "Neočekávaná chyba",
+        variant: "destructive",
+      });
+    }
+  }, [setPlanningData, toast]);
+
   return {
     updatePlanningEntry,
     updatePlanningHours,
+    updatePlanningSecondary,
     findEngineerByName,
   };
+
 }
