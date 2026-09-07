@@ -236,8 +236,10 @@ export const PlanningEditor: React.FC = () => {
     planningData,
     engineers,
     updatePlanningEntry, 
-    updatePlanningHours
+    updatePlanningHours,
+    updatePlanningSecondary
   } = usePlanning();
+
   
   // Convert engineers to the format expected by existing code
   const allKonstrukteri = engineers.map(eng => ({
