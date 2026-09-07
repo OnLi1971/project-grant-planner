@@ -342,12 +342,15 @@ export const PlanningEditor: React.FC = () => {
       // Auto-normalize regime activities to 40h/week — set hours FIRST so realtime reload doesn't overwrite
       if (REGIME_ACTIVITIES.includes(projekt)) {
         await updatePlanningHours(konstrukter, cw, 40);
+        // Regime activities cannot be split between projects
+        await updatePlanningSecondary(konstrukter, cw, null, 0, false);
       }
       await updatePlanningEntry(konstrukter, cw, projekt);
     } else if (field === 'mhTyden') {
       updatePlanningHours(konstrukter, cw, value as number);
     }
   };
+
 
   const toggleWeekSelection = (cw: string) => {
     if (!isMultiSelectMode) return;
