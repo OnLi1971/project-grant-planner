@@ -27,6 +27,7 @@ const getWeekDateRange = (cwString: string): string => {
 import { supabase } from '@/integrations/supabase/client';
 import { normalizeName, findEngineerByName } from '@/utils/nameNormalization';
 import { isEngineerDepartedForWeek } from '@/utils/engineerDeparture';
+import { getISOWeeksInYear } from '@/utils/workingDays';
 import { VacationImport } from '@/components/VacationImport';
 
 
@@ -115,8 +116,8 @@ const generateAllWeeks = (): WeekPlan[] => {
   
   // Pokud bychom šli do záporných týdnů, upravíme na předchozí rok
   if (startWeek < 1) {
-    startWeek = 52 + startWeek;
     startYear = currentYear - 1;
+    startWeek = getISOWeeksInYear(startYear) + startWeek;
   }
   
   // Generujeme 56 týdnů dopředu (4 týdny zpět + 52 týdnů dopředu)
@@ -135,7 +136,7 @@ const generateAllWeeks = (): WeekPlan[] => {
     });
     
     week++;
-    if (week > 52) {
+    if (week > getISOWeeksInYear(year)) {
       week = 1;
       year++;
     }
