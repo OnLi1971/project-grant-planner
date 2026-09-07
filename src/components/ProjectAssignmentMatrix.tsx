@@ -1357,7 +1357,7 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                           const project = projectData?.projekt;
                           const isTentative = projectData?.isTentative;
                           const hours = projectData?.hours || 0;
-                          const isLowCapacity = hours > 0 && hours <= 35;
+                          const isLowCapacity = hours > 0 && (hours + (projectData?.hours2 || 0)) <= 35;
                           // hodiny odpovídající 1–4 dnům dovolené (round(7.2 * zbylé dny))
                           const isLeaveReduced = (projectData?.leaveDays || 0) > 0 || [7, 14, 22, 29].includes(hours);
                           return (
