@@ -61,7 +61,11 @@ interface WeekPlan {
   mhTyden: number;
   projekt: string;
   is_tentative?: boolean;
+  projekt2?: string | null;
+  mhTyden2?: number;
+  is_tentative2?: boolean;
 }
+
 
 interface DatabaseProject {
   id: string;
