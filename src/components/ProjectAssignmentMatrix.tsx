@@ -465,7 +465,7 @@ export const ProjectAssignmentMatrix = ({
     engineers.forEach(e => {
       isSlovakMap[normalizeName(e.display_name)] = getEngineerCompany(e.display_name) === 'MB Idea';
     });
-    const matrix: { [engineer: string]: { [week: string]: { projekt: string; isTentative: boolean; hours: number; leaveDays: number } } } = {};
+    const matrix: { [engineer: string]: { [week: string]: { projekt: string; isTentative: boolean; hours: number; leaveDays: number; projekt2?: string | null; isTentative2?: boolean; hours2?: number } } } = {};
     
     engineerKeys.forEach(engineerKey => {
       matrix[engineerKey] = {};
@@ -482,9 +482,11 @@ export const ProjectAssignmentMatrix = ({
           };
           return;
         }
-        const entry = planningData.find(e => normalizeName(e.konstrukter) === engineerKey && e.cw === week);
+        const entry = planningData.find(e => !e.isSecondary && normalizeName(e.konstrukter) === engineerKey && e.cw === week);
         const projekt = entry?.projekt || (week.includes('CW52') ? 'DOVOLENÁ' : 'FREE');
         let hours = typeof entry?.mhTyden === 'number' ? entry.mhTyden : 0;
+        const projekt2 = entry?.projekt2 || null;
+        let hours2 = projekt2 ? (entry?.mhTyden2 || 0) : 0;
         // Auto-reduce project hours for holiday weeks (cap at engineer's actual capacity)
         const isRegime = projekt === 'DOVOLENÁ' || projekt === 'NEMOC' || projekt === 'OVER' || projekt === 'FREE';
         if (!isRegime && hours > 0) {
@@ -493,17 +495,27 @@ export const ProjectAssignmentMatrix = ({
             const cwN = parseInt(cwMatch[1]);
             const yN = parseInt(cwMatch[2]);
             const capacity = getWorkingDaysInCW(cwN, yN, isSlovak) * 8;
-            if (capacity > 0 && hours > capacity) hours = capacity;
+            if (capacity > 0 && hours + hours2 > capacity) {
+              // Cap the total of both projects at the real capacity of the week
+              const overflow = hours + hours2 - capacity;
+              const reduce2 = Math.min(hours2, overflow);
+              hours2 -= reduce2;
+              hours -= (overflow - reduce2);
+            }
           }
         }
         matrix[engineerKey][week] = {
           projekt,
           isTentative: entry?.is_tentative || false,
           hours,
-          leaveDays: entry?.leaveDays || 0
+          leaveDays: entry?.leaveDays || 0,
+          projekt2,
+          isTentative2: entry?.is_tentative2 || false,
+          hours2
         };
       });
     });
+
     
     return matrix;
   }, [planningData, engineers, weeks, endDateMap]);
