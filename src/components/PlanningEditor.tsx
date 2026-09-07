@@ -180,6 +180,7 @@ const generatePlanningDataForEditor = (data: any[]): { [key: string]: WeekPlan[]
   // Vytvoříme mapu existujících dat - data už přicházejí z planning_matrix s plným CW formátem
   const existingDataMap: { [key: string]: { [key: string]: WeekPlan } } = {};
   data.forEach(entry => {
+    if (entry.isSecondary) return; // synthetic row for the second project — editor uses the primary row
     if (!existingDataMap[entry.konstrukter]) {
       existingDataMap[entry.konstrukter] = {};
     }
@@ -190,9 +191,13 @@ const generatePlanningDataForEditor = (data: any[]): { [key: string]: WeekPlan[]
       mesic: entry.mesic,
       mhTyden: entry.mhTyden,
       projekt: entry.projekt,
-      is_tentative: entry.is_tentative || false
+      is_tentative: entry.is_tentative || false,
+      projekt2: entry.projekt2 || null,
+      mhTyden2: entry.mhTyden2 || 0,
+      is_tentative2: entry.is_tentative2 || false
     };
   });
+
   
   // Získáme seznam všech konstruktérů
   const allKonstrukteri = [...new Set(data.map(entry => entry.konstrukter))];
