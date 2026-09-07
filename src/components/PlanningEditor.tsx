@@ -646,10 +646,57 @@ export const PlanningEditor: React.FC = () => {
                 </Label>
               </div>
 
+              {/* 2. projekt – rozdělený týden */}
+              <Select value={bulkProject2} onValueChange={setBulkProject2}>
+                <SelectTrigger className="w-52">
+                  <SelectValue placeholder="2. projekt (volitelné)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="NONE">— odebrat 2. projekt —</SelectItem>
+                  {allProjectCodes.map((projekt) => (
+                    <SelectItem key={`b2-${projekt}`} value={projekt}>
+                      {projekt}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Input
+                type="number"
+                inputMode="numeric"
+                placeholder="Hodiny 2. projekt"
+                className="w-32"
+                value={bulkHours2}
+                disabled={!bulkProject2 || bulkProject2 === 'NONE'}
+                onChange={(e) => setBulkHours2(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    applyBulkChanges();
+                  }
+                }}
+              />
+
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="tentative2"
+                  checked={bulkIsTentative2}
+                  disabled={!bulkProject2 || bulkProject2 === 'NONE'}
+                  onCheckedChange={(checked) => setBulkIsTentative2(checked as boolean)}
+                />
+                <Label htmlFor="tentative2" className="cursor-pointer">
+                  Předběžná rezervace (2. projekt)
+                </Label>
+              </div>
+
               {/* 3) Tlačítka – POTVRDIT / ZRUŠIT */}
               <Button
                 onClick={applyBulkChanges}
-                disabled={!bulkProject || bulkHours.trim() === '' || selectedWeeks.size === 0}
+                disabled={
+                  selectedWeeks.size === 0 ||
+                  ((!bulkProject || bulkHours.trim() === '') &&
+                    (!bulkProject2 || (bulkProject2 !== 'NONE' && bulkHours2.trim() === '')))
+                }
               >
                 Použít
               </Button>
@@ -669,6 +716,9 @@ export const PlanningEditor: React.FC = () => {
                   setBulkProject('');
                   setBulkHours('');
                   setBulkIsTentative(false);
+                  setBulkProject2('');
+                  setBulkHours2('');
+                  setBulkIsTentative2(false);
                   clearSelection();
                 }}
               >
