@@ -720,11 +720,14 @@ export type Database = {
           engineer_id: string | null
           id: string
           is_tentative: boolean
+          is_tentative_2: boolean
           konstrukter: string
           leave_days: number
           mesic: string
           mh_tyden: number | null
+          mh_tyden_2: number
           projekt: string | null
+          projekt_2: string | null
           updated_at: string | null
           updated_by: string | null
           week_monday: string | null
@@ -737,11 +740,14 @@ export type Database = {
           engineer_id?: string | null
           id?: string
           is_tentative?: boolean
+          is_tentative_2?: boolean
           konstrukter: string
           leave_days?: number
           mesic: string
           mh_tyden?: number | null
+          mh_tyden_2?: number
           projekt?: string | null
+          projekt_2?: string | null
           updated_at?: string | null
           updated_by?: string | null
           week_monday?: string | null
@@ -754,11 +760,14 @@ export type Database = {
           engineer_id?: string | null
           id?: string
           is_tentative?: boolean
+          is_tentative_2?: boolean
           konstrukter?: string
           leave_days?: number
           mesic?: string
           mh_tyden?: number | null
+          mh_tyden_2?: number
           projekt?: string | null
+          projekt_2?: string | null
           updated_at?: string | null
           updated_by?: string | null
           week_monday?: string | null
