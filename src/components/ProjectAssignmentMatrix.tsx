@@ -1430,7 +1430,32 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                                   </TooltipContent>
                                 </Tooltip>
                               )}
+                              {project !== 'DEPARTED' && projectData?.projekt2 && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div
+                                      onClick={(e) => handleProjectClick(projectData.projekt2 as string, e)}
+                                      className={`mt-0.5 text-xs px-1.5 py-0.5 w-full justify-center font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-md inline-flex items-center cursor-pointer ${getProjectBadgeStyle(projectData.projekt2 as string, projectData.isTentative2)} ${
+                                        projectData.isTentative2 ? 'border-[3px] border-dashed !border-yellow-400' : ''
+                                      }`}
+                                    >
+                                      <span className="truncate max-w-[65px]" title={getProjectDisplayName(projectData.projekt2 as string)}>
+                                        {getProjectDisplayName(projectData.projekt2 as string)}
+                                      </span>
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top">
+                                    <div className="text-sm">
+                                      <div className="font-semibold">{getProjectDisplayName(projectData.projekt2 as string)} - {week}</div>
+                                      <div className="text-xs text-muted-foreground">
+                                        Split week: {hours}h {getProjectDisplayName(project)} + {projectData.hours2 || 0}h {getProjectDisplayName(projectData.projekt2 as string)}
+                                      </div>
+                                    </div>
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
                             </td>
+
                           );
                         })
                       )
