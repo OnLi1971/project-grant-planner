@@ -765,7 +765,9 @@ export const PlanningEditor: React.FC = () => {
                 <th className="p-3 text-left font-medium">Měsíc</th>
                 <th className="p-3 text-left font-medium">MH/týden</th>
                 <th className="p-3 text-left font-medium">Projekt</th>
+                <th className="p-3 text-left font-medium">2. projekt (rozdělený týden)</th>
                 <th className="p-3 text-left font-medium">Status</th>
+
               </tr>
             </thead>
             <tbody>
