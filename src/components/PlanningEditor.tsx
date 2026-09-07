@@ -962,15 +962,74 @@ export const PlanningEditor: React.FC = () => {
                     </div>
                   </td>
                   
+                  {/* Druhý projekt (rozdělený týden) */}
+                  <td className="p-3 relative" onClick={(e) => e.stopPropagation()}>
+                    {isSelected && (
+                      <div className="absolute inset-0 bg-primary/20 rounded" />
+                    )}
+                    <div className="relative z-10 flex items-center gap-2">
+                      <Select
+                        value={week.projekt2 || 'NONE'}
+                        onValueChange={(value) => {
+                          if (value === 'NONE') {
+                            updatePlanningSecondary(selectedKonstrukter, week.cw, null, 0, false);
+                          } else {
+                            const hours = week.mhTyden2 && week.mhTyden2 > 0
+                              ? week.mhTyden2
+                              : Math.max(0, 36 - (week.mhTyden || 0));
+                            updatePlanningSecondary(selectedKonstrukter, week.cw, value, hours, week.is_tentative2 || false);
+                          }
+                        }}
+                        disabled={isMultiSelectMode || REGIME_ACTIVITIES.includes(week.projekt)}
+                      >
+                        <SelectTrigger className="w-44 h-8">
+                          <SelectValue placeholder="—" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="NONE">— žádný —</SelectItem>
+                          {allProjectCodes
+                            .filter(code => !REGIME_ACTIVITIES.includes(code) && code !== week.projekt)
+                            .map(projekt => (
+                              <SelectItem key={projekt} value={projekt}>{projekt}</SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                      {week.projekt2 && (
+                        <Input
+                          type="number"
+                          className="w-20 h-8"
+                          defaultValue={week.mhTyden2 || 0}
+                          key={`${week.cw}-${week.mhTyden2}`}
+                          onBlur={(e) => {
+                            const val = parseInt(e.target.value, 10) || 0;
+                            if (val !== (week.mhTyden2 || 0)) {
+                              updatePlanningSecondary(selectedKonstrukter, week.cw, week.projekt2 || null, val, week.is_tentative2 || false);
+                            }
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                          }}
+                        />
+                      )}
+                      {week.projekt2 && (
+                        <span className={`text-xs ${((week.mhTyden || 0) + (week.mhTyden2 || 0)) > 40 ? 'text-destructive font-semibold' : 'text-muted-foreground'}`}>
+                          Σ {(week.mhTyden || 0) + (week.mhTyden2 || 0)}h
+                        </span>
+                      )}
+                    </div>
+                  </td>
+
                   {/* Status badge */}
                   <td className="p-3 relative">
                     {isSelected && (
                       <div className="absolute inset-0 bg-primary/20 rounded" />
                     )}
-                    <div className="relative z-10">
+                    <div className="relative z-10 flex flex-col gap-1 items-start">
                       {getProjectBadge(week.projekt, week.is_tentative)}
+                      {week.projekt2 && getProjectBadge(week.projekt2, week.is_tentative2)}
                     </div>
                   </td>
+
                 </tr>
                 );
               })}
