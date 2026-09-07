@@ -136,9 +136,12 @@ export function usePlanningData() {
       });
 
       // Convert to PlanningEntry format
-      const planningEntries: PlanningEntry[] = deduplicatedRows.map(row => {
+      const planningEntries: PlanningEntry[] = [];
+      const secondaryEntries: PlanningEntry[] = [];
+
+      deduplicatedRows.forEach(row => {
         const engineer = engineerMap.get(row.konstrukter);
-        return {
+        const base: PlanningEntry = {
           engineer_id: engineer?.id || null,
           konstrukter: row.konstrukter,
           cw: row.cw_full,
@@ -146,9 +149,31 @@ export function usePlanningData() {
           mhTyden: row.mh_tyden || 0,
           projekt: row.projekt || 'FREE',
           is_tentative: row.is_tentative || false,
-          leaveDays: row.leave_days || 0
+          leaveDays: row.leave_days || 0,
+          projekt2: row.projekt_2 || null,
+          mhTyden2: row.mh_tyden_2 || 0,
+          is_tentative2: row.is_tentative_2 || false,
         };
+        planningEntries.push(base);
+
+        // Synthetic row for the second project so all aggregations count it automatically
+        if (base.projekt2 && (base.mhTyden2 || 0) > 0) {
+          secondaryEntries.push({
+            ...base,
+            projekt: base.projekt2,
+            mhTyden: base.mhTyden2,
+            is_tentative: base.is_tentative2,
+            leaveDays: 0,
+            projekt2: null,
+            mhTyden2: 0,
+            is_tentative2: false,
+            isSecondary: true,
+          });
+        }
       });
+
+      planningEntries.push(...secondaryEntries);
+
 
       // Final race condition check before applying data
       if (latestFetchIdRef.current !== myFetchId) {
