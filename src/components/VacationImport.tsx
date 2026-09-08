@@ -156,8 +156,8 @@ export function VacationImport() {
 
         const parsedL: Row[] = [];
         agg.forEach(a => {
-          const current = planMapL.get(`${a.norm}|${a.cw}`);
-          if (!current) return;
+          // Týden nemusí v plánu existovat (např. CW53-2026) – upsert ho vytvoří
+          const current = planMapL.get(`${a.norm}|${a.cw}`) ?? { projekt: 'FREE', hours: 0 };
           const fullWeek = a.days >= 5;
           const newHours = fullWeek ? 40 : Math.round(7.2 * (5 - a.days));
           const conflict = NON_PROJECT.includes(normalizeProject(current.projekt).toUpperCase());
