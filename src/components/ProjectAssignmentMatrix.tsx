@@ -808,6 +808,9 @@ export const ProjectAssignmentMatrix = ({
         if (projectData?.projekt === projectName && projectData.hours > 0) {
           engineersOnProject.add(engineer);
         }
+        if (projectData?.projekt2 === projectName && (projectData.hours2 || 0) > 0) {
+          engineersOnProject.add(engineer);
+        }
       });
     });
 
