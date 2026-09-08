@@ -10,6 +10,14 @@ import * as XLSX from 'xlsx';
 import { getISOWeek, getISOWeekYear } from 'date-fns';
 import { usePlanning } from '@/contexts/PlanningContext';
 import { normalizeName } from '@/utils/nameNormalization';
+import { getWorkingDaysInCW } from '@/utils/workingDays';
+
+// Počet pracovních dnů v týdnu (bez svátků) podle klíče CWxx-YYYY
+const workingDaysForCw = (cw: string): number => {
+  const m = cw.match(/CW(\d+)-(\d+)/);
+  if (!m) return 5;
+  return getWorkingDaysInCW(parseInt(m[1]), parseInt(m[2]));
+};
 
 const NON_PROJECT = ['NEMOC', 'FREE', 'OVER'];
 
@@ -159,8 +167,9 @@ export function VacationImport() {
           // Týden nemusí v plánu existovat (např. CW53-2026) – uložení ho vytvoří
           const existing = planMapL.get(`${a.norm}|${a.cw}`);
           const current = existing ?? { projekt: 'FREE', hours: 0 };
-          const fullWeek = a.days >= 5;
-          const newHours = fullWeek ? 40 : Math.round(7.2 * (5 - a.days));
+          const wd = workingDaysForCw(a.cw);
+          const fullWeek = a.days >= wd;
+          const newHours = fullWeek ? 40 : Math.round(7.2 * (wd - a.days));
           const conflict = !!existing && NON_PROJECT.includes(normalizeProject(current.projekt).toUpperCase());
           parsedL.push({
             konstrukter: a.konstrukter,
@@ -253,8 +262,9 @@ export function VacationImport() {
           if (leaveDays === 0) return;
           const existing = planMap.get(`${norm}|${cw}`);
           const current = existing ?? { projekt: 'FREE', hours: 0 };
-          const fullWeek = leaveDays >= 5;
-          const newHours = fullWeek ? 40 : Math.round(7.2 * (5 - leaveDays));
+          const wd = workingDaysForCw(cw);
+          const fullWeek = leaveDays >= wd;
+          const newHours = fullWeek ? 40 : Math.round(7.2 * (wd - leaveDays));
           const conflict = !!existing && NON_PROJECT.includes(normalizeProject(current.projekt).toUpperCase());
           parsed.push({
             konstrukter,

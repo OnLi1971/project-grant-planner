@@ -70,8 +70,44 @@ const slovakHolidays2026 = [
   '2026-12-26', // 2. sviatok vianočný
 ];
 
-const allCzechHolidays = [...czechHolidays2025, ...czechHolidays2026];
-const allSlovakHolidays = [...slovakHolidays2025, ...slovakHolidays2026];
+// České státní svátky 2027
+const czechHolidays2027 = [
+  '2027-01-01', // Nový rok
+  '2027-03-26', // Velký pátek
+  '2027-03-29', // Velikonoční pondělí
+  '2027-05-01', // Svátek práce
+  '2027-05-08', // Den vítězství
+  '2027-07-05', // Cyril a Metoděj
+  '2027-07-06', // Jan Hus
+  '2027-09-28', // Den české státnosti
+  '2027-10-28', // Den vzniku samostatného československého státu
+  '2027-11-17', // Den boje za svobodu a demokracii
+  '2027-12-24', // Štědrý den
+  '2027-12-25', // 1. svátek vánoční
+  '2027-12-26', // 2. svátek vánoční
+];
+
+// Slovenské státní svátky 2027
+const slovakHolidays2027 = [
+  '2027-01-01',
+  '2027-01-06',
+  '2027-03-26',
+  '2027-03-29',
+  '2027-05-01',
+  '2027-05-08',
+  '2027-07-05',
+  '2027-08-29',
+  '2027-09-01',
+  '2027-09-15',
+  '2027-11-01',
+  '2027-11-17',
+  '2027-12-24',
+  '2027-12-25',
+  '2027-12-26',
+];
+
+const allCzechHolidays = [...czechHolidays2025, ...czechHolidays2026, ...czechHolidays2027];
+const allSlovakHolidays = [...slovakHolidays2025, ...slovakHolidays2026, ...slovakHolidays2027];
 
 /**
  * Zjistí, zda je daný den státní svátek
