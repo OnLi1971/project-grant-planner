@@ -838,6 +838,13 @@ export const ProjectAssignmentMatrix = ({
             hours: projectData.hours,
             isTentative: projectData.isTentative || false
           });
+        } else if (projectData?.projekt2 === projectName && (projectData.hours2 || 0) > 0) {
+          allocations.push({
+            engineer: displayNameMap[engineer] || engineer,
+            week,
+            hours: projectData.hours2 || 0,
+            isTentative: projectData.isTentative2 || false
+          });
         } else if (projectName === 'FREE' && projectData?.projekt && !regimeProjects.includes(projectData.projekt) && projectData.hours > 0 && projectData.hours < 30 && (40 - projectData.hours - (projectData.leaveDays || 0) * 7.2) >= 4) {
           // Add partial free capacity entry (excluding hours covered by leave)
           allocations.push({
