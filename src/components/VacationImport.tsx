@@ -251,11 +251,11 @@ export function VacationImport() {
         colToCw.forEach((cw, colIdx) => {
           const leaveDays = countLeaveDays(row[colIdx]);
           if (leaveDays === 0) return;
-          const current = planMap.get(`${norm}|${cw}`);
-          if (!current) return;
+          const existing = planMap.get(`${norm}|${cw}`);
+          const current = existing ?? { projekt: 'FREE', hours: 0 };
           const fullWeek = leaveDays >= 5;
           const newHours = fullWeek ? 40 : Math.round(7.2 * (5 - leaveDays));
-          const conflict = NON_PROJECT.includes(normalizeProject(current.projekt).toUpperCase());
+          const conflict = !!existing && NON_PROJECT.includes(normalizeProject(current.projekt).toUpperCase());
           parsed.push({
             konstrukter,
             cw,
