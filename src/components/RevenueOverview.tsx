@@ -1317,7 +1317,7 @@ export const RevenueOverview = ({
                         {showFree && (data[FREE_KEY] || 0) > 0 && (
                           <div className="mb-3">
                             <p className="text-xs font-semibold text-muted-foreground mb-1">
-                              FREE CAPACITY (36 MH/week @ 1100 Kč)
+                              FREE CAPACITY (8 h/working day @ 1100 Kč)
                             </p>
                             <div className="flex justify-between text-sm gap-4 items-center pl-2">
                               <div className="flex items-center gap-1.5">
