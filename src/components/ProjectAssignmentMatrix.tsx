@@ -343,23 +343,30 @@ export const ProjectAssignmentMatrix = ({
   }, [maxEndDate, showHistory]);
   const months = useMemo(() => generateMonths(weeks), [weeks]);
 
-  // Auto-load default selected engineers (hardcoded list for public pages)
+  // Auto-load defaults only once (otherwise manual de-selection gets reverted)
+  const defaultsAppliedRef = useRef(false);
+
   useEffect(() => {
-    if (defaultSelectedEngineers && defaultSelectedEngineers.length > 0 && selectedCustomEngineers.length === 0) {
+    if (defaultsAppliedRef.current) return;
+    if (defaultSelectedEngineers && defaultSelectedEngineers.length > 0) {
+      defaultsAppliedRef.current = true;
       setSelectedCustomEngineers(defaultSelectedEngineers);
     }
   }, [defaultSelectedEngineers]);
 
   // Auto-load default custom view when views are loaded (for logged-in users)
   useEffect(() => {
-    if (!defaultSelectedEngineers && defaultCustomViewId && customViews.length > 0 && !selectedViewId) {
+    if (defaultsAppliedRef.current) return;
+    if (!defaultSelectedEngineers && defaultCustomViewId && customViews.length > 0) {
       const view = customViews.find(v => v.id === defaultCustomViewId);
       if (view) {
+        defaultsAppliedRef.current = true;
         setSelectedCustomEngineers(view.engineers);
         setSelectedViewId(defaultCustomViewId);
       }
     }
-  }, [defaultCustomViewId, customViews, selectedViewId, defaultSelectedEngineers]);
+  }, [defaultCustomViewId, customViews, defaultSelectedEngineers]);
+
 
   const displayNameMap = useMemo(() => {
     const map: Record<string, string> = {};
