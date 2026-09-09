@@ -576,42 +576,65 @@ export const RevenueOverview = ({
     return result;
   }, [planningData]);
 
-  // Volná kapacita (hodiny) po měsících – jen RAIL+EL
-  // Teoretická kapacita měsíce = počet konstruktérů × 8 h × pracovní dny v měsíci
+  // Volná kapacita (hodiny) po měsících
+  // Teoretická kapacita měsíce = počet konstruktérů, kteří jsou v daném měsíci
+  // na projektech pod programy RAIL/MACH nebo evidovaní jako FREE, × 8 h × pracovní dny v měsíci
   const freeByMonth = useMemo(() => {
     const norm = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
     const allowed = new Set(RAIL_EL_ENGINEERS.map(norm));
 
+    // Kódy projektů patřících pod RAIL / MACH
+    const railMachProgramIds = new Set(
+      programs.filter(p => ['RAIL', 'MACH'].includes((p.code || '').toUpperCase())).map(p => p.id)
+    );
+    const railMachProjectCodes = new Set(
+      projects.filter(p => railMachProgramIds.has(p.program_id)).map(p => norm(p.code))
+    );
+
     // Odpracované (produktivní) hodiny po měsících
     const productiveByMonth: Record<string, number> = {};
+    // Konstruktéři relevantní pro daný měsíc (RAIL/MACH projekt nebo FREE)
+    const engineersByMonth: Record<string, Set<string>> = {};
+
     planningData.forEach(entry => {
       const eng = norm(entry.konstrukter || '');
       if (!allowed.has(eng)) return;
       const p = norm(entry.projekt || '');
-      if (p === 'dovolena' || p === 'nemoc' || p === 'free' || p === 'over') return;
-      const hours = entry.mhTyden || 0;
-      if (!hours) return;
       const cwKey = entry.cw.includes('-2026') ? entry.cw.replace('-', '_') : entry.cw.split('-')[0];
       const weekMapping = getWeekMapping(cwKey);
       if (!weekMapping) return;
+
+      const countsForCapacity = p === 'free' || railMachProjectCodes.has(p);
+      if (countsForCapacity) {
+        Object.keys(weekMapping).forEach(month => {
+          if (!engineersByMonth[month]) engineersByMonth[month] = new Set();
+          engineersByMonth[month].add(eng);
+        });
+      }
+
+      if (p === 'dovolena' || p === 'nemoc' || p === 'free' || p === 'over') return;
+      const hours = entry.mhTyden || 0;
+      if (!hours) return;
       Object.entries(weekMapping).forEach(([month, ratio]) => {
         productiveByMonth[month] = (productiveByMonth[month] || 0) + hours * (ratio as number);
       });
     });
 
-    const engineerCount = RAIL_EL_ENGINEERS.length;
     const result: Record<string, number> = {};
     const monthKeys = new Set<string>([
       ...Object.keys(productiveByMonth),
       ...Object.keys(leaveByMonth),
+      ...Object.keys(engineersByMonth),
     ]);
     monthKeys.forEach(month => {
+      const engineerCount = engineersByMonth[month]?.size || 0;
       const capacity = engineerCount * 8 * getWorkingDaysForMonthKey(month);
       const used = (productiveByMonth[month] || 0) + (leaveByMonth[month] || 0);
       result[month] = Math.max(0, capacity - used);
     });
     return result;
-  }, [planningData, leaveByMonth]);
+  }, [planningData, leaveByMonth, projects, programs]);
+
 
 
   const getLeaveValue = (month: string) => {
