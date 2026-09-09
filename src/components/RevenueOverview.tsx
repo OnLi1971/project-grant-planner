@@ -1401,7 +1401,7 @@ export const RevenueOverview = ({
                      stackId="combined"
                      fill="hsl(var(--chart-2, 142 71% 45%))"
                      fillOpacity={0.6}
-                     name="Free capacity (36 MH/week @ 1100)"
+                     name="Free capacity (8 h/working day @ 1100)"
                    >
                      <LabelList
                        dataKey="totalMax"
