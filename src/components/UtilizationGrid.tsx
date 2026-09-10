@@ -16,7 +16,7 @@ import {
   getISOWeekMonday,
   getWorkingDaysInWeekForMonth,
 } from '@/utils/workingDays';
-import { getWeek } from 'date-fns';
+import { format, getWeek } from 'date-fns';
 import { Calendar, BarChart3, Users, Save, Trash2, ChevronDown, X } from 'lucide-react';
 import { isEngineerDepartedForWeek } from '@/utils/engineerDeparture';
 
@@ -64,6 +64,20 @@ const getAllWeeks = (): string[] => {
 const monthNumberToNameCZ: Record<number, string> = {
   1: 'leden', 2: 'únor', 3: 'březen', 4: 'duben', 5: 'květen', 6: 'červen',
   7: 'červenec', 8: 'srpen', 9: 'září', 10: 'říjen', 11: 'listopad', 12: 'prosinec',
+};
+
+const monthNumberToNameEN: Record<number, string> = {
+  1: 'January', 2: 'February', 3: 'March', 4: 'April', 5: 'May', 6: 'June',
+  7: 'July', 8: 'August', 9: 'September', 10: 'October', 11: 'November', 12: 'December',
+};
+
+const getWeekDateRange = (cwKey: string): string => {
+  const parsed = cwKey.match(/CW(\d+)-(\d+)/);
+  if (!parsed) return '';
+  const monday = getISOWeekMonday(parseInt(parsed[1]), parseInt(parsed[2]));
+  const friday = new Date(monday);
+  friday.setDate(monday.getDate() + 4);
+  return `${format(monday, 'd.M.')}–${format(friday, 'd.M.')}`;
 };
 
 const getMonthForWeek = (cwKey: string) => {
@@ -485,25 +499,55 @@ export const UtilizationGrid: React.FC = () => {
         <div className="overflow-auto max-h-[70vh] border rounded-md">
           <table className="text-xs border-collapse w-max min-w-full">
             <thead className="sticky top-0 z-10 bg-card">
-              <tr>
-                <th className="sticky left-0 z-20 bg-card border px-3 py-2 text-left font-medium text-muted-foreground min-w-[140px]">
-                  Konstruktér
-                </th>
-                {viewMode === 'weekly'
-                  ? displayedWeeks.map(cwKey => {
-                      const parsed = parseCW(cwKey);
-                      return (
-                        <th key={cwKey} className="border px-2 py-2 font-medium text-muted-foreground whitespace-nowrap min-w-[55px] text-center">
-                          {parsed ? `CW${parsed.cw}` : cwKey}
-                        </th>
-                      );
-                    })
-                  : displayedMonths.map(mi => (
-                      <th key={mi.label} className="border px-2 py-2 font-medium text-muted-foreground whitespace-nowrap min-w-[70px] text-center">
-                        {mi.label}
+              {viewMode === 'weekly' ? (
+                <>
+                  <tr>
+                    <th className="sticky left-0 top-0 z-30 bg-background border-2 border-border px-3 py-2 text-left font-semibold min-w-[140px]">
+                      Konstruktér
+                    </th>
+                    {displayedMonths.map((mi, monthIndex) => (
+                      <th
+                        key={mi.label}
+                        colSpan={mi.weeks.length}
+                        className={`sticky top-0 z-20 bg-background border-2 border-border px-2 py-2 text-center text-base font-bold ${monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''}`}
+                      >
+                        <span className="text-primary">{monthNumberToNameEN[mi.month]} {mi.year}</span>
                       </th>
                     ))}
-              </tr>
+                  </tr>
+                  <tr>
+                    <th className="sticky left-0 top-[41px] z-30 bg-background border border-border px-3 py-1.5" />
+                    {displayedMonths.flatMap((mi, monthIndex) => mi.weeks.map((cwKey, weekIndex) => {
+                      const parsed = parseCW(cwKey);
+                      return (
+                        <th
+                          key={cwKey}
+                          className={`sticky top-[41px] z-20 bg-background border border-border px-2 py-1.5 font-medium text-muted-foreground whitespace-nowrap min-w-[90px] text-center ${monthIndex > 0 && weekIndex === 0 ? 'border-l-4 border-l-primary/50' : ''}`}
+                        >
+                          <div className="flex flex-col items-center">
+                            <span>{parsed ? `CW${parsed.cw.toString().padStart(2, '0')}` : cwKey}</span>
+                            <span className="text-[10px] leading-none mt-0.5">{getWeekDateRange(cwKey)}</span>
+                          </div>
+                        </th>
+                      );
+                    }))}
+                  </tr>
+                </>
+              ) : (
+                <tr>
+                  <th className="sticky left-0 top-0 z-30 bg-background border-2 border-border px-3 py-1 text-left font-semibold min-w-[140px]">
+                    Konstruktér
+                  </th>
+                  {displayedMonths.map((mi, monthIndex) => (
+                    <th
+                      key={mi.label}
+                      className={`sticky top-0 z-20 bg-background border-2 border-border px-2 py-1 font-bold text-primary whitespace-nowrap min-w-[70px] text-center ${monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''}`}
+                    >
+                      {monthNumberToNameEN[mi.month].slice(0, 3)} {String(mi.year).slice(-2)}
+                    </th>
+                  ))}
+                </tr>
+              )}
             </thead>
             <tbody>
               {filteredEngineers.map(eng => (
