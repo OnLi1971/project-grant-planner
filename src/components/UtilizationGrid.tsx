@@ -477,7 +477,7 @@ export const UtilizationGrid: React.FC = () => {
             <span className="inline-block w-3 h-3 rounded bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700" /> &lt;20%
             <span className="inline-block w-3 h-3 rounded bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700" /> 20-80%
             <span className="inline-block w-3 h-3 rounded bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700" /> 80-100%
-            <span className="inline-block w-3 h-3 rounded bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700" /> &gt;100%
+            <span className="inline-block w-3 h-3 rounded bg-green-300 dark:bg-green-700/50 border border-green-500 dark:border-green-600" /> >100%
           </div>
         </div>
 
