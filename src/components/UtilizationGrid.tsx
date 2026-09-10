@@ -184,6 +184,22 @@ export const UtilizationGrid: React.FC = () => {
     return companyFilteredEngineers.filter(e => selectedEngineers.includes(e.jmeno));
   }, [companyFilteredEngineers, selectedEngineers]);
 
+  // Average utilization across displayed columns (for sorting)
+  const getEngineerAvgUtilization = (eng: UIEngineer): number => {
+    if (viewMode === 'weekly') {
+      const values = displayedWeeks.map(cw => getWeeklyUtilization(eng, cw)).filter((v): v is number => v !== null);
+      return values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
+    }
+    const values = displayedMonths.map(mi => getMonthlyUtilization(eng, mi)).filter((v): v is number => v !== null);
+    return values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
+  };
+
+  const sortedEngineers = useMemo(() => {
+    if (!sortByUtilization) return filteredEngineers;
+    return [...filteredEngineers].sort((a, b) => getEngineerAvgUtilization(b) - getEngineerAvgUtilization(a));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredEngineers, sortByUtilization, viewMode, displayedWeeks, displayedMonths, planningData]);
+
   // Search-filtered list for the popover
   const searchFilteredNames = useMemo(() => {
     if (!engineerSearch) return allEngineerNames;
