@@ -17,7 +17,7 @@ import {
   getWorkingDaysInWeekForMonth,
 } from '@/utils/workingDays';
 import { format, getWeek } from 'date-fns';
-import { Calendar, BarChart3, Users, Save, Trash2, ChevronDown, X } from 'lucide-react';
+import { Calendar, BarChart3, Users, Save, Trash2, ChevronDown, X, ArrowDownWideNarrow } from 'lucide-react';
 import { isEngineerDepartedForWeek } from '@/utils/engineerDeparture';
 
 // Regime activities excluded from utilization calculation
@@ -133,6 +133,7 @@ export const UtilizationGrid: React.FC = () => {
   const { planningData } = usePlanning();
   const { engineers } = useEngineers();
   const [viewMode, setViewMode] = useState<'weekly' | 'monthly'>('monthly');
+  const [sortByUtilization, setSortByUtilization] = useState(false);
   const [companyFilter, setCompanyFilter] = useState('Všichni');
   const [selectedEngineers, setSelectedEngineers] = useState<string[]>([]);
   const [engineerSearch, setEngineerSearch] = useState('');
