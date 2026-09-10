@@ -105,7 +105,8 @@ const getUtilizationColor = (pct: number): string => {
   if (pct < 20) return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
   if (pct < 80) return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300';
   if (pct <= 100) return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
-  return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
+  // Over 100% — keep green but deeper
+  return 'bg-green-300 text-green-900 dark:bg-green-700/50 dark:text-green-100';
 };
 
 const parseCW = (cwKey: string): { cw: number; year: number } | null => {
