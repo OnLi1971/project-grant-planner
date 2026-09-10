@@ -504,7 +504,17 @@ export const UtilizationGrid: React.FC = () => {
           </Popover>
 
 
-          <div className="flex items-center gap-2 ml-auto text-xs text-muted-foreground">
+          <Button
+            variant={sortByUtilization ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSortByUtilization(s => !s)}
+            className="h-8 text-sm flex items-center gap-1.5 ml-auto"
+          >
+            <ArrowDownWideNarrow className="h-3.5 w-3.5" />
+            Řadit dle vytížení
+          </Button>
+
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <span className="inline-block w-3 h-3 rounded bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700" /> &lt;20%
             <span className="inline-block w-3 h-3 rounded bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700" /> 20-80%
             <span className="inline-block w-3 h-3 rounded bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700" /> 80-100%
