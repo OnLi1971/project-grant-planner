@@ -577,7 +577,7 @@ export const UtilizationGrid: React.FC = () => {
               )}
             </thead>
             <tbody>
-              {filteredEngineers.map(eng => (
+              {sortedEngineers.map(eng => (
                 <tr key={eng.id} className="hover:bg-muted/30">
                   <td className="sticky left-0 z-[5] bg-card border px-3 py-1.5 font-medium text-muted-foreground whitespace-nowrap">
                     {eng.jmeno}
