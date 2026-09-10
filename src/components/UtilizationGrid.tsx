@@ -308,15 +308,17 @@ export const UtilizationGrid: React.FC = () => {
     return (totalScaledHours / capacity) * 100;
   };
 
-  // Average utilization across displayed columns (for sorting)
+  // Average utilization across displayed columns (for sorting).
+  // Empty/unplanned columns (0%) are ignored so that future unplanned weeks
+  // don't drag down engineers who are highly utilized in planned periods.
   const getEngineerAvgUtilization = (eng: UIEngineer): number => {
-    if (viewMode === 'weekly') {
-      const values = displayedWeeks.map(cw => getWeeklyUtilization(eng, cw)).filter((v): v is number => v !== null);
-      return values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
-    }
-    const values = displayedMonths.map(mi => getMonthlyUtilization(eng, mi)).filter((v): v is number => v !== null);
+    const raw = viewMode === 'weekly'
+      ? displayedWeeks.map(cw => getWeeklyUtilization(eng, cw))
+      : displayedMonths.map(mi => getMonthlyUtilization(eng, mi));
+    const values = raw.filter((v): v is number => v !== null && v > 0);
     return values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
   };
+
 
   const sortedEngineers = useMemo(() => {
     if (!sortByUtilization) return filteredEngineers;
