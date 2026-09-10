@@ -17,7 +17,7 @@ import {
   getWorkingDaysInWeekForMonth,
 } from '@/utils/workingDays';
 import { format, getWeek } from 'date-fns';
-import { Calendar, BarChart3, Users, Save, Trash2, ChevronDown, X } from 'lucide-react';
+import { Calendar, BarChart3, Users, Save, Trash2, ChevronDown, X, ArrowDownWideNarrow } from 'lucide-react';
 import { isEngineerDepartedForWeek } from '@/utils/engineerDeparture';
 
 // Regime activities excluded from utilization calculation
@@ -133,6 +133,7 @@ export const UtilizationGrid: React.FC = () => {
   const { planningData } = usePlanning();
   const { engineers } = useEngineers();
   const [viewMode, setViewMode] = useState<'weekly' | 'monthly'>('monthly');
+  const [sortByUtilization, setSortByUtilization] = useState(false);
   const [companyFilter, setCompanyFilter] = useState('Všichni');
   const [selectedEngineers, setSelectedEngineers] = useState<string[]>([]);
   const [engineerSearch, setEngineerSearch] = useState('');
@@ -182,6 +183,22 @@ export const UtilizationGrid: React.FC = () => {
     if (selectedEngineers.length === 0) return companyFilteredEngineers;
     return companyFilteredEngineers.filter(e => selectedEngineers.includes(e.jmeno));
   }, [companyFilteredEngineers, selectedEngineers]);
+
+  // Average utilization across displayed columns (for sorting)
+  const getEngineerAvgUtilization = (eng: UIEngineer): number => {
+    if (viewMode === 'weekly') {
+      const values = displayedWeeks.map(cw => getWeeklyUtilization(eng, cw)).filter((v): v is number => v !== null);
+      return values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
+    }
+    const values = displayedMonths.map(mi => getMonthlyUtilization(eng, mi)).filter((v): v is number => v !== null);
+    return values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
+  };
+
+  const sortedEngineers = useMemo(() => {
+    if (!sortByUtilization) return filteredEngineers;
+    return [...filteredEngineers].sort((a, b) => getEngineerAvgUtilization(b) - getEngineerAvgUtilization(a));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredEngineers, sortByUtilization, viewMode, displayedWeeks, displayedMonths, planningData]);
 
   // Search-filtered list for the popover
   const searchFilteredNames = useMemo(() => {
@@ -487,7 +504,17 @@ export const UtilizationGrid: React.FC = () => {
           </Popover>
 
 
-          <div className="flex items-center gap-2 ml-auto text-xs text-muted-foreground">
+          <Button
+            variant={sortByUtilization ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSortByUtilization(s => !s)}
+            className="h-8 text-sm flex items-center gap-1.5 ml-auto"
+          >
+            <ArrowDownWideNarrow className="h-3.5 w-3.5" />
+            Řadit dle vytížení
+          </Button>
+
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <span className="inline-block w-3 h-3 rounded bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700" /> &lt;20%
             <span className="inline-block w-3 h-3 rounded bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700" /> 20-80%
             <span className="inline-block w-3 h-3 rounded bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700" /> 80-100%
@@ -550,7 +577,7 @@ export const UtilizationGrid: React.FC = () => {
               )}
             </thead>
             <tbody>
-              {filteredEngineers.map(eng => (
+              {sortedEngineers.map(eng => (
                 <tr key={eng.id} className="hover:bg-muted/30">
                   <td className="sticky left-0 z-[5] bg-card border px-3 py-1.5 font-medium text-muted-foreground whitespace-nowrap">
                     {eng.jmeno}
