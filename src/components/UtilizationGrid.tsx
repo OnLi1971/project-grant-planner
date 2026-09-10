@@ -118,9 +118,8 @@ const generateMonths = (weeksList: string[]): MonthInfo[] => {
 const getUtilizationColor = (pct: number): string => {
   if (pct < 20) return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
   if (pct < 80) return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300';
-  if (pct <= 100) return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
-  // Over 100% — bold, saturated green with border to stand out
-  return 'bg-green-400 text-green-950 dark:bg-green-600 dark:text-green-50 font-bold ring-2 ring-inset ring-green-600 dark:ring-green-400';
+  // 100% and above — same green, no special highlight
+  return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
 };
 
 const parseCW = (cwKey: string): { cw: number; year: number } | null => {
