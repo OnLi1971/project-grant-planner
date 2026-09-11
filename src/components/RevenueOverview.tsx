@@ -1202,7 +1202,9 @@ export const RevenueOverview = ({
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis 
                   dataKey="month" 
-                  tick={{ fontSize: 12 }}
+                  tick={{ fontSize: 13, fill: 'hsl(var(--muted-foreground))', fontWeight: 600 }}
+                  axisLine={{ stroke: 'hsl(var(--muted-foreground))', strokeWidth: 1.5 }}
+                  tickLine={{ stroke: 'hsl(var(--muted-foreground))', strokeWidth: 1.5 }}
                 />
                 <YAxis 
                   tickFormatter={(value) => {
@@ -1215,7 +1217,9 @@ export const RevenueOverview = ({
                     }
                     return `${(value / 1000).toFixed(0)}k`;
                   }}
-                  tick={{ fontSize: 12 }}
+                  tick={{ fontSize: 13, fill: 'hsl(var(--muted-foreground))', fontWeight: 600 }}
+                  axisLine={{ stroke: 'hsl(var(--muted-foreground))', strokeWidth: 1.5 }}
+                  tickLine={{ stroke: 'hsl(var(--muted-foreground))', strokeWidth: 1.5 }}
                 />
                 <Tooltip 
                   cursor={false}
