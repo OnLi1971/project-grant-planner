@@ -253,8 +253,8 @@ export const CapacityTrendChart: React.FC = () => {
             />
             <Legend wrapperStyle={{ fontSize: 13, fontWeight: 600, paddingTop: 8 }} />
             <Bar yAxisId="left" dataKey="Real productive [MH]" stackId="a" fill="hsl(var(--primary))" />
-            <Bar yAxisId="left" dataKey="Free capacity [MH]" stackId="a" fill="hsl(38 92% 55%)" />
-            <Bar yAxisId="left" dataKey="Leave [MH]" stackId="a" fill="hsl(142 71% 42%)" radius={[4, 4, 0, 0]} />
+            <Bar yAxisId="left" dataKey="Free capacity [MH]" stackId="a" fill="hsl(var(--chart-2, 142 71% 45%)" />
+            <Bar yAxisId="left" dataKey="Leave [MH]" stackId="a" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} />
             <Line
               yAxisId="right"
               type="monotone"
