@@ -2119,8 +2119,8 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                   ) : (
                     months.map((month, monthIndex) => {
                       const stats = getMonthStats(month.name);
-                      const utilization = stats.engineerCount > 0
-                        ? Math.round((stats.fte / stats.engineerCount) * 100)
+                      const utilization = stats.maxProductive > 0
+                        ? Math.round((stats.realProductive / stats.maxProductive) * 100)
                         : 0;
                       return (
                         <td
