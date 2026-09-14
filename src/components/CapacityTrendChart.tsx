@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
-  ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 } from 'recharts';
 import { usePlanning } from '@/contexts/PlanningContext';
 import { RAIL_EL_ENGINEERS } from '@/constants/railElEngineers';
@@ -182,6 +182,16 @@ export const CapacityTrendChart: React.FC = () => {
 
   const axisStyle = { fontSize: 13, fontWeight: 600, fill: 'hsl(var(--foreground))' };
 
+  // Sloupce tabulky přesně pod sloupci grafu: pevná šířka kategorie + levý
+  // sloupec tabulky stejně široký jako prostor vlevo od plotu grafu.
+  const LABEL_COL = 190; // šířka sloupce "Metric"
+  const AXIS_W = 48; // šířka obou os Y
+  const colW = view === 'weeks' ? 62 : 92;
+  const plotW = data.length * colW;
+  const chartW = LABEL_COL + plotW + AXIS_W; // plot začíná na x = LABEL_COL
+  const tableW = LABEL_COL + plotW;
+  const wrapW = Math.max(chartW, 900);
+
   return (
     <Card className="shadow-card-custom">
       <CardHeader className="pb-2">
@@ -209,8 +219,9 @@ export const CapacityTrendChart: React.FC = () => {
         </div>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={460}>
-          <ComposedChart data={data} margin={{ top: 16, right: 24, left: 8, bottom: 40 }}>
+        <div className="overflow-x-auto">
+          <div style={{ width: wrapW, minWidth: '100%' }}>
+          <ComposedChart width={chartW} height={460} data={data} margin={{ top: 16, right: 0, left: LABEL_COL - AXIS_W, bottom: 40 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
             <XAxis
               dataKey="label"
@@ -224,19 +235,19 @@ export const CapacityTrendChart: React.FC = () => {
             />
             <YAxis
               yAxisId="left"
+              width={AXIS_W}
               tick={axisStyle}
               tickLine={{ stroke: 'hsl(var(--foreground))' }}
               axisLine={{ stroke: 'hsl(var(--foreground))' }}
-              label={{ value: 'MH', angle: -90, position: 'insideLeft', style: axisStyle }}
             />
             <YAxis
               yAxisId="right"
               orientation="right"
+              width={AXIS_W}
               domain={[0, 120]}
               tick={axisStyle}
               tickLine={{ stroke: 'hsl(var(--foreground))' }}
               axisLine={{ stroke: 'hsl(var(--foreground))' }}
-              label={{ value: '%', angle: 90, position: 'insideRight', style: axisStyle }}
             />
             <Tooltip
               cursor={{ fill: 'hsl(var(--muted) / 0.3)' }}
@@ -269,15 +280,21 @@ export const CapacityTrendChart: React.FC = () => {
               dot={{ r: 3 }}
             />
           </ComposedChart>
-        </ResponsiveContainer>
 
-        <div className="mt-6 overflow-x-auto">
-          <table className="w-full text-sm border-collapse">
+          <table
+            className="text-sm border-collapse table-fixed"
+            style={{ width: tableW }}
+          >
             <thead>
               <tr>
-                <th className="border border-border p-2 text-left bg-muted/50 sticky left-0">Metric</th>
+                <th
+                  className="border border-border p-2 text-left bg-muted/50"
+                  style={{ width: LABEL_COL }}
+                >
+                  Metric
+                </th>
                 {data.map(d => (
-                  <th key={d.label} className="border border-border p-2 text-center bg-muted/50 whitespace-nowrap">
+                  <th key={d.label} className="border border-border p-1 text-center bg-muted/50 whitespace-nowrap overflow-hidden">
                     <div className="font-semibold">{d.label}</div>
                     {d.sub && <div className="text-[10px] text-muted-foreground">{d.sub}</div>}
                   </th>
@@ -294,9 +311,9 @@ export const CapacityTrendChart: React.FC = () => {
                 ['Utilization', (d: any) => `${d['Utilization [%]']}%`],
               ] as const).map(([label, fn]) => (
                 <tr key={label}>
-                  <td className="border border-border p-2 font-medium bg-background sticky left-0">{label}</td>
+                  <td className="border border-border p-2 font-medium bg-background">{label}</td>
                   {data.map(d => (
-                    <td key={d.label} className="border border-border p-2 text-center whitespace-nowrap">
+                    <td key={d.label} className="border border-border p-1 text-center whitespace-nowrap">
                       {fn(d) as any}
                     </td>
                   ))}
@@ -304,6 +321,7 @@ export const CapacityTrendChart: React.FC = () => {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       </CardContent>
     </Card>
