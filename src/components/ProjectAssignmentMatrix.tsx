@@ -123,6 +123,13 @@ const CURRENT_WEEK_KEY = (() => {
   return `CW${week.toString().padStart(2, '0')}-${year}`;
 })();
 const isCurrentWeekKey = (weekKey: string): boolean => weekKey === CURRENT_WEEK_KEY;
+
+// Maximální produktivní kapacita jednoho konstruktéra v daném týdnu (7.2h za pracovní den, svátky odečteny)
+const getWeekMaxPerEngineer = (weekKey: string): number => {
+  const m = weekKey.match(/CW(\d+)[-_](\d{4})/);
+  if (!m) return 36;
+  return getWorkingDaysInCW(parseInt(m[1]), parseInt(m[2])) * 7.2;
+};
 const isCurrentMonth = (monthName: string): boolean => {
   const info = getMonthForWeek(CURRENT_WEEK_KEY);
   return info ? monthName === `${info.name} ${info.year}` : false;
@@ -1719,10 +1726,12 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                           const pd = matrixData[engineer][week];
                           return sum + getProductiveHours(pd?.projekt, pd?.hours);
                         }, 0);
+                        const weekMax = getWeekMaxPerEngineer(week);
                         const maxHours = filteredEngineers.reduce((sum, engineer) => {
                           const pd = matrixData[engineer][week];
                           if (!pd || normActivity(pd.projekt) === 'DEPARTED' || isFullWeekActivity(pd.projekt)) return sum;
-                          return sum + 36;
+                          const partialLeave = Math.min(5, pd.leaveDays || 0) * 7.2;
+                          return sum + Math.max(0, weekMax - partialLeave);
                         }, 0);
                         const freeMh = Math.max(0, maxHours - realHours);
                         return (
@@ -1767,11 +1776,18 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                           const pd = matrixData[engineer][week];
                           return pd && pd.projekt !== 'DEPARTED';
                         }).length;
-                        const totalHours = filteredEngineers.reduce((sum, engineer) => {
+                        const weekMaxFte = getWeekMaxPerEngineer(week);
+                        const maxHoursFte = filteredEngineers.reduce((sum, engineer) => {
                           const pd = matrixData[engineer][week];
-                          return sum + getEffectiveHours(pd?.projekt, pd?.hours);
+                          if (!pd || normActivity(pd.projekt) === 'DEPARTED' || isFullWeekActivity(pd.projekt)) return sum;
+                          const partialLeave = Math.min(5, pd.leaveDays || 0) * 7.2;
+                          return sum + Math.max(0, weekMaxFte - partialLeave);
                         }, 0);
-                        const freeFte = Math.max(0, count - totalHours / 36);
+                        const realHoursFte = filteredEngineers.reduce((sum, engineer) => {
+                          const pd = matrixData[engineer][week];
+                          return sum + getProductiveHours(pd?.projekt, pd?.hours);
+                        }, 0);
+                        const freeFte = weekMaxFte > 0 ? Math.max(0, (maxHoursFte - realHoursFte) / weekMaxFte) : 0;
                         return (
                           <td 
                             key={week} 
@@ -1900,10 +1916,12 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                   {viewMode === 'weeks' ? (
                     months.map((month, monthIndex) =>
                       month.weeks.map((week, weekIndex) => {
+                        const weekMax = getWeekMaxPerEngineer(week);
                         const maxHours = filteredEngineers.reduce((sum, engineer) => {
                           const pd = matrixData[engineer][week];
                           if (!pd || normActivity(pd.projekt) === 'DEPARTED' || isFullWeekActivity(pd.projekt)) return sum;
-                          return sum + 36;
+                          const partialLeave = Math.min(5, pd.leaveDays || 0) * 7.2;
+                          return sum + Math.max(0, weekMax - partialLeave);
                         }, 0);
                         return (
                           <td
