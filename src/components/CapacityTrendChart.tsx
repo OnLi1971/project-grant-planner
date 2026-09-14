@@ -254,9 +254,34 @@ export const CapacityTrendChart: React.FC = () => {
             <Button size="sm" variant={view === 'months' ? 'default' : 'outline'} onClick={() => setView('months')}>
               Months
             </Button>
-            <Button size="sm" variant="outline" onClick={() => setHorizon(h => (h === 26 ? 52 : 26))}>
-              {horizon === 26 ? '6 months' : '12 months'}
+            <Button size="sm" variant={horizon === 26 ? 'default' : 'outline'} onClick={() => setHorizon(26)}>
+              6 months
             </Button>
+            <Button size="sm" variant={horizon === 52 ? 'default' : 'outline'} onClick={() => setHorizon(52)}>
+              12 months
+            </Button>
+            <Button size="sm" variant={horizon === 'custom' ? 'default' : 'outline'} onClick={() => setHorizon('custom')}>
+              Custom
+            </Button>
+            {horizon === 'custom' && (
+              <div className="flex items-center gap-1">
+                <select
+                  className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+                  value={fromCW}
+                  onChange={e => setFromCW(e.target.value)}
+                >
+                  {cwOptions.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+                <span className="text-sm text-muted-foreground">–</span>
+                <select
+                  className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+                  value={toCW}
+                  onChange={e => setToCW(e.target.value)}
+                >
+                  {cwOptions.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+            )}
           </div>
         </div>
       </CardHeader>
