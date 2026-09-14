@@ -1799,7 +1799,9 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                   ) : (
                     months.map((month, monthIndex) => {
                       const stats = getMonthStats(month.name);
-                      const freeFte = Math.max(0, stats.engineerCount - stats.fte);
+                      const freeFte = stats.maxProductive > 0
+                        ? Math.max(0, (stats.maxProductive - stats.realProductive) / stats.maxProductive) * stats.engineerCount
+                        : 0;
                       return (
                         <td 
                           key={month.name} 
