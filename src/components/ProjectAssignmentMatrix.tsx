@@ -1775,17 +1775,15 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                           return pd && pd.projekt !== 'DEPARTED';
                         }).length;
                         const weekMaxFte = getWeekMaxPerEngineer(week);
-                        const maxHoursFte = filteredEngineers.reduce((sum, engineer) => {
+                        const freeHoursFte = filteredEngineers.reduce((sum, engineer) => {
                           const pd = matrixData[engineer][week];
                           if (!pd || normActivity(pd.projekt) === 'DEPARTED' || isFullWeekActivity(pd.projekt)) return sum;
                           const partialLeave = Math.min(5, pd.leaveDays || 0) * 7.2;
-                          return sum + Math.max(0, weekMaxFte - partialLeave);
+                          const engMax = Math.max(0, weekMaxFte - partialLeave);
+                          const engReal = getProductiveHours(pd?.projekt, pd?.hours);
+                          return sum + Math.max(0, engMax - engReal);
                         }, 0);
-                        const realHoursFte = filteredEngineers.reduce((sum, engineer) => {
-                          const pd = matrixData[engineer][week];
-                          return sum + getProductiveHours(pd?.projekt, pd?.hours);
-                        }, 0);
-                        const freeFte = weekMaxFte > 0 ? Math.max(0, (maxHoursFte - realHoursFte) / weekMaxFte) : 0;
+                        const freeFte = weekMaxFte > 0 ? freeHoursFte / weekMaxFte : 0;
                         return (
                           <td 
                             key={week} 
