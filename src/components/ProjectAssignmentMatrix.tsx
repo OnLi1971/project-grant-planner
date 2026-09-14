@@ -1811,10 +1811,13 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                   {viewMode === 'weeks' ? (
                     months.map((month, monthIndex) => 
                       month.weeks.map((week, weekIndex) => {
-                        const leave = filteredEngineers.filter(engineer => {
+                        // Consistent with Leave [MH]: full-week activity = 1.0 FTE, partial leave = days/5
+                        const leave = filteredEngineers.reduce((sum, engineer) => {
                           const pd = matrixData[engineer][week];
-                          return pd && isFullWeekActivity(pd.projekt);
-                        }).length;
+                          if (!pd) return sum;
+                          if (isFullWeekActivity(pd.projekt)) return sum + 1;
+                          return sum + Math.min(5, pd.leaveDays || 0) / 5;
+                        }, 0);
                         return (
                           <td 
                             key={week} 
