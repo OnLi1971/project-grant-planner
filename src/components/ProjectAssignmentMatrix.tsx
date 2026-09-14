@@ -1872,11 +1872,13 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                   {viewMode === 'weeks' ? (
                     months.map((month, monthIndex) =>
                       month.weeks.map((week, weekIndex) => {
+                        const weekMaxLeave = getWeekMaxPerEngineer(week);
+                        const workDaysLeave = weekMaxLeave / 7.2;
                         const leaveMh = filteredEngineers.reduce((sum, engineer) => {
                           const pd = matrixData[engineer][week];
                           if (!pd) return sum;
-                          if (isFullWeekActivity(pd.projekt)) return sum + 36;
-                          return sum + (pd.leaveDays || 0) * 7.2;
+                          if (isFullWeekActivity(pd.projekt)) return sum + weekMaxLeave;
+                          return sum + Math.min(workDaysLeave, pd.leaveDays || 0) * 7.2;
                         }, 0);
                         return (
                           <td
