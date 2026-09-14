@@ -934,7 +934,7 @@ export const ProjectAssignmentMatrix = ({
         if (isFullWeekActivity(pd?.projekt)) leaveDays += daysInMonth;
         else leaveDays += partialLeave;
         if (!isFullWeekActivity(pd?.projekt) && normActivity(pd?.projekt) !== 'DEPARTED') {
-          maxProductive += (daysInMonth - partialLeave) * 8;
+          maxProductive += (daysInMonth - partialLeave) * 7.2;
           realProductive += getProductiveHours(pd?.projekt, pd?.hours) * (daysInMonth / 5);
         }
       });
@@ -1727,7 +1727,7 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                         const freeMh = filteredEngineers.reduce((sum, engineer) => {
                           const pd = matrixData[engineer][week];
                           if (!pd || normActivity(pd.projekt) === 'DEPARTED' || isFullWeekActivity(pd.projekt)) return sum;
-                          const partialLeave = Math.min(5, pd.leaveDays || 0) * 7.2;
+                          const partialLeave = Math.min(weekMax / 7.2, pd.leaveDays || 0) * 7.2;
                           const engMax = Math.max(0, weekMax - partialLeave);
                           const engReal = getProductiveHours(pd?.projekt, pd?.hours);
                           return sum + Math.max(0, engMax - engReal);
@@ -1778,7 +1778,7 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                         const freeHoursFte = filteredEngineers.reduce((sum, engineer) => {
                           const pd = matrixData[engineer][week];
                           if (!pd || normActivity(pd.projekt) === 'DEPARTED' || isFullWeekActivity(pd.projekt)) return sum;
-                          const partialLeave = Math.min(5, pd.leaveDays || 0) * 7.2;
+                          const partialLeave = Math.min(weekMaxFte / 7.2, pd.leaveDays || 0) * 7.2;
                           const engMax = Math.max(0, weekMaxFte - partialLeave);
                           const engReal = getProductiveHours(pd?.projekt, pd?.hours);
                           return sum + Math.max(0, engMax - engReal);
@@ -1799,7 +1799,9 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                   ) : (
                     months.map((month, monthIndex) => {
                       const stats = getMonthStats(month.name);
-                      const freeFte = Math.max(0, stats.engineerCount - stats.fte);
+                      const freeFte = stats.maxProductive > 0
+                        ? Math.max(0, (stats.maxProductive - stats.realProductive) / stats.maxProductive) * stats.engineerCount
+                        : 0;
                       return (
                         <td 
                           key={month.name} 
@@ -1823,12 +1825,14 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                   {viewMode === 'weeks' ? (
                     months.map((month, monthIndex) => 
                       month.weeks.map((week, weekIndex) => {
-                        // Consistent with Leave [MH]: full-week activity = 1.0 FTE, partial leave = days/5
+                        // Holiday-aware: full-week activity = 1.0 FTE, partial leave = leave days / working days in week
+                        const workDays = getWeekMaxPerEngineer(week) / 7.2;
                         const leave = filteredEngineers.reduce((sum, engineer) => {
                           const pd = matrixData[engineer][week];
                           if (!pd) return sum;
                           if (isFullWeekActivity(pd.projekt)) return sum + 1;
-                          return sum + Math.min(5, pd.leaveDays || 0) / 5;
+                          if (workDays <= 0) return sum;
+                          return sum + Math.min(workDays, pd.leaveDays || 0) / workDays;
                         }, 0);
                         return (
                           <td 
@@ -1868,11 +1872,13 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                   {viewMode === 'weeks' ? (
                     months.map((month, monthIndex) =>
                       month.weeks.map((week, weekIndex) => {
+                        const weekMaxLeave = getWeekMaxPerEngineer(week);
+                        const workDaysLeave = weekMaxLeave / 7.2;
                         const leaveMh = filteredEngineers.reduce((sum, engineer) => {
                           const pd = matrixData[engineer][week];
                           if (!pd) return sum;
-                          if (isFullWeekActivity(pd.projekt)) return sum + 36;
-                          return sum + (pd.leaveDays || 0) * 7.2;
+                          if (isFullWeekActivity(pd.projekt)) return sum + weekMaxLeave;
+                          return sum + Math.min(workDaysLeave, pd.leaveDays || 0) * 7.2;
                         }, 0);
                         return (
                           <td
@@ -1916,7 +1922,7 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                         const maxHours = filteredEngineers.reduce((sum, engineer) => {
                           const pd = matrixData[engineer][week];
                           if (!pd || normActivity(pd.projekt) === 'DEPARTED' || isFullWeekActivity(pd.projekt)) return sum;
-                          const partialLeave = Math.min(5, pd.leaveDays || 0) * 7.2;
+                          const partialLeave = Math.min(weekMax / 7.2, pd.leaveDays || 0) * 7.2;
                           return sum + Math.max(0, weekMax - partialLeave);
                         }, 0);
                         return (
@@ -2042,11 +2048,12 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                   {viewMode === 'weeks' ? (
                     months.map((month, monthIndex) =>
                       month.weeks.map((week, weekIndex) => {
+                        const weekMaxTotal = getWeekMaxPerEngineer(week);
                         const totalHours = filteredEngineers.reduce((sum, engineer) => {
                           const pd = matrixData[engineer][week];
                           return sum + getEffectiveHours(pd?.projekt, pd?.hours);
                         }, 0);
-                        const fte = (totalHours / 36).toFixed(1);
+                        const fte = (weekMaxTotal > 0 ? totalHours / weekMaxTotal : 0).toFixed(1);
                         return (
                           <td
                             key={week}
@@ -2085,15 +2092,17 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                   {viewMode === 'weeks' ? (
                     months.map((month, monthIndex) =>
                       month.weeks.map((week, weekIndex) => {
-                        const activeEngineers = filteredEngineers.filter(engineer => {
+                        // Utilization = real productive hours / max productive hours (holiday & leave aware)
+                        const weekMaxUtil = getWeekMaxPerEngineer(week);
+                        let capacity = 0;
+                        let totalHours = 0;
+                        filteredEngineers.forEach(engineer => {
                           const pd = matrixData[engineer][week];
-                          return pd && pd.projekt !== 'DEPARTED';
+                          if (!pd || normActivity(pd.projekt) === 'DEPARTED' || isFullWeekActivity(pd.projekt)) return;
+                          const partialLeave = Math.min(weekMaxUtil / 7.2, pd.leaveDays || 0) * 7.2;
+                          capacity += Math.max(0, weekMaxUtil - partialLeave);
+                          totalHours += getProductiveHours(pd.projekt, pd.hours);
                         });
-                        const totalHours = activeEngineers.reduce((sum, engineer) => {
-                          const pd = matrixData[engineer][week];
-                          return sum + getEffectiveHours(pd?.projekt, pd?.hours);
-                        }, 0);
-                        const capacity = activeEngineers.length * 36;
                         const utilization = capacity > 0 ? Math.round((totalHours / capacity) * 100) : 0;
                         return (
                           <td
@@ -2110,8 +2119,8 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                   ) : (
                     months.map((month, monthIndex) => {
                       const stats = getMonthStats(month.name);
-                      const utilization = stats.engineerCount > 0
-                        ? Math.round((stats.fte / stats.engineerCount) * 100)
+                      const utilization = stats.maxProductive > 0
+                        ? Math.round((stats.realProductive / stats.maxProductive) * 100)
                         : 0;
                       return (
                         <td
