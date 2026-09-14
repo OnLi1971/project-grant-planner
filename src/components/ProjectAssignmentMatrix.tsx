@@ -2092,15 +2092,17 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                   {viewMode === 'weeks' ? (
                     months.map((month, monthIndex) =>
                       month.weeks.map((week, weekIndex) => {
-                        const activeEngineers = filteredEngineers.filter(engineer => {
+                        // Utilization = real productive hours / max productive hours (holiday & leave aware)
+                        const weekMaxUtil = getWeekMaxPerEngineer(week);
+                        let capacity = 0;
+                        let totalHours = 0;
+                        filteredEngineers.forEach(engineer => {
                           const pd = matrixData[engineer][week];
-                          return pd && pd.projekt !== 'DEPARTED';
+                          if (!pd || normActivity(pd.projekt) === 'DEPARTED' || isFullWeekActivity(pd.projekt)) return;
+                          const partialLeave = Math.min(weekMaxUtil / 7.2, pd.leaveDays || 0) * 7.2;
+                          capacity += Math.max(0, weekMaxUtil - partialLeave);
+                          totalHours += getProductiveHours(pd.projekt, pd.hours);
                         });
-                        const totalHours = activeEngineers.reduce((sum, engineer) => {
-                          const pd = matrixData[engineer][week];
-                          return sum + getEffectiveHours(pd?.projekt, pd?.hours);
-                        }, 0);
-                        const capacity = activeEngineers.length * 36;
                         const utilization = capacity > 0 ? Math.round((totalHours / capacity) * 100) : 0;
                         return (
                           <td
