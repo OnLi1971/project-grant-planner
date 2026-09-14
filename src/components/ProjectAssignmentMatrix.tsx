@@ -123,6 +123,13 @@ const CURRENT_WEEK_KEY = (() => {
   return `CW${week.toString().padStart(2, '0')}-${year}`;
 })();
 const isCurrentWeekKey = (weekKey: string): boolean => weekKey === CURRENT_WEEK_KEY;
+
+// Maximální produktivní kapacita jednoho konstruktéra v daném týdnu (7.2h za pracovní den, svátky odečteny)
+const getWeekMaxPerEngineer = (weekKey: string): number => {
+  const m = weekKey.match(/CW(\d+)[-_](\d{4})/);
+  if (!m) return 36;
+  return getWorkingDaysInCW(parseInt(m[1]), parseInt(m[2])) * 7.2;
+};
 const isCurrentMonth = (monthName: string): boolean => {
   const info = getMonthForWeek(CURRENT_WEEK_KEY);
   return info ? monthName === `${info.name} ${info.year}` : false;
