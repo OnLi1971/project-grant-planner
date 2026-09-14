@@ -934,8 +934,10 @@ export const ProjectAssignmentMatrix = ({
         if (isFullWeekActivity(pd?.projekt)) leaveDays += daysInMonth;
         else leaveDays += partialLeave;
         if (!isFullWeekActivity(pd?.projekt) && normActivity(pd?.projekt) !== 'DEPARTED') {
-          maxProductive += (daysInMonth - partialLeave) * 7.2;
-          realProductive += getProductiveHours(pd?.projekt, pd?.hours) * (daysInMonth / 5);
+          const engMax = Math.max(0, (daysInMonth - partialLeave) * 7.2);
+          maxProductive += engMax;
+          // cap real hours at available capacity (short weeks must not exceed 100%)
+          realProductive += Math.min(engMax, getProductiveHours(pd?.projekt, pd?.hours) * (daysInMonth / 5));
         }
       });
 
