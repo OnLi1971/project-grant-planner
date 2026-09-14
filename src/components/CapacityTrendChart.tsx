@@ -153,12 +153,17 @@ export const CapacityTrendChart: React.FC = () => {
         b.leaveHours += weekMax;
         return;
       }
-      const partialLeave = Math.min(workDays, v.leaveDays || 0) * HOURS_PER_DAY;
+      const real = Math.min(weekMax, v.real);
+      // leave nesmí "sežrat" reálně naplánované hodiny (data mohou mít obojí)
+      const partialLeave = Math.min(
+        Math.min(workDays, v.leaveDays || 0) * HOURS_PER_DAY,
+        Math.max(0, weekMax - real)
+      );
       const engMax = Math.max(0, weekMax - partialLeave);
       b.leaveHours += partialLeave;
       b.maxHours += engMax;
-      b.realHours += Math.min(engMax, v.real);
-      b.freeHours += Math.max(0, engMax - v.real);
+      b.realHours += real;
+      b.freeHours += Math.max(0, engMax - real);
     });
 
     return Array.from(buckets.values())
