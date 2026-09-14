@@ -219,8 +219,9 @@ export const CapacityTrendChart: React.FC = () => {
         </div>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={460}>
-          <ComposedChart data={data} margin={{ top: 16, right: 24, left: 8, bottom: 40 }}>
+        <div className="overflow-x-auto">
+          <div style={{ width: wrapW, minWidth: '100%' }}>
+          <ComposedChart width={chartW} height={460} data={data} margin={{ top: 16, right: 0, left: LABEL_COL - AXIS_W, bottom: 40 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
             <XAxis
               dataKey="label"
@@ -234,19 +235,19 @@ export const CapacityTrendChart: React.FC = () => {
             />
             <YAxis
               yAxisId="left"
+              width={AXIS_W}
               tick={axisStyle}
               tickLine={{ stroke: 'hsl(var(--foreground))' }}
               axisLine={{ stroke: 'hsl(var(--foreground))' }}
-              label={{ value: 'MH', angle: -90, position: 'insideLeft', style: axisStyle }}
             />
             <YAxis
               yAxisId="right"
               orientation="right"
+              width={AXIS_W}
               domain={[0, 120]}
               tick={axisStyle}
               tickLine={{ stroke: 'hsl(var(--foreground))' }}
               axisLine={{ stroke: 'hsl(var(--foreground))' }}
-              label={{ value: '%', angle: 90, position: 'insideRight', style: axisStyle }}
             />
             <Tooltip
               cursor={{ fill: 'hsl(var(--muted) / 0.3)' }}
