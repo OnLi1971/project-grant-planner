@@ -2048,11 +2048,12 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                   {viewMode === 'weeks' ? (
                     months.map((month, monthIndex) =>
                       month.weeks.map((week, weekIndex) => {
+                        const weekMaxTotal = getWeekMaxPerEngineer(week);
                         const totalHours = filteredEngineers.reduce((sum, engineer) => {
                           const pd = matrixData[engineer][week];
                           return sum + getEffectiveHours(pd?.projekt, pd?.hours);
                         }, 0);
-                        const fte = (totalHours / 36).toFixed(1);
+                        const fte = (weekMaxTotal > 0 ? totalHours / weekMaxTotal : 0).toFixed(1);
                         return (
                           <td
                             key={week}
