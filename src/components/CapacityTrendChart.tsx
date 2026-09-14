@@ -280,15 +280,21 @@ export const CapacityTrendChart: React.FC = () => {
               dot={{ r: 3 }}
             />
           </ComposedChart>
-        </ResponsiveContainer>
 
-        <div className="mt-6 overflow-x-auto">
-          <table className="w-full text-sm border-collapse">
+          <table
+            className="text-sm border-collapse table-fixed"
+            style={{ width: tableW }}
+          >
             <thead>
               <tr>
-                <th className="border border-border p-2 text-left bg-muted/50 sticky left-0">Metric</th>
+                <th
+                  className="border border-border p-2 text-left bg-muted/50"
+                  style={{ width: LABEL_COL }}
+                >
+                  Metric
+                </th>
                 {data.map(d => (
-                  <th key={d.label} className="border border-border p-2 text-center bg-muted/50 whitespace-nowrap">
+                  <th key={d.label} className="border border-border p-1 text-center bg-muted/50 whitespace-nowrap overflow-hidden">
                     <div className="font-semibold">{d.label}</div>
                     {d.sub && <div className="text-[10px] text-muted-foreground">{d.sub}</div>}
                   </th>
@@ -305,9 +311,9 @@ export const CapacityTrendChart: React.FC = () => {
                 ['Utilization', (d: any) => `${d['Utilization [%]']}%`],
               ] as const).map(([label, fn]) => (
                 <tr key={label}>
-                  <td className="border border-border p-2 font-medium bg-background sticky left-0">{label}</td>
+                  <td className="border border-border p-2 font-medium bg-background">{label}</td>
                   {data.map(d => (
-                    <td key={d.label} className="border border-border p-2 text-center whitespace-nowrap">
+                    <td key={d.label} className="border border-border p-1 text-center whitespace-nowrap">
                       {fn(d) as any}
                     </td>
                   ))}
@@ -315,6 +321,7 @@ export const CapacityTrendChart: React.FC = () => {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       </CardContent>
     </Card>
