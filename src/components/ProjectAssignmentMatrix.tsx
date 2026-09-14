@@ -1778,7 +1778,7 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                         const freeHoursFte = filteredEngineers.reduce((sum, engineer) => {
                           const pd = matrixData[engineer][week];
                           if (!pd || normActivity(pd.projekt) === 'DEPARTED' || isFullWeekActivity(pd.projekt)) return sum;
-                          const partialLeave = Math.min(weekMax / 7.2, pd.leaveDays || 0) * 7.2;
+                          const partialLeave = Math.min(weekMaxFte / 7.2, pd.leaveDays || 0) * 7.2;
                           const engMax = Math.max(0, weekMaxFte - partialLeave);
                           const engReal = getProductiveHours(pd?.projekt, pd?.hours);
                           return sum + Math.max(0, engMax - engReal);
