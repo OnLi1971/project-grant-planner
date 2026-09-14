@@ -2102,8 +2102,10 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                           const pd = matrixData[engineer][week];
                           if (!pd || normActivity(pd.projekt) === 'DEPARTED' || isFullWeekActivity(pd.projekt)) return;
                           const partialLeave = Math.min(weekMaxUtil / 7.2, pd.leaveDays || 0) * 7.2;
-                          capacity += Math.max(0, weekMaxUtil - partialLeave);
-                          totalHours += getProductiveHours(pd.projekt, pd.hours);
+                          const engMax = Math.max(0, weekMaxUtil - partialLeave);
+                          capacity += engMax;
+                          // cap at available capacity so short weeks never exceed 100%
+                          totalHours += Math.min(engMax, getProductiveHours(pd.projekt, pd.hours));
                         });
                         const utilization = capacity > 0 ? Math.round((totalHours / capacity) * 100) : 0;
                         return (
