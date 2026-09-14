@@ -7,7 +7,7 @@ import {
 import { usePlanning } from '@/contexts/PlanningContext';
 import { RAIL_EL_ENGINEERS } from '@/constants/railElEngineers';
 import { normalizeName } from '@/utils/nameNormalization';
-import { getWorkingDaysInCW, getISOWeekMonday } from '@/utils/workingDays';
+import { getWorkingDaysInCW, getISOWeekMonday, getISOWeeksInYear } from '@/utils/workingDays';
 import { format, getWeek } from 'date-fns';
 import { BarChart3 } from 'lucide-react';
 
@@ -71,7 +71,7 @@ export const CapacityTrendChart: React.FC = () => {
     for (let i = 0; i < horizon; i++) {
       list.push(`CW${String(w).padStart(2, '0')}-${y}`);
       w++;
-      if (w > 52) { w = 1; y++; }
+      if (w > getISOWeeksInYear(y)) { w = 1; y++; }
     }
     return list;
   }, [horizon]);
