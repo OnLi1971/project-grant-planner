@@ -53,10 +53,47 @@ interface Bucket {
   engineers: Set<string>;
 }
 
+const addWeeks = (w: number, y: number, delta: number): { w: number; y: number } => {
+  let week = w, year = y;
+  while (delta > 0) { week++; if (week > getISOWeeksInYear(year)) { week = 1; year++; } delta--; }
+  while (delta < 0) { week--; if (week < 1) { year--; week = getISOWeeksInYear(year); } delta++; }
+  return { w: week, y: year };
+};
+
+const cwLabel = (w: number, y: number) => `CW${String(w).padStart(2, '0')}-${y}`;
+
 export const CapacityTrendChart: React.FC = () => {
   const { planningData } = usePlanning();
   const [view, setView] = useState<'weeks' | 'months'>('weeks');
-  const [horizon, setHorizon] = useState<number>(26);
+  const [horizon, setHorizon] = useState<number | 'custom'>(26);
+
+  const nowInfo = useMemo(() => {
+    const now = new Date();
+    return {
+      w: getWeek(now, { weekStartsOn: 1, firstWeekContainsDate: 4 }),
+      y: now.getFullYear(),
+    };
+  }, []);
+
+  // Vlastní období: výchozí od aktuálního CW do +26 týdnů
+  const [fromCW, setFromCW] = useState(() => cwLabel(nowInfo.w, nowInfo.y));
+  const [toCW, setToCW] = useState(() => {
+    const t = addWeeks(nowInfo.w, nowInfo.y, 25);
+    return cwLabel(t.w, t.y);
+  });
+
+  // Na výběr: 3 měsíce zpět až 12 měsíců dopředu
+  const cwOptions = useMemo(() => {
+    const start = addWeeks(nowInfo.w, nowInfo.y, -13);
+    const list: string[] = [];
+    let w = start.w, y = start.y;
+    for (let i = 0; i < 13 + 52; i++) {
+      list.push(cwLabel(w, y));
+      w++;
+      if (w > getISOWeeksInYear(y)) { w = 1; y++; }
+    }
+    return list;
+  }, [nowInfo]);
 
   const allowed = useMemo(
     () => new Set(RAIL_EL_ENGINEERS.map(n => normalizeName(n))),
@@ -64,17 +101,22 @@ export const CapacityTrendChart: React.FC = () => {
   );
 
   const weekKeys = useMemo(() => {
-    const now = new Date();
-    let w = getWeek(now, { weekStartsOn: 1, firstWeekContainsDate: 4 });
-    let y = now.getFullYear();
+    if (horizon === 'custom') {
+      const fi = cwOptions.indexOf(fromCW);
+      const ti = cwOptions.indexOf(toCW);
+      if (fi < 0 || ti < 0) return [];
+      const [a, b] = fi <= ti ? [fi, ti] : [ti, fi];
+      return cwOptions.slice(a, b + 1);
+    }
     const list: string[] = [];
+    let w = nowInfo.w, y = nowInfo.y;
     for (let i = 0; i < horizon; i++) {
-      list.push(`CW${String(w).padStart(2, '0')}-${y}`);
+      list.push(cwLabel(w, y));
       w++;
       if (w > getISOWeeksInYear(y)) { w = 1; y++; }
     }
     return list;
-  }, [horizon]);
+  }, [horizon, nowInfo, cwOptions, fromCW, toCW]);
 
   const data = useMemo(() => {
     const weekSet = new Set(weekKeys);
@@ -212,9 +254,34 @@ export const CapacityTrendChart: React.FC = () => {
             <Button size="sm" variant={view === 'months' ? 'default' : 'outline'} onClick={() => setView('months')}>
               Months
             </Button>
-            <Button size="sm" variant="outline" onClick={() => setHorizon(h => (h === 26 ? 52 : 26))}>
-              {horizon === 26 ? '6 months' : '12 months'}
+            <Button size="sm" variant={horizon === 26 ? 'default' : 'outline'} onClick={() => setHorizon(26)}>
+              6 months
             </Button>
+            <Button size="sm" variant={horizon === 52 ? 'default' : 'outline'} onClick={() => setHorizon(52)}>
+              12 months
+            </Button>
+            <Button size="sm" variant={horizon === 'custom' ? 'default' : 'outline'} onClick={() => setHorizon('custom')}>
+              Custom
+            </Button>
+            {horizon === 'custom' && (
+              <div className="flex items-center gap-1">
+                <select
+                  className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+                  value={fromCW}
+                  onChange={e => setFromCW(e.target.value)}
+                >
+                  {cwOptions.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+                <span className="text-sm text-muted-foreground">–</span>
+                <select
+                  className="h-8 rounded-md border border-input bg-background px-2 text-sm"
+                  value={toCW}
+                  onChange={e => setToCW(e.target.value)}
+                >
+                  {cwOptions.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+            )}
           </div>
         </div>
       </CardHeader>
