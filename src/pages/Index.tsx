@@ -28,7 +28,7 @@ import { useNavigate } from 'react-router-dom';
 const Index = () => {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
-  const [outputView, setOutputView] = useState<'matrix' | 'revenue' | 'utilization'>('matrix');
+  const [outputView, setOutputView] = useState<'matrix' | 'revenue' | 'utilization' | 'capacity'>('matrix');
   const [managementView, setManagementView] = useState<'projects' | 'licenses' | 'engineers' | 'migration' | 'knowledge'>('projects');
 
   // Show loading while checking auth
@@ -150,6 +150,15 @@ const Index = () => {
                     <Users className="h-3.5 w-3.5" />
                     Vytížení
                   </Button>
+                  <Button
+                    variant={outputView === 'capacity' ? 'default' : 'outline'}
+                    onClick={() => setOutputView('capacity')}
+                    className="flex items-center gap-2 text-sm h-8"
+                    size="sm"
+                  >
+                    <BarChart3 className="h-3.5 w-3.5" />
+                    Kapacita – graf
+                  </Button>
                 </div>
               </Card>
               
@@ -157,6 +166,8 @@ const Index = () => {
                 <ProjectAssignmentMatrix defaultFilterMode="custom" defaultCustomViewId="58440758-41f8-438c-a8dd-cc03d38b3789" />
               ) : outputView === 'revenue' ? (
                 <RevenueOverview />
+              ) : outputView === 'capacity' ? (
+                <CapacityTrendChart />
               ) : (
                 <UtilizationGrid />
               )}
