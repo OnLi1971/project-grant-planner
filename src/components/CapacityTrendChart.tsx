@@ -182,6 +182,16 @@ export const CapacityTrendChart: React.FC = () => {
 
   const axisStyle = { fontSize: 13, fontWeight: 600, fill: 'hsl(var(--foreground))' };
 
+  // Sloupce tabulky přesně pod sloupci grafu: pevná šířka kategorie + levý
+  // sloupec tabulky stejně široký jako prostor vlevo od plotu grafu.
+  const LABEL_COL = 190; // šířka sloupce "Metric"
+  const AXIS_W = 48; // šířka obou os Y
+  const colW = view === 'weeks' ? 62 : 92;
+  const plotW = data.length * colW;
+  const chartW = LABEL_COL + plotW + AXIS_W; // plot začíná na x = LABEL_COL
+  const tableW = LABEL_COL + plotW;
+  const wrapW = Math.max(chartW, 900);
+
   return (
     <Card className="shadow-card-custom">
       <CardHeader className="pb-2">
