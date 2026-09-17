@@ -6,7 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, Filter, History, Save, Trash2, Users, X, Download } from 'lucide-react';
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx-js-style';
 import { PlanningHistoryDialog } from './PlanningHistoryDialog';
 import { ProjectAllocationDialog, AllocationEntry } from './ProjectAllocationDialog';
 import { PlanningChangesTrendChart } from './PlanningChangesTrendChart';
@@ -256,6 +256,84 @@ const getProjectBadgeStyle = (projekt: string, isTentative?: boolean) => {
   
   // Default
   return 'bg-gray-500 text-white border-gray-600';
+};
+
+type ExcelCellStyle = {
+  fill?: { patternType: string; fgColor: { rgb: string } };
+  font?: { color?: { rgb: string }; bold?: boolean };
+  border?: Record<string, { style: string; color: { rgb: string } }>;
+  alignment?: { horizontal?: string; vertical?: string; wrapText?: boolean };
+};
+
+const excelBorder = (rgb = 'CBD5E1', style = 'thin') => ({
+  top: { style, color: { rgb } },
+  right: { style, color: { rgb } },
+  bottom: { style, color: { rgb } },
+  left: { style, color: { rgb } },
+});
+
+const excelFillStyle = (fill: string, font: string, bold = true): ExcelCellStyle => ({
+  fill: { patternType: 'solid', fgColor: { rgb: fill } },
+  font: { color: { rgb: font }, bold },
+  border: excelBorder(),
+  alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+});
+
+const getProjectExcelStyle = (project: string, isTentative?: boolean, borderColor?: string): ExcelCellStyle => {
+  const normalized = normActivity(project);
+  let style: ExcelCellStyle;
+
+  if (normalized === 'DEPARTED') style = excelFillStyle('E5E7EB', 'EF4444');
+  else if (normalized === 'FREE') style = excelFillStyle('FEE2E2', 'DC2626');
+  else if (normalized === 'DOVOLENA') style = isTentative ? excelFillStyle('DCFCE7', '15803D') : excelFillStyle('86EFAC', '064E3B');
+  else if (normalized === 'NEMOC' || normalized === 'SICK LEAVE') style = excelFillStyle('FCA5A5', '7F1D1D');
+  else if (normalized === 'OVER') style = excelFillStyle('FEF08A', '713F12');
+  else if (project === 'ST_EMU_INT') style = excelFillStyle('3B82F6', 'FFFFFF');
+  else if (project === 'ST_TRAM_INT') style = excelFillStyle('2563EB', 'FFFFFF');
+  else if (project === 'ST_MAINZ') style = excelFillStyle('60A5FA', 'FFFFFF');
+  else if (project === 'ST_KASSEL') style = excelFillStyle('1D4ED8', 'FFFFFF');
+  else if (project === 'ST_BLAVA') style = excelFillStyle('06B6D4', 'FFFFFF');
+  else if (project === 'ST_FEM') style = excelFillStyle('93C5FD', '1E3A8A');
+  else if (project === 'ST_POZAR') style = excelFillStyle('6366F1', 'FFFFFF');
+  else if (project === 'ST_JIGS') style = excelFillStyle('0EA5E9', 'FFFFFF');
+  else if (project === 'ST_TRAM_HS') style = excelFillStyle('1E40AF', 'FFFFFF');
+  else if (project.startsWith('NU_')) style = excelFillStyle('16A34A', 'FFFFFF');
+  else if (project.startsWith('WA_')) style = excelFillStyle('F97316', 'FFFFFF');
+  else if (project.startsWith('SAF_')) style = excelFillStyle('A855F7', 'FFFFFF');
+  else if (project.startsWith('BUCH_')) style = excelFillStyle('B45309', 'FFFFFF');
+  else if (project.startsWith('AIRB_')) style = excelFillStyle('0D9488', 'FFFFFF');
+  else if (normalized === 'OBSAZEN') style = excelFillStyle('E5E7EB', '374151');
+  else style = excelFillStyle('6B7280', 'FFFFFF');
+
+  if (isTentative && normalized !== 'DOVOLENA') {
+    return { ...style, border: excelBorder('FACC15', 'mediumDashed') };
+  }
+  if (borderColor) {
+    return { ...style, border: excelBorder(borderColor, 'mediumDashed') };
+  }
+  return style;
+};
+
+const headerExcelStyle: ExcelCellStyle = {
+  fill: { patternType: 'solid', fgColor: { rgb: 'EAF2FF' } },
+  font: { color: { rgb: '1D4ED8' }, bold: true },
+  border: excelBorder('93C5FD', 'thin'),
+  alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+};
+
+const nameExcelStyle: ExcelCellStyle = {
+  fill: { patternType: 'solid', fgColor: { rgb: 'F8FAFC' } },
+  font: { color: { rgb: '111827' }, bold: true },
+  border: excelBorder(),
+  alignment: { horizontal: 'left', vertical: 'center', wrapText: true },
+};
+
+const setExcelCellStyle = (ws: XLSX.WorkSheet, row: number, col: number, style: ExcelCellStyle) => {
+  const ref = XLSX.utils.encode_cell({ r: row, c: col });
+  const cell = ws[ref] as XLSX.CellObject | undefined;
+  if (cell) {
+    (cell as XLSX.CellObject & { s?: ExcelCellStyle }).s = style;
+  }
 };
 
 const REGIME_ACTIVITIES = ['DOVOLENÁ', 'NEMOC', 'OVER'];
@@ -968,9 +1046,9 @@ export const ProjectAssignmentMatrix = ({
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  const headers = viewMode === 'weeks'
-                    ? ['Engineer', ...weeks]
-                    : ['Engineer', ...months.map(m => getFullMonthNameEN(m.name))];
+                  const weeklyHeaders = ['Engineer', ...weeks];
+                  const monthlyHeaders = ['Engineer', ...months.map(m => getFullMonthNameEN(m.name))];
+                  const headers = viewMode === 'weeks' ? weeklyHeaders : monthlyHeaders;
                   const rows = filteredEngineers.map(engineer => {
                     const name = displayNameMap[engineer] || engineer;
                     if (viewMode === 'weeks') {
@@ -978,9 +1056,11 @@ export const ProjectAssignmentMatrix = ({
                         const d = matrixData[engineer]?.[w];
                         if (!d) return '';
                         if (customerViewMode && !isProjectVisibleForCustomer(d.projekt, customerViewMode)) {
-                          return d.projekt === 'FREE' || ['DOVOLENÁ','NEMOC','OVER'].includes(d.projekt) ? d.projekt : 'OBSAZEN';
+                          return d.projekt === 'FREE' || ['DOVOLENÁ','NEMOC','OVER'].includes(d.projekt) ? getProjectDisplayName(d.projekt) : 'OBSAZEN';
                         }
-                        return (d.isTentative ? '[?] ' : '') + d.projekt;
+                        const primary = `${d.isTentative ? '[?] ' : ''}${getProjectDisplayName(d.projekt)}`;
+                        const secondary = d.projekt2 ? `\n${d.isTentative2 ? '[?] ' : ''}${getProjectDisplayName(d.projekt2)}` : '';
+                        return `${primary}${secondary}`;
                       })];
                     }
                     return [name, ...months.map(m => {
@@ -988,13 +1068,71 @@ export const ProjectAssignmentMatrix = ({
                       if (!md) return '';
                       const proj = md.dominantProject;
                       if (customerViewMode && !isProjectVisibleForCustomer(proj, customerViewMode)) {
-                        return ['DOVOLENÁ','NEMOC','OVER','FREE'].includes(proj) ? proj : 'OBSAZEN';
+                        return ['DOVOLENÁ','NEMOC','OVER','FREE'].includes(proj) ? getProjectDisplayName(proj) : 'OBSAZEN';
                       }
-                      return proj;
+                      return getProjectDisplayName(proj);
                     })];
                   });
-                  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-                  ws['!cols'] = headers.map((_, i) => ({ wch: i === 0 ? 25 : 14 }));
+                  const exportRows = viewMode === 'weeks'
+                    ? [
+                        ['Engineer', ...months.flatMap(month => month.weeks.map((_, index) => index === 0 ? getFullMonthNameEN(month.name) : ''))],
+                        headers,
+                        ...rows,
+                      ]
+                    : [headers, ...rows];
+                  const ws = XLSX.utils.aoa_to_sheet(exportRows);
+                  ws['!cols'] = headers.map((_, i) => ({ wch: i === 0 ? 25 : 16 }));
+                  ws['!rows'] = exportRows.map((_, index) => ({ hpt: viewMode === 'weeks' && index === 0 ? 24 : 22 }));
+
+                  if (viewMode === 'weeks') {
+                    const merges: XLSX.Range[] = [{ s: { r: 0, c: 0 }, e: { r: 1, c: 0 } }];
+                    let col = 1;
+                    months.forEach(month => {
+                      const start = col;
+                      const end = col + month.weeks.length - 1;
+                      if (end >= start) merges.push({ s: { r: 0, c: start }, e: { r: 0, c: end } });
+                      col = end + 1;
+                    });
+                    ws['!merges'] = merges;
+                    for (let c = 0; c < headers.length; c += 1) {
+                      setExcelCellStyle(ws, 0, c, headerExcelStyle);
+                      setExcelCellStyle(ws, 1, c, headerExcelStyle);
+                    }
+                    filteredEngineers.forEach((engineer, rowIndex) => {
+                      const row = rowIndex + 2;
+                      setExcelCellStyle(ws, row, 0, nameExcelStyle);
+                      weeks.forEach((week, weekIndex) => {
+                        const colIndex = weekIndex + 1;
+                        const projectData = matrixData[engineer]?.[week];
+                        if (!projectData) return;
+                        const project = projectData.projekt;
+                        const visibleProject = customerViewMode && !isProjectVisibleForCustomer(project, customerViewMode)
+                          ? (project === 'FREE' || ['DOVOLENÁ', 'NEMOC', 'OVER'].includes(project) ? project : 'OBSAZEN')
+                          : project;
+                        const hours = projectData.hours || 0;
+                        const isLowCapacity = hours > 0 && (hours + (projectData.hours2 || 0)) <= 35;
+                        const isLeaveReduced = (projectData.leaveDays || 0) > 0 || [7, 14, 22, 29].includes(hours);
+                        const lowCapacityBorder = isLowCapacity ? (isLeaveReduced ? '22C55E' : 'EF4444') : undefined;
+                        setExcelCellStyle(ws, row, colIndex, getProjectExcelStyle(visibleProject, projectData.isTentative, lowCapacityBorder));
+                      });
+                    });
+                  } else {
+                    for (let c = 0; c < headers.length; c += 1) setExcelCellStyle(ws, 0, c, headerExcelStyle);
+                    filteredEngineers.forEach((engineer, rowIndex) => {
+                      const row = rowIndex + 1;
+                      setExcelCellStyle(ws, row, 0, nameExcelStyle);
+                      months.forEach((month, monthIndex) => {
+                        const monthData = monthlyData[engineer]?.[month.name];
+                        const project = monthData?.dominantProject;
+                        if (!project) return;
+                        const visibleProject = customerViewMode && !isProjectVisibleForCustomer(project, customerViewMode)
+                          ? (['DOVOLENÁ', 'NEMOC', 'OVER', 'FREE'].includes(project) ? project : 'OBSAZEN')
+                          : project;
+                        setExcelCellStyle(ws, row, monthIndex + 1, getProjectExcelStyle(visibleProject));
+                      });
+                    });
+                  }
+
                   const wb = XLSX.utils.book_new();
                   XLSX.utils.book_append_sheet(wb, ws, 'Capacity Overview');
                   const today = new Date().toISOString().slice(0, 10);
