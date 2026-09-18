@@ -619,7 +619,7 @@ export const ProjectAssignmentMatrix = ({
       ...engineers.map(e => normalizeName(e.display_name)),
       ...planningData.map(entry => normalizeName(entry.konstrukter))
     ]));
-    const monthlyMatrix: { [engineer: string]: { [month: string]: { projects: string[], totalHours: number, dominantProject: string } } } = {};
+    const monthlyMatrix: { [engineer: string]: { [month: string]: { projects: string[], totalHours: number, dominantProject: string, hoursByProject: { [project: string]: number } } } } = {};
     
     engineerKeys.forEach(engineerKey => {
       monthlyMatrix[engineerKey] = {};
@@ -658,7 +658,7 @@ export const ProjectAssignmentMatrix = ({
         });
 
         
-        const projects = Object.keys(monthProjects);
+        const projects = Object.keys(monthProjects).sort((a, b) => (monthProjects[b] || 0) - (monthProjects[a] || 0));
         const dominantProject = projects.reduce((a, b) => 
           monthProjects[a] > monthProjects[b] ? a : b, projects[0] || ''
         );
@@ -666,7 +666,8 @@ export const ProjectAssignmentMatrix = ({
         monthlyMatrix[engineerKey][month.name] = {
           projects,
           totalHours,
-          dominantProject
+          dominantProject,
+          hoursByProject: { ...monthProjects }
         };
       });
     });
@@ -1634,18 +1635,11 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                       months.map((month, monthIndex) => {
                         const monthData = monthlyData[engineer]?.[month.name];
                         
-                        // Sort projects by hours descending
-                        const sortedProjects = monthData.projects.sort((a, b) => {
-                          const aHours = month.weeks.reduce((sum, week) => {
-                            const entry = planningData.find(e => normalizeName(e.konstrukter) === engineer && e.cw === week && e.projekt === a);
-                            return sum + (typeof entry?.mhTyden === 'number' ? entry.mhTyden : 0);
-                          }, 0);
-                          const bHours = month.weeks.reduce((sum, week) => {
-                            const entry = planningData.find(e => normalizeName(e.konstrukter) === engineer && e.cw === week && e.projekt === b);
-                            return sum + (typeof entry?.mhTyden === 'number' ? entry.mhTyden : 0);
-                          }, 0);
-                          return bHours - aHours;
-                        });
+                        // Sort projects by aggregated hours (incl. second project) descending
+                        const hoursByProject = monthData.hoursByProject || {};
+                        const sortedProjects = [...monthData.projects].sort(
+                          (a, b) => (hoursByProject[b] || 0) - (hoursByProject[a] || 0)
+                        );
                         // Monthly view: hide vacation/sick visually (still counted in numbers)
                         const visibleProjects = sortedProjects.filter(p => !isFullWeekActivity(p));
                         const hasProjects = (visibleProjects?.length ?? 0) > 0;
