@@ -1633,7 +1633,7 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                     ) : (
                       months.map((month, monthIndex) => {
                         const monthData = monthlyData[engineer]?.[month.name];
-                        const hasProjects = (monthData?.projects?.length ?? 0) > 0;
+                        const hasProjects = (visibleProjects?.length ?? 0) > 0;
                         
                         // Sort projects by hours descending
                         const sortedProjects = monthData.projects.sort((a, b) => {
