@@ -1635,18 +1635,11 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                       months.map((month, monthIndex) => {
                         const monthData = monthlyData[engineer]?.[month.name];
                         
-                        // Sort projects by hours descending
-                        const sortedProjects = monthData.projects.sort((a, b) => {
-                          const aHours = month.weeks.reduce((sum, week) => {
-                            const entry = planningData.find(e => normalizeName(e.konstrukter) === engineer && e.cw === week && e.projekt === a);
-                            return sum + (typeof entry?.mhTyden === 'number' ? entry.mhTyden : 0);
-                          }, 0);
-                          const bHours = month.weeks.reduce((sum, week) => {
-                            const entry = planningData.find(e => normalizeName(e.konstrukter) === engineer && e.cw === week && e.projekt === b);
-                            return sum + (typeof entry?.mhTyden === 'number' ? entry.mhTyden : 0);
-                          }, 0);
-                          return bHours - aHours;
-                        });
+                        // Sort projects by aggregated hours (incl. second project) descending
+                        const hoursByProject = monthData.hoursByProject || {};
+                        const sortedProjects = [...monthData.projects].sort(
+                          (a, b) => (hoursByProject[b] || 0) - (hoursByProject[a] || 0)
+                        );
                         // Monthly view: hide vacation/sick visually (still counted in numbers)
                         const visibleProjects = sortedProjects.filter(p => !isFullWeekActivity(p));
                         const hasProjects = (visibleProjects?.length ?? 0) > 0;
