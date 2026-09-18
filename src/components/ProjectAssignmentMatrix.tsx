@@ -658,7 +658,7 @@ export const ProjectAssignmentMatrix = ({
         });
 
         
-        const projects = Object.keys(monthProjects);
+        const projects = Object.keys(monthProjects).sort((a, b) => (monthProjects[b] || 0) - (monthProjects[a] || 0));
         const dominantProject = projects.reduce((a, b) => 
           monthProjects[a] > monthProjects[b] ? a : b, projects[0] || ''
         );
@@ -666,7 +666,8 @@ export const ProjectAssignmentMatrix = ({
         monthlyMatrix[engineerKey][month.name] = {
           projects,
           totalHours,
-          dominantProject
+          dominantProject,
+          hoursByProject: { ...monthProjects }
         };
       });
     });
