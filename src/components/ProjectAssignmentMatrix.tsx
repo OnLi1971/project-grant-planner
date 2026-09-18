@@ -1766,7 +1766,7 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                                   })()}
                                   
                                   {/* Additional projects */}
-                                  {sortedProjects.slice(1).map((project, index) => {
+                                  {visibleProjects.slice(1).map((project, index) => {
                                     const showText = isProjectVisibleForCustomer(project, customerViewMode);
                                     
                                     const badgeContent = (
