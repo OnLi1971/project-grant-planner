@@ -1633,7 +1633,6 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                     ) : (
                       months.map((month, monthIndex) => {
                         const monthData = monthlyData[engineer]?.[month.name];
-                        const hasProjects = (visibleProjects?.length ?? 0) > 0;
                         
                         // Sort projects by hours descending
                         const sortedProjects = monthData.projects.sort((a, b) => {
@@ -1649,6 +1648,8 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                         });
                         // Monthly view: hide vacation/sick visually (still counted in numbers)
                         const visibleProjects = sortedProjects.filter(p => !isFullWeekActivity(p));
+                        const hasProjects = (visibleProjects?.length ?? 0) > 0;
+                        
                         
                         return (
                            <td 
