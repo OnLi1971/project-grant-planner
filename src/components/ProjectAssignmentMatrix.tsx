@@ -619,7 +619,7 @@ export const ProjectAssignmentMatrix = ({
       ...engineers.map(e => normalizeName(e.display_name)),
       ...planningData.map(entry => normalizeName(entry.konstrukter))
     ]));
-    const monthlyMatrix: { [engineer: string]: { [month: string]: { projects: string[], totalHours: number, dominantProject: string } } } = {};
+    const monthlyMatrix: { [engineer: string]: { [month: string]: { projects: string[], totalHours: number, dominantProject: string, hoursByProject: { [project: string]: number } } } } = {};
     
     engineerKeys.forEach(engineerKey => {
       monthlyMatrix[engineerKey] = {};
