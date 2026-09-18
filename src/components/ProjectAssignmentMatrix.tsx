@@ -1647,6 +1647,8 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                           }, 0);
                           return bHours - aHours;
                         });
+                        // Monthly view: hide vacation/sick visually (still counted in numbers)
+                        const visibleProjects = sortedProjects.filter(p => !isFullWeekActivity(p));
                         
                         return (
                            <td 
