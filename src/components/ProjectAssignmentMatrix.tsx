@@ -1361,15 +1361,29 @@ export const ProjectAssignmentMatrix = ({
                         </div>
                         
                         {/* Save view */}
-                        <div className="mt-3 px-2 flex gap-2">
+                        {selectedViewId && (
+                          <div className="mt-3 px-2">
+                            <Button
+                              size="sm"
+                              className="h-8 w-full"
+                              onClick={handleUpdateView}
+                              disabled={selectedCustomEngineers.length === 0}
+                            >
+                              <Save className="h-4 w-4 mr-1" />
+                              Update "{customViews.find(v => v.id === selectedViewId)?.name}"
+                            </Button>
+                          </div>
+                        )}
+                        <div className="mt-2 px-2 flex gap-2">
                           <Input 
-                            placeholder="View name..."
+                            placeholder="Save as new view..."
                             value={customViewName}
                             onChange={(e) => setCustomViewName(e.target.value)}
                             className="text-sm h-8"
                           />
                           <Button 
                             size="sm" 
+                            variant="outline"
                             className="h-8 px-3"
                             onClick={handleSaveView} 
                             disabled={!customViewName.trim() || selectedCustomEngineers.length === 0}
