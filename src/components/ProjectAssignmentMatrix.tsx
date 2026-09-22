@@ -414,7 +414,7 @@ export const ProjectAssignmentMatrix = ({
   const [selectedCustomEngineers, setSelectedCustomEngineers] = useState<string[]>([]);
   const [customViewName, setCustomViewName] = useState('');
   const [selectedViewId, setSelectedViewId] = useState<string | null>(null);
-  const { customViews, saveView, deleteView, isLoading: isLoadingViews } = useCustomEngineerViews();
+  const { customViews, saveView, updateView, deleteView, isLoading: isLoadingViews } = useCustomEngineerViews();
 
   // History toggle: default shows current week first; toggle shows ~2 months back
   const [showHistory, setShowHistory] = useState(false);
@@ -693,7 +693,6 @@ export const ProjectAssignmentMatrix = ({
         ? prev.filter(e => e !== engineer)
         : [...prev, engineer]
     );
-    setSelectedViewId(null); // Clear selected view when manually editing
   };
 
   // Load a saved custom view
@@ -714,6 +713,14 @@ export const ProjectAssignmentMatrix = ({
     if (success) {
       setCustomViewName('');
     }
+  };
+
+  // Update the currently selected saved view with the current selection
+  const handleUpdateView = async () => {
+    const view = customViews.find(v => v.id === selectedViewId);
+    if (!view || selectedCustomEngineers.length === 0) return;
+    await updateView(view.id, customViewName.trim() || view.name, selectedCustomEngineers);
+    setCustomViewName('');
   };
 
   // Delete a custom view
@@ -1354,15 +1361,29 @@ export const ProjectAssignmentMatrix = ({
                         </div>
                         
                         {/* Save view */}
-                        <div className="mt-3 px-2 flex gap-2">
+                        {selectedViewId && (
+                          <div className="mt-3 px-2">
+                            <Button
+                              size="sm"
+                              className="h-8 w-full"
+                              onClick={handleUpdateView}
+                              disabled={selectedCustomEngineers.length === 0}
+                            >
+                              <Save className="h-4 w-4 mr-1" />
+                              Update "{customViews.find(v => v.id === selectedViewId)?.name}"
+                            </Button>
+                          </div>
+                        )}
+                        <div className="mt-2 px-2 flex gap-2">
                           <Input 
-                            placeholder="View name..."
+                            placeholder="Save as new view..."
                             value={customViewName}
                             onChange={(e) => setCustomViewName(e.target.value)}
                             className="text-sm h-8"
                           />
                           <Button 
                             size="sm" 
+                            variant="outline"
                             className="h-8 px-3"
                             onClick={handleSaveView} 
                             disabled={!customViewName.trim() || selectedCustomEngineers.length === 0}
