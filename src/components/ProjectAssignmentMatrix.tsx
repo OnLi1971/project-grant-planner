@@ -414,7 +414,7 @@ export const ProjectAssignmentMatrix = ({
   const [selectedCustomEngineers, setSelectedCustomEngineers] = useState<string[]>([]);
   const [customViewName, setCustomViewName] = useState('');
   const [selectedViewId, setSelectedViewId] = useState<string | null>(null);
-  const { customViews, saveView, deleteView, isLoading: isLoadingViews } = useCustomEngineerViews();
+  const { customViews, saveView, updateView, deleteView, isLoading: isLoadingViews } = useCustomEngineerViews();
 
   // History toggle: default shows current week first; toggle shows ~2 months back
   const [showHistory, setShowHistory] = useState(false);
