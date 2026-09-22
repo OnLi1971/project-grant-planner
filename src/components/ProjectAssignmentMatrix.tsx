@@ -693,7 +693,6 @@ export const ProjectAssignmentMatrix = ({
         ? prev.filter(e => e !== engineer)
         : [...prev, engineer]
     );
-    setSelectedViewId(null); // Clear selected view when manually editing
   };
 
   // Load a saved custom view
@@ -714,6 +713,14 @@ export const ProjectAssignmentMatrix = ({
     if (success) {
       setCustomViewName('');
     }
+  };
+
+  // Update the currently selected saved view with the current selection
+  const handleUpdateView = async () => {
+    const view = customViews.find(v => v.id === selectedViewId);
+    if (!view || selectedCustomEngineers.length === 0) return;
+    await updateView(view.id, customViewName.trim() || view.name, selectedCustomEngineers);
+    setCustomViewName('');
   };
 
   // Delete a custom view
