@@ -47,7 +47,7 @@ export const employees: Employee[] = [
   { id: '38', name: 'Šedovičová Darina', company: 'TM CZ a.s.', program: 'Stress Analysis', organizationalLeader: 'PeNe' },
   { id: '39', name: 'Slavík Ondřej', company: 'TM CZ a.s.', program: 'Car Body & Bogies', organizationalLeader: 'KaSo' },
   { id: '40', name: 'Šoupa Karel', company: 'TM CZ a.s.', program: 'Car Body & Bogies', organizationalLeader: 'OnLi' },
-  { id: '41', name: 'Stránský Martin', company: 'TM CZ a.s.', program: 'General Machinery', organizationalLeader: 'PeMa' },
+  { id: '41', name: 'Stránský Radek', company: 'TM CZ a.s.', program: 'General Machinery', organizationalLeader: 'PeMa' },
   { id: '42', name: 'Trač Vasyl', company: 'TM CZ a.s.', program: 'General Machinery', organizationalLeader: 'PeMa' },
   { id: '43', name: 'Uher Tomáš', company: 'TM CZ a.s.', program: 'Steam Turbines', organizationalLeader: 'DaAm' },
   { id: '44', name: 'Večeř Jiří', company: 'TM CZ a.s.', program: 'Interiors & Non-metallic Design', organizationalLeader: 'JoMa' },

@@ -47,7 +47,7 @@ export const ENGINEERS: EngineerInfo[] = [
   { jmeno: "Šedovičová Darina", orgVedouci: "PeNe", spolecnost: "TM CZ a.s." },
   { jmeno: "Slavík Ondřej", orgVedouci: "KaSo", spolecnost: "TM CZ a.s." },
   { jmeno: "Šoupa Karel", orgVedouci: "OnLi", spolecnost: "TM CZ a.s." },
-  { jmeno: "Stránský Martin", orgVedouci: "PeMa", spolecnost: "TM CZ a.s." },
+  { jmeno: "Stránský Radek", orgVedouci: "PeMa", spolecnost: "TM CZ a.s." },
   { jmeno: "Trač Vasyl", orgVedouci: "PeMa", spolecnost: "TM CZ a.s." },
   { jmeno: "Uher Tomáš", orgVedouci: "KaSo", spolecnost: "TM CZ a.s." },
   { jmeno: "Večeř Jiří", orgVedouci: "JoMa", spolecnost: "TM CZ a.s." },
