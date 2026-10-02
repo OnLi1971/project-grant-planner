@@ -515,10 +515,18 @@ export const PlanningEditor: React.FC = () => {
   const copyPlan = async (from: string, to: string) => {
     console.log('Copying plan from:', from, 'to:', to);
     
-    // Find all weeks for the source constructor
-    const sourceWeeks = planningData.filter(entry => 
-      !entry.isSecondary && normalizeName(entry.konstrukter) === normalizeName(from)
-    );
+    // Find only future weeks (from current CW onwards) for the source constructor
+    const today = new Date();
+    const currentCwNum = getISOWeek(today);
+    const currentYear = today.getFullYear();
+    const sourceWeeks = planningData.filter(entry => {
+      if (entry.isSecondary || normalizeName(entry.konstrukter) !== normalizeName(from)) return false;
+      const m = entry.cw?.match(/CW(\d+)-(\d{4})/);
+      if (!m) return false;
+      const w = parseInt(m[1], 10);
+      const y = parseInt(m[2], 10);
+      return y > currentYear || (y === currentYear && w >= currentCwNum);
+    });
     
     if (sourceWeeks.length === 0) {
       alert(`Žádný plán nebyl nalezen pro konstruktéra ${from}`);
