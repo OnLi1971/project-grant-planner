@@ -92,7 +92,7 @@ const getAllWeeks = (): string[] => {
   
   const weeks = [];
   const weeksBack = 9; // ~2 měsíce nazpět
-  const weeksForward = 52;
+  const endYear = currentYear + 1; // dopředu až do konce příštího roku
   
   // Posunout se zpět o weeksBack týdnů (respektuje roky s 53 ISO týdny)
   let week = currentWeek - weeksBack;
