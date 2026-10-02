@@ -152,7 +152,9 @@ const generateAllWeeks = (): WeekPlan[] => {
   let week = startWeek;
   let year = startYear;
   
-  for (let i = 0; i < 56; i++) {
+  // Generujeme až do konce příštího roku
+  const lastYear = currentYear + 1;
+  for (let i = 0; i < 200 && year <= lastYear; i++) {
     const monthIndex = getMonthFromWeek(week);
     const mesic = months[monthIndex];
     
