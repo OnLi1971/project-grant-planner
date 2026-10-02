@@ -566,7 +566,7 @@ export const PlanningEditor: React.FC = () => {
     }
     
     const confirmed = confirm(
-      `Opravdu chcete zkopírovat plán konstruktéra "${copyFromKonstrukter}" do "${selectedKonstrukter}"? Tento krok přepíše celý stávající plán konstruktéra "${selectedKonstrukter}".`
+      `Opravdu chcete zkopírovat plán konstruktéra "${copyFromKonstrukter}" do "${selectedKonstrukter}"? Převezmou se pouze týdny od aktuálního CW dál — minulost zůstane beze změny.`
     );
     
     if (confirmed) {
