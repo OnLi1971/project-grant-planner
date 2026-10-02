@@ -86,7 +86,7 @@ const getCurrentWeekAndYear = (): { week: number; year: number } => {
   };
 };
 
-// Funkce pro generování týdnů: 2 měsíce (~9 týdnů) zpět + 52 týdnů dopředu
+// Funkce pro generování týdnů: 2 měsíce (~9 týdnů) zpět + dopředu až do konce příštího roku
 const getAllWeeks = (): string[] => {
   const { week: currentWeek, year: currentYear } = getCurrentWeekAndYear();
   
