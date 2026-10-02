@@ -102,14 +102,15 @@ const getAllWeeks = (): string[] => {
     week += getISOWeeksInYear(year);
   }
   
-  // Generujeme weeksBack + weeksForward týdnů
-  for (let i = 0; i < weeksBack + weeksForward; i++) {
+  // Generujeme týdny až do konce příštího roku
+  while (true) {
     weeks.push(`CW${week.toString().padStart(2, '0')}-${year}`);
     week++;
     if (week > getISOWeeksInYear(year)) {
       week = 1;
       year++;
     }
+    if (year > endYear) break;
   }
   
   return weeks;
