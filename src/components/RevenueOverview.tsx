@@ -740,6 +740,30 @@ export const RevenueOverview = ({
           months: ['říjen_2026', 'listopad_2026', 'prosinec_2026'],
           label: 'Q3 FY26',
           dateRange: '1 Oct – 31 Dec 2026'
+        },
+        {
+          quarter: 'Q4 FY26-27',
+          months: ['leden_2027', 'únor_2027', 'březen_2027'],
+          label: 'Q4 FY26',
+          dateRange: '1 Jan – 31 Mar 2027'
+        },
+        {
+          quarter: 'Q1 FY27-28',
+          months: ['duben_2027', 'květen_2027', 'červen_2027'],
+          label: 'Q1 FY27',
+          dateRange: '1 Apr – 30 Jun 2027'
+        },
+        {
+          quarter: 'Q2 FY27-28',
+          months: ['červenec_2027', 'srpen_2027', 'září_2027'],
+          label: 'Q2 FY27',
+          dateRange: '1 Jul – 30 Sep 2027'
+        },
+        {
+          quarter: 'Q3 FY27-28',
+          months: ['říjen_2027', 'listopad_2027', 'prosinec_2027'],
+          label: 'Q3 FY27',
+          dateRange: '1 Oct – 31 Dec 2027'
         }
       ];
 
@@ -780,7 +804,11 @@ export const RevenueOverview = ({
           'leden_2026': 'Jan 26', 'únor_2026': 'Feb 26', 'březen_2026': 'Mar 26',
           'duben_2026': 'Apr 26', 'květen_2026': 'May 26', 'červen_2026': 'Jun 26',
           'červenec_2026': 'Jul 26', 'srpen_2026': 'Aug 26', 'září_2026': 'Sep 26',
-          'říjen_2026': 'Oct 26', 'listopad_2026': 'Nov 26', 'prosinec_2026': 'Dec 26'
+          'říjen_2026': 'Oct 26', 'listopad_2026': 'Nov 26', 'prosinec_2026': 'Dec 26',
+          'leden_2027': 'Jan 27', 'únor_2027': 'Feb 27', 'březen_2027': 'Mar 27',
+          'duben_2027': 'Apr 27', 'květen_2027': 'May 27', 'červen_2027': 'Jun 27',
+          'červenec_2027': 'Jul 27', 'srpen_2027': 'Aug 27', 'září_2027': 'Sep 27',
+          'říjen_2027': 'Oct 27', 'listopad_2027': 'Nov 27', 'prosinec_2027': 'Dec 27'
         };
         const monthNameForDisplay = monthLabels[month] || month;
         const data: any = {
@@ -821,7 +849,11 @@ export const RevenueOverview = ({
     { value: 'Q4-FY25', label: 'Q4 FY25-26 (Jan-Mar 2026)' },
     { value: 'Q1-FY26', label: 'Q1 FY26-27 (Apr-Jun 2026)' },
     { value: 'Q2-FY26', label: 'Q2 FY26-27 (Jul-Sep 2026)' },
-    { value: 'Q3-FY26', label: 'Q3 FY26-27 (Oct-Dec 2026)' }
+    { value: 'Q3-FY26', label: 'Q3 FY26-27 (Oct-Dec 2026)' },
+    { value: 'Q4-FY26', label: 'Q4 FY26-27 (Jan-Mar 2027)' },
+    { value: 'Q1-FY27', label: 'Q1 FY27-28 (Apr-Jun 2027)' },
+    { value: 'Q2-FY27', label: 'Q2 FY27-28 (Jul-Sep 2027)' },
+    { value: 'Q3-FY27', label: 'Q3 FY27-28 (Oct-Dec 2027)' }
   ];
 
   // Month filter options
@@ -837,7 +869,19 @@ export const RevenueOverview = ({
     { value: 'září_2026', label: 'September 2026' },
     { value: 'říjen_2026', label: 'October 2026' },
     { value: 'listopad_2026', label: 'November 2026' },
-    { value: 'prosinec_2026', label: 'December 2026' }
+    { value: 'prosinec_2026', label: 'December 2026' },
+    { value: 'leden_2027', label: 'January 2027' },
+    { value: 'únor_2027', label: 'February 2027' },
+    { value: 'březen_2027', label: 'March 2027' },
+    { value: 'duben_2027', label: 'April 2027' },
+    { value: 'květen_2027', label: 'May 2027' },
+    { value: 'červen_2027', label: 'June 2027' },
+    { value: 'červenec_2027', label: 'July 2027' },
+    { value: 'srpen_2027', label: 'August 2027' },
+    { value: 'září_2027', label: 'September 2027' },
+    { value: 'říjen_2027', label: 'October 2027' },
+    { value: 'listopad_2027', label: 'November 2027' },
+    { value: 'prosinec_2027', label: 'December 2027' }
   ];
 
   const filterOptions = getFilterOptions();
@@ -857,9 +901,9 @@ export const RevenueOverview = ({
     onViewTypeChange?.(value);
     // Reset to all quarters/months when switching view type
     if (value === 'kvartal') {
-      setSelectedQuarters(['Q4-FY25', 'Q1-FY26', 'Q2-FY26', 'Q3-FY26']);
+      setSelectedQuarters(['Q4-FY25', 'Q1-FY26', 'Q2-FY26', 'Q3-FY26', 'Q4-FY26', 'Q1-FY27', 'Q2-FY27', 'Q3-FY27']);
     } else {
-      setSelectedMonths(['leden_2026', 'únor_2026', 'březen_2026', 'duben_2026', 'květen_2026', 'červen_2026', 'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026']);
+      setSelectedMonths(['leden_2026', 'únor_2026', 'březen_2026', 'duben_2026', 'květen_2026', 'červen_2026', 'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026', 'leden_2027', 'únor_2027', 'březen_2027', 'duben_2027', 'květen_2027', 'červen_2027', 'červenec_2027', 'srpen_2027', 'září_2027', 'říjen_2027', 'listopad_2027', 'prosinec_2027']);
     }
   };
 
