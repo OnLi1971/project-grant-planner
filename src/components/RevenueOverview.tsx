@@ -278,9 +278,7 @@ export const RevenueOverview = ({
       
       const allSelectedMonths = selectedQuarters.flatMap(quarter => quarterMonths[quarter] || []);
       data = data.filter(entry => {
-        const cwKey = entry.cw.includes('-2026')
-          ? entry.cw.replace('-', '_')
-          : entry.cw.split('-')[0];
+        const cwKey = entry.cw.includes('-') ? entry.cw.replace('-', '_') : entry.cw;
         const weekMapping = getWeekMapping(cwKey);
         if (!weekMapping) return false;
         return Object.keys(weekMapping).some(monthYear => allSelectedMonths.includes(monthYear));
@@ -290,9 +288,7 @@ export const RevenueOverview = ({
       });
     } else if (viewType === 'mesic' && selectedMonths.length > 0) {
       data = data.filter(entry => {
-        const cwKey = entry.cw.includes('-2026')
-          ? entry.cw.replace('-', '_')
-          : entry.cw.split('-')[0];
+        const cwKey = entry.cw.includes('-') ? entry.cw.replace('-', '_') : entry.cw;
         const weekMapping = getWeekMapping(cwKey);
         if (!weekMapping) return false;
         return Object.keys(weekMapping).some(monthYear => selectedMonths.includes(monthYear));
@@ -324,9 +320,7 @@ export const RevenueOverview = ({
 
     // Projdeme všechny záznamy v plánovacích datech
     data.forEach(entry => {
-      const cwKey = entry.cw.includes('-2026')
-        ? entry.cw.replace('-', '_')
-        : entry.cw.split('-')[0];
+      const cwKey = entry.cw.includes('-') ? entry.cw.replace('-', '_') : entry.cw;
       const weekMapping = getWeekMapping(cwKey);
       if (!weekMapping || entry.mhTyden === 0) return;
 
@@ -474,7 +468,7 @@ export const RevenueOverview = ({
     const nonRevenueActivities = ['FREE', 'Dovolena', 'DOVOLENÁ', 'Nemoc', 'NEMOC', 'Školení', 'ŠKOLENÍ', 'Interní', 'INTERNÍ'];
 
     data.forEach(entry => {
-      const cwKey = entry.cw.includes('-2026') ? entry.cw.replace('-', '_') : entry.cw.split('-')[0];
+      const cwKey = entry.cw.includes('-') ? entry.cw.replace('-', '_') : entry.cw;
       const weekMapping = getWeekMapping(cwKey);
       if (!weekMapping || entry.mhTyden === 0) return;
       if (entry.is_tentative === true) return;
@@ -572,7 +566,7 @@ export const RevenueOverview = ({
       const p = norm(entry.projekt || '');
       if (p !== 'dovolena' && p !== 'nemoc') return;
       if (!allowed.has(norm(entry.konstrukter || ''))) return;
-      const cwKey = entry.cw.includes('-2026') ? entry.cw.replace('-', '_') : entry.cw.split('-')[0];
+      const cwKey = entry.cw.includes('-') ? entry.cw.replace('-', '_') : entry.cw;
       const weekMapping = getWeekMapping(cwKey);
       if (!weekMapping || !entry.mhTyden) return;
       Object.entries(weekMapping).forEach(([month, ratio]) => {
@@ -606,7 +600,7 @@ export const RevenueOverview = ({
       const eng = norm(entry.konstrukter || '');
       if (!allowed.has(eng)) return;
       const p = norm(entry.projekt || '');
-      const cwKey = entry.cw.includes('-2026') ? entry.cw.replace('-', '_') : entry.cw.split('-')[0];
+      const cwKey = entry.cw.includes('-') ? entry.cw.replace('-', '_') : entry.cw;
       const weekMapping = getWeekMapping(cwKey);
       if (!weekMapping) return;
 
