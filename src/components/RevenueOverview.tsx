@@ -1605,6 +1605,10 @@ export const RevenueOverview = ({
                              { key: 'Q1-FY26', months: ['duben_2026', 'květen_2026', 'červen_2026'] },
                              { key: 'Q2-FY26', months: ['červenec_2026', 'srpen_2026', 'září_2026'] },
                              { key: 'Q3-FY26', months: ['říjen_2026', 'listopad_2026', 'prosinec_2026'] },
+                             { key: 'Q4-FY26', months: ['leden_2027', 'únor_2027', 'březen_2027'] },
+                             { key: 'Q1-FY27', months: ['duben_2027', 'květen_2027', 'červen_2027'] },
+                             { key: 'Q2-FY27', months: ['červenec_2027', 'srpen_2027', 'září_2027'] },
+                             { key: 'Q3-FY27', months: ['říjen_2027', 'listopad_2027', 'prosinec_2027'] },
                            ]
                              .filter(q => selectedQuarters.includes(q.key))
                              .map(q => {
@@ -1642,6 +1646,10 @@ export const RevenueOverview = ({
                        { key: 'Q1-FY26', months: ['duben_2026', 'květen_2026', 'červen_2026'] },
                        { key: 'Q2-FY26', months: ['červenec_2026', 'srpen_2026', 'září_2026'] },
                        { key: 'Q3-FY26', months: ['říjen_2026', 'listopad_2026', 'prosinec_2026'] },
+                       { key: 'Q4-FY26', months: ['leden_2027', 'únor_2027', 'březen_2027'] },
+                       { key: 'Q1-FY27', months: ['duben_2027', 'květen_2027', 'červen_2027'] },
+                       { key: 'Q2-FY27', months: ['červenec_2027', 'srpen_2027', 'září_2027'] },
+                       { key: 'Q3-FY27', months: ['říjen_2027', 'listopad_2027', 'prosinec_2027'] },
                      ]
                        .filter(q => selectedQuarters.includes(q.key))
                        .map(q => {
