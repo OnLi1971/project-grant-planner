@@ -179,6 +179,29 @@ export const CapacityTrendChart: React.FC = () => {
       }
     }
 
+    // Chybějící týdny (neplánovaná budoucnost) = FREE, pokud konstruktér neodešel
+    const sortOf = (cw: string) => { const p = parseWeek(cw); return p ? p.year * 100 + p.week : 0; };
+    const knownEngs = new Set<string>();
+    const departedFrom = new Map<string, number>();
+    for (const e of planningData) {
+      const n = normalizeName(e.konstrukter);
+      if (!allowed.has(n)) continue;
+      knownEngs.add(n);
+      if (norm(e.projekt) === 'DEPARTED') {
+        const s = sortOf(e.cw);
+        if (!departedFrom.has(n) || s < departedFrom.get(n)!) departedFrom.set(n, s);
+      }
+    }
+    knownEngs.forEach(n => {
+      const dep = departedFrom.get(n);
+      for (const cw of weekKeys) {
+        const k = `${n}|${cw}`;
+        if (perEngWeek.has(k)) continue;
+        if (dep !== undefined && sortOf(cw) >= dep) continue;
+        perEngWeek.set(k, { projekt: 'FREE', hours: 0, leaveDays: 0, real: 0 });
+      }
+    });
+
     perEngWeek.forEach((v, k) => {
       const cw = k.split('|')[1];
       const p = parseWeek(cw);
