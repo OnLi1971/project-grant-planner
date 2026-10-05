@@ -78,7 +78,9 @@ export const RevenueOverview = ({
   const [selectedQuarters, setSelectedQuarters] = useState<string[]>(['Q4-FY25', 'Q1-FY26', 'Q2-FY26', 'Q3-FY26']);
   const [selectedMonths, setSelectedMonths] = useState<string[]>([
     'leden_2026', 'únor_2026', 'březen_2026', 'duben_2026', 'květen_2026', 'červen_2026',
-    'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026'
+    'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026',
+    'leden_2027', 'únor_2027', 'březen_2027', 'duben_2027', 'květen_2027', 'červen_2027',
+    'červenec_2027', 'srpen_2027', 'září_2027', 'říjen_2027', 'listopad_2027', 'prosinec_2027'
   ]);
   const [currency, setCurrency] = useState<'CZK' | 'USD'>(defaultCurrency);
   const [displayUnit, setDisplayUnit] = useState<'kc' | 'hodiny'>('kc');
@@ -267,7 +269,11 @@ export const RevenueOverview = ({
         'Q4-FY25': ['leden_2026', 'únor_2026', 'březen_2026'],
         'Q1-FY26': ['duben_2026', 'květen_2026', 'červen_2026'],
         'Q2-FY26': ['červenec_2026', 'srpen_2026', 'září_2026'],
-        'Q3-FY26': ['říjen_2026', 'listopad_2026', 'prosinec_2026']
+        'Q3-FY26': ['říjen_2026', 'listopad_2026', 'prosinec_2026'],
+        'Q4-FY26': ['leden_2027', 'únor_2027', 'březen_2027'],
+        'Q1-FY27': ['duben_2027', 'květen_2027', 'červen_2027'],
+        'Q2-FY27': ['červenec_2027', 'srpen_2027', 'září_2027'],
+        'Q3-FY27': ['říjen_2027', 'listopad_2027', 'prosinec_2027']
       };
       
       const allSelectedMonths = selectedQuarters.flatMap(quarter => quarterMonths[quarter] || []);
