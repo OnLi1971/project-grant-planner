@@ -75,7 +75,7 @@ export const RevenueOverview = ({
   const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
   const [viewType, setViewType] = useState<'mesic' | 'kvartal'>(defaultViewType);
   // Indické fiskální kvartály: Q1=Apr-Jun, Q2=Jul-Sep, Q3=Oct-Dec, Q4=Jan-Mar (FY = Apr-Mar)
-  const [selectedQuarters, setSelectedQuarters] = useState<string[]>(['Q4-FY25', 'Q1-FY26', 'Q2-FY26', 'Q3-FY26']);
+  const [selectedQuarters, setSelectedQuarters] = useState<string[]>(['Q4-FY25', 'Q1-FY26', 'Q2-FY26', 'Q3-FY26', 'Q4-FY26', 'Q1-FY27', 'Q2-FY27', 'Q3-FY27']);
   const [selectedMonths, setSelectedMonths] = useState<string[]>([
     'leden_2026', 'únor_2026', 'březen_2026', 'duben_2026', 'květen_2026', 'červen_2026',
     'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026',
