@@ -75,10 +75,12 @@ export const RevenueOverview = ({
   const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
   const [viewType, setViewType] = useState<'mesic' | 'kvartal'>(defaultViewType);
   // Indické fiskální kvartály: Q1=Apr-Jun, Q2=Jul-Sep, Q3=Oct-Dec, Q4=Jan-Mar (FY = Apr-Mar)
-  const [selectedQuarters, setSelectedQuarters] = useState<string[]>(['Q4-FY25', 'Q1-FY26', 'Q2-FY26', 'Q3-FY26']);
+  const [selectedQuarters, setSelectedQuarters] = useState<string[]>(['Q4-FY25', 'Q1-FY26', 'Q2-FY26', 'Q3-FY26', 'Q4-FY26', 'Q1-FY27', 'Q2-FY27', 'Q3-FY27']);
   const [selectedMonths, setSelectedMonths] = useState<string[]>([
     'leden_2026', 'únor_2026', 'březen_2026', 'duben_2026', 'květen_2026', 'červen_2026',
-    'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026'
+    'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026',
+    'leden_2027', 'únor_2027', 'březen_2027', 'duben_2027', 'květen_2027', 'červen_2027',
+    'červenec_2027', 'srpen_2027', 'září_2027', 'říjen_2027', 'listopad_2027', 'prosinec_2027'
   ]);
   const [currency, setCurrency] = useState<'CZK' | 'USD'>(defaultCurrency);
   const [displayUnit, setDisplayUnit] = useState<'kc' | 'hodiny'>('kc');
@@ -267,14 +269,16 @@ export const RevenueOverview = ({
         'Q4-FY25': ['leden_2026', 'únor_2026', 'březen_2026'],
         'Q1-FY26': ['duben_2026', 'květen_2026', 'červen_2026'],
         'Q2-FY26': ['červenec_2026', 'srpen_2026', 'září_2026'],
-        'Q3-FY26': ['říjen_2026', 'listopad_2026', 'prosinec_2026']
+        'Q3-FY26': ['říjen_2026', 'listopad_2026', 'prosinec_2026'],
+        'Q4-FY26': ['leden_2027', 'únor_2027', 'březen_2027'],
+        'Q1-FY27': ['duben_2027', 'květen_2027', 'červen_2027'],
+        'Q2-FY27': ['červenec_2027', 'srpen_2027', 'září_2027'],
+        'Q3-FY27': ['říjen_2027', 'listopad_2027', 'prosinec_2027']
       };
       
       const allSelectedMonths = selectedQuarters.flatMap(quarter => quarterMonths[quarter] || []);
       data = data.filter(entry => {
-        const cwKey = entry.cw.includes('-2026')
-          ? entry.cw.replace('-', '_')
-          : entry.cw.split('-')[0];
+        const cwKey = entry.cw.includes('-') ? entry.cw.replace('-', '_') : entry.cw;
         const weekMapping = getWeekMapping(cwKey);
         if (!weekMapping) return false;
         return Object.keys(weekMapping).some(monthYear => allSelectedMonths.includes(monthYear));
@@ -284,9 +288,7 @@ export const RevenueOverview = ({
       });
     } else if (viewType === 'mesic' && selectedMonths.length > 0) {
       data = data.filter(entry => {
-        const cwKey = entry.cw.includes('-2026')
-          ? entry.cw.replace('-', '_')
-          : entry.cw.split('-')[0];
+        const cwKey = entry.cw.includes('-') ? entry.cw.replace('-', '_') : entry.cw;
         const weekMapping = getWeekMapping(cwKey);
         if (!weekMapping) return false;
         return Object.keys(weekMapping).some(monthYear => selectedMonths.includes(monthYear));
@@ -307,7 +309,9 @@ export const RevenueOverview = ({
     // Inicializace struktur pro všechny měsíce s rokem
     const months = [
       'leden_2026', 'únor_2026', 'březen_2026', 'duben_2026', 'květen_2026', 'červen_2026',
-      'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026'
+      'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026',
+      'leden_2027', 'únor_2027', 'březen_2027', 'duben_2027', 'květen_2027', 'červen_2027',
+      'červenec_2027', 'srpen_2027', 'září_2027', 'říjen_2027', 'listopad_2027', 'prosinec_2027'
     ];
     months.forEach(month => {
       monthlyData[month] = {};
@@ -318,9 +322,7 @@ export const RevenueOverview = ({
 
     // Projdeme všechny záznamy v plánovacích datech
     data.forEach(entry => {
-      const cwKey = entry.cw.includes('-2026')
-        ? entry.cw.replace('-', '_')
-        : entry.cw.split('-')[0];
+      const cwKey = entry.cw.includes('-') ? entry.cw.replace('-', '_') : entry.cw;
       const weekMapping = getWeekMapping(cwKey);
       if (!weekMapping || entry.mhTyden === 0) return;
 
@@ -414,7 +416,9 @@ export const RevenueOverview = ({
         const numberToMonth: { [key: string]: string } = {
           '10_2025': 'říjen_2025', '11_2025': 'listopad_2025', '12_2025': 'prosinec_2025',
           '1_2026': 'leden_2026', '2_2026': 'únor_2026', '3_2026': 'březen_2026', '4_2026': 'duben_2026', '5_2026': 'květen_2026', '6_2026': 'červen_2026',
-          '7_2026': 'červenec_2026', '8_2026': 'srpen_2026', '9_2026': 'září_2026', '10_2026': 'říjen_2026', '11_2026': 'listopad_2026', '12_2026': 'prosinec_2026'
+          '7_2026': 'červenec_2026', '8_2026': 'srpen_2026', '9_2026': 'září_2026', '10_2026': 'říjen_2026', '11_2026': 'listopad_2026', '12_2026': 'prosinec_2026',
+          '1_2027': 'leden_2027', '2_2027': 'únor_2027', '3_2027': 'březen_2027', '4_2027': 'duben_2027', '5_2027': 'květen_2027', '6_2027': 'červen_2027',
+          '7_2027': 'červenec_2027', '8_2027': 'srpen_2027', '9_2027': 'září_2027', '10_2027': 'říjen_2027', '11_2027': 'listopad_2027', '12_2027': 'prosinec_2027'
         };
         // Spočítáme celkový počet pracovních dnů v období
         let totalWorkingDays = 0;
@@ -461,14 +465,16 @@ export const RevenueOverview = ({
     const monthlyData: { [month: string]: { [projectCode: string]: number } } = {};
     const months = [
       'leden_2026', 'únor_2026', 'březen_2026', 'duben_2026', 'květen_2026', 'červen_2026',
-      'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026'
+      'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026',
+      'leden_2027', 'únor_2027', 'březen_2027', 'duben_2027', 'květen_2027', 'červen_2027',
+      'červenec_2027', 'srpen_2027', 'září_2027', 'říjen_2027', 'listopad_2027', 'prosinec_2027'
     ];
     months.forEach(month => { monthlyData[month] = {}; });
 
     const nonRevenueActivities = ['FREE', 'Dovolena', 'DOVOLENÁ', 'Nemoc', 'NEMOC', 'Školení', 'ŠKOLENÍ', 'Interní', 'INTERNÍ'];
 
     data.forEach(entry => {
-      const cwKey = entry.cw.includes('-2026') ? entry.cw.replace('-', '_') : entry.cw.split('-')[0];
+      const cwKey = entry.cw.includes('-') ? entry.cw.replace('-', '_') : entry.cw;
       const weekMapping = getWeekMapping(cwKey);
       if (!weekMapping || entry.mhTyden === 0) return;
       if (entry.is_tentative === true) return;
@@ -506,7 +512,9 @@ export const RevenueOverview = ({
         const numberToMonth: { [key: string]: string } = {
           '10_2025': 'říjen_2025', '11_2025': 'listopad_2025', '12_2025': 'prosinec_2025',
           '1_2026': 'leden_2026', '2_2026': 'únor_2026', '3_2026': 'březen_2026', '4_2026': 'duben_2026', '5_2026': 'květen_2026', '6_2026': 'červen_2026',
-          '7_2026': 'červenec_2026', '8_2026': 'srpen_2026', '9_2026': 'září_2026', '10_2026': 'říjen_2026', '11_2026': 'listopad_2026', '12_2026': 'prosinec_2026'
+          '7_2026': 'červenec_2026', '8_2026': 'srpen_2026', '9_2026': 'září_2026', '10_2026': 'říjen_2026', '11_2026': 'listopad_2026', '12_2026': 'prosinec_2026',
+          '1_2027': 'leden_2027', '2_2027': 'únor_2027', '3_2027': 'březen_2027', '4_2027': 'duben_2027', '5_2027': 'květen_2027', '6_2027': 'červen_2027',
+          '7_2027': 'červenec_2027', '8_2027': 'srpen_2027', '9_2027': 'září_2027', '10_2027': 'říjen_2027', '11_2027': 'listopad_2027', '12_2027': 'prosinec_2027'
         };
         let totalWD = 0;
         const monthsInPeriod: string[] = [];
@@ -566,7 +574,7 @@ export const RevenueOverview = ({
       const p = norm(entry.projekt || '');
       if (p !== 'dovolena' && p !== 'nemoc') return;
       if (!allowed.has(norm(entry.konstrukter || ''))) return;
-      const cwKey = entry.cw.includes('-2026') ? entry.cw.replace('-', '_') : entry.cw.split('-')[0];
+      const cwKey = entry.cw.includes('-') ? entry.cw.replace('-', '_') : entry.cw;
       const weekMapping = getWeekMapping(cwKey);
       if (!weekMapping || !entry.mhTyden) return;
       Object.entries(weekMapping).forEach(([month, ratio]) => {
@@ -600,7 +608,7 @@ export const RevenueOverview = ({
       const eng = norm(entry.konstrukter || '');
       if (!allowed.has(eng)) return;
       const p = norm(entry.projekt || '');
-      const cwKey = entry.cw.includes('-2026') ? entry.cw.replace('-', '_') : entry.cw.split('-')[0];
+      const cwKey = entry.cw.includes('-') ? entry.cw.replace('-', '_') : entry.cw;
       const weekMapping = getWeekMapping(cwKey);
       if (!weekMapping) return;
 
@@ -648,14 +656,18 @@ export const RevenueOverview = ({
   };
 
 
-  const months = viewType === 'mesic' ? 
+  const months = viewType === 'mesic' ?
     [
       'leden_2026', 'únor_2026', 'březen_2026', 'duben_2026', 'květen_2026', 'červen_2026',
-      'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026'
+      'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026',
+      'leden_2027', 'únor_2027', 'březen_2027', 'duben_2027', 'květen_2027', 'červen_2027',
+      'červenec_2027', 'srpen_2027', 'září_2027', 'říjen_2027', 'listopad_2027', 'prosinec_2027'
     ].filter(month => selectedMonths.includes(month))
     : [
       'leden_2026', 'únor_2026', 'březen_2026', 'duben_2026', 'květen_2026', 'červen_2026',
-      'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026'
+      'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026',
+      'leden_2027', 'únor_2027', 'březen_2027', 'duben_2027', 'květen_2027', 'červen_2027',
+      'červenec_2027', 'srpen_2027', 'září_2027', 'říjen_2027', 'listopad_2027', 'prosinec_2027'
     ];
   
   // Získání všech unikátních projektů s revenue - rozdělení podle statusu
@@ -728,6 +740,30 @@ export const RevenueOverview = ({
           months: ['říjen_2026', 'listopad_2026', 'prosinec_2026'],
           label: 'Q3 FY26',
           dateRange: '1 Oct – 31 Dec 2026'
+        },
+        {
+          quarter: 'Q4 FY26-27',
+          months: ['leden_2027', 'únor_2027', 'březen_2027'],
+          label: 'Q4 FY26',
+          dateRange: '1 Jan – 31 Mar 2027'
+        },
+        {
+          quarter: 'Q1 FY27-28',
+          months: ['duben_2027', 'květen_2027', 'červen_2027'],
+          label: 'Q1 FY27',
+          dateRange: '1 Apr – 30 Jun 2027'
+        },
+        {
+          quarter: 'Q2 FY27-28',
+          months: ['červenec_2027', 'srpen_2027', 'září_2027'],
+          label: 'Q2 FY27',
+          dateRange: '1 Jul – 30 Sep 2027'
+        },
+        {
+          quarter: 'Q3 FY27-28',
+          months: ['říjen_2027', 'listopad_2027', 'prosinec_2027'],
+          label: 'Q3 FY27',
+          dateRange: '1 Oct – 31 Dec 2027'
         }
       ];
 
@@ -768,7 +804,11 @@ export const RevenueOverview = ({
           'leden_2026': 'Jan 26', 'únor_2026': 'Feb 26', 'březen_2026': 'Mar 26',
           'duben_2026': 'Apr 26', 'květen_2026': 'May 26', 'červen_2026': 'Jun 26',
           'červenec_2026': 'Jul 26', 'srpen_2026': 'Aug 26', 'září_2026': 'Sep 26',
-          'říjen_2026': 'Oct 26', 'listopad_2026': 'Nov 26', 'prosinec_2026': 'Dec 26'
+          'říjen_2026': 'Oct 26', 'listopad_2026': 'Nov 26', 'prosinec_2026': 'Dec 26',
+          'leden_2027': 'Jan 27', 'únor_2027': 'Feb 27', 'březen_2027': 'Mar 27',
+          'duben_2027': 'Apr 27', 'květen_2027': 'May 27', 'červen_2027': 'Jun 27',
+          'červenec_2027': 'Jul 27', 'srpen_2027': 'Aug 27', 'září_2027': 'Sep 27',
+          'říjen_2027': 'Oct 27', 'listopad_2027': 'Nov 27', 'prosinec_2027': 'Dec 27'
         };
         const monthNameForDisplay = monthLabels[month] || month;
         const data: any = {
@@ -809,7 +849,11 @@ export const RevenueOverview = ({
     { value: 'Q4-FY25', label: 'Q4 FY25-26 (Jan-Mar 2026)' },
     { value: 'Q1-FY26', label: 'Q1 FY26-27 (Apr-Jun 2026)' },
     { value: 'Q2-FY26', label: 'Q2 FY26-27 (Jul-Sep 2026)' },
-    { value: 'Q3-FY26', label: 'Q3 FY26-27 (Oct-Dec 2026)' }
+    { value: 'Q3-FY26', label: 'Q3 FY26-27 (Oct-Dec 2026)' },
+    { value: 'Q4-FY26', label: 'Q4 FY26-27 (Jan-Mar 2027)' },
+    { value: 'Q1-FY27', label: 'Q1 FY27-28 (Apr-Jun 2027)' },
+    { value: 'Q2-FY27', label: 'Q2 FY27-28 (Jul-Sep 2027)' },
+    { value: 'Q3-FY27', label: 'Q3 FY27-28 (Oct-Dec 2027)' }
   ];
 
   // Month filter options
@@ -825,7 +869,19 @@ export const RevenueOverview = ({
     { value: 'září_2026', label: 'September 2026' },
     { value: 'říjen_2026', label: 'October 2026' },
     { value: 'listopad_2026', label: 'November 2026' },
-    { value: 'prosinec_2026', label: 'December 2026' }
+    { value: 'prosinec_2026', label: 'December 2026' },
+    { value: 'leden_2027', label: 'January 2027' },
+    { value: 'únor_2027', label: 'February 2027' },
+    { value: 'březen_2027', label: 'March 2027' },
+    { value: 'duben_2027', label: 'April 2027' },
+    { value: 'květen_2027', label: 'May 2027' },
+    { value: 'červen_2027', label: 'June 2027' },
+    { value: 'červenec_2027', label: 'July 2027' },
+    { value: 'srpen_2027', label: 'August 2027' },
+    { value: 'září_2027', label: 'September 2027' },
+    { value: 'říjen_2027', label: 'October 2027' },
+    { value: 'listopad_2027', label: 'November 2027' },
+    { value: 'prosinec_2027', label: 'December 2027' }
   ];
 
   const filterOptions = getFilterOptions();
@@ -845,9 +901,9 @@ export const RevenueOverview = ({
     onViewTypeChange?.(value);
     // Reset to all quarters/months when switching view type
     if (value === 'kvartal') {
-      setSelectedQuarters(['Q4-FY25', 'Q1-FY26', 'Q2-FY26', 'Q3-FY26']);
+      setSelectedQuarters(['Q4-FY25', 'Q1-FY26', 'Q2-FY26', 'Q3-FY26', 'Q4-FY26', 'Q1-FY27', 'Q2-FY27', 'Q3-FY27']);
     } else {
-      setSelectedMonths(['leden_2026', 'únor_2026', 'březen_2026', 'duben_2026', 'květen_2026', 'červen_2026', 'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026']);
+      setSelectedMonths(['leden_2026', 'únor_2026', 'březen_2026', 'duben_2026', 'květen_2026', 'červen_2026', 'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026', 'leden_2027', 'únor_2027', 'březen_2027', 'duben_2027', 'květen_2027', 'červen_2027', 'červenec_2027', 'srpen_2027', 'září_2027', 'říjen_2027', 'listopad_2027', 'prosinec_2027']);
     }
   };
 
@@ -1549,6 +1605,10 @@ export const RevenueOverview = ({
                              { key: 'Q1-FY26', months: ['duben_2026', 'květen_2026', 'červen_2026'] },
                              { key: 'Q2-FY26', months: ['červenec_2026', 'srpen_2026', 'září_2026'] },
                              { key: 'Q3-FY26', months: ['říjen_2026', 'listopad_2026', 'prosinec_2026'] },
+                             { key: 'Q4-FY26', months: ['leden_2027', 'únor_2027', 'březen_2027'] },
+                             { key: 'Q1-FY27', months: ['duben_2027', 'květen_2027', 'červen_2027'] },
+                             { key: 'Q2-FY27', months: ['červenec_2027', 'srpen_2027', 'září_2027'] },
+                             { key: 'Q3-FY27', months: ['říjen_2027', 'listopad_2027', 'prosinec_2027'] },
                            ]
                              .filter(q => selectedQuarters.includes(q.key))
                              .map(q => {
@@ -1586,6 +1646,10 @@ export const RevenueOverview = ({
                        { key: 'Q1-FY26', months: ['duben_2026', 'květen_2026', 'červen_2026'] },
                        { key: 'Q2-FY26', months: ['červenec_2026', 'srpen_2026', 'září_2026'] },
                        { key: 'Q3-FY26', months: ['říjen_2026', 'listopad_2026', 'prosinec_2026'] },
+                       { key: 'Q4-FY26', months: ['leden_2027', 'únor_2027', 'březen_2027'] },
+                       { key: 'Q1-FY27', months: ['duben_2027', 'květen_2027', 'červen_2027'] },
+                       { key: 'Q2-FY27', months: ['červenec_2027', 'srpen_2027', 'září_2027'] },
+                       { key: 'Q3-FY27', months: ['říjen_2027', 'listopad_2027', 'prosinec_2027'] },
                      ]
                        .filter(q => selectedQuarters.includes(q.key))
                        .map(q => {
