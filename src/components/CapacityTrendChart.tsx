@@ -202,20 +202,47 @@ export const CapacityTrendChart: React.FC = () => {
       }
     });
 
+    // Pro měsíční pohled: týden rozdělit podle pracovních dní (Po–Pá) do měsíců
+    const targetsFor = (cw: string): { b: Bucket; f: number }[] => {
+      if (view === 'weeks') { const b = bucketFor(cw); return b ? [{ b, f: 1 }] : []; }
+      const p = parseWeek(cw);
+      if (!p) return [];
+      const monday = getISOWeekMonday(p.week, p.year);
+      const counts = new Map<string, { m: number; y: number; n: number }>();
+      for (let i = 0; i < 5; i++) {
+        const d = new Date(monday); d.setDate(monday.getDate() + i);
+        const key = `${d.getFullYear()}-${d.getMonth()}`;
+        const c = counts.get(key) || { m: d.getMonth(), y: d.getFullYear(), n: 0 };
+        c.n++; counts.set(key, c);
+      }
+      return Array.from(counts.entries()).map(([key, c]) => {
+        if (!buckets.has(key)) {
+          buckets.set(key, {
+            key,
+            label: `${MONTHS_EN[c.m]} ${String(c.y).slice(-2)}`,
+            sort: c.y * 100 + c.m,
+            maxHours: 0, realHours: 0, leaveHours: 0, freeHours: 0,
+            engineers: new Set(),
+          });
+        }
+        return { b: buckets.get(key)!, f: c.n / 5 };
+      });
+    };
+
     perEngWeek.forEach((v, k) => {
       const cw = k.split('|')[1];
       const p = parseWeek(cw);
       if (!p) return;
-      const b = bucketFor(cw);
-      if (!b) return;
+      const targets = targetsFor(cw);
+      if (!targets.length) return;
       const workDays = getWorkingDaysInCW(p.week, p.year);
       const weekMax = workDays * HOURS_PER_DAY;
       if (norm(v.projekt) === 'DEPARTED') return;
 
-      b.engineers.add(k.split('|')[0]);
+      targets.forEach(({ b }) => b.engineers.add(k.split('|')[0]));
 
       if (isFullWeekLeave(v.projekt)) {
-        b.leaveHours += weekMax;
+        targets.forEach(({ b, f }) => { b.leaveHours += weekMax * f; });
         return;
       }
       const real = Math.min(weekMax, v.real);
@@ -225,10 +252,12 @@ export const CapacityTrendChart: React.FC = () => {
         Math.max(0, weekMax - real)
       );
       const engMax = Math.max(0, weekMax - partialLeave);
-      b.leaveHours += partialLeave;
-      b.maxHours += engMax;
-      b.realHours += real;
-      b.freeHours += Math.max(0, engMax - real);
+      targets.forEach(({ b, f }) => {
+        b.leaveHours += partialLeave * f;
+        b.maxHours += engMax * f;
+        b.realHours += real * f;
+        b.freeHours += Math.max(0, engMax - real) * f;
+      });
     });
 
     return Array.from(buckets.values())
