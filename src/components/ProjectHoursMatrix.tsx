@@ -20,6 +20,7 @@ const hoursLabel = (hours: number) => new Intl.NumberFormat('en-GB', { maximumFr
 export function ProjectHoursMatrix() {
   const { planningData, engineers } = usePlanning();
   const { data: catalog, isPending: catalogLoading, isError: catalogError } = useProjectHoursCatalog();
+  const { data: monthlyDemand } = useProjectMonthlyPlan();
   const [mode, setMode] = useState<'weeks' | 'months'>('weeks');
   const [showHistory, setShowHistory] = useState(false);
   const [filter, setFilter] = useState<ProjectHoursFilterValue>(() => {
