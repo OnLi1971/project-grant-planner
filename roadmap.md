@@ -1,4 +1,5 @@
 # Tasks
+- [x] Correct Project Hours program filtering using current Project Management assignments; verified Safran=AERO, Doosan=MACH with 40 planning rows; allocation/summaries and persistence tests pass (23/23), build OK.
 - [x] Preserve Project Hours Program / Custom filter, engineer selection and saved-view identity after F5; test persistence and safe storage fallback.
 - [x] Account for 2026/2027 public holidays in project-hours period allocation and location-aware capacity summaries; holiday, Easter and year-boundary tests pass.
 - [x] Add Program / Custom filtering to Project Hours Matrix, including shared saved engineer views and filtered totals; filter and aggregate tests pass.
