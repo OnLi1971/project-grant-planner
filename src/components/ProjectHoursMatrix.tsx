@@ -35,7 +35,9 @@ export function ProjectHoursMatrix() {
   const periods = useMemo(() => {
     const now = new Date();
     const currentMonday = getISOWeekMonday(getISOWeek(now), getISOWeekYear(now));
-    const start = addWeeks(currentMonday, showHistory ? -9 : 0);
+    const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthStartMonday = getISOWeekMonday(getISOWeek(firstOfMonth), getISOWeekYear(firstOfMonth));
+    const start = showHistory ? addWeeks(currentMonday, -9) : monthStartMonday;
     const endYear = now.getFullYear() + 1;
     const weeks: { key: string; label: string; sub: string; group: string; groupLabel: string; current: boolean }[] = [];
     for (let monday = start; getISOWeekYear(monday) <= endYear; monday = addWeeks(monday, 1)) {
@@ -136,7 +138,7 @@ export function ProjectHoursMatrix() {
                 </tr>}
                 <tr>
                   <th className="border-2 border-border p-1.5 bg-background text-left sticky left-0 z-30 min-w-[200px]">{mode === 'months' ? 'Project' : ''}</th>
-                  {columns.map((period, index) => <th key={period.key} className={`border border-border p-1.5 text-center min-w-[90px] ${period.current ? 'bg-warning/30 border-warning' : 'bg-background'} ${mode === 'weeks' && index > 0 && periods.weeks[index - 1]?.group !== periods.weeks[index]?.group ? 'border-l-4 border-l-primary/50' : ''}`}>
+                  {columns.map((period, index) => <th key={period.key} className={`border border-border p-1.5 text-center min-w-[90px] bg-background ${mode === 'weeks' && index > 0 && periods.weeks[index - 1]?.group !== periods.weeks[index]?.group ? 'border-l-4 border-l-primary/50' : ''}`}>
                     <div className="font-semibold text-primary">{period.label}</div>
                     {period.sub && <div className="text-[10px] text-muted-foreground whitespace-nowrap">{period.sub}</div>}
                   </th>)}
@@ -148,7 +150,7 @@ export function ProjectHoursMatrix() {
                   <th scope="row" className="border border-border p-1.5 text-left font-semibold sticky left-0 bg-inherit z-10 whitespace-nowrap">{code}</th>
                   {columns.map(period => {
                     const hours = rows.get(code)?.get(period.key) || 0;
-                    return <td key={period.key} className={`border border-border p-1 text-center ${period.current ? 'bg-warning/30 border-warning' : ''}`}>
+                    return <td key={period.key} className={`border border-border p-1 text-center`}>
                       {hours > 0 ? <span data-project={code} className="project-hours-value inline-flex w-full justify-center rounded-md px-1.5 py-0.5 font-medium shadow-sm" title={`${code} · ${period.label}: ${hoursLabel(hours)} MH`}>{hoursLabel(hours)}</span> : <span className="text-muted-foreground">–</span>}
                     </td>;
                   })}
@@ -159,7 +161,7 @@ export function ProjectHoursMatrix() {
                   <th scope="row" className="border border-border p-1.5 text-left font-medium sticky left-0 bg-background z-10 whitespace-nowrap">{code} · plan</th>
                   {columns.map(period => {
                     const hours = demandRows.get(code)?.get(period.key) || 0;
-                    return <td key={period.key} className={`border border-border p-1 text-center ${period.current ? 'bg-warning/30 border-warning' : ''}`}>
+                    return <td key={period.key} className={`border border-border p-1 text-center`}>
                       {hours > 0 ? <span data-project={code} className="project-plan-value inline-flex w-full justify-center rounded-md px-1.5 py-0.5 font-medium" title={`${code} demand · ${period.label}: ${hoursLabel(hours)} MH`}>{hoursLabel(hours)}</span> : <span className="text-muted-foreground">–</span>}
                     </td>;
                   })}
@@ -172,20 +174,20 @@ export function ProjectHoursMatrix() {
                 </tr>
                 {metrics.map(metric => <tr key={metric.key} className="bg-primary/5 font-semibold">
                   <th scope="row" className="border border-border p-2 text-left sticky left-0 bg-background z-10 whitespace-nowrap">{metric.label}</th>
-                  {columns.map(period => <td key={period.key} className={`border border-border p-2 text-center ${period.current ? 'bg-warning/30 border-warning' : ''}`}>{metricLabel(summaries.get(period.key)?.[metric.key] || 0, metric.unit)}</td>)}
+                  {columns.map(period => <td key={period.key} className={`border border-border p-2 text-center`}>{metricLabel(summaries.get(period.key)?.[metric.key] || 0, metric.unit)}</td>)}
                   <td className="border border-border p-2 text-center">{metric.unit === 'hours' ? metricLabel(columns.reduce((sum, period) => sum + (summaries.get(period.key)?.[metric.key] || 0), 0), 'hours') : '–'}</td>
                 </tr>)}
                 {demandCodes.length > 0 && <>
                   <tr className="bg-primary/5 font-semibold">
                     <th scope="row" className="border border-border p-2 text-left sticky left-0 bg-background z-10 whitespace-nowrap">Planned demand [MH]</th>
-                    {columns.map(period => <td key={period.key} className={`border border-border p-2 text-center ${period.current ? 'bg-warning/30 border-warning' : ''}`}>{hoursLabel(demandFor(period.key))}</td>)}
+                    {columns.map(period => <td key={period.key} className={`border border-border p-2 text-center`}>{hoursLabel(demandFor(period.key))}</td>)}
                     <td className="border border-border p-2 text-center">{hoursLabel(columns.reduce((sum, period) => sum + demandFor(period.key), 0))}</td>
                   </tr>
                   <tr className="bg-primary/5 font-bold">
                     <th scope="row" className="border border-border p-2 text-left sticky left-0 bg-background z-10 whitespace-nowrap">Balance [FTE]</th>
                     {columns.map(period => {
                       const balance = balanceFor(period.key);
-                      return <td key={period.key} className={`border border-border p-2 text-center ${balance < 0 ? 'text-destructive' : 'text-chart-2'} ${period.current ? 'bg-warning/30 border-warning' : ''}`}>{balance.toFixed(1)}</td>;
+                      return <td key={period.key} className={`border border-border p-2 text-center ${balance < 0 ? 'text-destructive' : 'text-chart-2'}`}>{balance.toFixed(1)}</td>;
                     })}
                     <td className="border border-border p-2 text-center">–</td>
                   </tr>
