@@ -175,4 +175,7 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground;
   }
-}
+}.project-plan-value { background: hsl(var(--project-tone, var(--project-unknown)) / 0.55); color: hsl(var(--project-label)); border: 1px dashed hsl(var(--project-label) / 0.6); }
+.project-plan-value[data-project^="ST_"] { --project-tone: var(--project-emu); }
+.project-plan-value[data-project^="NU_"] { --project-tone: var(--project-nuvia); }
+.project-plan-value[data-project^="WA_"] { --project-tone: var(--project-wabtec); }
