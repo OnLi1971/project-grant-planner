@@ -55,6 +55,7 @@ export function ProjectHoursMatrix() {
         const date = new Date(monday); date.setDate(date.getDate() + day);
         const key = monthKey(date);
         if (date.getFullYear() > endYear) continue;
+        if (!showHistory && key < monthKey(now)) continue;
         months.set(key, { key, label: format(date, 'MMM yy'), sub: '', current: key === monthKey(now) });
       }
     }
