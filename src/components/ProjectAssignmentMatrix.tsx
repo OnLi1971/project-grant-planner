@@ -236,6 +236,8 @@ const getProjectBadgeStyle = (projekt: string, isTentative?: boolean) => {
   if (projekt === 'ST_POZAR') return 'bg-indigo-500 text-white border-indigo-600';
   if (projekt === 'ST_JIGS') return 'bg-sky-500 text-white border-sky-600';
   if (projekt === 'ST_TRAM_HS') return 'bg-blue-800 text-white border-blue-900';
+  if (projekt === 'ST_ELEKTRO') return 'bg-sky-700 text-white border-sky-800';
+  if (projekt.startsWith('ST_')) return 'bg-blue-900 text-white border-blue-950';
   
   // NUVIA - green family
   if (projekt.startsWith('NU_')) return 'bg-green-600 text-white border-green-700';
@@ -298,6 +300,8 @@ const getProjectExcelStyle = (project: string, isTentative?: boolean, borderColo
   else if (project === 'ST_POZAR') style = excelFillStyle('6366F1', 'FFFFFF');
   else if (project === 'ST_JIGS') style = excelFillStyle('0EA5E9', 'FFFFFF');
   else if (project === 'ST_TRAM_HS') style = excelFillStyle('1E40AF', 'FFFFFF');
+  else if (project === 'ST_ELEKTRO') style = excelFillStyle('0369A1', 'FFFFFF');
+  else if (project.startsWith('ST_')) style = excelFillStyle('1E3A8A', 'FFFFFF');
   else if (project.startsWith('NU_')) style = excelFillStyle('16A34A', 'FFFFFF');
   else if (project.startsWith('WA_')) style = excelFillStyle('F97316', 'FFFFFF');
   else if (project.startsWith('SAF_')) style = excelFillStyle('A855F7', 'FFFFFF');

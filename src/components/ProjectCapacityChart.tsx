@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, CartesianGrid, LabelList } from 'recharts';
 import { format } from 'date-fns';
+import { getExactProjectColor } from '@/utils/colorSystem';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { EngineerInfo, PlanningEntry } from '@/types/planning';
 import { monthKey, projectHours } from '@/utils/projectHours';
@@ -15,15 +16,9 @@ interface Props {
   statusByProject: Map<string, string>;
 }
 
-const KNOWN: Record<string, string> = {
-  ST_EMU_INT: '--project-emu', ST_TRAM_INT: '--project-tram', ST_MAINZ: '--project-mainz', ST_KASSEL: '--project-kassel',
-  ST_BLAVA: '--project-blava', ST_FEM: '--project-fem', ST_POZAR: '--project-pozar', ST_JIGS: '--project-jigs', ST_TRAM_HS: '--project-tram-hs',
-};
-const PREFIX: [string, string][] = [['NU_', '--project-nuvia'], ['WA_', '--project-wabtec'], ['SAF_', '--project-safran'], ['BUCH_', '--project-bucher'], ['AIRB_', '--project-airbus']];
 const HUES = [190, 160, 205, 40, 220, 130, 280, 10, 330, 60, 100, 250];
 const colorFor = (code: string, i: number) => {
-  const v = KNOWN[code] || PREFIX.find(([p]) => code.startsWith(p))?.[1];
-  return v ? `hsl(var(${v}))` : `hsl(${HUES[i % HUES.length]} 70% 55%)`;
+  return getExactProjectColor(code) || `hsl(${HUES[i % HUES.length]} 70% 55%)`;
 };
 
 /** Monthly FTE per project (Delivery + Presales stacked) vs. max productive engineer count. */
