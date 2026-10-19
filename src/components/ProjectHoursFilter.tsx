@@ -7,18 +7,17 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { useCustomEngineerViews } from '@/hooks/useCustomEngineerViews';
 import { normalizeName } from '@/utils/nameNormalization';
 
-export interface ProjectHoursFilterValue { mode: 'program' | 'custom'; programs: string[]; engineers: string[] }
+export interface ProjectHoursFilterValue { mode: 'program' | 'custom'; programs: string[]; engineers: string[]; viewId?: string | null }
 export function ProjectHoursFilter({ value, onChange, names, programs }: { value: ProjectHoursFilterValue; onChange: (value: ProjectHoursFilterValue) => void; names: string[]; programs: string[] }) {
   const { customViews, saveView, updateView, deleteView, isLoading } = useCustomEngineerViews();
-  const [viewId, setViewId] = useState<string | null>(null);
+  const viewId = value.viewId ?? null;
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
   const selectedView = customViews.find(view => view.id === viewId);
   const toggleProgram = (program: string) => {
-    setViewId(null);
     const previous = value.mode === 'program' ? value.programs : [];
     const next = program === 'All' ? ['All'] : previous.includes(program) ? previous.filter(p => p !== program && p !== 'All') : [...previous.filter(p => p !== 'All'), program];
-    onChange({ ...value, mode: 'program', programs: next });
+    onChange({ ...value, mode: 'program', programs: next, viewId: null });
   };
   const save = async (update: boolean) => {
     setBusy(true);
@@ -41,8 +40,8 @@ export function ProjectHoursFilter({ value, onChange, names, programs }: { value
         <div className="text-xs font-medium text-muted-foreground">Saved views</div>
         {isLoading && <div className="text-xs text-muted-foreground">Loading…</div>}
         {customViews.map(view => <div key={view.id} className="flex gap-1">
-          <Button variant={view.id === viewId ? 'secondary' : 'ghost'} size="sm" className="min-w-0 flex-1 justify-start" onClick={() => { setViewId(view.id); onChange({ ...value, mode: 'custom', engineers: view.engineers }); }}><Folder className="mr-2 h-4 w-4 shrink-0" /><span className="truncate">{view.name} ({view.engineers.length})</span></Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" aria-label={`Delete ${view.name}`} title={`Delete ${view.name}`} onClick={async () => { if (await deleteView(view.id) && viewId === view.id) setViewId(null); }}><Trash2 className="h-3.5 w-3.5" /></Button>
+          <Button variant={view.id === viewId ? 'secondary' : 'ghost'} size="sm" className="min-w-0 flex-1 justify-start" onClick={() => { onChange({ ...value, mode: 'custom', engineers: view.engineers, viewId: view.id }); }}><Folder className="mr-2 h-4 w-4 shrink-0" /><span className="truncate">{view.name} ({view.engineers.length})</span></Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" aria-label={`Delete ${view.name}`} title={`Delete ${view.name}`} onClick={async () => { if (await deleteView(view.id) && viewId === view.id) onChange({ ...value, viewId: null }); }}><Trash2 className="h-3.5 w-3.5" /></Button>
         </div>)}
         <div className="flex items-center justify-between"><span className="text-xs font-medium">Engineers ({value.engineers.length})</span><div className="flex gap-1"><Button variant="ghost" size="sm" onClick={() => onChange({ ...value, engineers: names })}>All</Button><Button variant="ghost" size="sm" onClick={() => onChange({ ...value, engineers: [] })}>None</Button></div></div>
         <div className="h-48 overflow-y-auto rounded border border-border p-1">

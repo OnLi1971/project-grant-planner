@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { projects, programs } from '@/data/projectsData';
 import { ProjectHoursFilter, type ProjectHoursFilterValue } from '@/components/ProjectHoursFilter';
 import { filterProjectHoursEntries } from '@/utils/projectHoursFilter';
+import { readProjectHoursFilter, writeProjectHoursFilter } from '@/utils/projectHoursFilterStorage';
 import { getISOWeekMonday } from '@/utils/workingDays';
 import { monthKey, projectHours } from '@/utils/projectHours';
 import { projectCapacitySummary, type CapacitySummary } from '@/utils/projectCapacitySummary';
@@ -18,7 +19,14 @@ export function ProjectHoursMatrix() {
   const { planningData, engineers } = usePlanning();
   const [mode, setMode] = useState<'weeks' | 'months'>('weeks');
   const [showHistory, setShowHistory] = useState(false);
-  const [filter, setFilter] = useState<ProjectHoursFilterValue>({ mode: 'program', programs: ['All'], engineers: [] });
+  const [filter, setFilter] = useState<ProjectHoursFilterValue>(() => {
+    try { return readProjectHoursFilter(window.localStorage); }
+    catch { return { mode: 'program', programs: ['All'], engineers: [] }; }
+  });
+  const changeFilter = (value: ProjectHoursFilterValue) => {
+    setFilter(value);
+    try { writeProjectHoursFilter(window.localStorage, value); } catch { /* Storage may be blocked. */ }
+  };
   const engineerNames = useMemo(() => [...new Set([...engineers.map(e => e.display_name), ...planningData.filter(e => !e.isSecondary).map(e => e.konstrukter)])].sort((a, b) => a.localeCompare(b)), [engineers, planningData]);
   const periods = useMemo(() => {
     const now = new Date();
@@ -91,7 +99,7 @@ export function ProjectHoursMatrix() {
           </div>
         </CardHeader>
         <CardContent>
-          <ProjectHoursFilter value={filter} onChange={setFilter} names={engineerNames} programs={programs.map(p => p.code)} />
+          <ProjectHoursFilter value={filter} onChange={changeFilter} names={engineerNames} programs={programs.map(p => p.code)} />
           <div className="overflow-auto max-h-[85vh]">
             <table className="w-full border-collapse text-xs" aria-label="Project planned hours">
               <thead className="sticky top-0 z-20">
