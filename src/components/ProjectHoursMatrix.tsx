@@ -22,7 +22,7 @@ export function ProjectHoursMatrix() {
   const { planningData, engineers } = usePlanning();
   const { data: catalog, isPending: catalogLoading, isError: catalogError } = useProjectHoursCatalog();
   const { data: monthlyDemand } = useProjectMonthlyPlan();
-  const [mode, setMode] = useState<'weeks' | 'months'>('weeks');
+  const [mode, setMode] = useState<'weeks' | 'months'>('months');
   const [showHistory, setShowHistory] = useState(false);
   const [filter, setFilter] = useState<ProjectHoursFilterValue>(() => {
     try { return readProjectHoursFilter(window.localStorage); }
