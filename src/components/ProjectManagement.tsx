@@ -108,8 +108,24 @@ export const ProjectManagement = () => {
     presalesEndDate: '',
     parentOpportunity: '',
     crmCreationDate: '',
-    opportunityNumber: ''
+    opportunityNumber: '',
+    planStart: '',
+    planEnd: '',
+    monthlyPlan: [] as { month: string; hours: number }[]
   });
+  const prefillMonthlyPlan = (start: string, end: string, budget: number) => {
+    if (!start || !end || start > end) return [];
+    const months: string[] = [];
+    const [sy, sm] = start.split('-').map(Number);
+    const [ey, em] = end.split('-').map(Number);
+    for (let y = sy, m = sm; y < ey || (y === ey && m <= em);) {
+      months.push(`${y}-${String(m).padStart(2, '0')}`);
+      m++; if (m > 12) { m = 1; y++; }
+    }
+    const base = months.length ? Math.floor(budget / months.length) : 0;
+    let remainder = months.length ? budget - base * months.length : 0;
+    return months.map(month => ({ month, hours: base + (remainder-- > 0 ? 1 : 0) }));
+  };
   const [showDeadProjects, setShowDeadProjects] = useState(false);
 
   const presalesPhases = [
@@ -436,6 +452,7 @@ export const ProjectManagement = () => {
 
         // Handle project licenses
         await saveProjectLicenses(editingProject.id);
+        await saveMonthlyPlan(editingProject.id);
 
         toast({
           title: "Projekt upraven",
@@ -480,6 +497,7 @@ export const ProjectManagement = () => {
         // Handle project licenses
         if (newProject) {
           await saveProjectLicenses(newProject.id);
+          await saveMonthlyPlan(newProject.id);
         }
 
         toast({
@@ -498,6 +516,21 @@ export const ProjectManagement = () => {
         description: "Nepodařilo se uložit projekt.",
         variant: "destructive",
       });
+    }
+  };
+
+  const saveMonthlyPlan = async (projectId: string) => {
+    try {
+      await supabase.from('project_monthly_plan').delete().eq('project_id', projectId);
+      const rows = formData.monthlyPlan
+        .filter(m => m.hours > 0)
+        .map(m => ({ project_id: projectId, month: `${m.month}-01`, hours: m.hours }));
+      if (rows.length > 0) {
+        const { error } = await supabase.from('project_monthly_plan').insert(rows);
+        if (error) console.error('Error saving monthly plan:', error);
+      }
+    } catch (error) {
+      console.error('Error saving monthly plan:', error);
     }
   };
 
@@ -549,7 +582,10 @@ export const ProjectManagement = () => {
       presalesEndDate: '',
       parentOpportunity: '',
       crmCreationDate: '',
-      opportunityNumber: ''
+      opportunityNumber: '',
+      planStart: '',
+      planEnd: '',
+      monthlyPlan: []
     });
     setIsAddDialogOpen(false);
     setEditingProject(null);
@@ -657,8 +693,27 @@ export const ProjectManagement = () => {
         presalesEndDate: (project as any).presales_end_date ? normalizeYearMonth((project as any).presales_end_date) : '',
         parentOpportunity: (project as any).parent_opportunity || '',
         crmCreationDate: (project as any).crm_creation_date || '',
-        opportunityNumber: (project as any).opportunity_number || ''
+        opportunityNumber: (project as any).opportunity_number || '',
+        planStart: '',
+        planEnd: '',
+        monthlyPlan: []
       });
+
+      // Load monthly hour plan
+      const { data: planRows } = await supabase
+        .from('project_monthly_plan')
+        .select('month, hours')
+        .eq('project_id', project.id)
+        .order('month');
+      if (planRows && planRows.length > 0) {
+        const monthlyPlan = planRows.map(r => ({ month: r.month.slice(0, 7), hours: r.hours }));
+        setFormData(prev => ({
+          ...prev,
+          monthlyPlan,
+          planStart: monthlyPlan[0].month,
+          planEnd: monthlyPlan[monthlyPlan.length - 1].month
+        }));
+      }
       setIsAddDialogOpen(true);
     } catch (error) {
       console.error('Error loading project for edit:', error);
@@ -994,6 +1049,68 @@ export const ProjectManagement = () => {
                     />
                   </div>
                 )}
+                <div className="border rounded-md p-3 space-y-3">
+                  <Label>Plán hodin na generické zdroje (měsíčně)</Label>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="planStart">Období od</Label>
+                      <Input
+                        id="planStart"
+                        type="month"
+                        value={formData.planStart}
+                        onChange={(e) => {
+                          const planStart = e.target.value;
+                          setFormData({ ...formData, planStart, monthlyPlan: prefillMonthlyPlan(planStart, formData.planEnd, formData.budget) });
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="planEnd">Období do</Label>
+                      <Input
+                        id="planEnd"
+                        type="month"
+                        value={formData.planEnd}
+                        onChange={(e) => {
+                          const planEnd = e.target.value;
+                          setFormData({ ...formData, planEnd, monthlyPlan: prefillMonthlyPlan(formData.planStart, planEnd, formData.budget) });
+                        }}
+                      />
+                    </div>
+                    <div className="flex items-end">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setFormData({ ...formData, monthlyPlan: prefillMonthlyPlan(formData.planStart, formData.planEnd, formData.budget) })}
+                      >
+                        Rozdělit budget
+                      </Button>
+                    </div>
+                  </div>
+                  {formData.monthlyPlan.length > 0 && (
+                    <div className="grid grid-cols-3 gap-2 max-h-40 overflow-y-auto">
+                      {formData.monthlyPlan.map((item, index) => (
+                        <div key={item.month} className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground w-16">{item.month}</span>
+                          <Input
+                            type="number"
+                            className="h-8"
+                            value={item.hours || ''}
+                            onChange={(e) => {
+                              const monthlyPlan = formData.monthlyPlan.map((m, i) => i === index ? { ...m, hours: parseInt(e.target.value) || 0 } : m);
+                              setFormData({ ...formData, monthlyPlan });
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {formData.monthlyPlan.length > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Celkem: {formData.monthlyPlan.reduce((sum, m) => sum + m.hours, 0)} hod
+                    </p>
+                  )}
+                </div>
                 {editingProject && (
                   <ProjectRateHistoryEditor
                     projectId={editingProject.id}
