@@ -108,8 +108,24 @@ export const ProjectManagement = () => {
     presalesEndDate: '',
     parentOpportunity: '',
     crmCreationDate: '',
-    opportunityNumber: ''
+    opportunityNumber: '',
+    planStart: '',
+    planEnd: '',
+    monthlyPlan: [] as { month: string; hours: number }[]
   });
+  const prefillMonthlyPlan = (start: string, end: string, budget: number) => {
+    if (!start || !end || start > end) return [];
+    const months: string[] = [];
+    const [sy, sm] = start.split('-').map(Number);
+    const [ey, em] = end.split('-').map(Number);
+    for (let y = sy, m = sm; y < ey || (y === ey && m <= em);) {
+      months.push(`${y}-${String(m).padStart(2, '0')}`);
+      m++; if (m > 12) { m = 1; y++; }
+    }
+    const base = months.length ? Math.floor(budget / months.length) : 0;
+    let remainder = months.length ? budget - base * months.length : 0;
+    return months.map(month => ({ month, hours: base + (remainder-- > 0 ? 1 : 0) }));
+  };
   const [showDeadProjects, setShowDeadProjects] = useState(false);
 
   const presalesPhases = [
