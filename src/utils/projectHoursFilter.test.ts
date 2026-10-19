@@ -17,3 +17,7 @@ test('program selection includes secondary projects within displayed weeks', () 
   assert.deepEqual(filterProjectHoursEntries(entries, ['CW44-2026'], { mode: 'program', programs: ['RAIL'], engineers: [] }, map), [entries[0]]);
   assert.equal(filterProjectHoursEntries(entries, ['CW45-2026'], { mode: 'program', programs: ['RAIL'], engineers: [] }, map).length, 0);
 });
+test('missing secondary project does not falsely qualify for NA program', () => {
+  const row = { ...entries[1], projekt2: null };
+  assert.equal(filterProjectHoursEntries([row], ['CW44-2026'], { mode: 'program', programs: ['NA'], engineers: [] }, new Map([['NU_CRAIN', 'MACH']])).length, 0);
+});

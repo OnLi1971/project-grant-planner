@@ -11,7 +11,7 @@ export function filterProjectHoursEntries(entries: PlanningEntry[], weeks: strin
   const names = new Set<string>();
   for (const entry of entries) {
     if (!period.has(entry.cw.replace('_', '-'))) continue;
-    if ([entry.projekt, entry.projekt2 || ''].some(code => filter.programs.includes(programByProject.get(code) || 'NA'))) names.add(normalizeName(entry.konstrukter));
+    if ([entry.projekt, entry.projekt2 || ''].some(code => code && filter.programs.includes(programByProject.get(code) || 'NA'))) names.add(normalizeName(entry.konstrukter));
   }
   return entries.filter(entry => names.has(normalizeName(entry.konstrukter)));
 }
