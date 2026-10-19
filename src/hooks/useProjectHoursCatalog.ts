@@ -7,7 +7,7 @@ export function useProjectHoursCatalog() {
     queryKey: ['project-hours-catalog'],
     queryFn: async () => {
       const [projects, programs] = await Promise.all([
-        supabase.from('projects').select('code, name, program_id').order('name'),
+        supabase.from('projects').select('code, name, program_id, project_status').order('name'),
         supabase.from('programs').select('id, code').order('name'),
       ]);
       if (projects.error) throw projects.error;
@@ -16,6 +16,7 @@ export function useProjectHoursCatalog() {
       return {
         projects: projects.data,
         programs: programs.data,
+        statusByProject: new Map(projects.data.map(project => [project.code, project.project_status || 'Realizace'])),
         programByProject: new Map(projects.data.map(project => [project.code, programCodes.get(project.program_id) || 'NA'])),
       };
     },
