@@ -68,7 +68,6 @@ export function ProjectHoursMatrix() {
     else all.push({ key: week.group, label: week.groupLabel, count: 1 });
     return all;
   }, []);
-  const projectName = (code: string) => catalog?.projects.find(p => p.code === code)?.name || code;
   const totalFor = (period: string) => codes.reduce((sum, code) => sum + (rows.get(code)?.get(period) || 0), 0);
   const summaries = useMemo(() => projectCapacitySummary(filteredData, engineers, periods.weeks.map(w => w.key), mode), [filteredData, engineers, periods, mode]);
   const metrics: { label: string; key: keyof CapacitySummary; unit: 'hours' | 'fte' | 'count' | 'percent' }[] = [
@@ -120,11 +119,11 @@ export function ProjectHoursMatrix() {
               </thead>
               <tbody>
                 {codes.map((code, index) => <tr key={code} className={index % 2 ? 'bg-muted/30' : 'bg-background'}>
-                  <th scope="row" className="border border-border p-1.5 text-left font-semibold sticky left-0 bg-inherit z-10 whitespace-nowrap">{projectName(code)}</th>
+                  <th scope="row" className="border border-border p-1.5 text-left font-semibold sticky left-0 bg-inherit z-10 whitespace-nowrap">{code}</th>
                   {columns.map(period => {
                     const hours = rows.get(code)?.get(period.key) || 0;
                     return <td key={period.key} className={`border border-border p-1 text-center ${period.current ? 'bg-warning/30 border-warning' : ''}`}>
-                      {hours > 0 ? <span data-project={code} className="project-hours-value inline-flex w-full justify-center rounded-md px-1.5 py-0.5 font-medium shadow-sm" title={`${projectName(code)} · ${period.label}: ${hoursLabel(hours)} MH`}>{hoursLabel(hours)}</span> : <span className="text-muted-foreground">–</span>}
+                      {hours > 0 ? <span data-project={code} className="project-hours-value inline-flex w-full justify-center rounded-md px-1.5 py-0.5 font-medium shadow-sm" title={`${code} · ${period.label}: ${hoursLabel(hours)} MH`}>{hoursLabel(hours)}</span> : <span className="text-muted-foreground">–</span>}
                     </td>;
                   })}
                   <td className="border border-border p-1.5 text-center font-bold bg-primary/5">{hoursLabel(columns.reduce((sum, p) => sum + (rows.get(code)?.get(p.key) || 0), 0))}</td>
