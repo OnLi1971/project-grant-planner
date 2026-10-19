@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/components/AuthProvider';
 import { PlanningEditor } from '@/components/PlanningEditor';
 import { ProjectAssignmentMatrix } from '@/components/ProjectAssignmentMatrix';
+import { ProjectHoursMatrix } from '@/components/ProjectHoursMatrix';
 import { RevenueOverview } from '@/components/RevenueOverview';
 import { UtilizationGrid } from '@/components/UtilizationGrid';
 import { CapacityTrendChart } from '@/components/CapacityTrendChart';
@@ -28,7 +29,7 @@ import { useNavigate } from 'react-router-dom';
 const Index = () => {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
-  const [outputView, setOutputView] = useState<'matrix' | 'revenue' | 'utilization' | 'capacity'>('matrix');
+  const [outputView, setOutputView] = useState<'matrix' | 'project-hours' | 'revenue' | 'utilization' | 'capacity'>('matrix');
   const [managementView, setManagementView] = useState<'projects' | 'licenses' | 'engineers' | 'migration' | 'knowledge'>('projects');
 
   // Show loading while checking auth
@@ -122,7 +123,10 @@ const Index = () => {
             
             <TabsContent value="outputs" className="mt-6">
               <Card className="p-3 shadow-card-custom">
-                <div className="flex gap-2 mb-4">
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <Button variant={outputView === 'project-hours' ? 'default' : 'outline'} onClick={() => setOutputView('project-hours')} className="flex items-center gap-2 text-sm h-8" size="sm">
+                    <Grid3x3 className="h-3.5 w-3.5" />Hodiny projektů
+                  </Button>
                   <Button
                     variant={outputView === 'matrix' ? 'default' : 'outline'}
                     onClick={() => setOutputView('matrix')}
@@ -164,6 +168,8 @@ const Index = () => {
               
               {outputView === 'matrix' ? (
                 <ProjectAssignmentMatrix defaultFilterMode="custom" defaultCustomViewId="58440758-41f8-438c-a8dd-cc03d38b3789" />
+              ) : outputView === 'project-hours' ? (
+                <ProjectHoursMatrix />
               ) : outputView === 'revenue' ? (
                 <RevenueOverview />
               ) : outputView === 'capacity' ? (

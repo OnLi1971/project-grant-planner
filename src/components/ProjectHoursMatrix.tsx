@@ -1,0 +1,113 @@
+import { useMemo, useState } from 'react';
+import { format, getISOWeek, getISOWeekYear, addWeeks } from 'date-fns';
+import { Grid3x3, History } from 'lucide-react';
+import { usePlanning } from '@/contexts/PlanningContext';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { projects } from '@/data/projectsData';
+import { getISOWeekMonday } from '@/utils/workingDays';
+import { monthKey, projectHours } from '@/utils/projectHours';
+
+const hoursLabel = (hours: number) => new Intl.NumberFormat('en-GB', { maximumFractionDigits: 1 }).format(hours);
+
+export function ProjectHoursMatrix() {
+  const { planningData } = usePlanning();
+  const [mode, setMode] = useState<'weeks' | 'months'>('weeks');
+  const [showHistory, setShowHistory] = useState(false);
+  const periods = useMemo(() => {
+    const now = new Date();
+    const currentMonday = getISOWeekMonday(getISOWeek(now), getISOWeekYear(now));
+    const start = addWeeks(currentMonday, showHistory ? -9 : 0);
+    const endYear = now.getFullYear() + 1;
+    const weeks: { key: string; label: string; sub: string; group: string; groupLabel: string; current: boolean }[] = [];
+    for (let monday = start; getISOWeekYear(monday) <= endYear; monday = addWeeks(monday, 1)) {
+      const thursday = new Date(monday); thursday.setDate(monday.getDate() + 3);
+      const friday = new Date(monday); friday.setDate(monday.getDate() + 4);
+      const week = getISOWeek(monday);
+      weeks.push({ key: `CW${String(week).padStart(2, '0')}-${getISOWeekYear(monday)}`, label: `CW${String(week).padStart(2, '0')}`, sub: `${format(monday, 'd.M.')}–${format(friday, 'd.M.')}`, group: monthKey(thursday), groupLabel: format(thursday, 'MMMM yyyy'), current: monday.getTime() === currentMonday.getTime() });
+    }
+    const months = new Map<string, { key: string; label: string; sub: string; current: boolean }>();
+    for (const week of weeks) {
+      const match = week.key.match(/CW(\d+)-(\d+)/);
+      if (!match) continue;
+      const monday = getISOWeekMonday(Number(match[1]), Number(match[2]));
+      for (let day = 0; day < 5; day++) {
+        const date = new Date(monday); date.setDate(date.getDate() + day);
+        const key = monthKey(date);
+        if (date.getFullYear() > endYear) continue;
+        months.set(key, { key, label: format(date, 'MMM yy'), sub: '', current: key === monthKey(now) });
+      }
+    }
+    return { weeks, months: [...months.values()] };
+  }, [showHistory]);
+  const rows = useMemo(() => projectHours(planningData, periods.weeks.map(w => w.key), mode), [planningData, periods, mode]);
+  const codes = [...rows.keys()].sort((a, b) => a.localeCompare(b));
+  const columns = mode === 'weeks' ? periods.weeks : periods.months;
+  const groups = periods.weeks.reduce<{ key: string; label: string; count: number }[]>((all, week) => {
+    const previous = all[all.length - 1];
+    if (previous?.key === week.group) previous.count++;
+    else all.push({ key: week.group, label: week.groupLabel, count: 1 });
+    return all;
+  }, []);
+  const projectName = (code: string) => projects.find(p => p.code === code)?.name || code;
+  const totalFor = (period: string) => codes.reduce((sum, code) => sum + (rows.get(code)?.get(period) || 0), 0);
+
+  return (
+    <div className="p-6 space-y-6">
+      <Card>
+        <CardHeader>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <CardTitle className="flex items-center gap-2 text-2xl font-bold"><Grid3x3 className="h-5 w-5 text-primary" />Project Hours Matrix</CardTitle>
+            <div className="flex items-center gap-2">
+              <Button variant={showHistory ? 'default' : 'outline'} size="sm" onClick={() => setShowHistory(v => !v)}><History className="mr-2 h-4 w-4" />Show history</Button>
+              <Select value={mode} onValueChange={value => { if (value === 'weeks' || value === 'months') setMode(value); }}>
+                <SelectTrigger className="w-32" aria-label="Period view"><SelectValue /></SelectTrigger>
+                <SelectContent><SelectItem value="weeks">Weeks</SelectItem><SelectItem value="months">Months</SelectItem></SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-auto max-h-[85vh]">
+            <table className="w-full border-collapse text-xs" aria-label="Project planned hours">
+              <thead className="sticky top-0 z-20">
+                {mode === 'weeks' && <tr className="h-12">
+                  <th className="border-2 border-border bg-background p-2 text-left sticky left-0 z-30 min-w-[200px] text-sm">Project</th>
+                  {groups.map((group, index) => <th key={group.key} colSpan={group.count} className={`border-2 border-border bg-background p-2 text-center text-base text-primary ${index ? 'border-l-4 border-l-primary/50' : ''}`}>{group.label}</th>)}
+                  <th className="border-2 border-border bg-background p-2 min-w-[90px] text-primary">Total [MH]</th>
+                </tr>}
+                <tr>
+                  <th className="border-2 border-border p-1.5 bg-background text-left sticky left-0 z-30 min-w-[200px]">{mode === 'months' ? 'Project' : ''}</th>
+                  {columns.map((period, index) => <th key={period.key} className={`border border-border p-1.5 text-center min-w-[90px] ${period.current ? 'bg-warning/30 border-warning' : 'bg-background'} ${mode === 'weeks' && index > 0 && periods.weeks[index - 1]?.group !== periods.weeks[index]?.group ? 'border-l-4 border-l-primary/50' : ''}`}>
+                    <div className="font-semibold text-primary">{period.label}</div>
+                    {period.sub && <div className="text-[10px] text-muted-foreground whitespace-nowrap">{period.sub}</div>}
+                  </th>)}
+                  <th className="border border-border p-1.5 bg-background min-w-[90px]">{mode === 'months' ? 'Total [MH]' : ''}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {codes.map((code, index) => <tr key={code} className={index % 2 ? 'bg-muted/30' : 'bg-background'}>
+                  <th scope="row" className="border border-border p-1.5 text-left font-semibold sticky left-0 bg-inherit z-10 whitespace-nowrap">{projectName(code)}</th>
+                  {columns.map(period => {
+                    const hours = rows.get(code)?.get(period.key) || 0;
+                    return <td key={period.key} className={`border border-border p-1 text-center ${period.current ? 'bg-warning/30 border-warning' : ''}`}>
+                      {hours > 0 ? <span data-project={code} className="project-hours-value inline-flex w-full justify-center rounded-md px-1.5 py-0.5 font-medium shadow-sm" title={`${projectName(code)} · ${period.label}: ${hoursLabel(hours)} MH`}>{hoursLabel(hours)}</span> : <span className="text-muted-foreground">–</span>}
+                    </td>;
+                  })}
+                  <td className="border border-border p-1.5 text-center font-bold bg-primary/5">{hoursLabel(columns.reduce((sum, p) => sum + (rows.get(code)?.get(p.key) || 0), 0))}</td>
+                </tr>)}
+                {codes.length === 0 && <tr><td colSpan={columns.length + 2} className="p-6 text-muted-foreground">No planned project hours in this period.</td></tr>}
+                <tr className="bg-primary/5 border-t-2 border-primary/30 font-bold">
+                  <th className="border border-border p-2 text-left sticky left-0 bg-background z-10">Total planned hours [MH]</th>
+                  {columns.map(period => <td key={period.key} className="border border-border p-2 text-center" data-period={period.key}>{hoursLabel(totalFor(period.key))}</td>)}
+                  <td className="border border-border p-2 text-center">{hoursLabel(columns.reduce((sum, p) => sum + totalFor(p.key), 0))}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

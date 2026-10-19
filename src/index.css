@@ -48,6 +48,22 @@ All colors MUST be HSL.
     --planning-cell: 0 0% 100%;
     --planning-cell-hover: 213 100% 97%;
     --planning-stripe: 214 100% 98%;
+    --project-emu: 217 91% 60%;
+    --project-tram: 221 83% 53%;
+    --project-mainz: 213 94% 68%;
+    --project-kassel: 224 76% 48%;
+    --project-blava: 189 94% 43%;
+    --project-fem: 212 96% 78%;
+    --project-pozar: 239 84% 67%;
+    --project-jigs: 199 89% 48%;
+    --project-tram-hs: 226 71% 40%;
+    --project-nuvia: 142 76% 36%;
+    --project-wabtec: 25 95% 53%;
+    --project-safran: 271 91% 65%;
+    --project-bucher: 26 90% 37%;
+    --project-airbus: 175 84% 32%;
+    --project-unknown: 220 9% 46%;
+    --project-label: 0 0% 100%;
     
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(213 88% 45%), hsl(213 100% 65%));
@@ -134,6 +150,22 @@ All colors MUST be HSL.
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
+
+.project-hours-value { background: hsl(var(--project-tone, var(--project-unknown))); color: hsl(var(--project-label)); }
+.project-hours-value[data-project="ST_EMU_INT"] { --project-tone: var(--project-emu); }
+.project-hours-value[data-project="ST_TRAM_INT"] { --project-tone: var(--project-tram); }
+.project-hours-value[data-project="ST_MAINZ"] { --project-tone: var(--project-mainz); }
+.project-hours-value[data-project="ST_KASSEL"] { --project-tone: var(--project-kassel); }
+.project-hours-value[data-project="ST_BLAVA"] { --project-tone: var(--project-blava); }
+.project-hours-value[data-project="ST_FEM"] { --project-tone: var(--project-fem); color: hsl(var(--project-tram-hs)); }
+.project-hours-value[data-project="ST_POZAR"] { --project-tone: var(--project-pozar); }
+.project-hours-value[data-project="ST_JIGS"] { --project-tone: var(--project-jigs); }
+.project-hours-value[data-project="ST_TRAM_HS"] { --project-tone: var(--project-tram-hs); }
+.project-hours-value[data-project^="NU_"] { --project-tone: var(--project-nuvia); }
+.project-hours-value[data-project^="WA_"] { --project-tone: var(--project-wabtec); }
+.project-hours-value[data-project^="SAF_"] { --project-tone: var(--project-safran); }
+.project-hours-value[data-project^="BUCH_"] { --project-tone: var(--project-bucher); }
+.project-hours-value[data-project^="AIRB_"] { --project-tone: var(--project-airbus); }
 
 @layer base {
   * {
