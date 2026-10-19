@@ -5,7 +5,7 @@ import { projectWeekDays } from './projectHoursPeriods';
 
 export interface CapacitySummary {
   freeHours: number; freeFte: number; leaveHours: number; leaveFte: number;
-  maxHours: number; realHours: number; engineerCount: number; totalFte: number; utilization: number;
+  maxHours: number; realHours: number; engineerCount: number; maxEngineerCount: number; totalFte: number; utilization: number;
 }
 const normalize = (text: string) => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim();
 const identity = (name: string) => normalize(name);
