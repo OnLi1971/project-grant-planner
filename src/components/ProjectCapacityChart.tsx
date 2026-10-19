@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from 'recharts';
+import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, CartesianGrid, LabelList } from 'recharts';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { EngineerInfo, PlanningEntry } from '@/types/planning';
@@ -15,46 +15,90 @@ interface Props {
   statusByProject: Map<string, string>;
 }
 
-/** Monthly FTE demand split into Realizace / Presales vs. max productive engineer count. */
+const KNOWN: Record<string, string> = {
+  ST_EMU_INT: '--project-emu', ST_TRAM_INT: '--project-tram', ST_MAINZ: '--project-mainz', ST_KASSEL: '--project-kassel',
+  ST_BLAVA: '--project-blava', ST_FEM: '--project-fem', ST_POZAR: '--project-pozar', ST_JIGS: '--project-jigs', ST_TRAM_HS: '--project-tram-hs',
+};
+const PREFIX: [string, string][] = [['NU_', '--project-nuvia'], ['WA_', '--project-wabtec'], ['SAF_', '--project-safran'], ['BUCH_', '--project-bucher'], ['AIRB_', '--project-airbus']];
+const HUES = [190, 160, 205, 40, 220, 130, 280, 10, 330, 60, 100, 250];
+const colorFor = (code: string, i: number) => {
+  const v = KNOWN[code] || PREFIX.find(([p]) => code.startsWith(p))?.[1];
+  return v ? `hsl(var(${v}))` : `hsl(${HUES[i % HUES.length]} 70% 55%)`;
+};
+
+/** Monthly FTE per project (Delivery + Presales stacked) vs. max productive engineer count. */
 export function ProjectCapacityChart({ entries, engineers, weeks, demand, statusByProject }: Props) {
-  const data = useMemo(() => {
+  const { data, projects } = useMemo(() => {
     const current = monthKey(new Date());
     const hours = projectHours(entries, weeks, 'months');
     const plan = projectDemand(demand, weeks, 'months');
     const summary = projectCapacitySummary(entries, engineers, weeks, 'months');
     const months = [...summary.keys()].filter(m => m >= current).sort();
+    const codes = [...new Set([...hours.keys(), ...plan.keys()])];
     const isPresales = (code: string) => (statusByProject.get(code) || '').toLowerCase().includes('pre');
-    return months.map(m => {
+    const totals = new Map<string, number>();
+    const data = months.map(m => {
       const s = summary.get(m)!;
       const fteHours = s.maxEngineerCount ? s.maxHours / s.maxEngineerCount : 0;
-      let real = 0, pre = 0;
-      const add = (code: string, h: number) => { if (isPresales(code)) pre += h; else real += h; };
-      hours.forEach((byMonth, code) => add(code, byMonth.get(m) || 0));
-      plan.forEach((byMonth, code) => add(code, byMonth.get(m) || 0));
-      const toFte = (h: number) => (fteHours ? Math.round((h / fteHours) * 10) / 10 : 0);
-      const [y, mo] = m.split('-').map(Number);
-      return { month: format(new Date(y, mo - 1, 1), 'MMM yy'), realizace: toFte(real), presales: toFte(pre), capacity: s.maxEngineerCount };
+      const row: Record<string, number | string> = { month: format(new Date(Number(m.slice(0, 4)), Number(m.slice(5, 7)) - 1, 1), 'MMM yy'), capacity: s.maxEngineerCount };
+      let total = 0;
+      codes.forEach(code => {
+        const h = (hours.get(code)?.get(m) || 0) + (plan.get(code)?.get(m) || 0);
+        const fte = fteHours ? Math.round((h / fteHours) * 10) / 10 : 0;
+        if (fte > 0) { row[code] = fte; total += fte; totals.set(code, (totals.get(code) || 0) + fte); }
+      });
+      row.total = Math.round(total * 10) / 10;
+      return row;
     });
+    const used = codes.filter(c => totals.get(c));
+    const ordered = [...used.filter(c => !isPresales(c)), ...used.filter(isPresales)]
+      .map((code, i) => ({ code, presales: isPresales(code), color: colorFor(code, i) }));
+    return { data, projects: ordered };
   }, [entries, engineers, weeks, demand, statusByProject]);
+
+  const renderTooltip = ({ active, payload, label }: { active?: boolean; payload?: { payload: Record<string, number> }[]; label?: string }) => {
+    if (!active || !payload?.length) return null;
+    const row = payload[0].payload;
+    const group = (presales: boolean) => projects.filter(p => p.presales === presales && row[p.code]).sort((a, b) => row[b.code] - row[a.code]);
+    const block = (title: string, items: typeof projects) => {
+      if (!items.length) return null;
+      const sum = items.reduce((s, p) => s + row[p.code], 0);
+      return <div className="mt-2">
+        <div className="text-xs font-semibold text-muted-foreground mb-1">{title} ({sum.toFixed(1)} FTE)</div>
+        {items.map(p => <div key={p.code} className="flex items-center justify-between gap-6 text-xs">
+          <span className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full" style={{ background: p.color, opacity: p.presales ? 0.6 : 1 }} />{p.code}</span>
+          <span className="font-mono">{row[p.code].toFixed(1)} FTE</span>
+        </div>)}
+      </div>;
+    };
+    return <div className="rounded-md border border-border bg-popover p-3 text-popover-foreground shadow-lg min-w-[220px]">
+      <div className="font-bold border-b border-border pb-1">Month: {label}</div>
+      {block('DELIVERY', group(false))}
+      {block('PRESALES', group(true))}
+      <div className="mt-2 border-t border-border pt-1 flex justify-between text-xs font-bold"><span>Total:</span><span className="font-mono">{Number(row.total).toFixed(1)} FTE</span></div>
+      <div className="flex justify-between text-xs text-destructive"><span>Capacity:</span><span className="font-mono">{row.capacity} FTE</span></div>
+    </div>;
+  };
 
   return (
     <Card>
       <CardHeader><CardTitle className="text-xl">Capacity vs. demand [FTE]</CardTitle></CardHeader>
       <CardContent>
-        <div className="h-80 w-full">
+        <div className="h-96 w-full">
           <ResponsiveContainer>
-            <ComposedChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+            <ComposedChart data={data} margin={{ top: 20, right: 10, left: -10, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
               <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={11} />
               <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} />
-              <Tooltip contentStyle={{ background: 'hsl(var(--popover))', border: '1px solid hsl(var(--border))', color: 'hsl(var(--popover-foreground))' }} />
-              <Legend />
-              <Bar dataKey="realizace" name="Realizace" stackId="a" fill="hsl(var(--primary))" />
-              <Bar dataKey="presales" name="Presales" stackId="a" fill="hsl(var(--warning))" radius={[4, 4, 0, 0]} />
+              <Tooltip content={renderTooltip as never} cursor={{ fill: 'hsl(var(--muted) / 0.3)' }} />
+              {projects.map((p, i) => <Bar key={p.code} dataKey={p.code} stackId="a" fill={p.color} fillOpacity={p.presales ? 0.55 : 1} stroke={p.presales ? p.color : undefined} strokeDasharray={p.presales ? '3 2' : undefined}>
+                {i === projects.length - 1 && <LabelList dataKey="total" position="top" fill="hsl(var(--foreground))" fontSize={11} fontWeight={700} />}
+              </Bar>)}
               <Line dataKey="capacity" name="Max productive engineering count" type="monotone" stroke="hsl(var(--destructive))" strokeWidth={3} dot={{ r: 3 }} />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
+        <p className="mt-2 text-xs text-muted-foreground">Plné sloupce = Delivery, průhledné s čárkovaným okrajem = Presales, červená čára = Max productive engineering count.</p>
       </CardContent>
     </Card>
   );
