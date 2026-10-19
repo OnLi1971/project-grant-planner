@@ -517,6 +517,21 @@ export const ProjectManagement = () => {
     }
   };
 
+  const saveMonthlyPlan = async (projectId: string) => {
+    try {
+      await supabase.from('project_monthly_plan').delete().eq('project_id', projectId);
+      const rows = formData.monthlyPlan
+        .filter(m => m.hours > 0)
+        .map(m => ({ project_id: projectId, month: `${m.month}-01`, hours: m.hours }));
+      if (rows.length > 0) {
+        const { error } = await supabase.from('project_monthly_plan').insert(rows);
+        if (error) console.error('Error saving monthly plan:', error);
+      }
+    } catch (error) {
+      console.error('Error saving monthly plan:', error);
+    }
+  };
+
   const saveProjectLicenses = async (projectId: string) => {
     try {
       // Delete existing project licenses
@@ -673,7 +688,27 @@ export const ProjectManagement = () => {
         presalesEndDate: (project as any).presales_end_date ? normalizeYearMonth((project as any).presales_end_date) : '',
         parentOpportunity: (project as any).parent_opportunity || '',
         crmCreationDate: (project as any).crm_creation_date || '',
-        opportunityNumber: (project as any).opportunity_number || ''
+        opportunityNumber: (project as any).opportunity_number || '',
+        planStart: '',
+        planEnd: '',
+        monthlyPlan: []
+      });
+
+      // Load monthly hour plan
+      const { data: planRows } = await supabase
+        .from('project_monthly_plan')
+        .select('month, hours')
+        .eq('project_id', project.id)
+        .order('month');
+      if (planRows && planRows.length > 0) {
+        const monthlyPlan = planRows.map(r => ({ month: r.month.slice(0, 7), hours: r.hours }));
+        setFormData(prev => ({
+          ...prev,
+          monthlyPlan,
+          planStart: monthlyPlan[0].month,
+          planEnd: monthlyPlan[monthlyPlan.length - 1].month
+        }));
+      }
       });
       setIsAddDialogOpen(true);
     } catch (error) {
