@@ -5,7 +5,9 @@ import { usePlanning } from '@/contexts/PlanningContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { projects } from '@/data/projectsData';
+import { projects, programs } from '@/data/projectsData';
+import { ProjectHoursFilter, type ProjectHoursFilterValue } from '@/components/ProjectHoursFilter';
+import { filterProjectHoursEntries } from '@/utils/projectHoursFilter';
 import { getISOWeekMonday } from '@/utils/workingDays';
 import { monthKey, projectHours } from '@/utils/projectHours';
 import { projectCapacitySummary, type CapacitySummary } from '@/utils/projectCapacitySummary';
@@ -16,6 +18,8 @@ export function ProjectHoursMatrix() {
   const { planningData, engineers } = usePlanning();
   const [mode, setMode] = useState<'weeks' | 'months'>('weeks');
   const [showHistory, setShowHistory] = useState(false);
+  const [filter, setFilter] = useState<ProjectHoursFilterValue>({ mode: 'program', programs: ['All'], engineers: [] });
+  const engineerNames = useMemo(() => [...new Set([...engineers.map(e => e.display_name), ...planningData.filter(e => !e.isSecondary).map(e => e.konstrukter)])].sort((a, b) => a.localeCompare(b)), [engineers, planningData]);
   const periods = useMemo(() => {
     const now = new Date();
     const currentMonday = getISOWeekMonday(getISOWeek(now), getISOWeekYear(now));
@@ -42,7 +46,11 @@ export function ProjectHoursMatrix() {
     }
     return { weeks, months: [...months.values()] };
   }, [showHistory]);
-  const rows = useMemo(() => projectHours(planningData, periods.weeks.map(w => w.key), mode), [planningData, periods, mode]);
+  const filteredData = useMemo(() => {
+    const mapping = new Map(projects.map(project => [project.code, programs.find(p => p.id === project.programId)?.code || 'NA']));
+    return filterProjectHoursEntries(planningData, periods.weeks.map(w => w.key), filter, mapping);
+  }, [planningData, periods, filter]);
+  const rows = useMemo(() => projectHours(filteredData, periods.weeks.map(w => w.key), mode), [filteredData, periods, mode]);
   const codes = [...rows.keys()].sort((a, b) => a.localeCompare(b));
   const columns = mode === 'weeks' ? periods.weeks : periods.months;
   const groups = periods.weeks.reduce<{ key: string; label: string; count: number }[]>((all, week) => {
@@ -53,7 +61,7 @@ export function ProjectHoursMatrix() {
   }, []);
   const projectName = (code: string) => projects.find(p => p.code === code)?.name || code;
   const totalFor = (period: string) => codes.reduce((sum, code) => sum + (rows.get(code)?.get(period) || 0), 0);
-  const summaries = useMemo(() => projectCapacitySummary(planningData, engineers, periods.weeks.map(w => w.key), mode), [planningData, engineers, periods, mode]);
+  const summaries = useMemo(() => projectCapacitySummary(filteredData, engineers, periods.weeks.map(w => w.key), mode), [filteredData, engineers, periods, mode]);
   const metrics: { label: string; key: keyof CapacitySummary; unit: 'hours' | 'fte' | 'count' | 'percent' }[] = [
     { label: 'Free capacity [MH]', key: 'freeHours', unit: 'hours' },
     { label: 'Free capacity [FTE]', key: 'freeFte', unit: 'fte' },
@@ -83,6 +91,7 @@ export function ProjectHoursMatrix() {
           </div>
         </CardHeader>
         <CardContent>
+          <ProjectHoursFilter value={filter} onChange={setFilter} names={engineerNames} programs={programs.map(p => p.code)} />
           <div className="overflow-auto max-h-[85vh]">
             <table className="w-full border-collapse text-xs" aria-label="Project planned hours">
               <thead className="sticky top-0 z-20">
