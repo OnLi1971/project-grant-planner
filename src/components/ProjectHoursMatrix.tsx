@@ -71,8 +71,7 @@ export function ProjectHoursMatrix() {
     else all.push({ key: week.group, label: week.groupLabel, count: 1 });
     return all;
   }, []);
-  const totalFor = (period: string) => codes.reduce((sum, code) => sum + (rows.get(code)?.get(period) || 0), 0);
-  const summaries = useMemo(() => projectCapacitySummary(filteredData, engineers, periods.weeks.map(w => w.key), mode), [filteredData, engineers, periods, mode]);
+  const baseSummaries = useMemo(() => projectCapacitySummary(filteredData, engineers, periods.weeks.map(w => w.key), mode), [filteredData, engineers, periods, mode]);
   const demandRows = useMemo(() => {
     if (!monthlyDemand || !catalog) return new Map<string, Map<string, number>>();
     let demand = monthlyDemand;
@@ -83,13 +82,19 @@ export function ProjectHoursMatrix() {
   }, [monthlyDemand, catalog, filter, periods, mode]);
   const demandCodes = [...demandRows.keys()].sort((a, b) => a.localeCompare(b));
   const demandFor = (period: string) => demandCodes.reduce((sum, code) => sum + (demandRows.get(code)?.get(period) || 0), 0);
-  const balanceFor = (period: string) => {
-    const summary = summaries.get(period);
-    if (!summary) return 0;
-    const unplanned = Math.max(0, demandFor(period) - summary.realHours);
-    const fteHours = summary.maxEngineerCount ? summary.maxHours / summary.maxEngineerCount : 0;
-    return summary.freeFte - (fteHours ? unplanned / fteHours : 0);
-  };
+  // Plan (demand) hours count as if they were a real order.
+  const summaries = useMemo(() => {
+    const out = new Map<string, CapacitySummary>();
+    baseSummaries.forEach((s, period) => {
+      const d = demandCodes.reduce((sum, code) => sum + (demandRows.get(code)?.get(period) || 0), 0);
+      const fteHours = s.maxEngineerCount ? s.maxHours / s.maxEngineerCount : 0;
+      const realHours = s.realHours + d;
+      out.set(period, { ...s, realHours, freeHours: s.freeHours - d, freeFte: s.freeFte - (fteHours ? d / fteHours : 0), totalFte: s.totalFte + (fteHours ? d / fteHours : 0), utilization: s.maxHours ? (realHours / s.maxHours) * 100 : 0 });
+    });
+    return out;
+  }, [baseSummaries, demandRows]);
+  const totalFor = (period: string) => codes.reduce((sum, code) => sum + (rows.get(code)?.get(period) || 0), 0) + demandFor(period);
+  const balanceFor = (period: string) => summaries.get(period)?.freeFte || 0;
   const metrics: { label: string; key: keyof CapacitySummary; unit: 'hours' | 'fte' | 'count' | 'percent' }[] = [
     { label: 'Free capacity [MH]', key: 'freeHours', unit: 'hours' },
     { label: 'Free capacity [FTE]', key: 'freeFte', unit: 'fte' },
@@ -150,12 +155,12 @@ export function ProjectHoursMatrix() {
                   <td className="border border-border p-1.5 text-center font-bold bg-primary/5">{hoursLabel(columns.reduce((sum, p) => sum + (rows.get(code)?.get(p.key) || 0), 0))}</td>
                 </tr>)}
                 {codes.length === 0 && <tr><td colSpan={columns.length + 2} className="p-6 text-muted-foreground">{catalogLoading ? 'Loading projects…' : catalogError ? 'Unable to load projects.' : 'No planned project hours in this period.'}</td></tr>}
-                {demandCodes.map(code => <tr key={`demand-${code}`} className="bg-muted/50 italic">
+                {demandCodes.map(code => <tr key={`demand-${code}`} className="italic">
                   <th scope="row" className="border border-border p-1.5 text-left font-medium sticky left-0 bg-background z-10 whitespace-nowrap">{code} · plan</th>
                   {columns.map(period => {
                     const hours = demandRows.get(code)?.get(period.key) || 0;
                     return <td key={period.key} className={`border border-border p-1 text-center ${period.current ? 'bg-warning/30 border-warning' : ''}`}>
-                      {hours > 0 ? <span className="inline-flex w-full justify-center rounded-md px-1.5 py-0.5 text-muted-foreground" title={`${code} demand · ${period.label}: ${hoursLabel(hours)} MH`}>{hoursLabel(hours)}</span> : <span className="text-muted-foreground">–</span>}
+                      {hours > 0 ? <span data-project={code} className="project-plan-value inline-flex w-full justify-center rounded-md px-1.5 py-0.5 font-medium" title={`${code} demand · ${period.label}: ${hoursLabel(hours)} MH`}>{hoursLabel(hours)}</span> : <span className="text-muted-foreground">–</span>}
                     </td>;
                   })}
                   <td className="border border-border p-1.5 text-center font-semibold">{hoursLabel(columns.reduce((sum, p) => sum + (demandRows.get(code)?.get(p.key) || 0), 0))}</td>
