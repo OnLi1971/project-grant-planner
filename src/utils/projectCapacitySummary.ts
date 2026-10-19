@@ -43,6 +43,7 @@ export function projectCapacitySummary(entries: PlanningEntry[], engineers: Engi
       }
       for (const [period, days] of targets) {
         const bucket = buckets.get(period) || { people: new Map() };
+        buckets.set(period, bucket);
         const end = engineer?.end_date ? new Date(`${engineer.end_date}T00:00:00`).getTime() : Infinity;
         if (monday.getTime() > end || monday.getTime() >= (departed.get(name) ?? Infinity)) continue;
         const entry = byPersonWeek.get(`${name}|${week}`);
@@ -56,7 +57,6 @@ export function projectCapacitySummary(entries: PlanningEntry[], engineers: Engi
         person.real += raw * (mode === 'weeks' ? 1 : workingDays ? days / workingDays : 0);
         person.leave += leaveHours;
         bucket.people.set(name, person);
-        buckets.set(period, bucket);
       }
     }
   }

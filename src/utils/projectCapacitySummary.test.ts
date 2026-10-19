@@ -34,7 +34,7 @@ test('monthly raw productive hours equal project row totals and secondary is cou
 });
 test('missing weeks stay free, departed engineers are excluded', () => {
   const stats = projectCapacitySummary([base], [{ id: 'a', display_name: 'A', slug: 'a', status: 'active', end_date: '2026-10-30' }], ['CW45-2026'], 'weeks').get('CW45-2026');
-  assert.equal(stats?.maxHours || 0, 0);
+  assert.equal(stats?.maxHours, 0);
   const active = projectCapacitySummary([base], [], ['CW45-2026'], 'weeks').get('CW45-2026');
   assert.equal(active?.freeHours, 36);
 });

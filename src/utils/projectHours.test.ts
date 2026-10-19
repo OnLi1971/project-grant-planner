@@ -28,8 +28,8 @@ describe('project planning hours', () => {
     assert.equal(rows.get('ST_JIGS')?.get('2026-12'), 20);
     assert.equal(rows.get('ST_JIGS')?.get('2027-01'), 0);
   });
-  test('a holiday on May 31 2027 leaves the whole CW22 allocation in June', () => {
-    // April 30–May 4 2026: May 1 is a holiday, so April gets half the week.
+  test('May 1 2026 holiday keeps all CW18 hours in April', () => {
+    // April 27–May 1: the only May date is a holiday.
     const rows = projectHours([{ ...entry, cw: 'CW18-2026' }], ['CW18-2026'], 'months');
     assert.equal(rows.get('ST_JIGS')?.get('2026-04'), 20);
     assert.equal(rows.get('ST_JIGS')?.get('2026-05'), 0);
