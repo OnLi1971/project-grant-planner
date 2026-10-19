@@ -5,7 +5,7 @@ import { projectWeekDays } from './projectHoursPeriods';
 
 export interface CapacitySummary {
   freeHours: number; freeFte: number; leaveHours: number; leaveFte: number;
-  maxHours: number; realHours: number; engineerCount: number; totalFte: number; utilization: number;
+  maxHours: number; realHours: number; engineerCount: number; maxEngineerCount: number; totalFte: number; utilization: number;
 }
 const normalize = (text: string) => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim();
 const identity = (name: string) => normalize(name);
@@ -71,7 +71,7 @@ export function projectCapacitySummary(entries: PlanningEntry[], engineers: Engi
     const freeFte = people.reduce((sum, p) => sum + (p.capacity ? Math.max(0, p.max - p.real) / p.capacity : 0), 0);
     const leaveFte = people.reduce((sum, p) => sum + (p.capacity ? p.leave / p.capacity : 0), 0);
     const totalFte = people.reduce((sum, p) => sum + (p.capacity ? p.real / p.capacity : 0), 0);
-    result.set(period, { freeHours, freeFte, leaveHours, leaveFte, maxHours, realHours, engineerCount: people.filter(p => p.real > 0).length, totalFte, utilization: maxHours ? cappedReal / maxHours * 100 : 0 });
+    result.set(period, { freeHours, freeFte, leaveHours, leaveFte, maxHours, realHours, engineerCount: people.filter(p => p.real > 0).length, maxEngineerCount: people.filter(p => p.capacity > 0).length, totalFte, utilization: maxHours ? cappedReal / maxHours * 100 : 0 });
   }
   return result;
 }
