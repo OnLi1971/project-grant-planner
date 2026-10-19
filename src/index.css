@@ -57,6 +57,8 @@ All colors MUST be HSL.
     --project-pozar: 239 84% 67%;
     --project-jigs: 199 89% 48%;
     --project-tram-hs: 226 71% 40%;
+    --project-elektro: 201 96% 32%;
+    --project-st: 224 64% 33%;
     --project-nuvia: 142 76% 36%;
     --project-wabtec: 25 95% 53%;
     --project-safran: 271 91% 65%;
@@ -152,6 +154,8 @@ All colors MUST be HSL.
 }
 
 .project-hours-value { background: hsl(var(--project-tone, var(--project-unknown))); color: hsl(var(--project-label)); }
+.project-hours-value[data-project^="ST_"] { --project-tone: var(--project-st); }
+.project-hours-value[data-project="ST_ELEKTRO"] { --project-tone: var(--project-elektro); }
 .project-hours-value[data-project="ST_EMU_INT"] { --project-tone: var(--project-emu); }
 .project-hours-value[data-project="ST_TRAM_INT"] { --project-tone: var(--project-tram); }
 .project-hours-value[data-project="ST_MAINZ"] { --project-tone: var(--project-mainz); }
@@ -176,6 +180,6 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }.project-plan-value { background: hsl(var(--project-tone, var(--project-unknown)) / 0.55); color: hsl(var(--project-label)); border: 1px dashed hsl(var(--project-label) / 0.6); }
-.project-plan-value[data-project^="ST_"] { --project-tone: var(--project-emu); }
+.project-plan-value[data-project^="ST_"] { --project-tone: var(--project-st); }
 .project-plan-value[data-project^="NU_"] { --project-tone: var(--project-nuvia); }
 .project-plan-value[data-project^="WA_"] { --project-tone: var(--project-wabtec); }
