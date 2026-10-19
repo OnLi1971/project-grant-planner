@@ -1,5 +1,5 @@
 import type { PlanningEntry } from '../types/planning';
-import { getISOWeekMonday } from './workingDays';
+import { projectWeekDays } from './projectHoursPeriods';
 
 const excluded = new Set(['', 'FREE', 'OVER', 'DEPARTED', 'DOVOLENA', 'NEMOC', 'VACATION', 'SICK LEAVE']);
 export const isHoursProject = (code: string) => !excluded.has(code.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toUpperCase());
@@ -17,12 +17,11 @@ export function projectHours(entries: PlanningEntry[], weeks: string[], mode: 'w
     const targets = new Map<string, number>();
     if (mode === 'weeks') targets.set(key, 1);
     else {
-      const monday = getISOWeekMonday(Number(match[1]), Number(match[2]));
-      for (let i = 0; i < 5; i++) {
-        const date = new Date(monday);
-        date.setDate(date.getDate() + i);
+      const days = projectWeekDays(key, entry.konstrukter);
+      const workingDays = days.filter(day => day.working).length;
+      for (const { date, working } of days) {
         const month = monthKey(date);
-        targets.set(month, (targets.get(month) || 0) + 1 / 5);
+        targets.set(month, (targets.get(month) || 0) + (working && workingDays ? 1 / workingDays : 0));
       }
     }
     const allocations: [string, number][] = [[entry.projekt, entry.mhTyden || 0], [entry.projekt2 || '', entry.mhTyden2 || 0]];

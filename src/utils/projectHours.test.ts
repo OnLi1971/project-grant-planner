@@ -13,8 +13,8 @@ describe('project planning hours', () => {
   });
   test('splits cross-month week while conserving planned hours', () => {
     const rows = projectHours([entry], ['CW40-2026'], 'months');
-    assert.ok(Math.abs((rows.get('ST_JIGS')?.get('2026-09') || 0) - 12) < 0.0001);
-    assert.equal(rows.get('ST_JIGS')?.get('2026-10'), 8);
+    assert.equal(rows.get('ST_JIGS')?.get('2026-09'), 10);
+    assert.equal(rows.get('ST_JIGS')?.get('2026-10'), 10);
   });
   test('excludes non-project activities', () => {
     const rows = projectHours([{ ...entry, projekt: 'DOVOLENÁ', mhTyden: 40, projekt2: null }], ['CW40-2026'], 'weeks');
@@ -22,5 +22,16 @@ describe('project planning hours', () => {
   });
   test('excludes hours outside the selected period', () => {
     assert.equal(projectHours([entry], ['CW41-2026'], 'weeks').size, 0);
+  });
+  test('CW53 2026 assigns no planned hours to the January 1 2027 holiday', () => {
+    const rows = projectHours([{ ...entry, cw: 'CW53-2026' }], ['CW53-2026'], 'months');
+    assert.equal(rows.get('ST_JIGS')?.get('2026-12'), 20);
+    assert.equal(rows.get('ST_JIGS')?.get('2027-01'), 0);
+  });
+  test('May 1 2026 holiday keeps all CW18 hours in April', () => {
+    // April 27–May 1: the only May date is a holiday.
+    const rows = projectHours([{ ...entry, cw: 'CW18-2026' }], ['CW18-2026'], 'months');
+    assert.equal(rows.get('ST_JIGS')?.get('2026-04'), 20);
+    assert.equal(rows.get('ST_JIGS')?.get('2026-05'), 0);
   });
 });
