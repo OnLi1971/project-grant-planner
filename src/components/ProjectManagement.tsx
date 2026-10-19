@@ -714,7 +714,6 @@ export const ProjectManagement = () => {
           planEnd: monthlyPlan[monthlyPlan.length - 1].month
         }));
       }
-      });
       setIsAddDialogOpen(true);
     } catch (error) {
       console.error('Error loading project for edit:', error);
