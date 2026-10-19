@@ -150,6 +150,16 @@ export function ProjectHoursMatrix() {
                   <td className="border border-border p-1.5 text-center font-bold bg-primary/5">{hoursLabel(columns.reduce((sum, p) => sum + (rows.get(code)?.get(p.key) || 0), 0))}</td>
                 </tr>)}
                 {codes.length === 0 && <tr><td colSpan={columns.length + 2} className="p-6 text-muted-foreground">{catalogLoading ? 'Loading projects…' : catalogError ? 'Unable to load projects.' : 'No planned project hours in this period.'}</td></tr>}
+                {demandCodes.map(code => <tr key={`demand-${code}`} className="bg-muted/50 italic">
+                  <th scope="row" className="border border-border p-1.5 text-left font-medium sticky left-0 bg-background z-10 whitespace-nowrap">{code} · plan</th>
+                  {columns.map(period => {
+                    const hours = demandRows.get(code)?.get(period.key) || 0;
+                    return <td key={period.key} className={`border border-border p-1 text-center ${period.current ? 'bg-warning/30 border-warning' : ''}`}>
+                      {hours > 0 ? <span className="inline-flex w-full justify-center rounded-md px-1.5 py-0.5 text-muted-foreground" title={`${code} demand · ${period.label}: ${hoursLabel(hours)} MH`}>{hoursLabel(hours)}</span> : <span className="text-muted-foreground">–</span>}
+                    </td>;
+                  })}
+                  <td className="border border-border p-1.5 text-center font-semibold">{hoursLabel(columns.reduce((sum, p) => sum + (demandRows.get(code)?.get(p.key) || 0), 0))}</td>
+                </tr>)}
                 <tr className="bg-primary/5 border-t-2 border-primary/30 font-bold">
                   <th className="border border-border p-2 text-left sticky left-0 bg-background z-10">Total planned hours [MH]</th>
                   {columns.map(period => <td key={period.key} className="border border-border p-2 text-center" data-period={period.key}>{hoursLabel(totalFor(period.key))}</td>)}
