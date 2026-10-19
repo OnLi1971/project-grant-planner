@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { distribute, rebalance, type DistributionProfile } from '@/utils/budgetDistribution';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -122,11 +123,12 @@ export const ProjectManagement = () => {
       months.push(`${y}-${String(m).padStart(2, '0')}`);
       m++; if (m > 12) { m = 1; y++; }
     }
-    const base = months.length ? Math.floor(budget / months.length) : 0;
-    let remainder = months.length ? budget - base * months.length : 0;
-    return months.map(month => ({ month, hours: base + (remainder-- > 0 ? 1 : 0) }));
+    return distribute(budget, months, distProfile);
   };
+  const [distProfile, setDistProfile] = useState<DistributionProfile>('even');
+  const [lockedMonths, setLockedMonths] = useState<Set<string>>(new Set());
   const [showDeadProjects, setShowDeadProjects] = useState(false);
+
 
   const presalesPhases = [
     { value: 'P0', label: 'P0 - Opportunity Identified' },
@@ -1076,40 +1078,98 @@ export const ProjectManagement = () => {
                         }}
                       />
                     </div>
-                    <div className="flex items-end">
+                    <div className="flex items-end gap-2">
+                      <select
+                        className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+                        value={distProfile}
+                        onChange={(e) => setDistProfile(e.target.value as DistributionProfile)}
+                      >
+                        <option value="even">Rovnoměrně</option>
+                        <option value="ramp-up">Pomalý rozjezd</option>
+                        <option value="s-curve">S-křivka</option>
+                        <option value="ramp-down">Útlum na konci</option>
+                      </select>
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
-                        onClick={() => setFormData({ ...formData, monthlyPlan: prefillMonthlyPlan(formData.planStart, formData.planEnd, formData.budget) })}
+                        onClick={() => { setLockedMonths(new Set()); setFormData({ ...formData, monthlyPlan: prefillMonthlyPlan(formData.planStart, formData.planEnd, formData.budget) }); }}
                       >
                         Rozdělit budget
                       </Button>
                     </div>
                   </div>
+                  {formData.monthlyPlan.length > 0 && (() => {
+                    const maxH = Math.max(1, ...formData.monthlyPlan.map(m => m.hours));
+                    return (
+                      <div className="flex items-end gap-1 h-16 border-b border-border">
+                        {formData.monthlyPlan.map(m => (
+                          <div key={m.month} title={`${m.month}: ${m.hours} h`} className="flex-1 bg-primary/70 rounded-t" style={{ height: `${(m.hours / maxH) * 100}%` }} />
+                        ))}
+                      </div>
+                    );
+                  })()}
                   {formData.monthlyPlan.length > 0 && (
                     <div className="grid grid-cols-3 gap-2 max-h-40 overflow-y-auto">
-                      {formData.monthlyPlan.map((item, index) => (
-                        <div key={item.month} className="flex items-center gap-2">
-                          <span className="text-xs text-muted-foreground w-16">{item.month}</span>
+                      {formData.monthlyPlan.map((item, index) => {
+                        const isLocked = lockedMonths.has(item.month);
+                        return (
+                        <div key={item.month} className="flex items-center gap-1">
+                          <span className="text-xs text-muted-foreground w-14">{item.month}</span>
                           <Input
                             type="number"
                             className="h-8"
                             value={item.hours || ''}
                             onChange={(e) => {
-                              const monthlyPlan = formData.monthlyPlan.map((m, i) => i === index ? { ...m, hours: parseInt(e.target.value) || 0 } : m);
+                              const v = parseInt(e.target.value) || 0;
+                              const monthlyPlan = formData.budget > 0
+                                ? rebalance(formData.monthlyPlan, index, v, lockedMonths, formData.budget)
+                                : formData.monthlyPlan.map((m, i) => i === index ? { ...m, hours: v } : m);
                               setFormData({ ...formData, monthlyPlan });
                             }}
                           />
+                          <button
+                            type="button"
+                            title={isLocked ? 'Odemknout' : 'Zamknout měsíc'}
+                            className={`text-xs px-1 ${isLocked ? 'text-primary' : 'text-muted-foreground'}`}
+                            onClick={() => {
+                              const next = new Set(lockedMonths);
+                              isLocked ? next.delete(item.month) : next.add(item.month);
+                              setLockedMonths(next);
+                            }}
+                          >
+                            {isLocked ? '🔒' : '🔓'}
+                          </button>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
-                  {formData.monthlyPlan.length > 0 && (
-                    <p className="text-xs text-muted-foreground">
-                      Celkem: {formData.monthlyPlan.reduce((sum, m) => sum + m.hours, 0)} hod
-                    </p>
-                  )}
+                  {formData.monthlyPlan.length > 0 && (() => {
+                    const total = formData.monthlyPlan.reduce((sum, m) => sum + m.hours, 0);
+                    const diff = total !== formData.budget && formData.budget > 0;
+                    return (
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className={diff ? 'text-destructive font-medium' : 'text-muted-foreground'}>
+                          Součet / Budget: {total} / {formData.budget} hod
+                        </span>
+                        {diff && (
+                          <Button type="button" variant="outline" size="sm" className="h-6 text-xs"
+                            onClick={() => {
+                              const free = formData.monthlyPlan.filter(m => !lockedMonths.has(m.month));
+                              if (!free.length) return;
+                              const idx = formData.monthlyPlan.indexOf(free[0]);
+                              const otherSum = total - free[0].hours;
+                              const monthlyPlan = rebalance(formData.monthlyPlan, idx, free[0].hours + (formData.budget - total), lockedMonths, formData.budget);
+                              void otherSum;
+                              setFormData({ ...formData, monthlyPlan });
+                            }}>
+                            Dorovnat
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
                 {editingProject && (
                   <ProjectRateHistoryEditor
