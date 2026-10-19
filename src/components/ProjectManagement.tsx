@@ -122,11 +122,12 @@ export const ProjectManagement = () => {
       months.push(`${y}-${String(m).padStart(2, '0')}`);
       m++; if (m > 12) { m = 1; y++; }
     }
-    const base = months.length ? Math.floor(budget / months.length) : 0;
-    let remainder = months.length ? budget - base * months.length : 0;
-    return months.map(month => ({ month, hours: base + (remainder-- > 0 ? 1 : 0) }));
+    return distribute(budget, months, distProfile);
   };
+  const [distProfile, setDistProfile] = useState<DistributionProfile>('even');
+  const [lockedMonths, setLockedMonths] = useState<Set<string>>(new Set());
   const [showDeadProjects, setShowDeadProjects] = useState(false);
+
 
   const presalesPhases = [
     { value: 'P0', label: 'P0 - Opportunity Identified' },
