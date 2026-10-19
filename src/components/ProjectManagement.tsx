@@ -452,6 +452,7 @@ export const ProjectManagement = () => {
 
         // Handle project licenses
         await saveProjectLicenses(editingProject.id);
+        await saveMonthlyPlan(editingProject.id);
 
         toast({
           title: "Projekt upraven",
@@ -496,6 +497,7 @@ export const ProjectManagement = () => {
         // Handle project licenses
         if (newProject) {
           await saveProjectLicenses(newProject.id);
+          await saveMonthlyPlan(newProject.id);
         }
 
         toast({
@@ -580,7 +582,10 @@ export const ProjectManagement = () => {
       presalesEndDate: '',
       parentOpportunity: '',
       crmCreationDate: '',
-      opportunityNumber: ''
+      opportunityNumber: '',
+      planStart: '',
+      planEnd: '',
+      monthlyPlan: []
     });
     setIsAddDialogOpen(false);
     setEditingProject(null);
