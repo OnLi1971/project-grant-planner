@@ -5,7 +5,7 @@ import { usePlanning } from '@/contexts/PlanningContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { projects, programs } from '@/data/projectsData';
+import { useProjectHoursCatalog } from '@/hooks/useProjectHoursCatalog';
 import { ProjectHoursFilter, type ProjectHoursFilterValue } from '@/components/ProjectHoursFilter';
 import { filterProjectHoursEntries } from '@/utils/projectHoursFilter';
 import { readProjectHoursFilter, writeProjectHoursFilter } from '@/utils/projectHoursFilterStorage';
@@ -17,6 +17,7 @@ const hoursLabel = (hours: number) => new Intl.NumberFormat('en-GB', { maximumFr
 
 export function ProjectHoursMatrix() {
   const { planningData, engineers } = usePlanning();
+  const { data: catalog, isPending: catalogLoading, isError: catalogError } = useProjectHoursCatalog();
   const [mode, setMode] = useState<'weeks' | 'months'>('weeks');
   const [showHistory, setShowHistory] = useState(false);
   const [filter, setFilter] = useState<ProjectHoursFilterValue>(() => {
@@ -55,9 +56,9 @@ export function ProjectHoursMatrix() {
     return { weeks, months: [...months.values()] };
   }, [showHistory]);
   const filteredData = useMemo(() => {
-    const mapping = new Map(projects.map(project => [project.code, programs.find(p => p.id === project.programId)?.code || 'NA']));
-    return filterProjectHoursEntries(planningData, periods.weeks.map(w => w.key), filter, mapping);
-  }, [planningData, periods, filter]);
+    if (!catalog) return [];
+    return filterProjectHoursEntries(planningData, periods.weeks.map(w => w.key), filter, catalog.programByProject);
+  }, [planningData, periods, filter, catalog]);
   const rows = useMemo(() => projectHours(filteredData, periods.weeks.map(w => w.key), mode), [filteredData, periods, mode]);
   const codes = [...rows.keys()].sort((a, b) => a.localeCompare(b));
   const columns = mode === 'weeks' ? periods.weeks : periods.months;
@@ -67,7 +68,7 @@ export function ProjectHoursMatrix() {
     else all.push({ key: week.group, label: week.groupLabel, count: 1 });
     return all;
   }, []);
-  const projectName = (code: string) => projects.find(p => p.code === code)?.name || code;
+  const projectName = (code: string) => catalog?.projects.find(p => p.code === code)?.name || code;
   const totalFor = (period: string) => codes.reduce((sum, code) => sum + (rows.get(code)?.get(period) || 0), 0);
   const summaries = useMemo(() => projectCapacitySummary(filteredData, engineers, periods.weeks.map(w => w.key), mode), [filteredData, engineers, periods, mode]);
   const metrics: { label: string; key: keyof CapacitySummary; unit: 'hours' | 'fte' | 'count' | 'percent' }[] = [
@@ -99,7 +100,7 @@ export function ProjectHoursMatrix() {
           </div>
         </CardHeader>
         <CardContent>
-          <ProjectHoursFilter value={filter} onChange={changeFilter} names={engineerNames} programs={programs.map(p => p.code)} />
+          <ProjectHoursFilter value={filter} onChange={changeFilter} names={engineerNames} programs={catalog?.programs.map(p => p.code) || []} />
           <div className="overflow-auto max-h-[85vh]">
             <table className="w-full border-collapse text-xs" aria-label="Project planned hours">
               <thead className="sticky top-0 z-20">
@@ -128,7 +129,7 @@ export function ProjectHoursMatrix() {
                   })}
                   <td className="border border-border p-1.5 text-center font-bold bg-primary/5">{hoursLabel(columns.reduce((sum, p) => sum + (rows.get(code)?.get(p.key) || 0), 0))}</td>
                 </tr>)}
-                {codes.length === 0 && <tr><td colSpan={columns.length + 2} className="p-6 text-muted-foreground">No planned project hours in this period.</td></tr>}
+                {codes.length === 0 && <tr><td colSpan={columns.length + 2} className="p-6 text-muted-foreground">{catalogLoading ? 'Loading projects…' : catalogError ? 'Unable to load projects.' : 'No planned project hours in this period.'}</td></tr>}
                 <tr className="bg-primary/5 border-t-2 border-primary/30 font-bold">
                   <th className="border border-border p-2 text-left sticky left-0 bg-background z-10">Total planned hours [MH]</th>
                   {columns.map(period => <td key={period.key} className="border border-border p-2 text-center" data-period={period.key}>{hoursLabel(totalFor(period.key))}</td>)}
