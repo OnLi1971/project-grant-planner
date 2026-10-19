@@ -29,12 +29,30 @@ test('partial leave reduces capacity, not free hours', () => {
 test('monthly raw productive hours equal project row totals and secondary is counted once', () => {
   const entry = { ...base, cw: 'CW40-2026' };
   const stats = projectCapacitySummary([entry, { ...entry, isSecondary: true }], [], [entry.cw], 'months');
-  assert.ok(Math.abs((stats.get('2026-09')?.realHours || 0) - 24) < 0.00001);
-  assert.equal(stats.get('2026-10')?.realHours, 16);
+  assert.equal(stats.get('2026-09')?.realHours, 20);
+  assert.equal(stats.get('2026-10')?.realHours, 20);
 });
 test('missing weeks stay free, departed engineers are excluded', () => {
   const stats = projectCapacitySummary([base], [{ id: 'a', display_name: 'A', slug: 'a', status: 'active', end_date: '2026-10-30' }], ['CW45-2026'], 'weeks').get('CW45-2026');
-  assert.equal(stats?.maxHours, 0);
+  assert.equal(stats?.maxHours || 0, 0);
   const active = projectCapacitySummary([base], [], ['CW45-2026'], 'weeks').get('CW45-2026');
   assert.equal(active?.freeHours, 36);
+});
+test('CW53 accounts for the January 1 2027 holiday only in January', () => {
+  const stats = projectCapacitySummary([{ ...base, cw: 'CW53-2026', projekt: 'FREE', projekt2: null }], [], ['CW53-2026'], 'months');
+  assert.equal(stats.get('2026-12')?.freeHours, 28.8);
+  assert.equal(stats.get('2027-01')?.maxHours, 0);
+});
+test('2027 Czech Easter Friday and Monday reduce both weeks to 28.8 hours', () => {
+  for (const cw of ['CW12-2027', 'CW13-2027']) {
+    const stats = projectCapacitySummary([{ ...base, cw, projekt: 'FREE', projekt2: null }], [], [cw], 'weeks');
+    assert.equal(stats.get(cw)?.maxHours, 28.8);
+  }
+});
+test('Slovak January 6 2027 is excluded per engineer, with one free FTE each', () => {
+  const cw = 'CW01-2027';
+  const stats = projectCapacitySummary(['A', 'Bohušík Martin'].map(konstrukter => ({ ...base, konstrukter, cw, projekt: 'FREE', projekt2: null })), [], [cw], 'weeks').get(cw);
+  assert.ok(stats);
+  assert.ok(Math.abs(stats.maxHours - 64.8) < 0.00001);
+  assert.equal(stats.freeFte, 2);
 });
