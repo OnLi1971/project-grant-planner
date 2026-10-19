@@ -73,6 +73,23 @@ export function ProjectHoursMatrix() {
   }, []);
   const totalFor = (period: string) => codes.reduce((sum, code) => sum + (rows.get(code)?.get(period) || 0), 0);
   const summaries = useMemo(() => projectCapacitySummary(filteredData, engineers, periods.weeks.map(w => w.key), mode), [filteredData, engineers, periods, mode]);
+  const demandRows = useMemo(() => {
+    if (!monthlyDemand || !catalog) return new Map<string, Map<string, number>>();
+    let demand = monthlyDemand;
+    if (filter.mode === 'program' && !filter.programs.includes('All')) {
+      demand = demand.filter(d => filter.programs.includes(catalog.programByProject.get(d.projectCode) || 'NA'));
+    }
+    return projectDemand(demand, periods.weeks.map(w => w.key), mode);
+  }, [monthlyDemand, catalog, filter, periods, mode]);
+  const demandCodes = [...demandRows.keys()].sort((a, b) => a.localeCompare(b));
+  const demandFor = (period: string) => demandCodes.reduce((sum, code) => sum + (demandRows.get(code)?.get(period) || 0), 0);
+  const balanceFor = (period: string) => {
+    const summary = summaries.get(period);
+    if (!summary) return 0;
+    const unplanned = Math.max(0, demandFor(period) - summary.realHours);
+    const fteHours = summary.maxEngineerCount ? summary.maxHours / summary.maxEngineerCount : 0;
+    return summary.freeFte - (fteHours ? unplanned / fteHours : 0);
+  };
   const metrics: { label: string; key: keyof CapacitySummary; unit: 'hours' | 'fte' | 'count' | 'percent' }[] = [
     { label: 'Free capacity [MH]', key: 'freeHours', unit: 'hours' },
     { label: 'Free capacity [FTE]', key: 'freeFte', unit: 'fte' },
