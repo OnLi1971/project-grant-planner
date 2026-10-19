@@ -8,11 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { projects } from '@/data/projectsData';
 import { getISOWeekMonday } from '@/utils/workingDays';
 import { monthKey, projectHours } from '@/utils/projectHours';
+import { projectCapacitySummary, type CapacitySummary } from '@/utils/projectCapacitySummary';
 
 const hoursLabel = (hours: number) => new Intl.NumberFormat('en-GB', { maximumFractionDigits: 1 }).format(hours);
 
 export function ProjectHoursMatrix() {
-  const { planningData } = usePlanning();
+  const { planningData, engineers } = usePlanning();
   const [mode, setMode] = useState<'weeks' | 'months'>('weeks');
   const [showHistory, setShowHistory] = useState(false);
   const periods = useMemo(() => {
@@ -52,6 +53,19 @@ export function ProjectHoursMatrix() {
   }, []);
   const projectName = (code: string) => projects.find(p => p.code === code)?.name || code;
   const totalFor = (period: string) => codes.reduce((sum, code) => sum + (rows.get(code)?.get(period) || 0), 0);
+  const summaries = useMemo(() => projectCapacitySummary(planningData, engineers, periods.weeks.map(w => w.key), mode), [planningData, engineers, periods, mode]);
+  const metrics: { label: string; key: keyof CapacitySummary; unit: 'hours' | 'fte' | 'count' | 'percent' }[] = [
+    { label: 'Free capacity [MH]', key: 'freeHours', unit: 'hours' },
+    { label: 'Free capacity [FTE]', key: 'freeFte', unit: 'fte' },
+    { label: 'Leave [FTE]', key: 'leaveFte', unit: 'fte' },
+    { label: 'Leave [MH]', key: 'leaveHours', unit: 'hours' },
+    { label: 'Max productive hours', key: 'maxHours', unit: 'hours' },
+    { label: 'Real productive hours', key: 'realHours', unit: 'hours' },
+    { label: 'Engineer count', key: 'engineerCount', unit: 'count' },
+    { label: 'Total FTE', key: 'totalFte', unit: 'fte' },
+    { label: 'Utilization', key: 'utilization', unit: 'percent' },
+  ];
+  const metricLabel = (value: number, unit: typeof metrics[number]['unit']) => unit === 'fte' ? value.toFixed(1) : unit === 'percent' ? `${Math.round(value)}%` : unit === 'hours' ? `${hoursLabel(value)}h` : String(value);
 
   return (
     <div className="p-6 space-y-6">
@@ -103,6 +117,11 @@ export function ProjectHoursMatrix() {
                   {columns.map(period => <td key={period.key} className="border border-border p-2 text-center" data-period={period.key}>{hoursLabel(totalFor(period.key))}</td>)}
                   <td className="border border-border p-2 text-center">{hoursLabel(columns.reduce((sum, p) => sum + totalFor(p.key), 0))}</td>
                 </tr>
+                {metrics.map(metric => <tr key={metric.key} className="bg-primary/5 font-semibold">
+                  <th scope="row" className="border border-border p-2 text-left sticky left-0 bg-background z-10 whitespace-nowrap">{metric.label}</th>
+                  {columns.map(period => <td key={period.key} className={`border border-border p-2 text-center ${period.current ? 'bg-warning/30 border-warning' : ''}`}>{metricLabel(summaries.get(period.key)?.[metric.key] || 0, metric.unit)}</td>)}
+                  <td className="border border-border p-2 text-center">{metric.unit === 'hours' ? metricLabel(columns.reduce((sum, period) => sum + (summaries.get(period.key)?.[metric.key] || 0), 0), 'hours') : '–'}</td>
+                </tr>)}
               </tbody>
             </table>
           </div>
