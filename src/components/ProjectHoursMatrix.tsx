@@ -14,6 +14,7 @@ import { monthKey, projectHours } from '@/utils/projectHours';
 import { projectCapacitySummary, type CapacitySummary } from '@/utils/projectCapacitySummary';
 import { projectDemand } from '@/utils/projectDemand';
 import { useProjectMonthlyPlan } from '@/hooks/useProjectMonthlyPlan';
+import { ProjectCapacityChart } from '@/components/ProjectCapacityChart';
 
 const hoursLabel = (hours: number) => new Intl.NumberFormat('en-GB', { maximumFractionDigits: 1 }).format(hours);
 
@@ -83,6 +84,11 @@ export function ProjectHoursMatrix() {
     }
     return projectDemand(demand, periods.weeks.map(w => w.key), mode);
   }, [monthlyDemand, catalog, filter, periods, mode]);
+  const chartDemand = useMemo(() => {
+    if (!monthlyDemand || !catalog) return [];
+    if (filter.mode === 'program' && !filter.programs.includes('All')) return monthlyDemand.filter(d => filter.programs.includes(catalog.programByProject.get(d.projectCode) || 'NA'));
+    return monthlyDemand;
+  }, [monthlyDemand, catalog, filter]);
   const demandCodes = [...demandRows.keys()].sort((a, b) => a.localeCompare(b));
   const demandFor = (period: string) => demandCodes.reduce((sum, code) => sum + (demandRows.get(code)?.get(period) || 0), 0);
   // Plan (demand) hours count as if they were a real order.
@@ -198,6 +204,7 @@ export function ProjectHoursMatrix() {
           </div>
         </CardContent>
       </Card>
+      {catalog && <ProjectCapacityChart entries={filteredData} engineers={engineers} weeks={periods.weeks.map(w => w.key)} demand={chartDemand} statusByProject={catalog.statusByProject} />}
     </div>
   );
 }
