@@ -1050,6 +1050,68 @@ export const ProjectManagement = () => {
                     />
                   </div>
                 )}
+                <div className="border rounded-md p-3 space-y-3">
+                  <Label>Plán hodin na generické zdroje (měsíčně)</Label>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="planStart">Období od</Label>
+                      <Input
+                        id="planStart"
+                        type="month"
+                        value={formData.planStart}
+                        onChange={(e) => {
+                          const planStart = e.target.value;
+                          setFormData({ ...formData, planStart, monthlyPlan: prefillMonthlyPlan(planStart, formData.planEnd, formData.budget) });
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="planEnd">Období do</Label>
+                      <Input
+                        id="planEnd"
+                        type="month"
+                        value={formData.planEnd}
+                        onChange={(e) => {
+                          const planEnd = e.target.value;
+                          setFormData({ ...formData, planEnd, monthlyPlan: prefillMonthlyPlan(formData.planStart, planEnd, formData.budget) });
+                        }}
+                      />
+                    </div>
+                    <div className="flex items-end">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setFormData({ ...formData, monthlyPlan: prefillMonthlyPlan(formData.planStart, formData.planEnd, formData.budget) })}
+                      >
+                        Rozdělit budget
+                      </Button>
+                    </div>
+                  </div>
+                  {formData.monthlyPlan.length > 0 && (
+                    <div className="grid grid-cols-3 gap-2 max-h-40 overflow-y-auto">
+                      {formData.monthlyPlan.map((item, index) => (
+                        <div key={item.month} className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground w-16">{item.month}</span>
+                          <Input
+                            type="number"
+                            className="h-8"
+                            value={item.hours || ''}
+                            onChange={(e) => {
+                              const monthlyPlan = formData.monthlyPlan.map((m, i) => i === index ? { ...m, hours: parseInt(e.target.value) || 0 } : m);
+                              setFormData({ ...formData, monthlyPlan });
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {formData.monthlyPlan.length > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Celkem: {formData.monthlyPlan.reduce((sum, m) => sum + m.hours, 0)} hod
+                    </p>
+                  )}
+                </div>
                 {editingProject && (
                   <ProjectRateHistoryEditor
                     projectId={editingProject.id}
