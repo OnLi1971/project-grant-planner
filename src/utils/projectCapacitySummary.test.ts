@@ -11,6 +11,7 @@ test('holiday week capacity is 4 days × 7.2 and overplanning cannot hide anothe
   assert.ok(Math.abs(stats.freeHours - 28.8) < 0.00001);
   assert.equal(stats.realHours, 40);
   assert.equal(stats.engineerCount, 1);
+  assert.equal(stats.maxEngineerCount, 2);
   assert.equal(stats.utilization, 50);
 });
 test('full leave FTE and hours share holiday-adjusted denominator', () => {
