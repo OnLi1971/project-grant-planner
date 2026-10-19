@@ -160,6 +160,21 @@ export function ProjectHoursMatrix() {
                   {columns.map(period => <td key={period.key} className={`border border-border p-2 text-center ${period.current ? 'bg-warning/30 border-warning' : ''}`}>{metricLabel(summaries.get(period.key)?.[metric.key] || 0, metric.unit)}</td>)}
                   <td className="border border-border p-2 text-center">{metric.unit === 'hours' ? metricLabel(columns.reduce((sum, period) => sum + (summaries.get(period.key)?.[metric.key] || 0), 0), 'hours') : '–'}</td>
                 </tr>)}
+                {demandCodes.length > 0 && <>
+                  <tr className="bg-primary/5 font-semibold">
+                    <th scope="row" className="border border-border p-2 text-left sticky left-0 bg-background z-10 whitespace-nowrap">Planned demand [MH]</th>
+                    {columns.map(period => <td key={period.key} className={`border border-border p-2 text-center ${period.current ? 'bg-warning/30 border-warning' : ''}`}>{hoursLabel(demandFor(period.key))}</td>)}
+                    <td className="border border-border p-2 text-center">{hoursLabel(columns.reduce((sum, period) => sum + demandFor(period.key), 0))}</td>
+                  </tr>
+                  <tr className="bg-primary/5 font-bold">
+                    <th scope="row" className="border border-border p-2 text-left sticky left-0 bg-background z-10 whitespace-nowrap">Balance [FTE]</th>
+                    {columns.map(period => {
+                      const balance = balanceFor(period.key);
+                      return <td key={period.key} className={`border border-border p-2 text-center ${balance < 0 ? 'text-destructive' : 'text-chart-2'} ${period.current ? 'bg-warning/30 border-warning' : ''}`}>{balance.toFixed(1)}</td>;
+                    })}
+                    <td className="border border-border p-2 text-center">–</td>
+                  </tr>
+                </>}
               </tbody>
             </table>
           </div>
