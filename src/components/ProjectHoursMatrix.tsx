@@ -12,6 +12,8 @@ import { readProjectHoursFilter, writeProjectHoursFilter } from '@/utils/project
 import { getISOWeekMonday } from '@/utils/workingDays';
 import { monthKey, projectHours } from '@/utils/projectHours';
 import { projectCapacitySummary, type CapacitySummary } from '@/utils/projectCapacitySummary';
+import { projectDemand } from '@/utils/projectDemand';
+import { useProjectMonthlyPlan } from '@/hooks/useProjectMonthlyPlan';
 
 const hoursLabel = (hours: number) => new Intl.NumberFormat('en-GB', { maximumFractionDigits: 1 }).format(hours);
 
