@@ -14,6 +14,7 @@ interface Props {
   weeks: string[];
   demand: MonthlyDemand[];
   statusByProject: Map<string, string>;
+  blocked?: PlanningEntry[];
 }
 
 const HUES = [190, 160, 205, 40, 220, 130, 280, 10, 330, 60, 100, 250];
@@ -22,11 +23,12 @@ const colorFor = (code: string, i: number) => {
 };
 
 /** Monthly FTE per project (Delivery + Presales stacked) vs. max productive engineer count. */
-export function ProjectCapacityChart({ entries, engineers, weeks, demand, statusByProject }: Props) {
+export function ProjectCapacityChart({ entries, engineers, weeks, demand, statusByProject, blocked = [] }: Props) {
   const { data, projects } = useMemo(() => {
     const current = monthKey(new Date());
     const hours = projectHours(entries, weeks, 'months');
     const plan = projectDemand(demand, weeks, 'months');
+    const blockedHours = projectHours(blocked, weeks, 'months');
     const summary = projectCapacitySummary(entries, engineers, weeks, 'months');
     const months = [...summary.keys()].filter(m => m >= current).sort();
     const codes = [...new Set([...hours.keys(), ...plan.keys()])];
@@ -35,7 +37,11 @@ export function ProjectCapacityChart({ entries, engineers, weeks, demand, status
     const data = months.map(m => {
       const s = summary.get(m)!;
       const fteHours = s.maxEngineerCount ? s.maxHours / s.maxEngineerCount : 0;
-      const row: Record<string, number | string> = { month: format(new Date(Number(m.slice(0, 4)), Number(m.slice(5, 7)) - 1, 1), 'MMM yy'), capacity: s.maxEngineerCount };
+      const row: Record<string, number | string> = { month: format(new Date(Number(m.slice(0, 4)), Number(m.slice(5, 7)) - 1, 1), 'MMM yy'), capacity: 0, blockedFte: 0 };
+      const b = [...blockedHours.values()].reduce((sum, r) => sum + (r.get(m) || 0), 0);
+      const blockedFte = fteHours ? Math.min(s.maxEngineerCount, b / fteHours) : 0;
+      row.blockedFte = Math.round(blockedFte * 10) / 10;
+      row.capacity = Math.round((s.maxEngineerCount - blockedFte) * 10) / 10;
       let total = 0;
       codes.forEach(code => {
         const h = (hours.get(code)?.get(m) || 0) + (plan.get(code)?.get(m) || 0);
@@ -49,7 +55,7 @@ export function ProjectCapacityChart({ entries, engineers, weeks, demand, status
     const ordered = [...used.filter(c => !isPresales(c)), ...used.filter(isPresales)]
       .map((code, i) => ({ code, presales: isPresales(code), color: colorFor(code, i) }));
     return { data, projects: ordered };
-  }, [entries, engineers, weeks, demand, statusByProject]);
+  }, [entries, engineers, weeks, demand, statusByProject, blocked]);
 
   const renderTooltip = ({ active, payload, label }: { active?: boolean; payload?: { payload: Record<string, number> }[]; label?: string }) => {
     if (!active || !payload?.length) return null;
@@ -72,6 +78,7 @@ export function ProjectCapacityChart({ entries, engineers, weeks, demand, status
       {block('PRESALES', group(true))}
       <div className="mt-2 border-t border-border pt-1 flex justify-between text-xs font-bold"><span>Total:</span><span className="font-mono">{Number(row.total).toFixed(1)} FTE</span></div>
       <div className="flex justify-between text-xs text-destructive"><span>Capacity:</span><span className="font-mono">{row.capacity} FTE</span></div>
+      {row.blockedFte > 0 && <div className="flex justify-between text-xs text-muted-foreground"><span>Blocked by other programs:</span><span className="font-mono">{row.blockedFte} FTE</span></div>}
     </div>;
   };
 

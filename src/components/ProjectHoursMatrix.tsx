@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useProjectHoursCatalog } from '@/hooks/useProjectHoursCatalog';
 import { ProjectHoursFilter, type ProjectHoursFilterValue } from '@/components/ProjectHoursFilter';
-import { filterProjectHoursEntries } from '@/utils/projectHoursFilter';
+import { filterProjectHoursEntries, otherProgramEntries } from '@/utils/projectHoursFilter';
 import { readProjectHoursFilter, writeProjectHoursFilter } from '@/utils/projectHoursFilterStorage';
 import { getISOWeekMonday } from '@/utils/workingDays';
 import { monthKey, projectHours } from '@/utils/projectHours';
@@ -67,6 +67,7 @@ export function ProjectHoursMatrix() {
     if (!catalog) return [];
     return filterProjectHoursEntries(planningData, periods.weeks.map(w => w.key), filter, catalog.programByProject);
   }, [planningData, periods, filter, catalog]);
+  const blockedData = useMemo(() => catalog ? otherProgramEntries(planningData, periods.weeks.map(w => w.key), filter, catalog.programByProject) : [], [planningData, periods, filter, catalog]);
   const rows = useMemo(() => projectHours(filteredData, periods.weeks.map(w => w.key), mode), [filteredData, periods, mode]);
   const codes = [...rows.keys()].sort((a, b) => a.localeCompare(b));
   const columns = mode === 'weeks' ? periods.weeks : periods.months;
@@ -205,7 +206,7 @@ export function ProjectHoursMatrix() {
           </div>
         </CardContent>
       </Card>
-      {catalog && <ProjectCapacityChart entries={filteredData} engineers={engineers} weeks={periods.weeks.map(w => w.key)} demand={chartDemand} statusByProject={catalog.statusByProject} />}
+      {catalog && <ProjectCapacityChart entries={filteredData} engineers={engineers} weeks={periods.weeks.map(w => w.key)} demand={chartDemand} statusByProject={catalog.statusByProject} blocked={blockedData} />}
     </div>
   );
 }
