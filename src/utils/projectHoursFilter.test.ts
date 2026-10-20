@@ -51,5 +51,5 @@ test('engineer on AERO blocks RAIL capacity until he becomes FREE', () => {
   const map = new Map([['BUCH_INT', 'AERO'], ['ST_FEM', 'RAIL']]);
   const entries = [e('CW52-2026', 'BUCH_INT'), e('CW01-2027', 'FREE'), e('CW02-2027', 'ST_FEM')];
   const blocked = other(entries, ['CW52-2026', 'CW01-2027', 'CW02-2027'], { mode: 'program', programs: ['RAIL'], engineers: [] }, map);
-  expect(blocked.map(b => b.cw)).toEqual(['CW52-2026']);
+  assert.deepEqual(blocked.map(b => b.cw), ['CW52-2026']);
 });
