@@ -15,6 +15,7 @@ import { projectCapacitySummary, type CapacitySummary } from '@/utils/projectCap
 import { projectDemand } from '@/utils/projectDemand';
 import { useProjectMonthlyPlan } from '@/hooks/useProjectMonthlyPlan';
 import { ProjectCapacityChart } from '@/components/ProjectCapacityChart';
+import { planningEndYear } from '@/utils/planningHorizon';
 
 const hoursLabel = (hours: number) => new Intl.NumberFormat('en-GB', { maximumFractionDigits: 1 }).format(hours);
 
@@ -39,7 +40,7 @@ export function ProjectHoursMatrix() {
     const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const monthStartMonday = getISOWeekMonday(getISOWeek(firstOfMonth), getISOWeekYear(firstOfMonth));
     const start = showHistory ? addWeeks(currentMonday, -9) : monthStartMonday;
-    const endYear = now.getFullYear() + 1;
+    const endYear = planningEndYear(now);
     const weeks: { key: string; label: string; sub: string; group: string; groupLabel: string; current: boolean }[] = [];
     for (let monday = start; getISOWeekYear(monday) <= endYear; monday = addWeeks(monday, 1)) {
       const thursday = new Date(monday); thursday.setDate(monday.getDate() + 3);
