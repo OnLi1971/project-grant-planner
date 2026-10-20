@@ -45,3 +45,11 @@ test('custom and All retain the selected engineers complete split allocations', 
   assert.deepEqual(filterProjectHoursEntries([row], ['CW44-2026'], { mode: 'custom', programs: ['MACH'], engineers: ['Other'] }, new Map()), [row]);
   assert.deepEqual(filterProjectHoursEntries([row], ['CW44-2026'], { mode: 'program', programs: ['All'], engineers: [] }, new Map()), [row]);
 });
+import { otherProgramEntries as other } from './projectHoursFilter';
+test('engineer on AERO blocks RAIL capacity until he becomes FREE', () => {
+  const e = (cw: string, projekt: string) => ({ id: cw, konstrukter: 'Hibler', cw, mesic: '', mhTyden: 36, projekt, year: 2026 } as never);
+  const map = new Map([['BUCH_INT', 'AERO'], ['ST_FEM', 'RAIL']]);
+  const entries = [e('CW52-2026', 'BUCH_INT'), e('CW01-2027', 'FREE'), e('CW02-2027', 'ST_FEM')];
+  const blocked = other(entries, ['CW52-2026', 'CW01-2027', 'CW02-2027'], { mode: 'program', programs: ['RAIL'], engineers: [] }, map);
+  expect(blocked.map(b => b.cw)).toEqual(['CW52-2026']);
+});
