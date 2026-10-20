@@ -26,3 +26,15 @@ export function filterProjectHoursEntries(entries: PlanningEntry[], weeks: strin
     };
   });
 }
+
+/** Allocations of in-filter engineers on projects outside the selected programs (blocks their capacity). */
+export function otherProgramEntries(entries: PlanningEntry[], weeks: string[], filter: { mode: 'program' | 'custom'; programs: string[]; engineers: string[] }, programByProject: Map<string, string>) {
+  if (filter.mode === 'custom' || filter.programs.includes('All')) return [];
+  const matches = (code: string) => !!code && filter.programs.includes(programByProject.get(code) || 'NA');
+  const names = new Set(filterProjectHoursEntries(entries, weeks, filter, programByProject).map(e => normalizeName(e.konstrukter)));
+  return entries.filter(e => !e.isSecondary && names.has(normalizeName(e.konstrukter))).map(entry => {
+    const keepPrimary = isHoursProject(entry.projekt) && !matches(entry.projekt);
+    const keepSecondary = isHoursProject(entry.projekt2 || '') && !matches(entry.projekt2 || '');
+    return { ...entry, projekt: keepPrimary ? entry.projekt : '', mhTyden: keepPrimary ? entry.mhTyden : 0, projekt2: keepSecondary ? entry.projekt2 : null, mhTyden2: keepSecondary ? entry.mhTyden2 : 0 };
+  }).filter(e => e.projekt || e.projekt2);
+}
