@@ -1,5 +1,5 @@
 # Tasks
-- [ ] Extend planning and Project Hours Matrix through December 2028 and test the shared horizon.
+- [x] Extend planning and Project Hours Matrix through December 2028 with a shared tested horizon; include 2028 holiday calendars.
 - [x] Correct Project Hours program filtering using current Project Management assignments; verified Safran=AERO, Doosan=MACH with 40 planning rows; allocation/summaries and persistence tests pass (23/23), build OK.
 - [x] Preserve Project Hours Program / Custom filter, engineer selection and saved-view identity after F5; test persistence and safe storage fallback.
 - [x] Account for 2026/2027 public holidays in project-hours period allocation and location-aware capacity summaries; holiday, Easter and year-boundary tests pass.
