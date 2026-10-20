@@ -183,3 +183,5 @@ All colors MUST be HSL.
 .project-plan-value[data-project^="ST_"] { --project-tone: var(--project-st); }
 .project-plan-value[data-project^="NU_"] { --project-tone: var(--project-nuvia); }
 .project-plan-value[data-project^="WA_"] { --project-tone: var(--project-wabtec); }
+.project-hours-value[data-project="ST_25Ev"], .project-plan-value[data-project="ST_25Ev"] { --project-tone: 192 91% 31%; }
+.project-hours-value[data-project="ST_EMU400M"], .project-plan-value[data-project="ST_EMU400M"] { --project-tone: 243 55% 51%; }

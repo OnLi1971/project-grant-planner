@@ -160,7 +160,7 @@ export const getCustomerColor = (customerCode: string, variant: 'primary' | 'lig
 // Shared exact project colours — same as Project Matrix cells (single source for charts)
 export const PROJECT_EXACT_COLORS: Record<string, string> = {
   ST_EMU_INT: '#3B82F6', ST_TRAM_INT: '#2563EB', ST_MAINZ: '#60A5FA', ST_KASSEL: '#1D4ED8', ST_BLAVA: '#06B6D4',
-  ST_FEM: '#93C5FD', ST_POZAR: '#6366F1', ST_JIGS: '#0EA5E9', ST_TRAM_HS: '#1E40AF', ST_ELEKTRO: '#0369A1',
+  ST_FEM: '#93C5FD', ST_POZAR: '#6366F1', ST_JIGS: '#0EA5E9', ST_TRAM_HS: '#1E40AF', ST_ELEKTRO: '#0369A1', ST_25Ev: '#0E7490', ST_EMU400M: '#4338CA',
 };
 const PROJECT_PREFIX_COLORS: [string, string][] = [
   ['ST_', '#1E3A8A'], ['NU_', '#16A34A'], ['WA_', '#F97316'], ['SAF_', '#A855F7'], ['BUCH_', '#B45309'], ['AIRB_', '#0D9488'],
