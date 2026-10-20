@@ -751,7 +751,7 @@ export const ProjectManagement = () => {
       customer: i.customer?.name || 'N/A',
       pm: i.pm?.name || 'N/A',
       program: i.program?.name || 'N/A',
-      type: i.project.project_type === 'WP' ? 'WP' : `${i.project.project_type} Hodinovka`,
+      type: i.project.project_type || '',
       status: i.project.project_status || '',
     });
     const active = Object.entries(columnFilters).filter(([, v]) => v.trim());
