@@ -1382,6 +1382,25 @@ export const ProjectManagement = () => {
                   >
                     <Edit className="h-3 w-3" />
                   </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="ml-1 text-destructive"
+                    disabled={!item.project}
+                    onClick={async () => {
+                      const p = item.project;
+                      if (!p || !window.confirm(`Opravdu smazat projekt ${p.code}?`)) return;
+                      const { error } = await supabase.from('projects').delete().eq('id', p.id);
+                      if (error) {
+                        toast({ title: 'Smazání selhalo', description: error.message, variant: 'destructive' });
+                        return;
+                      }
+                      toast({ title: 'Projekt smazán', description: p.code });
+                      loadProjects();
+                    }}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
                 </TableCell>
               </TableRow>
             ))}
