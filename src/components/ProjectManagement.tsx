@@ -742,6 +742,22 @@ export const ProjectManagement = () => {
         };
       }).sort((a, b) => b.usage - a.usage);
   }, [projects, customers, projectManagers, programs, planningData, showDeadProjects]);
+
+  const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
+  const visibleProjects = useMemo(() => {
+    const norm = (s: unknown) => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const values = (i: typeof allProjects[number]): Record<string, string> => ({
+      name: `${i.project.name} ${i.code}`,
+      customer: i.customer?.name || 'N/A',
+      pm: i.pm?.name || 'N/A',
+      program: i.program?.name || 'N/A',
+      type: i.project.project_type === 'WP' ? 'WP' : `${i.project.project_type} Hodinovka`,
+      status: i.project.project_status || '',
+    });
+    const active = Object.entries(columnFilters).filter(([, v]) => v.trim());
+    if (!active.length) return allProjects;
+    return allProjects.filter(i => { const v = values(i); return active.every(([k, q]) => norm(v[k]).includes(norm(q.trim()))); });
+  }, [allProjects, columnFilters]);
   
   const deadProjectsCount = useMemo(() => {
     return projects.filter(p => p.project_status === 'Dead').length;
@@ -1256,9 +1272,17 @@ export const ProjectManagement = () => {
               <TableHead>Použití</TableHead>
               <TableHead>Akce</TableHead>
             </TableRow>
+            <TableRow>
+              {(['name', 'customer', 'pm', 'program', 'type', 'status'] as const).map(key => (
+                <TableHead key={key} className="py-1">
+                  <Input value={columnFilters[key] || ''} onChange={e => setColumnFilters(f => ({ ...f, [key]: e.target.value }))} placeholder="Filtr…" aria-label={`Filtr ${key}`} className="h-7 text-xs" />
+                </TableHead>
+              ))}
+              <TableHead colSpan={4} />
+            </TableRow>
           </TableHeader>
           <TableBody>
-            {allProjects.map((item, index) => (
+            {visibleProjects.map((item, index) => (
               <TableRow key={item.code} className={index % 2 === 1 ? 'bg-muted/30' : 'bg-background'}>
                 <TableCell className="font-medium">
                   <div className="flex flex-col gap-1">
