@@ -106,8 +106,19 @@ const slovakHolidays2027 = [
   '2027-12-26',
 ];
 
-const allCzechHolidays = [...czechHolidays2025, ...czechHolidays2026, ...czechHolidays2027];
-const allSlovakHolidays = [...slovakHolidays2025, ...slovakHolidays2026, ...slovakHolidays2027];
+const czechHolidays2028 = [
+  '2028-01-01', '2028-04-14', '2028-04-17', '2028-05-01', '2028-05-08',
+  '2028-07-05', '2028-07-06', '2028-09-28', '2028-10-28', '2028-11-17',
+  '2028-12-24', '2028-12-25', '2028-12-26',
+];
+const slovakHolidays2028 = [
+  '2028-01-01', '2028-01-06', '2028-04-14', '2028-04-17', '2028-05-01',
+  '2028-05-08', '2028-07-05', '2028-08-29', '2028-09-01', '2028-09-15',
+  '2028-11-01', '2028-11-17', '2028-12-24', '2028-12-25', '2028-12-26',
+];
+
+const allCzechHolidays = [...czechHolidays2025, ...czechHolidays2026, ...czechHolidays2027, ...czechHolidays2028];
+const allSlovakHolidays = [...slovakHolidays2025, ...slovakHolidays2026, ...slovakHolidays2027, ...slovakHolidays2028];
 
 /**
  * Zjistí, zda je daný den státní svátek

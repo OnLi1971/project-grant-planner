@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useCustomEngineerViews } from '@/hooks/useCustomEngineerViews';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { planningEndYear } from '@/utils/planningHorizon';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 // ---- Shared utilization basis (must match UtilizationGrid) ----
@@ -92,7 +93,7 @@ const getAllWeeks = (): string[] => {
   
   const weeks = [];
   const weeksBack = 9; // ~2 měsíce nazpět
-  const endYear = currentYear + 1; // dopředu až do konce příštího roku
+  const endYear = planningEndYear();
   
   // Posunout se zpět o weeksBack týdnů (respektuje roky s 53 ISO týdny)
   let week = currentWeek - weeksBack;

@@ -53,6 +53,7 @@ import { normalizeName, findEngineerByName } from '@/utils/nameNormalization';
 import { isEngineerDepartedForWeek } from '@/utils/engineerDeparture';
 import { getISOWeeksInYear } from '@/utils/workingDays';
 import { VacationImport } from '@/components/VacationImport';
+import { planningEndYear } from '@/utils/planningHorizon';
 
 
 interface WeekPlan {
@@ -148,13 +149,12 @@ const generateAllWeeks = (): WeekPlan[] => {
     startWeek = getISOWeeksInYear(startYear) + startWeek;
   }
   
-  // Generujeme 56 týdnů dopředu (4 týdny zpět + 52 týdnů dopředu)
+  // Zachováme historii a doplníme všechny týdny do konce plánovacího období.
   let week = startWeek;
   let year = startYear;
   
-  // Generujeme až do konce příštího roku
-  const lastYear = currentYear + 1;
-  for (let i = 0; i < 200 && year <= lastYear; i++) {
+  const lastYear = planningEndYear(today);
+  while (year <= lastYear) {
     const monthIndex = getMonthFromWeek(week);
     const mesic = months[monthIndex];
     
