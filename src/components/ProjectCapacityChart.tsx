@@ -1,5 +1,7 @@
 import { useId, useMemo, useState } from 'react';
 import { capacityPeriodSummary } from '@/utils/capacityPeriodSummary';
+import { toQuarterRows } from '@/utils/fiscalQuarter';
+import { Button } from '@/components/ui/button';
 import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, CartesianGrid, LabelList } from 'recharts';
 import { format } from 'date-fns';
 import { getExactProjectColor } from '@/utils/colorSystem';
@@ -59,8 +61,10 @@ export function ProjectCapacityChart({ entries, engineers, weeks, demand, status
       .map((code, i) => ({ code, presales: isPresales(code), color: colorFor(code, i) }));
     return { data, projects: ordered };
   }, [entries, engineers, weeks, demand, statusByProject, blocked]);
+  const [period, setPeriod] = useState<'months' | 'quarters'>('months');
+  const chartData = useMemo(() => period === 'quarters' ? toQuarterRows(data as Record<string, number | string>[]) : data, [data, period]);
   const [selected, setSelected] = useState<string | null>(null);
-  const selectedRow = selected ? data.find(r => r.month === selected) as Record<string, number | string> | undefined : undefined;
+  const selectedRow = selected ? (chartData as Record<string, number | string>[]).find(r => r.month === selected) : undefined;
 
   const renderTooltip = ({ active, payload, label }: { active?: boolean; payload?: { payload: Record<string, number> }[]; label?: string }) => {
     if (!active || !payload?.length) return null;
@@ -89,11 +93,13 @@ export function ProjectCapacityChart({ entries, engineers, weeks, demand, status
 
   return (
     <Card>
-      <CardHeader><CardTitle className="text-xl">Capacity vs. demand [FTE]</CardTitle></CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0"><CardTitle className="text-xl">Capacity vs. demand [FTE]</CardTitle>
+        <div className="flex gap-1">{(['months', 'quarters'] as const).map(p => <Button key={p} size="sm" variant={period === p ? 'default' : 'outline'} onClick={() => { setPeriod(p); setSelected(null); }}>{p === 'months' ? 'Months' : 'Quarters'}</Button>)}</div>
+      </CardHeader>
       <CardContent>
         <div className="h-96 w-full">
           <ResponsiveContainer>
-            <ComposedChart data={data} margin={{ top: 20, right: 10, left: -10, bottom: 0 }} style={{ cursor: 'pointer' }} onClick={(e: { activeLabel?: string } | null) => e?.activeLabel && setSelected(e.activeLabel)}>
+            <ComposedChart data={chartData} margin={{ top: 20, right: 10, left: -10, bottom: 0 }} style={{ cursor: 'pointer' }} onClick={(e: { activeLabel?: string } | null) => e?.activeLabel && setSelected(e.activeLabel)}>
               <defs>
                 {projects.filter(p => p.presales).map(p => <pattern key={p.code} id={`${patternPrefix}-${p.code}`} width="7" height="7" patternUnits="userSpaceOnUse">
                   <rect width="7" height="7" fill={p.color} fillOpacity={0.22} />
