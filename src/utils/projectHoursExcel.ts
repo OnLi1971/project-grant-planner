@@ -12,7 +12,7 @@ export interface ExcelCellSnapshot {
   total?: boolean;
 }
 
-export async function projectHoursWorkbook(rows: ExcelCellSnapshot[][], headerRows: number, chart: { base64: string; width: number; height: number }) {
+export async function projectHoursWorkbook(rows: ExcelCellSnapshot[][], headerRows: number, chart: { base64: string; width: number; height: number; axis?: string; periods?: number }) {
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'Project Grant Planner';
   const sheet = workbook.addWorksheet('Project Hours Matrix', {
@@ -44,7 +44,15 @@ export async function projectHoursWorkbook(rows: ExcelCellSnapshot[][], headerRo
   sheet.getCell(chartRow, 1).value = 'Capacity vs. demand [FTE]';
   sheet.getCell(chartRow, 1).font = { name: 'Arial', bold: true, size: 14 };
   const id = workbook.addImage({ base64: chart.base64, extension: 'png' });
-  sheet.addImage(id, { tl: { col: 0, row: chartRow }, ext: { width: chart.width, height: chart.height }, editAs: 'oneCell' });
+  if (chart.axis && chart.periods) {
+    // Align chart bars with table period columns: axis in column A, plot over B..N.
+    const rowsTall = Math.ceil(chart.height / 20);
+    const axisId = workbook.addImage({ base64: chart.axis, extension: 'png' });
+    sheet.addImage(axisId, { tl: { col: 0, row: chartRow }, br: { col: 1, row: chartRow + rowsTall }, editAs: 'twoCell' } as never);
+    sheet.addImage(id, { tl: { col: 1, row: chartRow }, br: { col: 1 + chart.periods, row: chartRow + rowsTall }, editAs: 'twoCell' } as never);
+  } else {
+    sheet.addImage(id, { tl: { col: 0, row: chartRow }, ext: { width: chart.width, height: chart.height }, editAs: 'oneCell' });
+  }
   return workbook;
 }
 
@@ -90,9 +98,23 @@ export async function exportProjectHours(table: HTMLTableElement, chart: HTMLEle
       clone.querySelectorAll('.recharts-tooltip-wrapper').forEach(node => node.remove());
     },
   });
-  const workbook = await projectHoursWorkbook(rows, table.tHead?.rows.length || 1, {
+  const box = chart.getBoundingClientRect();
+  const grid = chart.querySelector('.recharts-cartesian-grid')?.getBoundingClientRect();
+  const periods = chart.querySelectorAll('.recharts-xAxis .recharts-cartesian-axis-tick').length;
+  let payload: { base64: string; width: number; height: number; axis?: string; periods?: number } = {
     base64: canvas.toDataURL('image/png'), width: canvas.width / 2, height: canvas.height / 2,
-  });
+  };
+  if (grid && grid.width > 0 && periods > 0) {
+    const crop = (x: number, w: number) => {
+      const out = document.createElement('canvas');
+      out.width = Math.max(1, Math.round(w * 2)); out.height = canvas.height;
+      out.getContext('2d')!.drawImage(canvas, Math.round(x * 2), 0, out.width, canvas.height, 0, 0, out.width, canvas.height);
+      return out.toDataURL('image/png');
+    };
+    const left = grid.left - box.left;
+    payload = { ...payload, axis: crop(0, left), base64: crop(left, grid.width), periods };
+  }
+  const workbook = await projectHoursWorkbook(rows, table.tHead?.rows.length || 1, payload);
   const buffer = await workbook.xlsx.writeBuffer();
   return new Blob([new Uint8Array(buffer)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 }
