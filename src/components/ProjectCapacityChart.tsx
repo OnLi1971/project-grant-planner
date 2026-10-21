@@ -97,6 +97,7 @@ export function ProjectCapacityChart({ entries, engineers, weeks, demand, status
         <div className="flex gap-1">{(['months', 'quarters'] as const).map(p => <Button key={p} size="sm" variant={period === p ? 'default' : 'outline'} onClick={() => { setPeriod(p); setSelected(null); }}>{p === 'months' ? 'Months' : 'Quarters'}</Button>)}</div>
       </CardHeader>
       <CardContent>
+        <div data-capacity-export>
         <div className="h-96 w-full">
           <ResponsiveContainer>
             <ComposedChart data={chartData} margin={{ top: 20, right: 10, left: -10, bottom: 0 }} style={{ cursor: 'pointer' }} onClick={(e: { activeLabel?: string } | null) => e?.activeLabel && setSelected(e.activeLabel)}>
@@ -117,17 +118,18 @@ export function ProjectCapacityChart({ entries, engineers, weeks, demand, status
             </ComposedChart>
           </ResponsiveContainer>
         </div>
+        <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
+          <span className="flex items-center gap-2"><svg width="18" height="14" aria-hidden="true"><rect width="18" height="14" fill="hsl(var(--muted-foreground))" /></svg>Delivery</span>
+          <span className="flex items-center gap-2"><svg width="18" height="14" aria-hidden="true"><rect width="18" height="14" fill="hsl(var(--muted))" /><path d="M-4 4L4-4M0 14L14 0M7 14L21 0M14 14L28 0" stroke="hsl(var(--muted-foreground))" strokeWidth="1.5" /></svg>Presales</span>
+          <span className="flex items-center gap-2"><svg width="18" height="14" aria-hidden="true"><path d="M0 7H18" stroke="hsl(var(--destructive))" strokeWidth="3" /></svg>Max engineers available</span>
+        </div>
+        </div>
         {selectedRow && <div className="mt-3 rounded-md border border-border bg-muted/40 p-3 text-sm">
           <div className="mb-1 flex items-center justify-between font-semibold"><span>Summary – {String(selectedRow.month)}</span>
             <button type="button" aria-label="Close summary" className="text-muted-foreground hover:text-foreground" onClick={() => setSelected(null)}>✕</button></div>
           <p className="text-muted-foreground">{capacityPeriodSummary(String(selectedRow.month), projects.filter(p => Number(selectedRow[p.code]) > 0).map(p => ({ code: p.code, presales: p.presales, fte: Number(selectedRow[p.code]) })), Number(selectedRow.capacity), Number(selectedRow.blockedFte))}</p>
         </div>}
         {!selectedRow && <p className="mt-2 text-xs text-muted-foreground">Click a column to see a summary of the period.</p>}
-        <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
-          <span className="flex items-center gap-2"><svg width="18" height="14" aria-hidden="true"><rect width="18" height="14" fill="hsl(var(--muted-foreground))" /></svg>Delivery</span>
-          <span className="flex items-center gap-2"><svg width="18" height="14" aria-hidden="true"><rect width="18" height="14" fill="hsl(var(--muted))" /><path d="M-4 4L4-4M0 14L14 0M7 14L21 0M14 14L28 0" stroke="hsl(var(--muted-foreground))" strokeWidth="1.5" /></svg>Presales</span>
-          <span className="flex items-center gap-2"><svg width="18" height="14" aria-hidden="true"><path d="M0 7H18" stroke="hsl(var(--destructive))" strokeWidth="3" /></svg>Max engineers available</span>
-        </div>
       </CardContent>
     </Card>
   );

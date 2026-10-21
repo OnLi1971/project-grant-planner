@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { format, getISOWeek, getISOWeekYear, addWeeks } from 'date-fns';
-import { Grid3x3, History } from 'lucide-react';
+import { Download, Grid3x3, History, Loader2 } from 'lucide-react';
 import { usePlanning } from '@/contexts/PlanningContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,10 +17,16 @@ import { useProjectMonthlyPlan } from '@/hooks/useProjectMonthlyPlan';
 import { ProjectCapacityChart } from '@/components/ProjectCapacityChart';
 import { planningEndYear } from '@/utils/planningHorizon';
 import { projectHoursSummary } from '@/utils/projectHoursSummary';
+import { useToast } from '@/hooks/use-toast';
 
 const hoursLabel = (hours: number) => new Intl.NumberFormat('en-GB', { maximumFractionDigits: 1 }).format(hours);
 
 export function ProjectHoursMatrix() {
+  const tableRef = useRef<HTMLTableElement>(null);
+  const chartRef = useRef<HTMLDivElement>(null);
+  const [exporting, setExporting] = useState(false);
+  const [preparedExport, setPreparedExport] = useState<Blob | null>(null);
+  const { toast } = useToast();
   const { planningData, engineers } = usePlanning();
   const { data: catalog, isPending: catalogLoading, isError: catalogError } = useProjectHoursCatalog();
   const { data: monthlyDemand } = useProjectMonthlyPlan();
@@ -30,6 +36,7 @@ export function ProjectHoursMatrix() {
     try { return readProjectHoursFilter(window.localStorage); }
     catch { return { mode: 'program', programs: ['All'], engineers: [] }; }
   });
+  useEffect(() => { setPreparedExport(null); }, [filter, mode, showHistory, planningData, monthlyDemand]);
   const changeFilter = (value: ProjectHoursFilterValue) => {
     setFilter(value);
     try { writeProjectHoursFilter(window.localStorage, value); } catch { /* Storage may be blocked. */ }
@@ -116,6 +123,29 @@ export function ProjectHoursMatrix() {
     { label: 'Balance [FTE]', unit: 'fte', value: balanceFor, balance: true },
   ];
   const metricLabel = (value: number, unit: typeof metrics[number]['unit']) => unit === 'fte' ? value.toFixed(1) : unit === 'hours' ? hoursLabel(value) : String(value);
+  const exportExcel = async () => {
+    const table = tableRef.current;
+    const chart = chartRef.current?.querySelector<HTMLElement>('[data-capacity-export]');
+    if (!table || !chart) return;
+    const filename = `Project-Hours-Matrix-${mode}-${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
+    setExporting(true);
+    try {
+      const { exportProjectHours, downloadProjectHours } = await import('@/utils/projectHoursExcel');
+      if (preparedExport) {
+        await downloadProjectHours(preparedExport, filename);
+        setPreparedExport(null);
+        return;
+      }
+      const blob = await exportProjectHours(table, chart);
+      // Safari requires a fresh user gesture after asynchronous generation.
+      if (matchMedia('(pointer: coarse)').matches) {
+        setPreparedExport(blob);
+        toast({ title: 'Excel is ready', description: 'Download Excel' });
+      } else await downloadProjectHours(blob, filename);
+    } catch (error) {
+      toast({ title: 'Excel export failed', description: error instanceof Error ? error.message : 'Please try again.', variant: 'destructive' });
+    } finally { setExporting(false); }
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -123,7 +153,11 @@ export function ProjectHoursMatrix() {
         <CardHeader>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <CardTitle className="flex items-center gap-2 text-2xl font-bold"><Grid3x3 className="h-5 w-5 text-primary" />Project Hours Matrix</CardTitle>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="outline" size="sm" disabled={exporting || !catalog || catalogLoading} onClick={exportExcel}>
+                {exporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                {exporting ? 'Preparing Excel…' : preparedExport ? 'Download Excel' : 'Export to Excel'}
+              </Button>
               <Button variant={showHistory ? 'default' : 'outline'} size="sm" onClick={() => setShowHistory(v => !v)}><History className="mr-2 h-4 w-4" />Show history</Button>
               <Select value={mode} onValueChange={value => { if (value === 'weeks' || value === 'months') setMode(value); }}>
                 <SelectTrigger className="w-32" aria-label="Period view"><SelectValue /></SelectTrigger>
@@ -135,7 +169,7 @@ export function ProjectHoursMatrix() {
         <CardContent>
           <ProjectHoursFilter value={filter} onChange={changeFilter} names={engineerNames} programs={catalog?.programs.map(p => p.code) || []} />
           <div className="overflow-auto max-h-[85vh]">
-            <table className="w-full border-collapse text-xs" aria-label="Project planned hours">
+            <table ref={tableRef} className="w-full border-collapse text-xs" aria-label="Project planned hours">
               <thead className="sticky top-0 z-20">
                 {mode === 'weeks' && <tr className="h-12">
                   <th className="border-2 border-border bg-background p-2 text-left sticky left-0 z-30 min-w-[200px] text-sm">Project</th>
@@ -156,34 +190,34 @@ export function ProjectHoursMatrix() {
                   <th scope="row" className="border border-border p-1.5 text-left font-semibold sticky left-0 bg-inherit z-10 whitespace-nowrap">{code}</th>
                   {columns.map(period => {
                     const hours = rows.get(code)?.get(period.key) || 0;
-                    return <td key={period.key} className={`border border-border p-1 text-center`}>
+                    return <td key={period.key} data-excel-value={hours} className={`border border-border p-1 text-center`}>
                       {hours > 0 ? <span data-project={code} className="project-hours-value inline-flex w-full justify-center rounded-md px-1.5 py-0.5 font-medium shadow-sm" title={`${code} · ${period.label}: ${hoursLabel(hours)} MH`}>{hoursLabel(hours)}</span> : <span className="text-muted-foreground">–</span>}
                     </td>;
                   })}
-                  <td className="border border-border p-1.5 text-center font-bold bg-primary/5">{hoursLabel(columns.reduce((sum, p) => sum + (rows.get(code)?.get(p.key) || 0), 0))}</td>
+                  <td data-excel-total="true" data-excel-value={columns.reduce((sum, p) => sum + (rows.get(code)?.get(p.key) || 0), 0)} className="border border-border p-1.5 text-center font-bold bg-primary/5">{hoursLabel(columns.reduce((sum, p) => sum + (rows.get(code)?.get(p.key) || 0), 0))}</td>
                 </tr>)}
                 {codes.length === 0 && <tr><td colSpan={columns.length + 2} className="p-6 text-muted-foreground">{catalogLoading ? 'Loading projects…' : catalogError ? 'Unable to load projects.' : 'No planned project hours in this period.'}</td></tr>}
                 {demandCodes.map(code => <tr key={`demand-${code}`} className="italic">
                   <th scope="row" className="border border-border p-1.5 text-left font-medium sticky left-0 bg-background z-10 whitespace-nowrap">{code} · plan</th>
                   {columns.map(period => {
                     const hours = demandRows.get(code)?.get(period.key) || 0;
-                    return <td key={period.key} className={`border border-border p-1 text-center`}>
+                    return <td key={period.key} data-excel-value={hours} className={`border border-border p-1 text-center`}>
                       {hours > 0 ? <span data-project={code} className="project-plan-value inline-flex w-full justify-center rounded-md px-1.5 py-0.5 font-medium" title={`${code} demand · ${period.label}: ${hoursLabel(hours)} MH`}>{hoursLabel(hours)}</span> : <span className="text-muted-foreground">–</span>}
                     </td>;
                   })}
-                  <td className="border border-border p-1.5 text-center font-semibold">{hoursLabel(columns.reduce((sum, p) => sum + (demandRows.get(code)?.get(p.key) || 0), 0))}</td>
+                  <td data-excel-total="true" data-excel-value={columns.reduce((sum, p) => sum + (demandRows.get(code)?.get(p.key) || 0), 0)} className="border border-border p-1.5 text-center font-semibold">{hoursLabel(columns.reduce((sum, p) => sum + (demandRows.get(code)?.get(p.key) || 0), 0))}</td>
                 </tr>)}
                 {metrics.map(metric => <tr key={metric.label} className="bg-primary/5 font-semibold">
                   <th scope="row" className="border border-border p-2 text-left sticky left-0 bg-background z-10 whitespace-nowrap">{metric.label}</th>
-                  {columns.map(period => <td key={period.key} className={`border border-border p-2 text-center ${metric.balance ? metric.value(period.key) < 0 ? 'text-destructive' : 'text-chart-2' : ''}`}>{metricLabel(metric.value(period.key), metric.unit)}</td>)}
-                  <td className="border border-border p-2 text-center">{metric.unit === 'hours' ? metricLabel(columns.reduce((sum, period) => sum + metric.value(period.key), 0), 'hours') : '–'}</td>
+                  {columns.map(period => <td key={period.key} data-excel-value={metric.value(period.key)} data-excel-format={metric.unit === 'count' ? '0' : undefined} className={`border border-border p-2 text-center ${metric.balance ? metric.value(period.key) < 0 ? 'text-destructive' : 'text-chart-2' : ''}`}>{metricLabel(metric.value(period.key), metric.unit)}</td>)}
+                  <td data-excel-total={metric.unit === 'hours' ? 'true' : undefined} data-excel-value={metric.unit === 'hours' ? columns.reduce((sum, period) => sum + metric.value(period.key), 0) : undefined} className="border border-border p-2 text-center">{metric.unit === 'hours' ? metricLabel(columns.reduce((sum, period) => sum + metric.value(period.key), 0), 'hours') : '–'}</td>
                 </tr>)}
               </tbody>
             </table>
           </div>
         </CardContent>
       </Card>
-      {catalog && <ProjectCapacityChart entries={filteredData} engineers={engineers} weeks={periods.weeks.map(w => w.key)} demand={chartDemand} statusByProject={catalog.statusByProject} blocked={blockedData} />}
+      <div ref={chartRef} onClickCapture={() => setPreparedExport(null)}>{catalog && <ProjectCapacityChart entries={filteredData} engineers={engineers} weeks={periods.weeks.map(w => w.key)} demand={chartDemand} statusByProject={catalog.statusByProject} blocked={blockedData} />}</div>
     </div>
   );
 }
