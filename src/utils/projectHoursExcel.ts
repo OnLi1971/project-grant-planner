@@ -12,7 +12,7 @@ export interface ExcelCellSnapshot {
   total?: boolean;
 }
 
-export async function projectHoursWorkbook(rows: ExcelCellSnapshot[][], headerRows: number, chart: { base64: string; width: number; height: number; axis?: string; periods?: number }) {
+export async function projectHoursWorkbook(rows: ExcelCellSnapshot[][], headerRows: number, chart: { base64: string; width: number; height: number; axis?: string; axisWidth?: number; periods?: number }) {
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'Project Grant Planner';
   const sheet = workbook.addWorksheet('Project Hours Matrix', {
@@ -48,7 +48,9 @@ export async function projectHoursWorkbook(rows: ExcelCellSnapshot[][], headerRo
     // Align chart bars with table period columns: axis in column A, plot over B..N.
     const rowsTall = Math.ceil(chart.height / 20);
     const axisId = workbook.addImage({ base64: chart.axis, extension: 'png' });
-    sheet.addImage(axisId, { tl: { col: 0, row: chartRow }, br: { col: 1, row: chartRow + rowsTall }, editAs: 'twoCell' } as never);
+    const colAPx = 47 * 7 + 5;
+    const axisW = Math.min(chart.axisWidth || 60, colAPx);
+    sheet.addImage(axisId, { tl: { col: 1 - axisW / colAPx, row: chartRow }, ext: { width: axisW, height: rowsTall * 20 }, editAs: 'oneCell' });
     sheet.addImage(id, { tl: { col: 1, row: chartRow }, br: { col: 1 + chart.periods, row: chartRow + rowsTall }, editAs: 'twoCell' } as never);
   } else {
     sheet.addImage(id, { tl: { col: 0, row: chartRow }, ext: { width: chart.width, height: chart.height }, editAs: 'oneCell' });
@@ -101,7 +103,7 @@ export async function exportProjectHours(table: HTMLTableElement, chart: HTMLEle
   const box = chart.getBoundingClientRect();
   const grid = chart.querySelector('.recharts-cartesian-grid')?.getBoundingClientRect();
   const periods = chart.querySelectorAll('.recharts-xAxis .recharts-cartesian-axis-tick').length;
-  let payload: { base64: string; width: number; height: number; axis?: string; periods?: number } = {
+  let payload: { base64: string; width: number; height: number; axis?: string; axisWidth?: number; periods?: number } = {
     base64: canvas.toDataURL('image/png'), width: canvas.width / 2, height: canvas.height / 2,
   };
   if (grid && grid.width > 0 && periods > 0) {
@@ -112,7 +114,7 @@ export async function exportProjectHours(table: HTMLTableElement, chart: HTMLEle
       return out.toDataURL('image/png');
     };
     const left = grid.left - box.left;
-    payload = { ...payload, axis: crop(0, left), base64: crop(left, grid.width), periods };
+    payload = { ...payload, axis: crop(0, left), axisWidth: left, base64: crop(left, grid.width), periods };
   }
   const workbook = await projectHoursWorkbook(rows, table.tHead?.rows.length || 1, payload);
   const buffer = await workbook.xlsx.writeBuffer();
