@@ -71,7 +71,8 @@ export function projectCapacitySummary(entries: PlanningEntry[], engineers: Engi
     const freeFte = people.reduce((sum, p) => sum + (p.capacity ? Math.max(0, p.max - p.real) / p.capacity : 0), 0);
     const leaveFte = people.reduce((sum, p) => sum + (p.capacity ? p.leave / p.capacity : 0), 0);
     const totalFte = people.reduce((sum, p) => sum + (p.capacity ? p.real / p.capacity : 0), 0);
-    result.set(period, { freeHours, freeFte, leaveHours, leaveFte, maxHours, realHours, engineerCount: people.filter(p => p.real > 0).length, maxEngineerCount: people.filter(p => p.capacity > 0).length, totalFte, utilization: maxHours ? cappedReal / maxHours * 100 : 0 });
+    const maxEngineerCount = people.reduce((sum, p) => sum + (p.capacity ? p.max / p.capacity : 0), 0);
+    result.set(period, { freeHours, freeFte, leaveHours, leaveFte, maxHours, realHours, engineerCount: people.filter(p => p.real > 0).length, maxEngineerCount, totalFte, utilization: maxHours ? cappedReal / maxHours * 100 : 0 });
   }
   return result;
 }
