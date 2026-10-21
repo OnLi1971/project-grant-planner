@@ -42,7 +42,7 @@ export async function projectHoursWorkbook(rows: ExcelCellSnapshot[][], headerRo
       cell.alignment = { horizontal: item.align, vertical: 'middle', wrapText: true };
       const border = { style: 'thin' as const, color: { argb: 'FFD1D5DB' } };
       cell.border = { top: border, bottom: border, left: border, right: border };
-      cell.numFmt = item.format || '#,##0.0;(#,##0.0);"–"';
+      cell.numFmt = item.format || '#,##0.0;-#,##0.0;"–"';
       if (item.colSpan > 1) sheet.mergeCells(index + 1, column, index + 1, column + item.colSpan - 1);
       column += item.colSpan;
     });
