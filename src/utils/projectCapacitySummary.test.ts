@@ -52,7 +52,7 @@ test('2027 Czech Easter Friday and Monday reduce both weeks to 28.8 hours', () =
 });
 test('Slovak January 6 2027 is excluded per engineer, with one free FTE each', () => {
   const cw = 'CW01-2027';
-  const stats = projectCapacitySummary(['A', 'Bohušík Martin'].map(konstrukter => ({ ...base, konstrukter, cw, projekt: 'FREE', projekt2: null })), [], [cw], 'weeks').get(cw);
+  const stats = projectCapacitySummary(['A', 'Chrenko Daniel'].map(konstrukter => ({ ...base, konstrukter, cw, projekt: 'FREE', projekt2: null })), [], [cw], 'weeks').get(cw);
   assert.ok(stats);
   assert.ok(Math.abs(stats.maxHours - 64.8) < 0.00001);
   assert.equal(stats.freeFte, 2);
