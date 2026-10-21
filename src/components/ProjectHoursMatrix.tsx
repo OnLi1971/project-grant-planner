@@ -25,6 +25,7 @@ export function ProjectHoursMatrix() {
   const tableRef = useRef<HTMLTableElement>(null);
   const chartRef = useRef<HTMLDivElement>(null);
   const [exporting, setExporting] = useState(false);
+  const [align, setAlign] = useState<{ first: number; col: number } | null>(null);
   const [preparedExport, setPreparedExport] = useState<Blob | null>(null);
   const { toast } = useToast();
   const { planningData, engineers } = usePlanning();
@@ -36,6 +37,22 @@ export function ProjectHoursMatrix() {
     try { return readProjectHoursFilter(window.localStorage); }
     catch { return { mode: 'program', programs: ['All'], engineers: [] }; }
   });
+  // Measure month columns so the chart below puts each month bar under its table column.
+  useEffect(() => {
+    const table = tableRef.current;
+    if (!table || mode !== 'months') { setAlign(null); return; }
+    const measure = () => {
+      const cells = table.tHead?.rows[table.tHead.rows.length - 1]?.cells;
+      if (!cells || cells.length < 3) return;
+      const first = cells[1].getBoundingClientRect().left - table.getBoundingClientRect().left;
+      const col = cells[1].getBoundingClientRect().width;
+      setAlign(a => a && Math.abs(a.first - first) < 0.5 && Math.abs(a.col - col) < 0.5 ? a : { first, col });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(table);
+    return () => ro.disconnect();
+  }, [mode]);
   useEffect(() => { setPreparedExport(null); }, [filter, mode, showHistory, planningData, monthlyDemand]);
   const changeFilter = (value: ProjectHoursFilterValue) => {
     setFilter(value);
@@ -168,8 +185,8 @@ export function ProjectHoursMatrix() {
         </CardHeader>
         <CardContent>
           <ProjectHoursFilter value={filter} onChange={changeFilter} names={engineerNames} programs={catalog?.programs.map(p => p.code) || []} />
-          <div className="overflow-auto max-h-[85vh]">
-            <table ref={tableRef} className="w-full border-collapse text-xs" aria-label="Project planned hours">
+          <div className="overflow-auto max-h-[85vh]" onScroll={e => { const el = chartRef.current?.querySelector<HTMLElement>('[data-chart-scroll]'); if (el) el.scrollLeft = e.currentTarget.scrollLeft; }}>
+            <table ref={tableRef} className="w-max min-w-full border-collapse text-xs" aria-label="Project planned hours">
               <thead className="sticky top-0 z-20">
                 {mode === 'weeks' && <tr className="h-12">
                   <th className="border-2 border-border bg-background p-2 text-left sticky left-0 z-30 min-w-[200px] text-sm">Project</th>
@@ -178,7 +195,7 @@ export function ProjectHoursMatrix() {
                 </tr>}
                 <tr>
                   <th className="border-2 border-border p-1.5 bg-background text-left sticky left-0 z-30 min-w-[200px]">{mode === 'months' ? 'Project' : ''}</th>
-                  {columns.map((period, index) => <th key={period.key} className={`border border-border p-1.5 text-center min-w-[90px] bg-background ${mode === 'weeks' && index > 0 && periods.weeks[index - 1]?.group !== periods.weeks[index]?.group ? 'border-l-4 border-l-primary/50' : ''}`}>
+                  {columns.map((period, index) => <th key={period.key} className={`border border-border p-1.5 text-center min-w-[90px] w-[90px] bg-background ${mode === 'weeks' && index > 0 && periods.weeks[index - 1]?.group !== periods.weeks[index]?.group ? 'border-l-4 border-l-primary/50' : ''}`}>
                     <div className="font-semibold text-primary">{period.label}</div>
                     {period.sub && <div className="text-[10px] text-muted-foreground whitespace-nowrap">{period.sub}</div>}
                   </th>)}
@@ -217,7 +234,7 @@ export function ProjectHoursMatrix() {
           </div>
         </CardContent>
       </Card>
-      <div ref={chartRef} onClickCapture={() => setPreparedExport(null)}>{catalog && <ProjectCapacityChart entries={filteredData} engineers={engineers} weeks={periods.weeks.map(w => w.key)} demand={chartDemand} statusByProject={catalog.statusByProject} blocked={blockedData} />}</div>
+      <div ref={chartRef} onClickCapture={() => setPreparedExport(null)}>{catalog && <ProjectCapacityChart entries={filteredData} engineers={engineers} weeks={periods.weeks.map(w => w.key)} demand={chartDemand} statusByProject={catalog.statusByProject} blocked={blockedData} align={align} />}</div>
     </div>
   );
 }

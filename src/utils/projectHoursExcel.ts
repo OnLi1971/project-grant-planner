@@ -13,7 +13,7 @@ export interface ExcelCellSnapshot {
 }
 
 export const COL_A = 47;
-export const COL_PERIOD = 14;
+export const COL_PERIOD = 12.15; // ≈ 90 px, same as the app's month columns
 export const COL_PERIOD_PX = COL_PERIOD * 7 + 5;
 const ROW_PX = 20;
 export interface ChartImages {
@@ -110,7 +110,13 @@ export async function exportProjectHours(table: HTMLTableElement, chart: HTMLEle
   const original = chart.style.width;
   const gridOf = () => chart.querySelector('.recharts-cartesian-grid')?.getBoundingClientRect();
   const before = gridOf();
-  if (before && periods > 0) {
+  const scroller = chart.querySelector<HTMLElement>('[data-chart-scroll]');
+  const scrollerStyle = scroller?.getAttribute('style') ?? null;
+  if (scroller) {
+    // Aligned chart: reveal its full width instead of the scrolled viewport.
+    scroller.style.overflow = 'visible'; scroller.style.width = 'max-content';
+    chart.style.width = 'max-content';
+  } else if (before && periods > 0) {
     chart.style.width = `${chart.getBoundingClientRect().width - before.width + periods * COL_PERIOD_PX}px`;
     await new Promise(r => setTimeout(r, 400));
   }
@@ -153,6 +159,7 @@ export async function exportProjectHours(table: HTMLTableElement, chart: HTMLEle
     return new Blob([new Uint8Array(buffer)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   } finally {
     chart.style.width = original;
+    if (scroller) { if (scrollerStyle === null) scroller.removeAttribute('style'); else scroller.setAttribute('style', scrollerStyle); }
   }
 }
 
