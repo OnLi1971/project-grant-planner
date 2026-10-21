@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useId, useMemo } from 'react';
 import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, CartesianGrid, LabelList } from 'recharts';
 import { format } from 'date-fns';
 import { getExactProjectColor } from '@/utils/colorSystem';
@@ -24,6 +24,7 @@ const colorFor = (code: string, i: number) => {
 
 /** Monthly FTE per project (Delivery + Presales stacked) vs. max productive engineer count. */
 export function ProjectCapacityChart({ entries, engineers, weeks, demand, statusByProject, blocked = [] }: Props) {
+  const patternPrefix = useId().replace(/:/g, '');
   const { data, projects } = useMemo(() => {
     const current = monthKey(new Date());
     const hours = projectHours(entries, weeks, 'months');
@@ -35,7 +36,8 @@ export function ProjectCapacityChart({ entries, engineers, weeks, demand, status
     const isPresales = (code: string) => (statusByProject.get(code) || '').toLowerCase().includes('pre');
     const totals = new Map<string, number>();
     const data = months.map(m => {
-      const s = summary.get(m)!;
+      const s = summary.get(m);
+      if (!s) return { month: m, capacity: 0, blockedFte: 0, total: 0 };
       const fteHours = s.maxEngineerCount ? s.maxHours / s.maxEngineerCount : 0;
       const row: Record<string, number | string> = { month: format(new Date(Number(m.slice(0, 4)), Number(m.slice(5, 7)) - 1, 1), 'MMM yy'), capacity: 0, blockedFte: 0 };
       const b = [...blockedHours.values()].reduce((sum, r) => sum + (r.get(m) || 0), 0);
@@ -67,7 +69,7 @@ export function ProjectCapacityChart({ entries, engineers, weeks, demand, status
       return <div className="mt-2">
         <div className="text-xs font-semibold text-muted-foreground mb-1">{title} ({sum.toFixed(1)} FTE)</div>
         {items.map(p => <div key={p.code} className="flex items-center justify-between gap-6 text-xs">
-          <span className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full" style={{ background: p.color, opacity: p.presales ? 0.6 : 1 }} />{p.code}</span>
+          <span className="flex items-center gap-2"><svg className="h-3 w-3 shrink-0" viewBox="0 0 12 12" aria-hidden="true"><rect width="12" height="12" fill={p.color} fillOpacity={p.presales ? 0.25 : 1} />{p.presales && <path d="M-3 3L3-3M0 12L12 0M9 15L15 9" stroke={p.color} strokeWidth="2" />}</svg>{p.code}</span>
           <span className="font-mono">{row[p.code].toFixed(1)} FTE</span>
         </div>)}
       </div>;
@@ -89,18 +91,28 @@ export function ProjectCapacityChart({ entries, engineers, weeks, demand, status
         <div className="h-96 w-full">
           <ResponsiveContainer>
             <ComposedChart data={data} margin={{ top: 20, right: 10, left: -10, bottom: 0 }}>
+              <defs>
+                {projects.filter(p => p.presales).map(p => <pattern key={p.code} id={`${patternPrefix}-${p.code}`} width="7" height="7" patternUnits="userSpaceOnUse">
+                  <rect width="7" height="7" fill={p.color} fillOpacity={0.22} />
+                  <path d="M-2 2L2-2M0 7L7 0M5 9L9 5" stroke={p.color} strokeWidth="1.5" />
+                </pattern>)}
+              </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
               <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={11} />
               <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} />
               <Tooltip content={renderTooltip as never} cursor={{ fill: 'hsl(var(--muted) / 0.3)' }} />
-              {projects.map((p, i) => <Bar key={p.code} dataKey={p.code} stackId="a" fill={p.color} fillOpacity={p.presales ? 0.55 : 1} stroke={p.presales ? p.color : undefined} strokeDasharray={p.presales ? '3 2' : undefined}>
+              {projects.map((p, i) => <Bar key={p.code} dataKey={p.code} stackId="a" fill={p.presales ? `url(#${patternPrefix}-${p.code})` : p.color} stroke={p.presales ? p.color : undefined} strokeDasharray={p.presales ? '3 2' : undefined}>
                 {i === projects.length - 1 && <LabelList dataKey="total" position="top" fill="hsl(var(--foreground))" fontSize={11} fontWeight={700} />}
               </Bar>)}
               <Line dataKey="capacity" name="Max productive engineering count" type="monotone" stroke="hsl(var(--destructive))" strokeWidth={3} dot={{ r: 3 }} />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
-        <p className="mt-2 text-xs text-muted-foreground">Plné sloupce = Delivery, průhledné s čárkovaným okrajem = Presales, červená čára = Max productive engineering count.</p>
+        <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
+          <span className="flex items-center gap-2"><svg width="18" height="14" aria-hidden="true"><rect width="18" height="14" fill="hsl(var(--muted-foreground))" /></svg>Delivery</span>
+          <span className="flex items-center gap-2"><svg width="18" height="14" aria-hidden="true"><rect width="18" height="14" fill="hsl(var(--muted))" /><path d="M-4 4L4-4M0 14L14 0M7 14L21 0M14 14L28 0" stroke="hsl(var(--muted-foreground))" strokeWidth="1.5" /></svg>Presales</span>
+          <span className="flex items-center gap-2"><svg width="18" height="14" aria-hidden="true"><path d="M0 7H18" stroke="hsl(var(--destructive))" strokeWidth="3" /></svg>Max engineers available</span>
+        </div>
       </CardContent>
     </Card>
   );
