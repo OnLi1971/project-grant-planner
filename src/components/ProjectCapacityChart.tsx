@@ -1,4 +1,5 @@
-import { useId, useMemo } from 'react';
+import { useId, useMemo, useState } from 'react';
+import { capacityPeriodSummary } from '@/utils/capacityPeriodSummary';
 import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, CartesianGrid, LabelList } from 'recharts';
 import { format } from 'date-fns';
 import { getExactProjectColor } from '@/utils/colorSystem';
@@ -58,6 +59,8 @@ export function ProjectCapacityChart({ entries, engineers, weeks, demand, status
       .map((code, i) => ({ code, presales: isPresales(code), color: colorFor(code, i) }));
     return { data, projects: ordered };
   }, [entries, engineers, weeks, demand, statusByProject, blocked]);
+  const [selected, setSelected] = useState<string | null>(null);
+  const selectedRow = selected ? data.find(r => r.month === selected) as Record<string, number | string> | undefined : undefined;
 
   const renderTooltip = ({ active, payload, label }: { active?: boolean; payload?: { payload: Record<string, number> }[]; label?: string }) => {
     if (!active || !payload?.length) return null;
@@ -90,7 +93,7 @@ export function ProjectCapacityChart({ entries, engineers, weeks, demand, status
       <CardContent>
         <div className="h-96 w-full">
           <ResponsiveContainer>
-            <ComposedChart data={data} margin={{ top: 20, right: 10, left: -10, bottom: 0 }}>
+            <ComposedChart data={data} margin={{ top: 20, right: 10, left: -10, bottom: 0 }} style={{ cursor: 'pointer' }} onClick={(e: { activeLabel?: string } | null) => e?.activeLabel && setSelected(e.activeLabel)}>
               <defs>
                 {projects.filter(p => p.presales).map(p => <pattern key={p.code} id={`${patternPrefix}-${p.code}`} width="7" height="7" patternUnits="userSpaceOnUse">
                   <rect width="7" height="7" fill={p.color} fillOpacity={0.22} />
@@ -108,6 +111,12 @@ export function ProjectCapacityChart({ entries, engineers, weeks, demand, status
             </ComposedChart>
           </ResponsiveContainer>
         </div>
+        {selectedRow && <div className="mt-3 rounded-md border border-border bg-muted/40 p-3 text-sm">
+          <div className="mb-1 flex items-center justify-between font-semibold"><span>Summary – {String(selectedRow.month)}</span>
+            <button type="button" aria-label="Close summary" className="text-muted-foreground hover:text-foreground" onClick={() => setSelected(null)}>✕</button></div>
+          <p className="text-muted-foreground">{capacityPeriodSummary(String(selectedRow.month), projects.filter(p => Number(selectedRow[p.code]) > 0).map(p => ({ code: p.code, presales: p.presales, fte: Number(selectedRow[p.code]) })), Number(selectedRow.capacity), Number(selectedRow.blockedFte))}</p>
+        </div>}
+        {!selectedRow && <p className="mt-2 text-xs text-muted-foreground">Click a column to see a summary of the month.</p>}
         <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
           <span className="flex items-center gap-2"><svg width="18" height="14" aria-hidden="true"><rect width="18" height="14" fill="hsl(var(--muted-foreground))" /></svg>Delivery</span>
           <span className="flex items-center gap-2"><svg width="18" height="14" aria-hidden="true"><rect width="18" height="14" fill="hsl(var(--muted))" /><path d="M-4 4L4-4M0 14L14 0M7 14L21 0M14 14L28 0" stroke="hsl(var(--muted-foreground))" strokeWidth="1.5" /></svg>Presales</span>
