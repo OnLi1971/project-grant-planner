@@ -114,7 +114,7 @@ export function ProjectHoursMatrix() {
     { label: 'Max productive hours', key: 'maxHours', unit: 'hours' },
     { label: 'Real productive hours', key: 'realHours', unit: 'hours' },
     { label: 'Engineer count', key: 'engineerCount', unit: 'count' },
-    { label: 'Max productive engineering count', key: 'maxEngineerCount', unit: 'count' },
+    { label: 'Max productive engineering count', key: 'maxEngineerCount', unit: 'fte' },
     { label: 'Total FTE', key: 'totalFte', unit: 'fte' },
     { label: 'Utilization', key: 'utilization', unit: 'percent' },
   ];
