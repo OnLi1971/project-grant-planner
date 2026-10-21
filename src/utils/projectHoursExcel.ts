@@ -54,15 +54,23 @@ export async function projectHoursWorkbook(rows: ExcelCellSnapshot[][], headerRo
   sheet.getCell(chartRow, 1).value = 'Capacity vs. demand [FTE]';
   sheet.getCell(chartRow, 1).font = { name: 'Arial', bold: true, size: 14 };
   const id = workbook.addImage({ base64: chart.base64, extension: 'png' });
-  if (chart.axis && chart.legend && chart.periods) {
-    // Bars sit exactly under their period columns: axis right-aligned in column A, plot from column B, legend below.
-    const colAPx = COL_A * 7 + 5;
-    const axisW = Math.min(chart.axisWidth || 60, colAPx);
+  if (chart.axisWidth && chart.periods) {
+    // One image anchored cell-to-cell: Excel scales it to exactly column A + N period columns,
+    // and column A gets the same width ratio as the chart's axis area, so bars sit under their months.
+    const colPx = (chart.width - chart.axisWidth) / chart.periods;
+    sheet.getColumn(1).width = Math.max(20, COL_PERIOD * chart.axisWidth / colPx);
     const plotH = chart.plotHeight || chart.height;
     const top = chartRow;
-    sheet.addImage(workbook.addImage({ base64: chart.axis, extension: 'png' }), { tl: { col: 1 - axisW / colAPx, row: top }, ext: { width: axisW, height: plotH }, editAs: 'oneCell' });
-    sheet.addImage(id, { tl: { col: 1, row: top }, ext: { width: chart.width, height: plotH }, editAs: 'oneCell' });
-    sheet.addImage(workbook.addImage({ base64: chart.legend, extension: 'png' }), { tl: { col: 1, row: top + plotH / ROW_PX + 0.3 }, ext: { width: chart.legendWidth || 300, height: chart.legendHeight || 30 }, editAs: 'oneCell' });
+    const span = Math.max(1, Math.round(plotH / ROW_PX));
+    for (let r = top + 1; r <= top + span + 1; r++) sheet.getRow(r).height = 15;
+    sheet.addImage(id, { tl: { col: 0, row: top }, br: { col: 1 + chart.periods, row: top + span }, editAs: 'twoCell' } as never);
+    const legendRow = top + span + 2;
+    const legend: [string, string][] = [['■ Delivery', 'FF1D4ED8'], ['▨ Presales', 'FF64748B'], ['━ Max engineers available', 'FFDC2626']];
+    legend.forEach(([text, color], i) => {
+      const cell = sheet.getCell(legendRow, 2 + i * 2);
+      cell.value = text;
+      cell.font = { name: 'Arial', size: 10, bold: true, color: { argb: color } };
+    });
   } else {
     sheet.addImage(id, { tl: { col: 0, row: chartRow }, ext: { width: chart.width, height: chart.height }, editAs: 'oneCell' });
   }
@@ -130,7 +138,6 @@ export async function exportProjectHours(table: HTMLTableElement, chart: HTMLEle
     const box = chart.getBoundingClientRect();
     const grid = gridOf();
     const xAxis = chart.querySelector('.recharts-xAxis')?.getBoundingClientRect();
-    const legendEl = chart.querySelector('[data-capacity-legend]') as HTMLElement | null;
     let payload: ChartImages = { base64: canvas.toDataURL('image/png'), width: canvas.width / 2, height: canvas.height / 2 };
     if (grid && grid.width > 0 && periods > 0) {
       const crop = (x: number, y: number, w: number, h: number) => {
@@ -141,16 +148,11 @@ export async function exportProjectHours(table: HTMLTableElement, chart: HTMLEle
       };
       const left = grid.left - box.left;
       const plotBottom = Math.max(grid.bottom, xAxis?.bottom ?? grid.bottom) - box.top + 4;
-      const lg = legendEl?.getBoundingClientRect();
-      const legendTop = lg ? lg.top - box.top : plotBottom;
-      const legendH = lg ? lg.height : box.height - plotBottom;
-      const legendW = lg ? Math.min(lg.width, Array.from(legendEl!.children).reduce((m, c) => Math.max(m, c.getBoundingClientRect().right - lg.left), 0) + 8) : grid.width;
-      const legendX = lg ? lg.left - box.left : left;
+      const fullW = left + grid.width;
       payload = {
         ...payload,
-        axis: crop(0, 0, left, plotBottom), axisWidth: left, plotHeight: plotBottom,
-        base64: crop(left, 0, grid.width, plotBottom), width: grid.width,
-        legend: crop(legendX, legendTop, legendW, legendH), legendWidth: legendW, legendHeight: legendH,
+        axisWidth: left, plotHeight: plotBottom,
+        base64: crop(0, 0, fullW, plotBottom), width: fullW,
         periods,
       };
     }
