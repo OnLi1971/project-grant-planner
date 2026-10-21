@@ -118,7 +118,7 @@ export function ProjectCapacityChart({ entries, engineers, weeks, demand, status
             </ComposedChart>
           </ResponsiveContainer>
         </div>
-        <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
+        <div data-capacity-legend className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
           <span className="flex items-center gap-2"><svg width="18" height="14" aria-hidden="true"><rect width="18" height="14" fill="hsl(var(--muted-foreground))" /></svg>Delivery</span>
           <span className="flex items-center gap-2"><svg width="18" height="14" aria-hidden="true"><rect width="18" height="14" fill="hsl(var(--muted))" /><path d="M-4 4L4-4M0 14L14 0M7 14L21 0M14 14L28 0" stroke="hsl(var(--muted-foreground))" strokeWidth="1.5" /></svg>Presales</span>
           <span className="flex items-center gap-2"><svg width="18" height="14" aria-hidden="true"><path d="M0 7H18" stroke="hsl(var(--destructive))" strokeWidth="3" /></svg>Max engineers available</span>
