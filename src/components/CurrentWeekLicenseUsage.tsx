@@ -8,7 +8,6 @@ import { supabase } from '@/integrations/supabase/client';
 
 // Konstruktéři od dodavatele MB Idea - nečerpají naše licence
 const MB_IDEA_CONTRACTORS = [
-  'Bohušík Martin',
   'Chrenko Daniel', 
   'Chrenko Peter',
   'Jurčišin Peter',
