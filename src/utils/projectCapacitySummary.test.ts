@@ -56,4 +56,10 @@ test('Slovak January 6 2027 is excluded per engineer, with one free FTE each', (
   assert.ok(stats);
   assert.ok(Math.abs(stats.maxHours - 64.8) < 0.00001);
   assert.equal(stats.freeFte, 2);
+});test('max productive engineering count subtracts leave as FTE', () => {
+  const full = { ...base, konstrukter: 'C', projekt: 'DOVOLENÁ', mhTyden: 40, projekt2: null };
+  const half = { ...base, konstrukter: 'D', projekt: 'FREE', mhTyden: 40, projekt2: null, leaveDays: 2 };
+  const stats = projectCapacitySummary([base, full, half], [], [base.cw], 'weeks').get(base.cw);
+  assert.ok(stats);
+  assert.ok(Math.abs(stats.maxEngineerCount - 1.5) < 0.00001);
 });
