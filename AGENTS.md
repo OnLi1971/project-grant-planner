@@ -1,6 +1,7 @@
 # Architecture rules
 - Planning Editor, Project Assignment Matrix and Project Hours Matrix use the shared planning horizon utility so their last selectable year stays aligned.
 - Keep project-hours aggregation in a pure utility, separate from its view, so split allocations and period totals can be tested independently.
+- Keep status-based project-hours summary breakdowns in a pure utility using the live project catalog; generic demand contributes hours but never fabricates named engineer headcount.
 - Keep project matrix capacity summaries in a pure utility; raw productive totals match project cells while utilization caps each person's contribution independently to available capacity.
 - Read planning through PlanningContext; synthetic secondary rows must not double-count primary-row secondary fields.
 - Project-hours filtering reads the live Project Management catalog; Program mode masks out-of-program allocations before both aggregations, while Custom mode selects engineers through the shared saved-view hook, keeping project cells and productive totals consistent.

@@ -16,6 +16,7 @@ import { projectDemand } from '@/utils/projectDemand';
 import { useProjectMonthlyPlan } from '@/hooks/useProjectMonthlyPlan';
 import { ProjectCapacityChart } from '@/components/ProjectCapacityChart';
 import { planningEndYear } from '@/utils/planningHorizon';
+import { projectHoursSummary } from '@/utils/projectHoursSummary';
 
 const hoursLabel = (hours: number) => new Intl.NumberFormat('en-GB', { maximumFractionDigits: 1 }).format(hours);
 
@@ -104,21 +105,17 @@ export function ProjectHoursMatrix() {
     });
     return out;
   }, [baseSummaries, demandRows]);
-  const totalFor = (period: string) => codes.reduce((sum, code) => sum + (rows.get(code)?.get(period) || 0), 0) + demandFor(period);
   const balanceFor = (period: string) => summaries.get(period)?.freeFte || 0;
-  const metrics: { label: string; key: keyof CapacitySummary; unit: 'hours' | 'fte' | 'count' | 'percent' }[] = [
-    { label: 'Free capacity [MH]', key: 'freeHours', unit: 'hours' },
-    { label: 'Free capacity [FTE]', key: 'freeFte', unit: 'fte' },
-    { label: 'Leave [FTE]', key: 'leaveFte', unit: 'fte' },
-    { label: 'Leave [MH]', key: 'leaveHours', unit: 'hours' },
-    { label: 'Max productive hours', key: 'maxHours', unit: 'hours' },
-    { label: 'Real productive hours', key: 'realHours', unit: 'hours' },
-    { label: 'Engineer count', key: 'engineerCount', unit: 'count' },
-    { label: 'Max productive engineering count', key: 'maxEngineerCount', unit: 'fte' },
-    { label: 'Total FTE', key: 'totalFte', unit: 'fte' },
-    { label: 'Utilization', key: 'utilization', unit: 'percent' },
+  const breakdown = useMemo(() => projectHoursSummary(rows, demandRows, filteredData, engineers, periods.weeks.map(w => w.key), mode, catalog?.statusByProject || new Map()), [rows, demandRows, filteredData, engineers, periods, mode, catalog]);
+  const metrics: { label: string; unit: 'hours' | 'fte' | 'count'; value: (period: string) => number; balance?: boolean }[] = [
+    { label: 'Total planned [MH] — Delivery', unit: 'hours', value: p => breakdown.get(p)?.deliveryHours || 0 },
+    { label: 'Total planned [MH] — Presales', unit: 'hours', value: p => breakdown.get(p)?.presalesHours || 0 },
+    { label: 'Total planned [MH] — Delivery + Presales', unit: 'hours', value: p => breakdown.get(p)?.totalHours || 0 },
+    { label: 'Engineer count — Delivery', unit: 'count', value: p => breakdown.get(p)?.deliveryEngineerCount || 0 },
+    { label: 'Max engineers available [FTE]', unit: 'fte', value: p => summaries.get(p)?.maxEngineerCount || 0 },
+    { label: 'Balance [FTE]', unit: 'fte', value: balanceFor, balance: true },
   ];
-  const metricLabel = (value: number, unit: typeof metrics[number]['unit']) => unit === 'fte' ? value.toFixed(1) : unit === 'percent' ? `${Math.round(value)}%` : unit === 'hours' ? `${hoursLabel(value)}h` : String(value);
+  const metricLabel = (value: number, unit: typeof metrics[number]['unit']) => unit === 'fte' ? value.toFixed(1) : unit === 'hours' ? hoursLabel(value) : String(value);
 
   return (
     <div className="p-6 space-y-6">
@@ -176,31 +173,11 @@ export function ProjectHoursMatrix() {
                   })}
                   <td className="border border-border p-1.5 text-center font-semibold">{hoursLabel(columns.reduce((sum, p) => sum + (demandRows.get(code)?.get(p.key) || 0), 0))}</td>
                 </tr>)}
-                <tr className="bg-primary/5 border-t-2 border-primary/30 font-bold">
-                  <th className="border border-border p-2 text-left sticky left-0 bg-background z-10">Total planned hours [MH]</th>
-                  {columns.map(period => <td key={period.key} className="border border-border p-2 text-center" data-period={period.key}>{hoursLabel(totalFor(period.key))}</td>)}
-                  <td className="border border-border p-2 text-center">{hoursLabel(columns.reduce((sum, p) => sum + totalFor(p.key), 0))}</td>
-                </tr>
-                {metrics.map(metric => <tr key={metric.key} className="bg-primary/5 font-semibold">
+                {metrics.map(metric => <tr key={metric.label} className="bg-primary/5 font-semibold">
                   <th scope="row" className="border border-border p-2 text-left sticky left-0 bg-background z-10 whitespace-nowrap">{metric.label}</th>
-                  {columns.map(period => <td key={period.key} className={`border border-border p-2 text-center`}>{metricLabel(summaries.get(period.key)?.[metric.key] || 0, metric.unit)}</td>)}
-                  <td className="border border-border p-2 text-center">{metric.unit === 'hours' ? metricLabel(columns.reduce((sum, period) => sum + (summaries.get(period.key)?.[metric.key] || 0), 0), 'hours') : '–'}</td>
+                  {columns.map(period => <td key={period.key} className={`border border-border p-2 text-center ${metric.balance ? metric.value(period.key) < 0 ? 'text-destructive' : 'text-chart-2' : ''}`}>{metricLabel(metric.value(period.key), metric.unit)}</td>)}
+                  <td className="border border-border p-2 text-center">{metric.unit === 'hours' ? metricLabel(columns.reduce((sum, period) => sum + metric.value(period.key), 0), 'hours') : '–'}</td>
                 </tr>)}
-                {demandCodes.length > 0 && <>
-                  <tr className="bg-primary/5 font-semibold">
-                    <th scope="row" className="border border-border p-2 text-left sticky left-0 bg-background z-10 whitespace-nowrap">Planned demand [MH]</th>
-                    {columns.map(period => <td key={period.key} className={`border border-border p-2 text-center`}>{hoursLabel(demandFor(period.key))}</td>)}
-                    <td className="border border-border p-2 text-center">{hoursLabel(columns.reduce((sum, period) => sum + demandFor(period.key), 0))}</td>
-                  </tr>
-                  <tr className="bg-primary/5 font-bold">
-                    <th scope="row" className="border border-border p-2 text-left sticky left-0 bg-background z-10 whitespace-nowrap">Balance [FTE]</th>
-                    {columns.map(period => {
-                      const balance = balanceFor(period.key);
-                      return <td key={period.key} className={`border border-border p-2 text-center ${balance < 0 ? 'text-destructive' : 'text-chart-2'}`}>{balance.toFixed(1)}</td>;
-                    })}
-                    <td className="border border-border p-2 text-center">–</td>
-                  </tr>
-                </>}
               </tbody>
             </table>
           </div>
