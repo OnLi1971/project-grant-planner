@@ -1,4 +1,5 @@
 # Tasks
+- [x] Diagnose failed creation of ST_TRAM_OSTRAVA: existing unique project code; show duplicate guidance before saving and the actual server error on failure.
 - [x] Visually distinguish Presales projects in the capacity chart with diagonal hatching, matching tooltip swatches and a compact legend; preserve project colors and calculations.
 - [x] Replace Project Hours Matrix summaries with the six requested delivery/presales, headcount, availability and balance rows; preserve existing capacity rules.
 - [x] Extend planning and Project Hours Matrix through December 2028 with a shared tested horizon; include 2028 holiday calendars.

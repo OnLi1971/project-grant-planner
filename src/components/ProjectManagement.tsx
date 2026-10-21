@@ -405,6 +405,18 @@ export const ProjectManagement = () => {
       return;
     }
 
+    const duplicateProject = projects.find(project =>
+      project.code === formData.code && project.id !== editingProject?.id
+    );
+    if (duplicateProject) {
+      toast({
+        title: "Kód projektu už existuje",
+        description: `Projekt ${formData.code} už je ve Správě projektů. Upravte existující projekt, nebo pro nový zadejte jiný kód.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       // Use first available project manager as default if not set
       const defaultPmId = formData.projectManagerId || projectManagers[0]?.id;
@@ -490,7 +502,9 @@ export const ProjectManagement = () => {
           console.error('Error creating project:', error);
           toast({
             title: "Chyba",
-            description: "Nepodařilo se přidat projekt.",
+            description: error.code === '23505'
+              ? `Projekt s kódem ${formData.code} už existuje. Upravte ho ve Správě projektů, nebo zadejte jiný kód.`
+              : `Nepodařilo se přidat projekt: ${error.message}`,
             variant: "destructive",
           });
           return;
@@ -515,7 +529,9 @@ export const ProjectManagement = () => {
       console.error('Error saving project:', error);
       toast({
         title: "Chyba",
-        description: "Nepodařilo se uložit projekt.",
+        description: error instanceof Error
+          ? `Nepodařilo se uložit projekt: ${error.message}`
+          : "Nepodařilo se uložit projekt. Zkontrolujte připojení a zkuste to znovu.",
         variant: "destructive",
       });
     }
