@@ -13,7 +13,8 @@ export function filterProjectHoursEntries(entries: PlanningEntry[], weeks: strin
   const names = new Set<string>();
   for (const entry of entries) {
     if (!period.has(entry.cw.replace('_', '-'))) continue;
-    if ([entry.projekt, entry.projekt2 || ''].some(matches)) names.add(normalizeName(entry.konstrukter));
+    const isFree = !entry.isSecondary && (entry.projekt || '').trim().toUpperCase() === 'FREE' && !isHoursProject(entry.projekt2 || '');
+    if (isFree || [entry.projekt, entry.projekt2 || ''].some(matches)) names.add(normalizeName(entry.konstrukter));
   }
   return entries.filter(entry => names.has(normalizeName(entry.konstrukter))).map(entry => {
     const excludePrimary = isHoursProject(entry.projekt) && !matches(entry.projekt);
