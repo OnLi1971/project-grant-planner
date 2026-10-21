@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { format, getISOWeek, getISOWeekYear, addWeeks } from 'date-fns';
 import { Download, Grid3x3, History, Loader2 } from 'lucide-react';
 import { usePlanning } from '@/contexts/PlanningContext';
@@ -36,6 +36,7 @@ export function ProjectHoursMatrix() {
     try { return readProjectHoursFilter(window.localStorage); }
     catch { return { mode: 'program', programs: ['All'], engineers: [] }; }
   });
+  useEffect(() => { setPreparedExport(null); }, [filter, mode, showHistory, planningData, monthlyDemand]);
   const changeFilter = (value: ProjectHoursFilterValue) => {
     setFilter(value);
     try { writeProjectHoursFilter(window.localStorage, value); } catch { /* Storage may be blocked. */ }
@@ -216,7 +217,7 @@ export function ProjectHoursMatrix() {
           </div>
         </CardContent>
       </Card>
-      <div ref={chartRef}>{catalog && <ProjectCapacityChart entries={filteredData} engineers={engineers} weeks={periods.weeks.map(w => w.key)} demand={chartDemand} statusByProject={catalog.statusByProject} blocked={blockedData} />}</div>
+      <div ref={chartRef} onClickCapture={() => setPreparedExport(null)}>{catalog && <ProjectCapacityChart entries={filteredData} engineers={engineers} weeks={periods.weeks.map(w => w.key)} demand={chartDemand} statusByProject={catalog.statusByProject} blocked={blockedData} />}</div>
     </div>
   );
 }
