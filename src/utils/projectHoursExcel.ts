@@ -124,7 +124,7 @@ export async function exportProjectHours(table: HTMLTableElement, chart: HTMLEle
     const box = chart.getBoundingClientRect();
     const grid = gridOf();
     const xAxis = chart.querySelector('.recharts-xAxis')?.getBoundingClientRect();
-    const legendEl = chart.querySelector('.recharts-legend-wrapper') as HTMLElement | null;
+    const legendEl = chart.querySelector('[data-capacity-legend]') as HTMLElement | null;
     let payload: ChartImages = { base64: canvas.toDataURL('image/png'), width: canvas.width / 2, height: canvas.height / 2 };
     if (grid && grid.width > 0 && periods > 0) {
       const crop = (x: number, y: number, w: number, h: number) => {
@@ -138,7 +138,7 @@ export async function exportProjectHours(table: HTMLTableElement, chart: HTMLEle
       const lg = legendEl?.getBoundingClientRect();
       const legendTop = lg ? lg.top - box.top : plotBottom;
       const legendH = lg ? lg.height : box.height - plotBottom;
-      const legendW = lg ? lg.width : grid.width;
+      const legendW = lg ? Math.min(lg.width, Array.from(legendEl!.children).reduce((m, c) => Math.max(m, c.getBoundingClientRect().right - lg.left), 0) + 8) : grid.width;
       const legendX = lg ? lg.left - box.left : left;
       payload = {
         ...payload,
