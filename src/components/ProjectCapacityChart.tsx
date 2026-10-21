@@ -18,6 +18,8 @@ interface Props {
   demand: MonthlyDemand[];
   statusByProject: Map<string, string>;
   blocked?: PlanningEntry[];
+  /** Table geometry: left offset of first month column and month column width. */
+  align?: { first: number; col: number } | null;
 }
 
 const HUES = [190, 160, 205, 40, 220, 130, 280, 10, 330, 60, 100, 250];
@@ -26,7 +28,7 @@ const colorFor = (code: string, i: number) => {
 };
 
 /** Monthly FTE per project (Delivery + Presales stacked) vs. max productive engineer count. */
-export function ProjectCapacityChart({ entries, engineers, weeks, demand, statusByProject, blocked = [] }: Props) {
+export function ProjectCapacityChart({ entries, engineers, weeks, demand, statusByProject, blocked = [], align }: Props) {
   const patternPrefix = useId().replace(/:/g, '');
   const { data, projects } = useMemo(() => {
     const current = monthKey(new Date());
@@ -64,6 +66,7 @@ export function ProjectCapacityChart({ entries, engineers, weeks, demand, status
   const [period, setPeriod] = useState<'months' | 'quarters'>('months');
   const chartData = useMemo(() => period === 'quarters' ? toQuarterRows(data as Record<string, number | string>[]) : data, [data, period]);
   const [selected, setSelected] = useState<string | null>(null);
+  const aligned = !!align && period === 'months';
   const selectedRow = selected ? (chartData as Record<string, number | string>[]).find(r => r.month === selected) : undefined;
 
   const renderTooltip = ({ active, payload, label }: { active?: boolean; payload?: { payload: Record<string, number> }[]; label?: string }) => {
@@ -98,7 +101,24 @@ export function ProjectCapacityChart({ entries, engineers, weeks, demand, status
       </CardHeader>
       <CardContent>
         <div data-capacity-export>
-        <div className="h-96 w-full">
+        {aligned ? <div data-chart-scroll className="overflow-hidden h-96 w-full">
+            <ComposedChart width={align ? align.first + chartData.length * align.col : 0} height={384} data={chartData} margin={{ top: 20, right: 0, left: Math.max(0, (align?.first ?? 50) - 50), bottom: 0 }} style={{ cursor: 'pointer' }} onClick={(e: { activeLabel?: string } | null) => e?.activeLabel && setSelected(e.activeLabel)}>
+              <defs>
+                {projects.filter(p => p.presales).map(p => <pattern key={p.code} id={`${patternPrefix}-${p.code}`} width="7" height="7" patternUnits="userSpaceOnUse">
+                  <rect width="7" height="7" fill={p.color} fillOpacity={0.22} />
+                  <path d="M-2 2L2-2M0 7L7 0M5 9L9 5" stroke={p.color} strokeWidth="1.5" />
+                </pattern>)}
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+              <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={11} />
+              <YAxis width={50} stroke="hsl(var(--muted-foreground))" fontSize={11} />
+              <Tooltip content={renderTooltip as never} cursor={{ fill: 'hsl(var(--muted) / 0.3)' }} />
+              {projects.map((p, i) => <Bar key={p.code} dataKey={p.code} stackId="a" fill={p.presales ? `url(#${patternPrefix}-${p.code})` : p.color} stroke={p.presales ? p.color : undefined} strokeDasharray={p.presales ? '3 2' : undefined}>
+                {i === projects.length - 1 && <LabelList dataKey="total" position="top" fill="hsl(var(--foreground))" fontSize={11} fontWeight={700} />}
+              </Bar>)}
+              <Line dataKey="capacity" name="Max productive engineering count" type="monotone" stroke="hsl(var(--destructive))" strokeWidth={3} dot={{ r: 3 }} />
+            </ComposedChart>
+        </div> : <div className="h-96 w-full">
           <ResponsiveContainer>
             <ComposedChart data={chartData} margin={{ top: 20, right: 10, left: -10, bottom: 0 }} style={{ cursor: 'pointer' }} onClick={(e: { activeLabel?: string } | null) => e?.activeLabel && setSelected(e.activeLabel)}>
               <defs>
@@ -117,7 +137,7 @@ export function ProjectCapacityChart({ entries, engineers, weeks, demand, status
               <Line dataKey="capacity" name="Max productive engineering count" type="monotone" stroke="hsl(var(--destructive))" strokeWidth={3} dot={{ r: 3 }} />
             </ComposedChart>
           </ResponsiveContainer>
-        </div>
+        </div>}
         <div data-capacity-legend className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
           <span className="flex items-center gap-2"><svg width="18" height="14" aria-hidden="true"><rect width="18" height="14" fill="hsl(var(--muted-foreground))" /></svg>Delivery</span>
           <span className="flex items-center gap-2"><svg width="18" height="14" aria-hidden="true"><rect width="18" height="14" fill="hsl(var(--muted))" /><path d="M-4 4L4-4M0 14L14 0M7 14L21 0M14 14L28 0" stroke="hsl(var(--muted-foreground))" strokeWidth="1.5" /></svg>Presales</span>
