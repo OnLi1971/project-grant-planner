@@ -1,5 +1,5 @@
 # Tasks
-- [ ] Add styled Excel export of the filtered Project Hours Matrix with its current capacity chart below the table on one worksheet; verify file contents and download.
+- [x] Add styled Excel export of the filtered Project Hours Matrix with its current capacity chart below the table on one worksheet; workbook tests and test-data browser download pass, embedded colors/hatching checked, recalculation has zero formula errors.
 - [x] Diagnose failed creation of ST_TRAM_OSTRAVA: existing unique project code; show duplicate guidance before saving and the actual server error on failure.
 - [x] Visually distinguish Presales projects in the capacity chart with diagonal hatching, matching tooltip swatches and a compact legend; preserve project colors and calculations.
 - [x] Replace Project Hours Matrix summaries with the six requested delivery/presales, headcount, availability and balance rows; preserve existing capacity rules.
@@ -11,4 +11,4 @@
 - [x] Add capacity, leave, productive hours, headcount, FTE and utilization summary rows under Project Hours Matrix; nine tests pass and build OK.
 - [x] Add project-by-week/month hours matrix using the existing matrix design.
 - [x] Test split allocations, cross-month totals, non-project exclusions and selected periods; confirm build OK.
-- [ ] Verify both views in the signed-in UI — blocked: external unmanaged authentication does not provide a test session.
+- [ ] Verify both views and Excel export against live signed-in data — blocked: external unmanaged authentication does not provide a test session; test-data download verified.
