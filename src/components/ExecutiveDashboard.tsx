@@ -10,6 +10,7 @@ import { TrendingUp, TrendingDown, DollarSign, Target, Calendar, Award, RefreshC
 import { Button } from '@/components/ui/button';
 import { getWeekToMonthFractions } from '@/utils/workingDays';
 import { getEffectiveRate, RateHistoryEntry } from '@/utils/projectRates';
+import { fiscalQuarterLabel } from '@/utils/fiscalQuarter';
 
 interface DatabaseProject {
   id: string;
@@ -184,7 +185,7 @@ export const ExecutiveDashboard = () => {
         currentMonths = allMonths.slice(0, 3);
         break;
       case 'quarter':
-        // Q4 2025
+        // Indian fiscal Q3 FY26: October–December 2025
         currentMonths = ['říjen_2025', 'listopad_2025', 'prosinec_2025'];
         break;
       case 'ytd':
@@ -287,7 +288,7 @@ export const ExecutiveDashboard = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="current">Aktuální 3 měsíce</SelectItem>
-              <SelectItem value="quarter">Q4 2025</SelectItem>
+              <SelectItem value="quarter">{fiscalQuarterLabel('2025-10')}</SelectItem>
               <SelectItem value="ytd">Celý rok 2025-2026</SelectItem>
             </SelectContent>
           </Select>

@@ -14,6 +14,9 @@ import { getProjectColorWithIndex } from '@/utils/colorSystem';
 import { getWeekToMonthFractions, getWorkingDaysInMonth as getWorkingDaysInMonthFromUtils } from '@/utils/workingDays';
 import { getEffectiveRate, RateHistoryEntry } from '@/utils/projectRates';
 import { RAIL_EL_ENGINEERS } from '@/constants/railElEngineers';
+import { revenueQuarterPeriods } from '@/utils/revenueQuarters';
+
+const revenueQuarters = revenueQuarterPeriods(2026, 2027);
 
 export const LEAVE_KEY = '__LEAVE__';
 export const FREE_KEY = '__FREE__';
@@ -75,7 +78,7 @@ export const RevenueOverview = ({
   const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
   const [viewType, setViewType] = useState<'mesic' | 'kvartal'>(defaultViewType);
   // Indické fiskální kvartály: Q1=Apr-Jun, Q2=Jul-Sep, Q3=Oct-Dec, Q4=Jan-Mar (FY = Apr-Mar)
-  const [selectedQuarters, setSelectedQuarters] = useState<string[]>(['Q4-FY25', 'Q1-FY26', 'Q2-FY26', 'Q3-FY26', 'Q4-FY26', 'Q1-FY27', 'Q2-FY27', 'Q3-FY27']);
+  const [selectedQuarters, setSelectedQuarters] = useState<string[]>(() => revenueQuarters.map(q => q.key));
   const [selectedMonths, setSelectedMonths] = useState<string[]>([
     'leden_2026', 'únor_2026', 'březen_2026', 'duben_2026', 'květen_2026', 'červen_2026',
     'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026',
@@ -264,19 +267,7 @@ export const RevenueOverview = ({
 
     // Kvartální/měsíční filtrování
     if (viewType === 'kvartal' && selectedQuarters.length > 0) {
-      const quarterMonths: { [key: string]: string[] } = {
-        'Q3-FY25': ['říjen_2025', 'listopad_2025', 'prosinec_2025'],
-        'Q4-FY25': ['leden_2026', 'únor_2026', 'březen_2026'],
-        'Q1-FY26': ['duben_2026', 'květen_2026', 'červen_2026'],
-        'Q2-FY26': ['červenec_2026', 'srpen_2026', 'září_2026'],
-        'Q3-FY26': ['říjen_2026', 'listopad_2026', 'prosinec_2026'],
-        'Q4-FY26': ['leden_2027', 'únor_2027', 'březen_2027'],
-        'Q1-FY27': ['duben_2027', 'květen_2027', 'červen_2027'],
-        'Q2-FY27': ['červenec_2027', 'srpen_2027', 'září_2027'],
-        'Q3-FY27': ['říjen_2027', 'listopad_2027', 'prosinec_2027']
-      };
-      
-      const allSelectedMonths = selectedQuarters.flatMap(quarter => quarterMonths[quarter] || []);
+      const allSelectedMonths = revenueQuarters.filter(q => selectedQuarters.includes(q.key)).flatMap(q => q.months);
       data = data.filter(entry => {
         const cwKey = entry.cw.includes('-') ? entry.cw.replace('-', '_') : entry.cw;
         const weekMapping = getWeekMapping(cwKey);
@@ -716,58 +707,9 @@ export const RevenueOverview = ({
   const chartData = useMemo(() => {
     if (viewType === 'kvartal') {
       // Kvartální data
-      const quarterData = [
-        {
-          quarter: 'Q4 FY25-26',
-          months: ['leden_2026', 'únor_2026', 'březen_2026'],
-          label: 'Q4 FY25',
-          dateRange: '1 Jan – 31 Mar 2026'
-        },
-        {
-          quarter: 'Q1 FY26-27',
-          months: ['duben_2026', 'květen_2026', 'červen_2026'],
-          label: 'Q1 FY26',
-          dateRange: '1 Apr – 30 Jun 2026'
-        },
-        {
-          quarter: 'Q2 FY26-27',
-          months: ['červenec_2026', 'srpen_2026', 'září_2026'],
-          label: 'Q2 FY26',
-          dateRange: '1 Jul – 30 Sep 2026'
-        },
-        {
-          quarter: 'Q3 FY26-27',
-          months: ['říjen_2026', 'listopad_2026', 'prosinec_2026'],
-          label: 'Q3 FY26',
-          dateRange: '1 Oct – 31 Dec 2026'
-        },
-        {
-          quarter: 'Q4 FY26-27',
-          months: ['leden_2027', 'únor_2027', 'březen_2027'],
-          label: 'Q4 FY26',
-          dateRange: '1 Jan – 31 Mar 2027'
-        },
-        {
-          quarter: 'Q1 FY27-28',
-          months: ['duben_2027', 'květen_2027', 'červen_2027'],
-          label: 'Q1 FY27',
-          dateRange: '1 Apr – 30 Jun 2027'
-        },
-        {
-          quarter: 'Q2 FY27-28',
-          months: ['červenec_2027', 'srpen_2027', 'září_2027'],
-          label: 'Q2 FY27',
-          dateRange: '1 Jul – 30 Sep 2027'
-        },
-        {
-          quarter: 'Q3 FY27-28',
-          months: ['říjen_2027', 'listopad_2027', 'prosinec_2027'],
-          label: 'Q3 FY27',
-          dateRange: '1 Oct – 31 Dec 2027'
-        }
-      ];
+      const quarterData = revenueQuarters.filter(q => selectedQuarters.includes(q.key));
 
-      return quarterData.map(({ quarter, months, label, dateRange }) => {
+      return quarterData.map(({ months, label, dateRange }) => {
         const data: any = {
           month: label,
           total: 0,
@@ -828,7 +770,7 @@ export const RevenueOverview = ({
         return data;
       });
     }
-  }, [activeData, filteredProjectList, viewType, months, leaveByMonth, freeByMonth, displayUnit, avgHourlyRate]);
+  }, [activeData, filteredProjectList, viewType, months, leaveByMonth, freeByMonth, displayUnit, avgHourlyRate, selectedQuarters]);
 
   // Možnosti pro filtrování
   const getFilterOptions = () => {
@@ -845,16 +787,7 @@ export const RevenueOverview = ({
   };
 
   // Možnosti pro kvartální filtr
-  const getQuarterOptions = () => [
-    { value: 'Q4-FY25', label: 'Q4 FY25-26 (Jan-Mar 2026)' },
-    { value: 'Q1-FY26', label: 'Q1 FY26-27 (Apr-Jun 2026)' },
-    { value: 'Q2-FY26', label: 'Q2 FY26-27 (Jul-Sep 2026)' },
-    { value: 'Q3-FY26', label: 'Q3 FY26-27 (Oct-Dec 2026)' },
-    { value: 'Q4-FY26', label: 'Q4 FY26-27 (Jan-Mar 2027)' },
-    { value: 'Q1-FY27', label: 'Q1 FY27-28 (Apr-Jun 2027)' },
-    { value: 'Q2-FY27', label: 'Q2 FY27-28 (Jul-Sep 2027)' },
-    { value: 'Q3-FY27', label: 'Q3 FY27-28 (Oct-Dec 2027)' }
-  ];
+  const getQuarterOptions = () => revenueQuarters.map(q => ({ value: q.key, label: `${q.label} (${q.dateRange})` }));
 
   // Month filter options
   const getMonthOptions = () => [
@@ -901,7 +834,7 @@ export const RevenueOverview = ({
     onViewTypeChange?.(value);
     // Reset to all quarters/months when switching view type
     if (value === 'kvartal') {
-      setSelectedQuarters(['Q4-FY25', 'Q1-FY26', 'Q2-FY26', 'Q3-FY26', 'Q4-FY26', 'Q1-FY27', 'Q2-FY27', 'Q3-FY27']);
+      setSelectedQuarters(revenueQuarters.map(q => q.key));
     } else {
       setSelectedMonths(['leden_2026', 'únor_2026', 'březen_2026', 'duben_2026', 'květen_2026', 'červen_2026', 'červenec_2026', 'srpen_2026', 'září_2026', 'říjen_2026', 'listopad_2026', 'prosinec_2026', 'leden_2027', 'únor_2027', 'březen_2027', 'duben_2027', 'květen_2027', 'červen_2027', 'červenec_2027', 'srpen_2027', 'září_2027', 'říjen_2027', 'listopad_2027', 'prosinec_2027']);
     }
@@ -1511,12 +1444,7 @@ export const RevenueOverview = ({
                 <TableRow>
                   <TableHead className="font-bold">Project</TableHead>
                    {viewType === 'kvartal' ? (
-                     [
-                       { key: 'Q4-FY25', label: 'Q4 FY25' },
-                       { key: 'Q1-FY26', label: 'Q1 FY26' },
-                       { key: 'Q2-FY26', label: 'Q2 FY26' },
-                       { key: 'Q3-FY26', label: 'Q3 FY26' },
-                     ]
+                     revenueQuarters
                        .filter(q => selectedQuarters.includes(q.key))
                        .map(q => (
                          <TableHead key={q.key} className="text-right font-bold min-w-[120px]">
@@ -1600,17 +1528,8 @@ export const RevenueOverview = ({
                           </div>
                         </TableCell>
                          {viewType === 'kvartal' ? (
-                           [
-                             { key: 'Q4-FY25', months: ['leden_2026', 'únor_2026', 'březen_2026'] },
-                             { key: 'Q1-FY26', months: ['duben_2026', 'květen_2026', 'červen_2026'] },
-                             { key: 'Q2-FY26', months: ['červenec_2026', 'srpen_2026', 'září_2026'] },
-                             { key: 'Q3-FY26', months: ['říjen_2026', 'listopad_2026', 'prosinec_2026'] },
-                             { key: 'Q4-FY26', months: ['leden_2027', 'únor_2027', 'březen_2027'] },
-                             { key: 'Q1-FY27', months: ['duben_2027', 'květen_2027', 'červen_2027'] },
-                             { key: 'Q2-FY27', months: ['červenec_2027', 'srpen_2027', 'září_2027'] },
-                             { key: 'Q3-FY27', months: ['říjen_2027', 'listopad_2027', 'prosinec_2027'] },
-                           ]
-                             .filter(q => selectedQuarters.includes(q.key))
+                           revenueQuarters
+                       .filter(q => selectedQuarters.includes(q.key))
                              .map(q => {
                                const revenue = q.months.reduce((sum, m) => sum + (activeData[m]?.[projectCode] || 0), 0);
                                return (
@@ -1641,16 +1560,7 @@ export const RevenueOverview = ({
                 <TableRow className="font-bold border-t-2">
                   <TableCell className="font-bold">TOTAL</TableCell>
                    {viewType === 'kvartal' ? (
-                     [
-                       { key: 'Q4-FY25', months: ['leden_2026', 'únor_2026', 'březen_2026'] },
-                       { key: 'Q1-FY26', months: ['duben_2026', 'květen_2026', 'červen_2026'] },
-                       { key: 'Q2-FY26', months: ['červenec_2026', 'srpen_2026', 'září_2026'] },
-                       { key: 'Q3-FY26', months: ['říjen_2026', 'listopad_2026', 'prosinec_2026'] },
-                       { key: 'Q4-FY26', months: ['leden_2027', 'únor_2027', 'březen_2027'] },
-                       { key: 'Q1-FY27', months: ['duben_2027', 'květen_2027', 'červen_2027'] },
-                       { key: 'Q2-FY27', months: ['červenec_2027', 'srpen_2027', 'září_2027'] },
-                       { key: 'Q3-FY27', months: ['říjen_2027', 'listopad_2027', 'prosinec_2027'] },
-                     ]
+                     revenueQuarters
                        .filter(q => selectedQuarters.includes(q.key))
                        .map(q => {
                          const quarterTotal = q.months.reduce((sum, m) => {
