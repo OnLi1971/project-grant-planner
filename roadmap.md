@@ -1,5 +1,5 @@
 # Tasks
-- [ ] Correct Indian fiscal quarter labels in every view and export to ending-year notation (Oct–Dec 2026 = Q3 FY27); test calendar boundaries.
+- [x] Correct Indian fiscal quarter labels in Revenue, capacity chart, planning-trend filters and Executive Dashboard (and chart exports) to ending-year notation (Oct–Dec 2026 = Q3 FY27); fiscal-boundary, period mapping and workbook tests pass.
 - [x] Add styled Excel export of the filtered Project Hours Matrix with its current capacity chart below the table on one worksheet; workbook tests and test-data browser download pass, embedded colors/hatching checked, recalculation has zero formula errors.
 - [x] Diagnose failed creation of ST_TRAM_OSTRAVA: existing unique project code; show duplicate guidance before saving and the actual server error on failure.
 - [x] Visually distinguish Presales projects in the capacity chart with diagonal hatching, matching tooltip swatches and a compact legend; preserve project colors and calculations.

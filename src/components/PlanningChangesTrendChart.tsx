@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { RAIL_EL_ENGINEERS } from '@/constants/railElEngineers';
 import { normalizeName } from '@/utils/nameNormalization';
 import { getWeekToMonthFractions } from '@/utils/workingDays';
+import { revenueQuarterPeriods } from '@/utils/revenueQuarters';
 
 interface Props {
   viewType: 'mesic' | 'kvartal';
@@ -13,13 +14,9 @@ interface Props {
   selectedMonths: string[];
 }
 
-const QUARTER_MONTHS: Record<string, string[]> = {
-  'Q3-FY25': ['říjen_2025', 'listopad_2025', 'prosinec_2025'],
-  'Q4-FY25': ['leden_2026', 'únor_2026', 'březen_2026'],
-  'Q1-FY26': ['duben_2026', 'květen_2026', 'červen_2026'],
-  'Q2-FY26': ['červenec_2026', 'srpen_2026', 'září_2026'],
-  'Q3-FY26': ['říjen_2026', 'listopad_2026', 'prosinec_2026'],
-};
+const QUARTER_MONTHS: Record<string, string[]> = Object.fromEntries(
+  revenueQuarterPeriods(2025, 2027).map(q => [q.key, q.months])
+);
 
 const isRegime = (v: string | null) =>
   !v || v === 'FREE' || v === 'DOVOLENÁ' || v === 'DOVOLENA' || v === 'NEMOC' || v === 'OVER';
