@@ -1,6 +1,7 @@
 # Architecture rules
 - Revenue filters, breakdowns and chart labels derive their fiscal periods from the shared fiscal quarter utility so calendar boundaries and exported labels stay consistent.
 - Planning Editor, Project Assignment Matrix and Project Hours Matrix use the shared planning horizon utility so their last selectable year stays aligned.
+- Project allocation details derive weekly month headers from ISO Thursday dates and limit contextual leave to the project's actual allocation period, preventing unrelated future leave from extending project columns.
 - Keep project-hours aggregation in a pure utility, separate from its view, so split allocations and period totals can be tested independently.
 - Keep status-based project-hours summary breakdowns in a pure utility using the live project catalog; generic demand contributes hours but never fabricates named engineer headcount.
 - Keep project matrix capacity summaries in a pure utility; raw productive totals match project cells while utilization caps each person's contribution independently to available capacity.

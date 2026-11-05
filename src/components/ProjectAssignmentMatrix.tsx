@@ -9,6 +9,7 @@ import { ChevronDown, Filter, History, Save, Trash2, Users, X, Download } from '
 import * as XLSX from 'xlsx-js-style';
 import { PlanningHistoryDialog } from './PlanningHistoryDialog';
 import { ProjectAllocationDialog, AllocationEntry } from './ProjectAllocationDialog';
+import { allocationsWithinProjectPeriod } from '@/utils/projectAllocationPeriods';
 import { PlanningChangesTrendChart } from './PlanningChangesTrendChart';
 import { PlanningAIAnalyzer } from './PlanningAIAnalyzer';
 import { usePlanning } from '@/contexts/PlanningContext';
@@ -977,7 +978,7 @@ export const ProjectAssignmentMatrix = ({
       });
     });
     
-    return allocations;
+    return allocationsWithinProjectPeriod(allocations);
   }, [matrixData, displayNameMap, filteredEngineers, weeks]);
 
   // Handle project click to open allocation dialog
