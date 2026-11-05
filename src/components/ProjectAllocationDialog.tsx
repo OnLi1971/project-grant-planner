@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { allocationWeekPeriod } from '@/utils/projectAllocationPeriods';
 import { getWorkingDaysInCW, getISOWeekMonday, getWorkingDaysInWeekForMonth } from '@/utils/workingDays';
 import {
   Dialog,
@@ -41,21 +42,6 @@ interface ProjectAllocationDialogProps {
   viewMode?: 'weeks' | 'months';
 }
 
-// Week to month mapping
-const monthWeekMapping: { [key: string]: { month: number; name: string } } = {
-  '01': { month: 1, name: 'January' }, '02': { month: 1, name: 'January' }, '03': { month: 1, name: 'January' }, '04': { month: 1, name: 'January' }, '05': { month: 2, name: 'February' },
-  '06': { month: 2, name: 'February' }, '07': { month: 2, name: 'February' }, '08': { month: 2, name: 'February' }, '09': { month: 3, name: 'March' },
-  '10': { month: 3, name: 'March' }, '11': { month: 3, name: 'March' }, '12': { month: 3, name: 'March' }, '13': { month: 3, name: 'March' }, '14': { month: 4, name: 'April' },
-  '15': { month: 4, name: 'April' }, '16': { month: 4, name: 'April' }, '17': { month: 4, name: 'April' }, '18': { month: 5, name: 'May' },
-  '19': { month: 5, name: 'May' }, '20': { month: 5, name: 'May' }, '21': { month: 5, name: 'May' }, '22': { month: 5, name: 'May' }, '23': { month: 6, name: 'June' },
-  '24': { month: 6, name: 'June' }, '25': { month: 6, name: 'June' }, '26': { month: 6, name: 'June' }, '27': { month: 7, name: 'July' },
-  '28': { month: 7, name: 'July' }, '29': { month: 7, name: 'July' }, '30': { month: 7, name: 'July' }, '31': { month: 8, name: 'August' },
-  '32': { month: 8, name: 'August' }, '33': { month: 8, name: 'August' }, '34': { month: 8, name: 'August' }, '35': { month: 8, name: 'August' },
-  '36': { month: 9, name: 'September' }, '37': { month: 9, name: 'September' }, '38': { month: 9, name: 'September' }, '39': { month: 9, name: 'September' },
-  '40': { month: 10, name: 'October' }, '41': { month: 10, name: 'October' }, '42': { month: 10, name: 'October' }, '43': { month: 10, name: 'October' }, '44': { month: 10, name: 'October' },
-  '45': { month: 11, name: 'November' }, '46': { month: 11, name: 'November' }, '47': { month: 11, name: 'November' }, '48': { month: 11, name: 'November' },
-  '49': { month: 12, name: 'December' }, '50': { month: 12, name: 'December' }, '51': { month: 12, name: 'December' }, '52': { month: 12, name: 'December' }
-};
 // Helper functions for alternative activities
 const getActivityLabel = (activity: string): string => {
   switch (activity) {
@@ -243,10 +229,9 @@ export const ProjectAllocationDialog = ({
     if (viewMode !== 'weeks') return [];
     const groups: { name: string; colSpan: number }[] = [];
     weeks.forEach(week => {
-      const match = week.match(/CW(\d+)-(\d+)/);
-      if (match) {
-        const monthInfo = monthWeekMapping[match[1]];
-        const label = `${monthInfo?.name || '?'} ${match[2]}`;
+      const period = allocationWeekPeriod(week);
+      if (period) {
+        const label = `${monthNames[period.month]} ${period.year}`;
         if (groups.length > 0 && groups[groups.length - 1].name === label) {
           groups[groups.length - 1].colSpan++;
         } else {
@@ -382,8 +367,10 @@ export const ProjectAllocationDialog = ({
                       {displayColumns.map(col => {
                         const isHolidayWeek = viewMode === 'weeks' && holidayWeeks.has(col);
                         const cwLabel = col.replace(/-\d{4}$/, '');
+                        const period = viewMode === 'weeks' ? allocationWeekPeriod(col) : null;
+                        const dateRange = period ? `${col}: ${period.monday.toLocaleDateString('en-GB')} – ${period.friday.toLocaleDateString('en-GB')}` : undefined;
                         return (
-                        <TableHead key={col} className={`text-center ${viewMode === 'months' ? 'min-w-[80px]' : 'min-w-[50px]'} text-[10px] py-1.5 px-1`}>
+                        <TableHead key={col} title={dateRange} className={`text-center ${viewMode === 'months' ? 'min-w-[80px]' : 'min-w-[50px]'} text-[10px] py-1.5 px-1`}>
                           {isHolidayWeek ? `${cwLabel}*` : cwLabel}
                         </TableHead>
                         );
