@@ -24,14 +24,27 @@ describe('compareProjectsForManagement', () => {
     assert.deepEqual(sorted.map(r => r.code), ['ST_ELEKTRO', 'ST_EMU_INT', 'ST_MAINZ']);
   });
 
-  test('projekty bez zákazníka jsou až za ostatními', () => {
+  test('režimové aktivity jsou vždy úplně na konci, i když mají zákazníka', () => {
     const rows = [
-      { customerName: null, projectName: 'FREE', code: 'FREE' },
+      { customerName: 'Interní', projectName: 'DOVOLENÁ', code: 'DOVOLENÁ' },
       { customerName: 'AIRBUS', projectName: 'AIRB INT', code: 'AIRB_INT' },
-      { customerName: '', projectName: 'DOVOLENÁ', code: 'DOVOLENÁ' },
+      { customerName: 'Interní', projectName: 'OVER', code: 'OVER' },
+      { customerName: 'Interní', projectName: 'NEMOC', code: 'NEMOC' },
+      { customerName: 'Interní', projectName: 'FREE', code: 'FREE' },
+      { customerName: 'ZEMAN', projectName: 'ZEM FEM', code: 'ZEM_FEM' },
     ];
     const sorted = [...rows].sort(compareProjectsForManagement);
-    assert.deepEqual(sorted.map(r => r.code), ['AIRB_INT', 'DOVOLENÁ', 'FREE']);
+    assert.deepEqual(sorted.map(r => r.code), ['AIRB_INT', 'ZEM_FEM', 'FREE', 'NEMOC', 'OVER', 'DOVOLENÁ']);
+  });
+
+  test('projekty bez zákazníka jsou až za ostatními', () => {
+    const rows = [
+      { customerName: null, projectName: 'JINÝ', code: 'JINY' },
+      { customerName: 'AIRBUS', projectName: 'AIRB INT', code: 'AIRB_INT' },
+      { customerName: '', projectName: 'BEZ ZAKAZNIKA', code: 'BEZ_ZAK' },
+    ];
+    const sorted = [...rows].sort(compareProjectsForManagement);
+    assert.deepEqual(sorted.map(r => r.code), ['AIRB_INT', 'BEZ_ZAK', 'JINY']);
   });
 
   test('řadí i české znaky a bez diakritiky správně', () => {

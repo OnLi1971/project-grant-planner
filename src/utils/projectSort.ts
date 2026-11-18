@@ -7,14 +7,23 @@ export interface ProjectSortInput {
 const locale = 'cs';
 const options: Intl.CollatorOptions = { sensitivity: 'base', numeric: true };
 
-/**
- * Řadí projekty primárně podle zákazníka (A–Z), potom podle názvu projektu.
- * Projekty bez zákazníka (FREE, DOVOLENÁ, ...) jsou až za ostatními.
- */
+// Režimové aktivity patří vždy úplně na konec, v tomto pořadí.
+const TAIL_CODES = ['FREE', 'NEMOC', 'OVER', 'DOVOLENÁ'];
+
+const tailIndex = (code?: string | null): number =>
+  TAIL_CODES.indexOf(String(code ?? '').trim().toUpperCase());
+
 export function compareProjectsForManagement(a: ProjectSortInput, b: ProjectSortInput): number {
+  const tailA = tailIndex(a.code);
+  const tailB = tailIndex(b.code);
+
+  if (tailA !== -1 || tailB !== -1) {
+    if (tailA !== -1 && tailB !== -1) return tailA - tailB;
+    return tailA === -1 ? -1 : 1;
+  }
+
   const customerA = String(a.customerName ?? '').trim();
   const customerB = String(b.customerName ?? '').trim();
-
   if (!customerA && customerB) return 1;
   if (customerA && !customerB) return -1;
 
