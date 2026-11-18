@@ -1,4 +1,5 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, test } from 'node:test';
+import { strict as assert } from 'node:assert';
 import { compareProjectsForManagement } from './projectSort';
 
 describe('compareProjectsForManagement', () => {
@@ -10,7 +11,7 @@ describe('compareProjectsForManagement', () => {
       { customerName: 'ST', projectName: 'ST EMU INT', code: 'ST_EMU_INT' },
     ];
     const sorted = [...rows].sort(compareProjectsForManagement);
-    expect(sorted.map(r => r.code)).toEqual(['AIRB_INT', 'BUCH_INT', 'SAF_INT', 'ST_EMU_INT']);
+    assert.deepEqual(sorted.map(r => r.code), ['AIRB_INT', 'BUCH_INT', 'SAF_INT', 'ST_EMU_INT']);
   });
 
   test('v rámci zákazníka řadí podle názvu projektu', () => {
@@ -20,7 +21,7 @@ describe('compareProjectsForManagement', () => {
       { customerName: 'ST', projectName: 'ST ELEKTRO', code: 'ST_ELEKTRO' },
     ];
     const sorted = [...rows].sort(compareProjectsForManagement);
-    expect(sorted.map(r => r.code)).toEqual(['ST_ELEKTRO', 'ST_EMU_INT', 'ST_MAINZ']);
+    assert.deepEqual(sorted.map(r => r.code), ['ST_ELEKTRO', 'ST_EMU_INT', 'ST_MAINZ']);
   });
 
   test('projekty bez zákazníka jsou až za ostatními', () => {
@@ -30,7 +31,7 @@ describe('compareProjectsForManagement', () => {
       { customerName: '', projectName: 'DOVOLENÁ', code: 'DOVOLENÁ' },
     ];
     const sorted = [...rows].sort(compareProjectsForManagement);
-    expect(sorted.map(r => r.code)).toEqual(['AIRB_INT', 'DOVOLENÁ', 'FREE']);
+    assert.deepEqual(sorted.map(r => r.code), ['AIRB_INT', 'DOVOLENÁ', 'FREE']);
   });
 
   test('řadí i české znaky a bez diakritiky správně', () => {
@@ -40,6 +41,6 @@ describe('compareProjectsForManagement', () => {
       { customerName: 'Aero', projectName: 'A', code: 'A' },
     ];
     const sorted = [...rows].sort(compareProjectsForManagement);
-    expect(sorted.map(r => r.code)).toEqual(['A', 'B', 'C']);
+    assert.deepEqual(sorted.map(r => r.code), ['A', 'B', 'C']);
   });
 });
