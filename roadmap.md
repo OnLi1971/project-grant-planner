@@ -1,4 +1,5 @@
 # Tasks
+- [x] Sort Správa projektů list primarily by customer A–Z (Airbus, Bucher, …), then by project name; projects without a customer last; four sort tests pass, typecheck clean.
 - [x] Correct year-end project detail headers and exclude unrelated leave-only weeks outside the project's allocation period; 9 tests pass and browser fixture confirms December 2026 / January 2027 with correct CW53 date range; live signed-in data unavailable.
 - [x] Correct Indian fiscal quarter labels in Revenue, capacity chart, planning-trend filters and Executive Dashboard (and chart exports) to ending-year notation (Oct–Dec 2026 = Q3 FY27); fiscal-boundary, period mapping and workbook tests pass.
 - [x] Add styled Excel export of the filtered Project Hours Matrix with its current capacity chart below the table on one worksheet; workbook tests and test-data browser download pass, embedded colors/hatching checked, recalculation has zero formula errors.

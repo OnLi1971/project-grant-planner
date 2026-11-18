@@ -14,6 +14,7 @@ import { Plus, Edit, Briefcase, Building, Trash2, X, Eye, Save, Users, Archive }
 import { Checkbox } from '@/components/ui/checkbox';
 import { usePlanning } from '@/contexts/PlanningContext';
 import { getProjectColor, getCustomerByProjectCode } from '@/utils/colorSystem';
+import { compareProjectsForManagement } from '@/utils/projectSort';
 import { supabase } from '@/integrations/supabase/client';
 import { OrganizationalStructure } from '@/components/OrganizationalStructure';
 import { ProjectRateHistoryEditor } from '@/components/ProjectRateHistoryEditor';
@@ -756,7 +757,10 @@ export const ProjectManagement = () => {
           program,
           usage
         };
-      }).sort((a, b) => b.usage - a.usage);
+      }).sort((a, b) => compareProjectsForManagement(
+        { customerName: a.customer?.name, projectName: a.project.name, code: a.code },
+        { customerName: b.customer?.name, projectName: b.project.name, code: b.code }
+      ));
   }, [projects, customers, projectManagers, programs, planningData, showDeadProjects]);
 
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
