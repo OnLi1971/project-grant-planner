@@ -117,16 +117,19 @@ const slovakHolidays2028 = [
   '2028-11-01', '2028-11-17', '2028-12-24', '2028-12-25', '2028-12-26',
 ];
 
-const allCzechHolidays = [...czechHolidays2025, ...czechHolidays2026, ...czechHolidays2027, ...czechHolidays2028];
-const allSlovakHolidays = [...slovakHolidays2025, ...slovakHolidays2026, ...slovakHolidays2027, ...slovakHolidays2028];
+const allCzechHolidays = new Set([...czechHolidays2025, ...czechHolidays2026, ...czechHolidays2027, ...czechHolidays2028]);
+const allSlovakHolidays = new Set([...slovakHolidays2025, ...slovakHolidays2026, ...slovakHolidays2027, ...slovakHolidays2028]);
 
 /**
  * Zjistí, zda je daný den státní svátek
  */
 export const isHoliday = (date: Date, isSlovak: boolean = false): boolean => {
-  const dateStr = format(date, 'yyyy-MM-dd');
+  const y = date.getFullYear();
+  const m = date.getMonth() + 1;
+  const d = date.getDate();
+  const dateStr = `${y}-${m < 10 ? '0' : ''}${m}-${d < 10 ? '0' : ''}${d}`;
   const holidays = isSlovak ? allSlovakHolidays : allCzechHolidays;
-  return holidays.includes(dateStr);
+  return holidays.has(dateStr);
 };
 
 /**

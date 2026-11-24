@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useCallback, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { PlanningEntry, PlanningContextType } from '@/types/planning';
 import { usePlanningData } from '@/hooks/usePlanningData';
@@ -24,19 +24,28 @@ export const PlanningProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     loadPlanningData();
   }, [loadPlanningData]);
 
-  // Realtime subscription for live updates
+  // Realtime subscription for live updates (debounced to coalesce bulk writes)
+  const realtimeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     const subscription = supabase
       .channel('planning_entries_changes')
-      .on('postgres_changes', 
+      .on('postgres_changes',
         { event: '*', schema: 'public', table: 'planning_entries' },
         () => {
-          loadPlanningData();
+          if (realtimeTimerRef.current) clearTimeout(realtimeTimerRef.current);
+          realtimeTimerRef.current = setTimeout(() => {
+            realtimeTimerRef.current = null;
+            loadPlanningData();
+          }, 400);
         }
       )
       .subscribe();
 
     return () => {
+      if (realtimeTimerRef.current) {
+        clearTimeout(realtimeTimerRef.current);
+        realtimeTimerRef.current = null;
+      }
       subscription.unsubscribe();
     };
   }, [loadPlanningData]);

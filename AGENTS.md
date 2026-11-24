@@ -10,3 +10,5 @@
 - Project-hours and capacity summaries share working-date allocation using the existing engineer company list to choose holiday calendars; monthly raw hours remain conserved across working dates and FTE denominators are person-specific.
 - Persist the project-hours filter and saved-view identity in validated browser storage, restoring lazily without overwriting an edited selection when saved views load.
 - Export Project Hours Matrix through a lazy-loaded ExcelJS helper using numeric table snapshots and computed UI colors, embedding the currently rendered capacity chart on the same worksheet to preserve filters, styling and chart mode.
+- Keep Project Assignment Matrix lookups indexed in Maps, compute its weekly/monthly summary rows in one pass through `matrixSummary`, and render cell tooltips through one shared imperative overlay so large horizons do not mount per-cell tooltip trees or scan planning entries per cell.
+- Load `planning_matrix` in parallel page batches selecting only needed columns (omitting SQL `normalize_name`) with a stable loader and debounced realtime subscription so initial loads and bulk edits do not trigger redundant full-table refetches.

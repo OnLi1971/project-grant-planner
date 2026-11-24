@@ -1,22 +1,22 @@
 // Utility funkce pro normalizaci jmen konstruktérů
 // Tato funkce replikuje logiku z DB funkce normalize_name() na klientovi
 
+const DIACRITICS_MAP: Record<string, string> = {
+  'á': 'a', 'ä': 'a', 'ć': 'c', 'č': 'c', 'ď': 'd',
+  'é': 'e', 'ě': 'e', 'ë': 'e', 'í': 'i', 'î': 'i',
+  'ĺ': 'l', 'ľ': 'l', 'ň': 'n', 'ó': 'o', 'ö': 'o',
+  'ŕ': 'r', 'ř': 'r', 'š': 's', 'ť': 't', 'ú': 'u',
+  'ů': 'u', 'ü': 'u', 'ý': 'y', 'ž': 'z'
+};
+const DIACRITICS_REGEX = /[áäćčďéěëíîĺľňóöŕřšťúůüýž]/g;
+
 export const normalizeName = (name: string): string => {
   if (!name) return '';
-  
+
   return name
     .trim()
     .toLowerCase()
-    .replace(/[áäćčďéěëíîĺľňóöŕřšťúůüýž]/g, (char) => {
-      const map: { [key: string]: string } = {
-        'á': 'a', 'ä': 'a', 'ć': 'c', 'č': 'c', 'ď': 'd',
-        'é': 'e', 'ě': 'e', 'ë': 'e', 'í': 'i', 'î': 'i',
-        'ĺ': 'l', 'ľ': 'l', 'ň': 'n', 'ó': 'o', 'ö': 'o',
-        'ŕ': 'r', 'ř': 'r', 'š': 's', 'ť': 't', 'ú': 'u',
-        'ů': 'u', 'ü': 'u', 'ý': 'y', 'ž': 'z'
-      };
-      return map[char] || char;
-    });
+    .replace(DIACRITICS_REGEX, (char) => DIACRITICS_MAP[char] || char);
 };
 
 // Utility funkce pro nalezení konstruktéra podle normalizovaného jména

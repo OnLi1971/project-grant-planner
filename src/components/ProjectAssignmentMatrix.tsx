@@ -24,28 +24,14 @@ import { useCustomEngineerViews } from '@/hooks/useCustomEngineerViews';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { planningEndYear } from '@/utils/planningHorizon';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-
-// ---- Shared utilization basis (must match UtilizationGrid) ----
-// 100% = 36 Mh/week (7.2h/day). Vacation/sick are planned as 40h weeks -> scaled by 36/40.
-const normActivity = (p?: string) => (p || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim();
-const isNonCountedActivity = (p?: string) => {
-  const a = normActivity(p);
-  return a === 'FREE' || a === 'OVER' || a === 'DEPARTED' || a === '';
-};
-const isFullWeekActivity = (p?: string) => {
-  const a = normActivity(p);
-  return a === 'DOVOLENA' || a === 'NEMOC';
-};
-const getEffectiveHours = (projekt?: string, hours?: number) => {
-  if (isNonCountedActivity(projekt)) return 0;
-  const h = hours || 0;
-  return isFullWeekActivity(projekt) ? h * (36 / 40) : h;
-};
-// Productive = real project work only (vacation/sick/free/over excluded)
-const getProductiveHours = (projekt?: string, hours?: number) => {
-  if (isNonCountedActivity(projekt) || isFullWeekActivity(projekt)) return 0;
-  return hours || 0;
-};
+import {
+  computeMonthlyMatrixStats,
+  computeWeeklyMatrixStats,
+  isFullWeekActivity,
+  normActivity,
+  type MatrixDataMap,
+} from '@/utils/matrixSummary';
+import { MatrixHoverTooltip, type MatrixHoverTooltipHandle } from '@/components/matrix/MatrixHoverTooltip';
 
 
 
@@ -429,6 +415,8 @@ export const ProjectAssignmentMatrix = ({
 
   // History toggle: default shows current week first; toggle shows ~2 months back
   const [showHistory, setShowHistory] = useState(false);
+  const [openFilterWeek, setOpenFilterWeek] = useState<string | null>(null);
+  const hoverTooltipRef = useRef<MatrixHoverTooltipHandle>(null);
 
   // Filter weeks and months based on maxEndDate
   const weeks = useMemo(() => {
@@ -438,6 +426,36 @@ export const ProjectAssignmentMatrix = ({
     return filterWeeksByMaxDate(base, maxEndDate);
   }, [maxEndDate, showHistory]);
   const months = useMemo(() => generateMonths(weeks), [weeks]);
+
+  const weekHeaderMeta = useMemo(() => {
+    const map: Record<string, { cwLabel: string; dateRange: string; holidays: string[] }> = {};
+    for (const week of weeks) {
+      const m = week.match(/CW(\d+)-(\d+)/);
+      if (!m) {
+        map[week] = { cwLabel: week, dateRange: '', holidays: [] };
+        continue;
+      }
+      const cwN = parseInt(m[1], 10);
+      const yN = parseInt(m[2], 10);
+      const cwLabel = `CW${cwN.toString().padStart(2, '0')}`;
+      const dateRange = getWeekDateRange(week);
+      const monday = getISOWeekMonday(cwN, yN);
+      const holidays: string[] = [];
+      for (let i = 0; i < 5; i++) {
+        const d = new Date(monday);
+        d.setDate(monday.getDate() + i);
+        const cz = isHoliday(d, false);
+        const sk = isHoliday(d, true);
+        if (cz || sk) {
+          const dayName = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'][i];
+          const tags = [cz && 'CZ', sk && 'SK'].filter(Boolean).join('+');
+          holidays.push(`${dayName} ${d.getDate()}.${d.getMonth() + 1}. (${tags})`);
+        }
+      }
+      map[week] = { cwLabel, dateRange, holidays };
+    }
+    return map;
+  }, [weeks]);
 
   // Auto-load defaults only once (otherwise manual de-selection gets reverted)
   const defaultsAppliedRef = useRef(false);
@@ -557,7 +575,20 @@ export const ProjectAssignmentMatrix = ({
     return filters && !filters.includes('Všechny') && filters.length > 0;
   };
 
-// Create matrix data structure
+  // O(N) lookup index for primary planning entries by normalized engineer name + CW
+  const primaryEntryMap = useMemo(() => {
+    const map = new Map<string, (typeof planningData)[number]>();
+    for (const entry of planningData) {
+      if (entry.isSecondary) continue;
+      const key = `${normalizeName(entry.konstrukter)}|${entry.cw}`;
+      if (!map.has(key)) {
+        map.set(key, entry);
+      }
+    }
+    return map;
+  }, [planningData]);
+
+  // Create matrix data structure
   const matrixData = useMemo(() => {
     const engineerKeys = Array.from(new Set([
       ...engineers.map(e => normalizeName(e.display_name)),
@@ -568,7 +599,19 @@ export const ProjectAssignmentMatrix = ({
     engineers.forEach(e => {
       isSlovakMap[normalizeName(e.display_name)] = getEngineerCompany(e.display_name) === 'MB Idea';
     });
-    const matrix: { [engineer: string]: { [week: string]: { projekt: string; isTentative: boolean; hours: number; leaveDays: number; projekt2?: string | null; isTentative2?: boolean; hours2?: number } } } = {};
+    // Precompute CZ/SK capacity per week once instead of per engineer
+    const weekCapacityCZ: Record<string, number> = {};
+    const weekCapacitySK: Record<string, number> = {};
+    for (const week of weeks) {
+      const cwMatch = week.match(/CW(\d+)-(\d+)/);
+      if (cwMatch) {
+        const cwN = parseInt(cwMatch[1], 10);
+        const yN = parseInt(cwMatch[2], 10);
+        weekCapacityCZ[week] = getWorkingDaysInCW(cwN, yN, false) * 8;
+        weekCapacitySK[week] = getWorkingDaysInCW(cwN, yN, true) * 8;
+      }
+    }
+    const matrix: MatrixDataMap = {};
     
     engineerKeys.forEach(engineerKey => {
       matrix[engineerKey] = {};
@@ -585,7 +628,7 @@ export const ProjectAssignmentMatrix = ({
           };
           return;
         }
-        const entry = planningData.find(e => !e.isSecondary && normalizeName(e.konstrukter) === engineerKey && e.cw === week);
+        const entry = primaryEntryMap.get(`${engineerKey}|${week}`);
         const projekt = entry?.projekt || (week.includes('CW52') ? 'DOVOLENÁ' : 'FREE');
         let hours = typeof entry?.mhTyden === 'number' ? entry.mhTyden : 0;
         const projekt2 = entry?.projekt2 || null;
@@ -593,18 +636,13 @@ export const ProjectAssignmentMatrix = ({
         // Auto-reduce project hours for holiday weeks (cap at engineer's actual capacity)
         const isRegime = projekt === 'DOVOLENÁ' || projekt === 'NEMOC' || projekt === 'OVER' || projekt === 'FREE';
         if (!isRegime && hours > 0) {
-          const cwMatch = week.match(/CW(\d+)-(\d+)/);
-          if (cwMatch) {
-            const cwN = parseInt(cwMatch[1]);
-            const yN = parseInt(cwMatch[2]);
-            const capacity = getWorkingDaysInCW(cwN, yN, isSlovak) * 8;
-            if (capacity > 0 && hours + hours2 > capacity) {
-              // Cap the total of both projects at the real capacity of the week
-              const overflow = hours + hours2 - capacity;
-              const reduce2 = Math.min(hours2, overflow);
-              hours2 -= reduce2;
-              hours -= (overflow - reduce2);
-            }
+          const capacity = isSlovak ? weekCapacitySK[week] : weekCapacityCZ[week];
+          if (capacity > 0 && hours + hours2 > capacity) {
+            // Cap the total of both projects at the real capacity of the week
+            const overflow = hours + hours2 - capacity;
+            const reduce2 = Math.min(hours2, overflow);
+            hours2 -= reduce2;
+            hours -= (overflow - reduce2);
           }
         }
         matrix[engineerKey][week] = {
@@ -621,22 +659,33 @@ export const ProjectAssignmentMatrix = ({
 
     
     return matrix;
-  }, [planningData, engineers, weeks, endDateMap]);
+  }, [planningData, primaryEntryMap, engineers, weeks, endDateMap]);
 
 
-// Create monthly aggregated data
+  // Create monthly aggregated data
   const monthlyData = useMemo(() => {
     const engineerKeys = Array.from(new Set([
       ...engineers.map(e => normalizeName(e.display_name)),
       ...planningData.map(entry => normalizeName(entry.konstrukter))
     ]));
-    const monthlyMatrix: { [engineer: string]: { [month: string]: { projects: string[], totalHours: number, dominantProject: string, hoursByProject: { [project: string]: number } } } } = {};
+    const monthlyMatrix: {
+      [engineer: string]: {
+        [month: string]: {
+          projects: string[];
+          totalHours: number;
+          dominantProject: string;
+          hoursByProject: { [project: string]: number };
+          tentativeByProject: { [project: string]: boolean };
+        };
+      };
+    } = {};
     
     engineerKeys.forEach(engineerKey => {
       monthlyMatrix[engineerKey] = {};
       const engEndDate = endDateMap[engineerKey] || null;
       months.forEach(month => {
         const monthProjects: { [project: string]: number } = {};
+        const tentativeByProject: { [project: string]: boolean } = {};
         let totalHours = 0;
         
         month.weeks.forEach(week => {
@@ -645,13 +694,14 @@ export const ProjectAssignmentMatrix = ({
             monthProjects['DEPARTED'] = (monthProjects['DEPARTED'] || 0) + 0;
             return;
           }
-          const entry = planningData.find(e => !e.isSecondary && normalizeName(e.konstrukter) === engineerKey && e.cw === week);
+          const entry = primaryEntryMap.get(`${engineerKey}|${week}`);
           let projekt: string;
           let hours: number;
           
           if (entry && entry.projekt) {
             projekt = entry.projekt;
             hours = typeof entry.mhTyden === 'number' ? entry.mhTyden : 0;
+            if (entry.is_tentative) tentativeByProject[projekt] = true;
           } else {
             // Default values for weeks without entries
             projekt = week.includes('CW52') ? 'DOVOLENÁ' : 'FREE';
@@ -665,6 +715,7 @@ export const ProjectAssignmentMatrix = ({
           if (entry?.projekt2 && (entry.mhTyden2 || 0) > 0) {
             monthProjects[entry.projekt2] = (monthProjects[entry.projekt2] || 0) + (entry.mhTyden2 || 0);
             totalHours += entry.mhTyden2 || 0;
+            if (entry.is_tentative2) tentativeByProject[entry.projekt2] = true;
           }
         });
 
@@ -678,13 +729,14 @@ export const ProjectAssignmentMatrix = ({
           projects,
           totalHours,
           dominantProject,
-          hoursByProject: { ...monthProjects }
+          hoursByProject: { ...monthProjects },
+          tentativeByProject,
         };
       });
     });
     
     return monthlyMatrix;
-  }, [planningData, endDateMap, months]);
+  }, [planningData, primaryEntryMap, engineers, endDateMap, months]);
 
   // Get display data based on view mode
   const displayData = viewMode === 'weeks' ? matrixData : monthlyData;
@@ -988,66 +1040,29 @@ export const ProjectAssignmentMatrix = ({
     setProjectDialogOpen(true);
   }, []);
 
-  // Monthly aggregation identical to UtilizationGrid (100% = 36 Mh/week, vacation/sick scaled 36/40)
-  const getMonthStats = useCallback((monthName: string) => {
-    const monthMapLocal: { [key: string]: number } = {
-      'leden': 1, 'únor': 2, 'březen': 3, 'duben': 4, 'květen': 5, 'červen': 6,
-      'červenec': 7, 'srpen': 8, 'září': 9, 'říjen': 10, 'listopad': 11, 'prosinec': 12
-    };
-    const [mName, yStr] = monthName.toLowerCase().split(' ');
-    const mNum = monthMapLocal[mName];
-    const mYear = parseInt(yStr);
+  // Precompute all weekly/monthly summary rows in a single memoized pass
+  const weeklyStatsByWeek = useMemo(
+    () => (viewMode === 'weeks' ? computeWeeklyMatrixStats(weeks, filteredEngineers, matrixData) : {}),
+    [viewMode, weeks, filteredEngineers, matrixData]
+  );
 
-    let fte = 0;
-    let hours = 0;
-    let engineerCount = 0;
-    let maxProductive = 0;
-    let realProductive = 0;
-    let leaveFte = 0;
-    let leaveMh = 0;
+  const monthlyStatsByMonth = useMemo(
+    () =>
+      viewMode === 'months'
+        ? computeMonthlyMatrixStats(months, weeks, filteredEngineers, matrixData, endDateMap, displayNameMap)
+        : {},
+    [viewMode, months, weeks, filteredEngineers, matrixData, endDateMap, displayNameMap]
+  );
 
-    filteredEngineers.forEach(engineer => {
-      const endDate = endDateMap[engineer] || null;
-      const isSlovak = getEngineerCompany(displayNameMap[engineer] || engineer) === 'MB Idea';
+  const selectedProjectAllocations = useMemo(
+    () => (projectDialogOpen && selectedProject ? getAllocationsForProject(selectedProject) : []),
+    [projectDialogOpen, selectedProject, getAllocationsForProject]
+  );
 
-      let capacityDays = 0;
-      let engHours = 0;
-      let leaveDays = 0;
-
-      weeks.forEach(week => {
-        if (endDate && isEngineerDepartedForWeek(endDate, week)) return;
-        const cwMatch = week.match(/CW(\d+)-(\d+)/);
-        if (!cwMatch) return;
-        const cwNum = parseInt(cwMatch[1]);
-        const wYear = parseInt(cwMatch[2]);
-        const monday = getISOWeekMonday(cwNum, wYear);
-        const daysInMonth = getWorkingDaysInWeekForMonth(monday, mYear, mNum, isSlovak);
-        capacityDays += daysInMonth;
-        if (daysInMonth === 0) return;
-        const pd = matrixData[engineer]?.[week];
-        const eff = getEffectiveHours(pd?.projekt, pd?.hours);
-        if (eff > 0) engHours += eff * (daysInMonth / 5);
-        const partialLeave = isFullWeekActivity(pd?.projekt) ? 0 : Math.min(daysInMonth, (pd?.leaveDays || 0) * (daysInMonth / 5));
-        if (isFullWeekActivity(pd?.projekt)) leaveDays += daysInMonth;
-        else leaveDays += partialLeave;
-        if (!isFullWeekActivity(pd?.projekt) && normActivity(pd?.projekt) !== 'DEPARTED') {
-          const engMax = Math.max(0, (daysInMonth - partialLeave) * 7.2);
-          maxProductive += engMax;
-          // cap real hours at available capacity (short weeks must not exceed 100%)
-          realProductive += Math.min(engMax, getProductiveHours(pd?.projekt, pd?.hours) * (daysInMonth / 5));
-        }
-      });
-
-      if (capacityDays === 0) return;
-      engineerCount += 1;
-      leaveFte += leaveDays / capacityDays;
-      leaveMh += leaveDays * 7.2;
-      hours += engHours;
-      fte += engHours / (capacityDays * 7.2);
-    });
-
-    return { fte, hours, engineerCount, maxProductive, realProductive, leaveFte, leaveMh };
-  }, [filteredEngineers, endDateMap, displayNameMap, weeks, matrixData]);
+  const visibleEngineerNames = useMemo(
+    () => filteredEngineers.map(engineer => displayNameMap[engineer] || engineer),
+    [filteredEngineers, displayNameMap]
+  );
 
 
   return (
@@ -1413,7 +1428,10 @@ export const ProjectAssignmentMatrix = ({
           )}
 
           {/* Matrix Table */}
-          <div className="overflow-x-auto overflow-y-auto max-h-[85vh]">
+          <div
+            className="overflow-x-auto overflow-y-auto max-h-[85vh]"
+            onScroll={() => hoverTooltipRef.current?.hide()}
+          >
             <table className="w-full border-collapse">
               <thead className="sticky top-0 z-20">
                 {viewMode === 'weeks' ? (
@@ -1448,25 +1466,9 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                           >
                             <div className="flex flex-col items-center">
                               {(() => {
-                                const m = week.match(/CW(\d+)-(\d+)/);
-                                if (!m) return <span className="text-muted-foreground">{week}</span>;
-                                const cwN = parseInt(m[1]);
-                                const yN = parseInt(m[2]);
-                                const cwLabel = `CW${cwN.toString().padStart(2, '0')}`;
-                                const dateRange = getWeekDateRange(week);
-                                const monday = getISOWeekMonday(cwN, yN);
-                                const holidays: string[] = [];
-                                for (let i = 0; i < 5; i++) {
-                                  const d = new Date(monday);
-                                  d.setDate(monday.getDate() + i);
-                                  const cz = isHoliday(d, false);
-                                  const sk = isHoliday(d, true);
-                                  if (cz || sk) {
-                                    const dayName = ['Mon','Tue','Wed','Thu','Fri'][i];
-                                    const tags = [cz && 'CZ', sk && 'SK'].filter(Boolean).join('+');
-                                    holidays.push(`${dayName} ${d.getDate()}.${d.getMonth()+1}. (${tags})`);
-                                  }
-                                }
+                                const meta = weekHeaderMeta[week];
+                                if (!meta || !meta.dateRange) return <span className="text-muted-foreground">{week}</span>;
+                                const { cwLabel, dateRange, holidays } = meta;
                                 const label = holidays.length === 0 ? (
                                   <span className="text-muted-foreground">{cwLabel}</span>
                                 ) : (
@@ -1486,7 +1488,10 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                                   <>
                                     <div className="flex items-center gap-1">
                                       {label}
-                                      <Popover>
+                                      <Popover
+                                        open={openFilterWeek === week}
+                                        onOpenChange={(open) => setOpenFilterWeek(open ? week : null)}
+                                      >
                                         <PopoverTrigger asChild>
                                           <Button 
                                             variant="ghost" 
@@ -1497,6 +1502,7 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                                           </Button>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-60 p-0" align="start">
+                                          {openFilterWeek === week && (
                                           <div className="p-2 max-h-64 overflow-y-auto">
                                             <div className="font-medium text-sm mb-2 px-2">{cwLabel}</div>
                                             {getProjectsForWeek(week).map(project => (
@@ -1515,6 +1521,7 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                                               </div>
                                             ))}
                                           </div>
+                                          )}
                                         </PopoverContent>
                                       </Popover>
                                     </div>
@@ -1576,87 +1583,51 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                                   <X className="h-3.5 w-3.5 text-red-500" />
                                 </div>
                               ) : project && (
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <div 
-                                      onClick={(e) => handleProjectClick(project, e)}
-                                      className={`text-xs px-1.5 py-0.5 w-full justify-center font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-md inline-flex items-center cursor-pointer ${getProjectBadgeStyle(project, isTentative)} ${
-                                        isTentative && project !== 'DOVOLENÁ' ? 'border-[3px] border-dashed !border-yellow-400' : (isLowCapacity ? `border-[3px] border-dashed ${isLeaveReduced ? '!border-green-500' : '!border-red-500'}` : '')
-                                      }`}
-                                    >
-                                      <span className="truncate max-w-[65px]" title={getProjectDisplayName(project)}>
-                                        {getProjectDisplayName(project)}
-                                      </span>
-                                    </div>
-                                  </TooltipTrigger>
-                                  <TooltipContent side="top" className="max-w-[350px]">
-                                    {(() => {
-                                      const engineers = getEngineersForProjectInWeek(project, week);
-                                      const tentativeCount = engineers.filter(e => e.isTentative).length;
-                                      const partialCount = engineers.filter(e => e.hours > 0 && e.hours < 35).length;
-                                      const fullCount = engineers.filter(e => e.hours >= 35).length;
-                                      const isFreeProject = project === 'FREE';
-                                      const totalHours = engineers.reduce((sum, e) => sum + e.hours, 0);
-                                      return (
-                                        <div className="text-sm">
-                                          <div className="font-semibold mb-1">{getProjectDisplayName(project)} - {week}</div>
-                                          <div className="text-xs text-muted-foreground mb-2 space-y-0.5">
-                                            <div>{isFreeProject ? 'Available:' : 'Allocated:'} {engineers.length} engineers</div>
-                                            <div className="text-blue-400">📊 Total: {totalHours}h</div>
-                                            {fullCount > 0 && (
-                                              <div className="text-green-500">● {isFreeProject ? 'Free capacity' : 'Fully allocated'}: {fullCount}</div>
-                                            )}
-                                            {partialCount > 0 && (
-                                              <div className="text-orange-400">◐ Partial: {partialCount}</div>
-                                            )}
-                                            {tentativeCount > 0 && (
-                                              <div className="text-yellow-400">⚠ Tentative: {tentativeCount}</div>
-                                            )}
-                                          </div>
-                                          <div className="flex flex-col gap-0.5 max-h-[200px] overflow-y-auto">
-                                            {engineers.map(eng => (
-                                              <div key={eng.name} className="text-xs flex items-center gap-1.5">
-                                                <span className={eng.isTentative ? 'text-yellow-400' : ''}>{eng.name}</span>
-                                                {eng.hours >= 35 ? (
-                                                  <span className="text-green-500 text-[10px]">{isFreeProject ? '(free)' : '(full)'}</span>
-                                                ) : eng.hours > 0 && (
-                                                  <span className="text-orange-400 text-[10px]">({eng.hours}h)</span>
-                                                )}
-                                                {eng.isTentative && (
-                                                  <span className="text-yellow-400 text-[10px]">(tentative)</span>
-                                                )}
-                                              </div>
-                                            ))}
-                                          </div>
-                                        </div>
-                                      );
-                                    })()}
-                                  </TooltipContent>
-                                </Tooltip>
+                                <div
+                                  onClick={(e) => handleProjectClick(project, e)}
+                                  onMouseEnter={(e) => {
+                                    const r = e.currentTarget.getBoundingClientRect();
+                                    hoverTooltipRef.current?.show({
+                                      kind: 'week',
+                                      rect: { left: r.left, top: r.top, bottom: r.bottom, width: r.width },
+                                      project,
+                                      week,
+                                    });
+                                  }}
+                                  onMouseLeave={() => hoverTooltipRef.current?.hide()}
+                                  className={`text-xs px-1.5 py-0.5 w-full justify-center font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-md inline-flex items-center cursor-pointer ${getProjectBadgeStyle(project, isTentative)} ${
+                                    isTentative && project !== 'DOVOLENÁ' ? 'border-[3px] border-dashed !border-yellow-400' : (isLowCapacity ? `border-[3px] border-dashed ${isLeaveReduced ? '!border-green-500' : '!border-red-500'}` : '')
+                                  }`}
+                                >
+                                  <span className="truncate max-w-[65px]" title={getProjectDisplayName(project)}>
+                                    {getProjectDisplayName(project)}
+                                  </span>
+                                </div>
                               )}
                               {project !== 'DEPARTED' && projectData?.projekt2 && (
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <div
-                                      onClick={(e) => handleProjectClick(projectData.projekt2 as string, e)}
-                                      className={`mt-0.5 text-xs px-1.5 py-0.5 w-full justify-center font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-md inline-flex items-center cursor-pointer ${getProjectBadgeStyle(projectData.projekt2 as string, projectData.isTentative2)} ${
-                                        projectData.isTentative2 ? 'border-[3px] border-dashed !border-yellow-400' : ''
-                                      }`}
-                                    >
-                                      <span className="truncate max-w-[65px]" title={getProjectDisplayName(projectData.projekt2 as string)}>
-                                        {getProjectDisplayName(projectData.projekt2 as string)}
-                                      </span>
-                                    </div>
-                                  </TooltipTrigger>
-                                  <TooltipContent side="top">
-                                    <div className="text-sm">
-                                      <div className="font-semibold">{getProjectDisplayName(projectData.projekt2 as string)} - {week}</div>
-                                      <div className="text-xs text-muted-foreground">
-                                        Split week: {hours}h {getProjectDisplayName(project)} + {projectData.hours2 || 0}h {getProjectDisplayName(projectData.projekt2 as string)}
-                                      </div>
-                                    </div>
-                                  </TooltipContent>
-                                </Tooltip>
+                                <div
+                                  onClick={(e) => handleProjectClick(projectData.projekt2 as string, e)}
+                                  onMouseEnter={(e) => {
+                                    const r = e.currentTarget.getBoundingClientRect();
+                                    hoverTooltipRef.current?.show({
+                                      kind: 'split',
+                                      rect: { left: r.left, top: r.top, bottom: r.bottom, width: r.width },
+                                      primaryProject: project,
+                                      secondaryProject: projectData.projekt2 as string,
+                                      week,
+                                      hours,
+                                      hours2: projectData.hours2 || 0,
+                                    });
+                                  }}
+                                  onMouseLeave={() => hoverTooltipRef.current?.hide()}
+                                  className={`mt-0.5 text-xs px-1.5 py-0.5 w-full justify-center font-medium shadow-sm hover:shadow-md transition-all duration-200 rounded-md inline-flex items-center cursor-pointer ${getProjectBadgeStyle(projectData.projekt2 as string, projectData.isTentative2)} ${
+                                    projectData.isTentative2 ? 'border-[3px] border-dashed !border-yellow-400' : ''
+                                  }`}
+                                >
+                                  <span className="truncate max-w-[65px]" title={getProjectDisplayName(projectData.projekt2 as string)}>
+                                    {getProjectDisplayName(projectData.projekt2 as string)}
+                                  </span>
+                                </div>
                               )}
                             </td>
 
@@ -1700,21 +1671,22 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                                     }
                                     
                                      const showText = isProjectVisibleForCustomer(mainProject, customerViewMode);
-                                     
-                                     // Compute total hours and tentative status for the main project across month weeks
-                                      let mainHours = 0;
-                                      let mainTentative = false;
-                                      month.weeks.forEach(week => {
-                                        const entry = planningData.find(e => normalizeName(e.konstrukter) === engineer && e.cw === week && e.projekt === mainProject);
-                                        if (entry) {
-                                          mainHours += typeof entry.mhTyden === 'number' ? entry.mhTyden : 0;
-                                          if (entry.is_tentative) mainTentative = true;
-                                        }
-                                      });
-                                      
-                                      const badgeContent = (
-                                        <div 
+                                     const mainTentative = Boolean(monthData?.tentativeByProject?.[mainProject]);
+
+                                     return (
+                                        <div
                                           onClick={customerViewMode ? undefined : (e) => handleProjectClick(mainProject, e)}
+                                          onMouseEnter={customerViewMode ? undefined : (e) => {
+                                            const r = e.currentTarget.getBoundingClientRect();
+                                            hoverTooltipRef.current?.show({
+                                              kind: 'month',
+                                              rect: { left: r.left, top: r.top, bottom: r.bottom, width: r.width },
+                                              project: mainProject,
+                                              monthName: month.name,
+                                              monthWeeks: month.weeks,
+                                            });
+                                          }}
+                                          onMouseLeave={customerViewMode ? undefined : () => hoverTooltipRef.current?.hide()}
                                           className={`text-xs px-1.5 py-0.5 w-full justify-center font-medium shadow-sm ${!customerViewMode ? 'hover:shadow-md cursor-pointer' : ''} transition-all duration-200 rounded-md inline-flex items-center ${getProjectBadgeStyle(mainProject)} ${
                                           mainTentative ? 'border-[3px] border-dashed !border-yellow-400' : ''
                                         }`}
@@ -1728,77 +1700,26 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                                          )}
                                        </div>
                                      );
-                                    
-                                    // In customer view, no tooltip
-                                    if (customerViewMode) {
-                                      return badgeContent;
-                                    }
-                                    
-                                    // Normal view with tooltip
-                                    return (
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          {badgeContent}
-                                        </TooltipTrigger>
-                                        <TooltipContent side="top" className="max-w-[350px]">
-                                          {(() => {
-                                            const engineers = getEngineersForProjectInMonth(mainProject, month.name, month.weeks);
-                                            const tentativeCount = engineers.filter(e => e.isTentative).length;
-                                            const avgHoursPerWeek = month.weeks.length > 0 ? engineers.map(e => e.hours / month.weeks.length) : [];
-                                            const fullCount = engineers.filter((e, i) => avgHoursPerWeek[i] >= 35).length;
-                                            const partialCount = engineers.filter((e, i) => avgHoursPerWeek[i] > 0 && avgHoursPerWeek[i] < 35).length;
-                                            const totalHours = engineers.reduce((sum, e) => sum + e.hours, 0);
-                                            const avgHoursPerWeekTotal = month.weeks.length > 0 ? Math.round(totalHours / month.weeks.length) : totalHours;
-                                            const isFreeProject = mainProject === 'FREE';
-                                            return (
-                                              <div className="text-sm">
-                                                <div className="font-semibold mb-1">{getProjectDisplayName(mainProject)} - {getFullMonthNameEN(month.name)}</div>
-                                                <div className="text-xs text-muted-foreground mb-2 space-y-0.5">
-                                                  <div>{isFreeProject ? 'Available:' : 'Allocated:'} {engineers.length} engineers</div>
-                                                  <div className="text-blue-400">📊 Total: {totalHours}h ({avgHoursPerWeekTotal}h/week)</div>
-                                                  {fullCount > 0 && (
-                                                    <div className="text-green-500">● {isFreeProject ? 'Free capacity' : 'Fully allocated'}: {fullCount}</div>
-                                                  )}
-                                                  {partialCount > 0 && (
-                                                    <div className="text-orange-400">◐ Partial: {partialCount}</div>
-                                                  )}
-                                                  {tentativeCount > 0 && (
-                                                    <div className="text-yellow-400">⚠ Tentative: {tentativeCount}</div>
-                                                  )}
-                                                </div>
-                                                <div className="flex flex-col gap-0.5 max-h-[200px] overflow-y-auto">
-                                                  {engineers.map((eng, i) => {
-                                                    const avgHours = avgHoursPerWeek[i] || 0;
-                                                    return (
-                                                      <div key={eng.name} className="text-xs flex items-center gap-1.5">
-                                                        <span className={eng.isTentative ? 'text-yellow-400' : ''}>{eng.name}</span>
-                                                        {avgHours >= 35 ? (
-                                                          <span className="text-green-500 text-[10px]">(full)</span>
-                                                        ) : avgHours > 0 && (
-                                                          <span className="text-orange-400 text-[10px]">({Math.round(avgHours)}h/w)</span>
-                                                        )}
-                                                        {eng.isTentative && (
-                                                          <span className="text-yellow-400 text-[10px]">(tentative)</span>
-                                                        )}
-                                                      </div>
-                                                    );
-                                                  })}
-                                                </div>
-                                              </div>
-                                            );
-                                          })()}
-                                        </TooltipContent>
-                                      </Tooltip>
-                                    );
                                   })()}
                                   
                                   {/* Additional projects */}
                                   {visibleProjects.slice(1).map((project, index) => {
                                     const showText = isProjectVisibleForCustomer(project, customerViewMode);
-                                    
-                                    const badgeContent = (
-                                      <div 
+                                    return (
+                                      <div
+                                        key={index}
                                         onClick={customerViewMode ? undefined : (e) => handleProjectClick(project, e)}
+                                        onMouseEnter={customerViewMode ? undefined : (e) => {
+                                          const r = e.currentTarget.getBoundingClientRect();
+                                          hoverTooltipRef.current?.show({
+                                            kind: 'month',
+                                            rect: { left: r.left, top: r.top, bottom: r.bottom, width: r.width },
+                                            project,
+                                            monthName: month.name,
+                                            monthWeeks: month.weeks,
+                                          });
+                                        }}
+                                        onMouseLeave={customerViewMode ? undefined : () => hoverTooltipRef.current?.hide()}
                                         className={`text-xs px-1 py-0.5 w-full justify-center font-normal opacity-75 rounded-sm inline-flex items-center ${!customerViewMode ? 'cursor-pointer' : ''} ${getProjectBadgeStyle(project)}`}
                                       >
                                         {showText ? (
@@ -1809,68 +1730,6 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                                           <span className="opacity-0">-</span>
                                         )}
                                       </div>
-                                    );
-                                    
-                                    // In customer view, no tooltip
-                                    if (customerViewMode) {
-                                      return <React.Fragment key={index}>{badgeContent}</React.Fragment>;
-                                    }
-                                    
-                                    // Normal view with tooltip
-                                    return (
-                                      <Tooltip key={index}>
-                                        <TooltipTrigger asChild>
-                                          {badgeContent}
-                                        </TooltipTrigger>
-                                        <TooltipContent side="top" className="max-w-[350px]">
-                                          {(() => {
-                                            const engineers = getEngineersForProjectInMonth(project, month.name, month.weeks);
-                                            const tentativeCount = engineers.filter(e => e.isTentative).length;
-                                            const avgHoursPerWeek = month.weeks.length > 0 ? engineers.map(e => e.hours / month.weeks.length) : [];
-                                            const fullCount = engineers.filter((e, i) => avgHoursPerWeek[i] >= 35).length;
-                                            const partialCount = engineers.filter((e, i) => avgHoursPerWeek[i] > 0 && avgHoursPerWeek[i] < 35).length;
-                                            const totalHours = engineers.reduce((sum, e) => sum + e.hours, 0);
-                                            const avgHoursPerWeekTotal = month.weeks.length > 0 ? Math.round(totalHours / month.weeks.length) : totalHours;
-                                            const isFreeProject = project === 'FREE';
-                                            return (
-                                              <div className="text-sm">
-                                                <div className="font-semibold mb-1">{getProjectDisplayName(project)} - {getFullMonthNameEN(month.name)}</div>
-                                                <div className="text-xs text-muted-foreground mb-2 space-y-0.5">
-                                                  <div>{isFreeProject ? 'Available:' : 'Allocated:'} {engineers.length} engineers</div>
-                                                  <div className="text-blue-400">📊 Total: {totalHours}h ({avgHoursPerWeekTotal}h/week)</div>
-                                                  {fullCount > 0 && (
-                                                    <div className="text-green-500">● {isFreeProject ? 'Free capacity' : 'Fully allocated'}: {fullCount}</div>
-                                                  )}
-                                                  {partialCount > 0 && (
-                                                    <div className="text-orange-400">◐ Partial: {partialCount}</div>
-                                                  )}
-                                                  {tentativeCount > 0 && (
-                                                    <div className="text-yellow-400">⚠ Tentative: {tentativeCount}</div>
-                                                  )}
-                                                </div>
-                                                <div className="flex flex-col gap-0.5 max-h-[200px] overflow-y-auto">
-                                                  {engineers.map((eng, i) => {
-                                                    const avgHours = avgHoursPerWeek[i] || 0;
-                                                    return (
-                                                      <div key={eng.name} className="text-xs flex items-center gap-1.5">
-                                                        <span className={eng.isTentative ? 'text-yellow-400' : ''}>{eng.name}</span>
-                                                        {avgHours >= 35 ? (
-                                                          <span className="text-green-500 text-[10px]">(full)</span>
-                                                        ) : avgHours > 0 && (
-                                                          <span className="text-orange-400 text-[10px]">({Math.round(avgHours)}h/w)</span>
-                                                        )}
-                                                        {eng.isTentative && (
-                                                          <span className="text-yellow-400 text-[10px]">(tentative)</span>
-                                                        )}
-                                                      </div>
-                                                    );
-                                                  })}
-                                                </div>
-                                              </div>
-                                            );
-                                          })()}
-                                        </TooltipContent>
-                                      </Tooltip>
                                     );
                                   })}
                                 </div>
@@ -1889,16 +1748,7 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                   {viewMode === 'weeks' ? (
                     months.map((month, monthIndex) => 
                       month.weeks.map((week, weekIndex) => {
-                        const weekMax = getWeekMaxPerEngineer(week);
-                        // Per-engineer free capacity (over-allocation on one engineer must not hide free capacity of another)
-                        const freeMh = filteredEngineers.reduce((sum, engineer) => {
-                          const pd = matrixData[engineer][week];
-                          if (!pd || normActivity(pd.projekt) === 'DEPARTED' || isFullWeekActivity(pd.projekt)) return sum;
-                          const partialLeave = Math.min(weekMax / 7.2, pd.leaveDays || 0) * 7.2;
-                          const engMax = Math.max(0, weekMax - partialLeave);
-                          const engReal = getProductiveHours(pd?.projekt, pd?.hours);
-                          return sum + Math.max(0, engMax - engReal);
-                        }, 0);
+                        const freeMh = weeklyStatsByWeek[week]?.freeMh ?? 0;
                         return (
                           <td 
                             key={week} 
@@ -1913,8 +1763,7 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                     )
                   ) : (
                     months.map((month, monthIndex) => {
-                      const stats = getMonthStats(month.name);
-                      const freeMh = Math.max(0, stats.maxProductive - stats.realProductive);
+                      const freeMh = monthlyStatsByMonth[month.name]?.freeMh ?? 0;
                       return (
                         <td 
                           key={month.name} 
@@ -1937,20 +1786,7 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                   {viewMode === 'weeks' ? (
                     months.map((month, monthIndex) => 
                       month.weeks.map((week, weekIndex) => {
-                        const count = filteredEngineers.filter(engineer => {
-                          const pd = matrixData[engineer][week];
-                          return pd && pd.projekt !== 'DEPARTED';
-                        }).length;
-                        const weekMaxFte = getWeekMaxPerEngineer(week);
-                        const freeHoursFte = filteredEngineers.reduce((sum, engineer) => {
-                          const pd = matrixData[engineer][week];
-                          if (!pd || normActivity(pd.projekt) === 'DEPARTED' || isFullWeekActivity(pd.projekt)) return sum;
-                          const partialLeave = Math.min(weekMaxFte / 7.2, pd.leaveDays || 0) * 7.2;
-                          const engMax = Math.max(0, weekMaxFte - partialLeave);
-                          const engReal = getProductiveHours(pd?.projekt, pd?.hours);
-                          return sum + Math.max(0, engMax - engReal);
-                        }, 0);
-                        const freeFte = weekMaxFte > 0 ? freeHoursFte / weekMaxFte : 0;
+                        const freeFte = weeklyStatsByWeek[week]?.freeFte ?? 0;
                         return (
                           <td 
                             key={week} 
@@ -1965,10 +1801,7 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                     )
                   ) : (
                     months.map((month, monthIndex) => {
-                      const stats = getMonthStats(month.name);
-                      const freeFte = stats.maxProductive > 0
-                        ? Math.max(0, (stats.maxProductive - stats.realProductive) / stats.maxProductive) * stats.engineerCount
-                        : 0;
+                      const freeFte = monthlyStatsByMonth[month.name]?.freeFte ?? 0;
                       return (
                         <td 
                           key={month.name} 
@@ -1992,15 +1825,7 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                   {viewMode === 'weeks' ? (
                     months.map((month, monthIndex) => 
                       month.weeks.map((week, weekIndex) => {
-                        // Holiday-aware: full-week activity = 1.0 FTE, partial leave = leave days / working days in week
-                        const workDays = getWeekMaxPerEngineer(week) / 7.2;
-                        const leave = filteredEngineers.reduce((sum, engineer) => {
-                          const pd = matrixData[engineer][week];
-                          if (!pd) return sum;
-                          if (isFullWeekActivity(pd.projekt)) return sum + 1;
-                          if (workDays <= 0) return sum;
-                          return sum + Math.min(workDays, pd.leaveDays || 0) / workDays;
-                        }, 0);
+                        const leave = weeklyStatsByWeek[week]?.leaveFte ?? 0;
                         return (
                           <td 
                             key={week} 
@@ -2015,7 +1840,7 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                     )
                   ) : (
                     months.map((month, monthIndex) => {
-                      const stats = getMonthStats(month.name);
+                      const leaveFte = monthlyStatsByMonth[month.name]?.leaveFte ?? 0;
                       return (
                         <td 
                           key={month.name} 
@@ -2023,7 +1848,7 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                             (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + ((showHistory && viewMode === 'months' && isCurrentMonth(month.name)) ? ' bg-warning/30 border-warning' : '')
                           }`}
                         >
-                          <div className="text-sm text-foreground">{stats.leaveFte.toFixed(1)}</div>
+                          <div className="text-sm text-foreground">{leaveFte.toFixed(1)}</div>
                         </td>
                       );
                     })
@@ -2039,14 +1864,7 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                   {viewMode === 'weeks' ? (
                     months.map((month, monthIndex) =>
                       month.weeks.map((week, weekIndex) => {
-                        const weekMaxLeave = getWeekMaxPerEngineer(week);
-                        const workDaysLeave = weekMaxLeave / 7.2;
-                        const leaveMh = filteredEngineers.reduce((sum, engineer) => {
-                          const pd = matrixData[engineer][week];
-                          if (!pd) return sum;
-                          if (isFullWeekActivity(pd.projekt)) return sum + weekMaxLeave;
-                          return sum + Math.min(workDaysLeave, pd.leaveDays || 0) * 7.2;
-                        }, 0);
+                        const leaveMh = weeklyStatsByWeek[week]?.leaveMh ?? 0;
                         return (
                           <td
                             key={week}
@@ -2061,7 +1879,7 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                     )
                   ) : (
                     months.map((month, monthIndex) => {
-                      const stats = getMonthStats(month.name);
+                      const leaveMh = monthlyStatsByMonth[month.name]?.leaveMh ?? 0;
                       return (
                         <td
                           key={month.name}
@@ -2069,7 +1887,7 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                             (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + ((showHistory && viewMode === 'months' && isCurrentMonth(month.name)) ? ' bg-warning/30 border-warning' : '')
                           }`}
                         >
-                          <div className="text-sm text-foreground">{Math.round(stats.leaveMh)}h</div>
+                          <div className="text-sm text-foreground">{Math.round(leaveMh)}h</div>
                         </td>
                       );
                     })
@@ -2085,13 +1903,7 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                   {viewMode === 'weeks' ? (
                     months.map((month, monthIndex) =>
                       month.weeks.map((week, weekIndex) => {
-                        const weekMax = getWeekMaxPerEngineer(week);
-                        const maxHours = filteredEngineers.reduce((sum, engineer) => {
-                          const pd = matrixData[engineer][week];
-                          if (!pd || normActivity(pd.projekt) === 'DEPARTED' || isFullWeekActivity(pd.projekt)) return sum;
-                          const partialLeave = Math.min(weekMax / 7.2, pd.leaveDays || 0) * 7.2;
-                          return sum + Math.max(0, weekMax - partialLeave);
-                        }, 0);
+                        const maxHours = weeklyStatsByWeek[week]?.maxProductive ?? 0;
                         return (
                           <td
                             key={week}
@@ -2106,7 +1918,7 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                     )
                   ) : (
                     months.map((month, monthIndex) => {
-                      const stats = getMonthStats(month.name);
+                      const maxProductive = monthlyStatsByMonth[month.name]?.maxProductive ?? 0;
                       return (
                         <td
                           key={month.name}
@@ -2114,7 +1926,7 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                             (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + ((showHistory && viewMode === 'months' && isCurrentMonth(month.name)) ? ' bg-warning/30 border-warning' : '')
                           }`}
                         >
-                          <div className="text-sm text-foreground">{Math.round(stats.maxProductive)}h</div>
+                          <div className="text-sm text-foreground">{Math.round(maxProductive)}h</div>
                         </td>
                       );
                     })
@@ -2130,10 +1942,7 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                   {viewMode === 'weeks' ? (
                     months.map((month, monthIndex) =>
                       month.weeks.map((week, weekIndex) => {
-                        const realHours = filteredEngineers.reduce((sum, engineer) => {
-                          const pd = matrixData[engineer][week];
-                          return sum + getProductiveHours(pd?.projekt, pd?.hours);
-                        }, 0);
+                        const realHours = weeklyStatsByWeek[week]?.realProductive ?? 0;
                         return (
                           <td
                             key={week}
@@ -2148,7 +1957,7 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                     )
                   ) : (
                     months.map((month, monthIndex) => {
-                      const stats = getMonthStats(month.name);
+                      const realProductive = monthlyStatsByMonth[month.name]?.realProductive ?? 0;
                       return (
                         <td
                           key={month.name}
@@ -2156,7 +1965,7 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                             (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + ((showHistory && viewMode === 'months' && isCurrentMonth(month.name)) ? ' bg-warning/30 border-warning' : '')
                           }`}
                         >
-                          <div className="text-sm text-foreground">{Math.round(stats.realProductive)}h</div>
+                          <div className="text-sm text-foreground">{Math.round(realProductive)}h</div>
 
                         </td>
                       );
@@ -2173,10 +1982,7 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                   {viewMode === 'weeks' ? (
                     months.map((month, monthIndex) =>
                       month.weeks.map((week, weekIndex) => {
-                        const count = filteredEngineers.filter(engineer => {
-                          const pd = matrixData[engineer][week];
-                          return pd && pd.projekt !== 'DEPARTED';
-                        }).length;
+                        const count = weeklyStatsByWeek[week]?.engineerCount ?? 0;
                         return (
                           <td
                             key={week}
@@ -2191,7 +1997,7 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                     )
                   ) : (
                     months.map((month, monthIndex) => {
-                      const stats = getMonthStats(month.name);
+                      const engineerCount = monthlyStatsByMonth[month.name]?.engineerCount ?? 0;
                       return (
                         <td
                           key={month.name}
@@ -2199,7 +2005,7 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                             (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + ((showHistory && viewMode === 'months' && isCurrentMonth(month.name)) ? ' bg-warning/30 border-warning' : '')
                           }`}
                         >
-                          <div className="text-sm text-foreground">{stats.engineerCount}</div>
+                          <div className="text-sm text-foreground">{engineerCount}</div>
                         </td>
                       );
                     })
@@ -2215,12 +2021,7 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                   {viewMode === 'weeks' ? (
                     months.map((month, monthIndex) =>
                       month.weeks.map((week, weekIndex) => {
-                        const weekMaxTotal = getWeekMaxPerEngineer(week);
-                        const totalHours = filteredEngineers.reduce((sum, engineer) => {
-                          const pd = matrixData[engineer][week];
-                          return sum + getEffectiveHours(pd?.projekt, pd?.hours);
-                        }, 0);
-                        const fte = (weekMaxTotal > 0 ? totalHours / weekMaxTotal : 0).toFixed(1);
+                        const fte = (weeklyStatsByWeek[week]?.totalFte ?? 0).toFixed(1);
                         return (
                           <td
                             key={week}
@@ -2235,7 +2036,7 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                     )
                   ) : (
                     months.map((month, monthIndex) => {
-                      const stats = getMonthStats(month.name);
+                      const fte = monthlyStatsByMonth[month.name]?.fte ?? 0;
                       return (
                         <td
                           key={month.name}
@@ -2243,7 +2044,7 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                             (monthIndex > 0 ? 'border-l-4 border-l-primary/50' : '') + ((showHistory && viewMode === 'months' && isCurrentMonth(month.name)) ? ' bg-warning/30 border-warning' : '')
                           }`}
                         >
-                          <div className="text-sm text-foreground">{stats.fte.toFixed(1)}</div>
+                          <div className="text-sm text-foreground">{fte.toFixed(1)}</div>
                         </td>
                       );
                     })
@@ -2259,20 +2060,7 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                   {viewMode === 'weeks' ? (
                     months.map((month, monthIndex) =>
                       month.weeks.map((week, weekIndex) => {
-                        // Utilization = real productive hours / max productive hours (holiday & leave aware)
-                        const weekMaxUtil = getWeekMaxPerEngineer(week);
-                        let capacity = 0;
-                        let totalHours = 0;
-                        filteredEngineers.forEach(engineer => {
-                          const pd = matrixData[engineer][week];
-                          if (!pd || normActivity(pd.projekt) === 'DEPARTED' || isFullWeekActivity(pd.projekt)) return;
-                          const partialLeave = Math.min(weekMaxUtil / 7.2, pd.leaveDays || 0) * 7.2;
-                          const engMax = Math.max(0, weekMaxUtil - partialLeave);
-                          capacity += engMax;
-                          // cap at available capacity so short weeks never exceed 100%
-                          totalHours += Math.min(engMax, getProductiveHours(pd.projekt, pd.hours));
-                        });
-                        const utilization = capacity > 0 ? Math.round((totalHours / capacity) * 100) : 0;
+                        const utilization = weeklyStatsByWeek[week]?.utilization ?? 0;
                         return (
                           <td
                             key={week}
@@ -2287,10 +2075,7 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
                     )
                   ) : (
                     months.map((month, monthIndex) => {
-                      const stats = getMonthStats(month.name);
-                      const utilization = stats.maxProductive > 0
-                        ? Math.round((stats.realProductive / stats.maxProductive) * 100)
-                        : 0;
+                      const utilization = monthlyStatsByMonth[month.name]?.utilization ?? 0;
                       return (
                         <td
                           key={month.name}
@@ -2358,7 +2143,7 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
           open={projectDialogOpen}
           onOpenChange={setProjectDialogOpen}
           projectName={selectedProject || ''}
-          allocations={selectedProject ? getAllocationsForProject(selectedProject) : []}
+          allocations={selectedProjectAllocations}
           projectInfo={projects.find(p => p.code === selectedProject)}
           customers={customers}
           projectManagers={projectManagers}
@@ -2366,6 +2151,14 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
           viewMode={viewMode}
         />
       </Card>
+
+      <MatrixHoverTooltip
+        ref={hoverTooltipRef}
+        getProjectDisplayName={getProjectDisplayName}
+        getFullMonthNameEN={getFullMonthNameEN}
+        getEngineersForProjectInWeek={getEngineersForProjectInWeek}
+        getEngineersForProjectInMonth={getEngineersForProjectInMonth}
+      />
 
       {!customerViewMode && (
         <div className="mt-6 space-y-6">
@@ -2377,7 +2170,7 @@ monthIndex > 0 ? 'border-l-4 border-l-primary/50' : ''
           <PlanningAIAnalyzer
             planningData={planningData}
             visibleWeeks={weeks}
-            visibleEngineerNames={filteredEngineers.map(engineer => displayNameMap[engineer] || engineer)}
+            visibleEngineerNames={visibleEngineerNames}
           />
         </div>
       )}
