@@ -66,6 +66,12 @@ All colors MUST be HSL.
     --project-airbus: 175 84% 32%;
     --project-unknown: 220 9% 46%;
     --project-label: 0 0% 100%;
+    --calendar-productive: 142 71% 34%;
+    --calendar-vacation: 35 92% 52%;
+    --calendar-sick: 0 78% 55%;
+    --calendar-holiday: 204 82% 46%;
+    --calendar-highlight: 48 96% 62%;
+    --calendar-highlight-foreground: 38 92% 14%;
     
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(213 88% 45%), hsl(213 100% 65%));
@@ -134,6 +140,12 @@ All colors MUST be HSL.
     --planning-cell: 222.2 84% 4.9%;
     --planning-cell-hover: 217.2 32.6% 20%;
     --planning-stripe: 217.2 32.6% 15%;
+    --calendar-productive: 142 65% 38%;
+    --calendar-vacation: 35 88% 54%;
+    --calendar-sick: 0 72% 56%;
+    --calendar-holiday: 204 82% 52%;
+    --calendar-highlight: 45 70% 24%;
+    --calendar-highlight-foreground: 48 96% 88%;
     
     /* Dark mode gradients */
     --gradient-header: linear-gradient(180deg, hsl(217.2 32.6% 17.5%), hsl(217.2 32.6% 14%));
