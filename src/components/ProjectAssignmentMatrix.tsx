@@ -224,6 +224,8 @@ const getProjectBadgeStyle = (projekt: string, isTentative?: boolean) => {
   if (projekt === 'ST_POZAR') return 'bg-indigo-500 text-white border-indigo-600';
   if (projekt === 'ST_JIGS') return 'bg-sky-500 text-white border-sky-600';
   if (projekt === 'ST_TRAM_HS') return 'bg-blue-800 text-white border-blue-900';
+  if (projekt === 'ST_TRAM_BELEHRAD') return 'bg-indigo-900 text-white border-indigo-950';
+  if (projekt === 'ST_TRAM_OSTRAVA') return 'bg-sky-400 text-sky-950 border-sky-500';
   if (projekt === 'ST_ELEKTRO') return 'bg-sky-700 text-white border-sky-800';
   if (projekt === 'ST_25Ev') return 'bg-cyan-700 text-white border-cyan-800';
   if (projekt === 'ST_EMU400M') return 'bg-indigo-700 text-white border-indigo-800';
@@ -290,6 +292,8 @@ const getProjectExcelStyle = (project: string, isTentative?: boolean, borderColo
   else if (project === 'ST_POZAR') style = excelFillStyle('6366F1', 'FFFFFF');
   else if (project === 'ST_JIGS') style = excelFillStyle('0EA5E9', 'FFFFFF');
   else if (project === 'ST_TRAM_HS') style = excelFillStyle('1E40AF', 'FFFFFF');
+  else if (project === 'ST_TRAM_BELEHRAD') style = excelFillStyle('312E81', 'FFFFFF');
+  else if (project === 'ST_TRAM_OSTRAVA') style = excelFillStyle('38BDF8', '0C4A6E');
   else if (project === 'ST_ELEKTRO') style = excelFillStyle('0369A1', 'FFFFFF');
   else if (project === 'ST_25Ev') style = excelFillStyle('0E7490', 'FFFFFF');
   else if (project === 'ST_EMU400M') style = excelFillStyle('4338CA', 'FFFFFF');

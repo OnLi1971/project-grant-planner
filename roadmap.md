@@ -1,4 +1,5 @@
 # Tasks
+- [x] Give ST_TRAM_BELEHRAD and ST_TRAM_OSTRAVA distinct blue colours across matrix badges, Excel export, capacity chart and Project Hours CSS; 3 colour tests pass, 64/64 suite green, browser confirms computed backgrounds differ.
 - [x] Keep FREE, NEMOC, OVER and DOVOLENÁ at the very end of the Správa projektů list (in that order) even though they carry a customer; five sort tests pass, typecheck clean.
 - [x] Sort Správa projektů list primarily by customer A–Z (Airbus, Bucher, …), then by project name; projects without a customer last; four sort tests pass, typecheck clean.
 - [x] Correct year-end project detail headers and exclude unrelated leave-only weeks outside the project's allocation period; 9 tests pass and browser fixture confirms December 2026 / January 2027 with correct CW53 date range; live signed-in data unavailable.

@@ -110,6 +110,8 @@ export const PlanningTable: React.FC = () => {
             'ST_POZAR': 'ST',
             'ST_JIGS': 'ST',
             'ST_TRAM_HS': 'ST',
+            'ST_TRAM_BELEHRAD': 'ST',
+            'ST_TRAM_OSTRAVA': 'ST',
             'ST_ELEKTRO': 'ST',
             'NU_CRAIN': 'NUVIA',
             'WA_HVAC': 'WABTEC',

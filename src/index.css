@@ -57,6 +57,8 @@ All colors MUST be HSL.
     --project-pozar: 239 84% 67%;
     --project-jigs: 199 89% 48%;
     --project-tram-hs: 226 71% 40%;
+    --project-tram-belehrad: 242 47% 34%;
+    --project-tram-ostrava: 198 93% 60%;
     --project-elektro: 201 96% 32%;
     --project-st: 224 64% 33%;
     --project-nuvia: 142 76% 36%;
@@ -197,3 +199,5 @@ All colors MUST be HSL.
 .project-plan-value[data-project^="WA_"] { --project-tone: var(--project-wabtec); }
 .project-hours-value[data-project="ST_25Ev"], .project-plan-value[data-project="ST_25Ev"] { --project-tone: 192 91% 31%; }
 .project-hours-value[data-project="ST_EMU400M"], .project-plan-value[data-project="ST_EMU400M"] { --project-tone: 243 55% 51%; }
+.project-hours-value[data-project="ST_TRAM_BELEHRAD"], .project-plan-value[data-project="ST_TRAM_BELEHRAD"] { --project-tone: var(--project-tram-belehrad); }
+.project-hours-value[data-project="ST_TRAM_OSTRAVA"], .project-plan-value[data-project="ST_TRAM_OSTRAVA"] { --project-tone: var(--project-tram-ostrava); color: hsl(201 96% 18%); }
