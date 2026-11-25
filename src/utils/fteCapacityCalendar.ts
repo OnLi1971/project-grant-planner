@@ -67,6 +67,7 @@ export interface RangeFteCapacity {
   weekdays: number;
   holidayDays: number;
   workingDays: number;
+  months: { month: string; label: string; productiveHours: number }[];
   perFte: {
     theoreticalHours: number;
     holidayHours: number;
@@ -142,6 +143,7 @@ export function calculateRangeFteCapacity(
   let vacationHours = 0;
   let sickAndSickDayHours = 0;
   let productiveHours = 0;
+  const months: RangeFteCapacity['months'] = [];
 
   let cursorYear = start.getFullYear();
   let cursorMonth = start.getMonth();
@@ -179,6 +181,11 @@ export function calculateRangeFteCapacity(
     vacationHours += segVacation;
     sickAndSickDayHours += segSick;
     productiveHours += segProductive;
+    months.push({
+      month: `${cursorYear}-${String(cursorMonth + 1).padStart(2, '0')}`,
+      label: `${MONTH_NAMES[cursorMonth]} ${cursorYear}`,
+      productiveHours: segProductive * peopleCount,
+    });
 
     cursorMonth++;
     if (cursorMonth > 11) {
@@ -203,6 +210,7 @@ export function calculateRangeFteCapacity(
       weekdays,
       holidayDays,
       workingDays,
+      months,
       perFte: {
         theoreticalHours,
         holidayHours,
@@ -218,6 +226,24 @@ export function calculateRangeFteCapacity(
         sickAndSickDayHours: sickAndSickDayHours * peopleCount,
         productiveHours: productiveHours * peopleCount,
       },
+    },
+  };
+}
+
+export function calculateProjectCapacity(start: string, end: string, people: number, hourlyRate: number) {
+  const capacity = calculateRangeFteCapacity(start, end, people);
+  if (capacity.ok === false) return { ok: false as const, error: capacity.error, data: undefined };
+  if (!Number.isFinite(hourlyRate) || hourlyRate < 0) {
+    return { ok: false as const, error: 'Hodinová cena musí být nezáporné číslo.', data: undefined };
+  }
+  return {
+    ok: true as const,
+    error: undefined,
+    data: {
+      ...capacity.data,
+      hourlyRate,
+      totalPrice: capacity.data.total.productiveHours * hourlyRate,
+      months: capacity.data.months.map(month => ({ ...month, price: month.productiveHours * hourlyRate })),
     },
   };
 }

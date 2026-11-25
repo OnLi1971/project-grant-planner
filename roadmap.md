@@ -1,4 +1,5 @@
 # Tasks
+- [x] Move the range calculator to Výpočet projektu beside Kapacitní kalendář; add hourly rate, monthly MH/CZK charts and table; 8 calculation tests and isolated desktop/mobile browser checks pass; signed-in navigation unavailable with external authentication.
 - [x] Give ST_TRAM_BELEHRAD and ST_TRAM_OSTRAVA distinct blue colours across matrix badges, Excel export, capacity chart and Project Hours CSS; 3 colour tests pass, 64/64 suite green, browser confirms computed backgrounds differ.
 - [x] Keep FREE, NEMOC, OVER and DOVOLENÁ at the very end of the Správa projektů list (in that order) even though they carry a customer; five sort tests pass, typecheck clean.
 - [x] Sort Správa projektů list primarily by customer A–Z (Airbus, Bucher, …), then by project name; projects without a customer last; four sort tests pass, typecheck clean.

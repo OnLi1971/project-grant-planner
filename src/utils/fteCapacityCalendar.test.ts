@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { buildFteCapacityCalendar, calculateRangeFteCapacity } from './fteCapacityCalendar';
+import { buildFteCapacityCalendar, calculateRangeFteCapacity, calculateProjectCapacity } from './fteCapacityCalendar';
 
 test('2027 FTE capacity calendar matches Czech holidays and standard absence profile', () => {
   const cal = buildFteCapacityCalendar(2027);
@@ -90,4 +90,32 @@ test('range MH calculator rejects invalid dates, reversed ranges and non-positiv
   assert.equal(calculateRangeFteCapacity('2027-01-01', '2027-01-31', -2).ok, false);
   assert.equal(calculateRangeFteCapacity('2027-01-01', '2027-01-31', Number.NaN).ok, false);
   assert.equal(calculateRangeFteCapacity('2024-12-31', '2026-01-10', 1).ok, false);
+});
+
+test('project calculation multiplies productive MH by hourly price for each month and total', () => {
+  const result = calculateProjectCapacity('2027-01-01', '2027-02-28', 5, 1200);
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  assert.equal(result.data.months[0]?.productiveHours, 720);
+  assert.equal(result.data.months[0]?.price, 864000);
+  assert.equal(result.data.months[1]?.productiveHours, 680);
+  assert.equal(result.data.total.productiveHours, 1400);
+  assert.equal(result.data.totalPrice, 1680000);
+  assert.equal(result.data.months.reduce((sum, m) => sum + m.price, 0), result.data.totalPrice);
+});
+
+test('monthly project breakdown conserves partial-month and cross-year MH', () => {
+  const result = calculateProjectCapacity('2026-12-16', '2027-01-15', 2.5, 900);
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  assert.deepEqual(result.data.months.map(m => m.month), ['2026-12', '2027-01']);
+  assert.ok(Math.abs(result.data.months.reduce((sum, m) => sum + m.productiveHours, 0) - result.data.total.productiveHours) < 1e-9);
+});
+
+test('hourly rate accepts zero and rejects negative or invalid values', () => {
+  const free = calculateProjectCapacity('2027-01-01', '2027-01-31', 1, 0);
+  assert.equal(free.ok, true);
+  if (free.ok) assert.equal(free.data.totalPrice, 0);
+  assert.equal(calculateProjectCapacity('2027-01-01', '2027-01-31', 1, -1).ok, false);
+  assert.equal(calculateProjectCapacity('2027-01-01', '2027-01-31', 1, Number.NaN).ok, false);
 });

@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, LabelList, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FteCapacityCalculator } from '@/components/FteCapacityCalculator';
 import { buildFteCapacityCalendar, type MonthlyFteCapacity, type SupportedCalendarYear } from '@/utils/fteCapacityCalendar';
 
 const YEARS: SupportedCalendarYear[] = [2026, 2027];
@@ -61,15 +60,10 @@ function renderCalendarTooltip({ active, payload, label }: ChartTooltipProps) {
 
 export function FteCapacityCalendar() {
   const [year, setYear] = useState<SupportedCalendarYear>(2027);
-  const [fromDate, setFromDate] = useState('2027-01-01');
-  const [toDate, setToDate] = useState('2027-12-31');
-  const [peopleInput, setPeopleInput] = useState('1');
   const cal = useMemo(() => buildFteCapacityCalendar(year), [year]);
 
   const handleYearChange = (nextYear: SupportedCalendarYear) => {
     setYear(nextYear);
-    setFromDate(`${nextYear}-01-01`);
-    setToDate(`${nextYear}-12-31`);
   };
 
   return (
@@ -86,14 +80,6 @@ export function FteCapacityCalendar() {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          <FteCapacityCalculator
-            fromDate={fromDate}
-            toDate={toDate}
-            peopleInput={peopleInput}
-            onFromDateChange={setFromDate}
-            onToDateChange={setToDate}
-            onPeopleInputChange={setPeopleInput}
-          />
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
           <div className="xl:col-span-6 space-y-5 min-w-0">
             <div className="overflow-x-auto rounded-md border border-border">

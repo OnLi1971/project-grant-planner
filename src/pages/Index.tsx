@@ -8,6 +8,7 @@ import { RevenueOverview } from '@/components/RevenueOverview';
 import { UtilizationGrid } from '@/components/UtilizationGrid';
 import { CapacityTrendChart } from '@/components/CapacityTrendChart';
 import { FteCapacityCalendar } from '@/components/FteCapacityCalendar';
+import { FteCapacityCalculator } from '@/components/FteCapacityCalculator';
 import { LicenseManagement } from '@/components/LicenseManagement';
 import { ProjectManagement } from '@/components/ProjectManagement';
 import { EngineerManagement } from '@/components/EngineerManagement';
@@ -18,7 +19,7 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Grid3x3, Database, TrendingUp, Settings, Shield, UserPlus, DollarSign, LogOut, BarChart3, ChevronDown, BookOpen, Calendar } from 'lucide-react';
+import { Users, Grid3x3, Database, TrendingUp, Settings, Shield, UserPlus, DollarSign, LogOut, BarChart3, ChevronDown, BookOpen, Calendar, Calculator } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,7 +31,7 @@ import { useNavigate } from 'react-router-dom';
 const Index = () => {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
-  const [outputView, setOutputView] = useState<'matrix' | 'project-hours' | 'revenue' | 'utilization' | 'capacity' | 'calendar'>('matrix');
+  const [outputView, setOutputView] = useState<'matrix' | 'project-hours' | 'revenue' | 'utilization' | 'capacity' | 'calendar' | 'project-calculation'>('matrix');
   const [managementView, setManagementView] = useState<'projects' | 'licenses' | 'engineers' | 'migration' | 'knowledge'>('projects');
 
   // Show loading while checking auth
@@ -173,6 +174,15 @@ const Index = () => {
                     <Calendar className="h-3.5 w-3.5" />
                     Kapacitní kalendář
                   </Button>
+                  <Button
+                    variant={outputView === 'project-calculation' ? 'default' : 'outline'}
+                    onClick={() => setOutputView('project-calculation')}
+                    className="flex items-center gap-2 text-sm h-8"
+                    size="sm"
+                  >
+                    <Calculator className="h-3.5 w-3.5" />
+                    Výpočet projektu
+                  </Button>
                 </div>
               </Card>
               
@@ -186,6 +196,8 @@ const Index = () => {
                 <CapacityTrendChart />
               ) : outputView === 'calendar' ? (
                 <FteCapacityCalendar />
+              ) : outputView === 'project-calculation' ? (
+                <FteCapacityCalculator />
               ) : (
                 <UtilizationGrid />
               )}
