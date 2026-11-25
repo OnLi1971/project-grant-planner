@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, LabelList, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { FteCapacityCalculator } from '@/components/FteCapacityCalculator';
 import { buildFteCapacityCalendar, type MonthlyFteCapacity, type SupportedCalendarYear } from '@/utils/fteCapacityCalendar';
 
 const YEARS: SupportedCalendarYear[] = [2026, 2027];
@@ -60,7 +61,16 @@ function renderCalendarTooltip({ active, payload, label }: ChartTooltipProps) {
 
 export function FteCapacityCalendar() {
   const [year, setYear] = useState<SupportedCalendarYear>(2027);
+  const [fromDate, setFromDate] = useState('2027-01-01');
+  const [toDate, setToDate] = useState('2027-12-31');
+  const [peopleInput, setPeopleInput] = useState('1');
   const cal = useMemo(() => buildFteCapacityCalendar(year), [year]);
+
+  const handleYearChange = (nextYear: SupportedCalendarYear) => {
+    setYear(nextYear);
+    setFromDate(`${nextYear}-01-01`);
+    setToDate(`${nextYear}-12-31`);
+  };
 
   return (
     <div className="mt-4 space-y-4">
@@ -69,13 +79,22 @@ export function FteCapacityCalendar() {
           <CardTitle className="text-xl">Měsíční kapacita {year} (1 FTE)</CardTitle>
           <div className="flex items-center gap-1">
             {YEARS.map((y) => (
-              <Button key={y} size="sm" variant={year === y ? 'default' : 'outline'} onClick={() => setYear(y)} className="h-8 px-4">
+              <Button key={y} size="sm" variant={year === y ? 'default' : 'outline'} onClick={() => handleYearChange(y)} className="h-8 px-4">
                 {y}
               </Button>
             ))}
           </div>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+        <CardContent className="space-y-6">
+          <FteCapacityCalculator
+            fromDate={fromDate}
+            toDate={toDate}
+            peopleInput={peopleInput}
+            onFromDateChange={setFromDate}
+            onToDateChange={setToDate}
+            onPeopleInputChange={setPeopleInput}
+          />
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
           <div className="xl:col-span-6 space-y-5 min-w-0">
             <div className="overflow-x-auto rounded-md border border-border">
               <table className="w-full text-xs border-collapse">
@@ -175,6 +194,7 @@ export function FteCapacityCalendar() {
                 </BarChart>
               </ResponsiveContainer>
             </div>
+          </div>
           </div>
         </CardContent>
       </Card>

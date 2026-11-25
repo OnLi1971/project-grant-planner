@@ -53,6 +53,175 @@ const VACATION_HOURS_BY_MONTH = [0, 16, 16, 0, 8, 16, 40, 40, 16, 8, 0, 40] as c
 const SICK_AND_SICK_DAY_HOURS_BY_MONTH = [16, 8, 8, 0, 0, 0, 0, 0, 0, 0, 8, 8] as const;
 const QUARTERS = ['Q1', 'Q2', 'Q3', 'Q4'] as const;
 
+export const CALENDAR_MIN_DATE = '2025-01-01';
+export const CALENDAR_MAX_DATE = '2028-12-31';
+const MIN_SUPPORTED_YEAR = 2025;
+const MAX_SUPPORTED_YEAR = 2028;
+const MAX_PEOPLE_COUNT = 10000;
+
+export interface RangeFteCapacity {
+  startDate: string;
+  endDate: string;
+  peopleCount: number;
+  calendarDays: number;
+  weekdays: number;
+  holidayDays: number;
+  workingDays: number;
+  perFte: {
+    theoreticalHours: number;
+    holidayHours: number;
+    workingFundAfterHolidays: number;
+    vacationHours: number;
+    sickAndSickDayHours: number;
+    productiveHours: number;
+    utilizationPct: number;
+  };
+  total: {
+    workingFundAfterHolidays: number;
+    vacationHours: number;
+    sickAndSickDayHours: number;
+    productiveHours: number;
+  };
+}
+
+export type RangeFteCapacityOutcome =
+  | { ok: true; data: RangeFteCapacity; error?: undefined }
+  | { ok: false; data?: undefined; error: string };
+
+function parseLocalIsoDate(dateStr: string): Date | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr.trim());
+  if (!match) return null;
+  const y = Number(match[1]);
+  const m = Number(match[2]);
+  const d = Number(match[3]);
+  const date = new Date(y, m - 1, d);
+  if (date.getFullYear() !== y || date.getMonth() !== m - 1 || date.getDate() !== d) {
+    return null;
+  }
+  return date;
+}
+
+function countWorkingDaysInMonth(year: number, monthIdx: number): number {
+  const days = eachDayOfInterval({
+    start: new Date(year, monthIdx, 1),
+    end: new Date(year, monthIdx + 1, 0),
+  });
+  let count = 0;
+  for (const day of days) {
+    if (!isWeekend(day) && !isHoliday(day, false)) count++;
+  }
+  return count;
+}
+
+export function calculateRangeFteCapacity(
+  startDateStr: string,
+  endDateStr: string,
+  peopleCount: number
+): RangeFteCapacityOutcome {
+  const start = parseLocalIsoDate(startDateStr);
+  const end = parseLocalIsoDate(endDateStr);
+  if (!start || !end) {
+    return { ok: false, error: 'Zadejte platné datum od a do.' };
+  }
+  if (start.getFullYear() < MIN_SUPPORTED_YEAR || end.getFullYear() > MAX_SUPPORTED_YEAR) {
+    return { ok: false, error: 'Podporované období je 1. 1. 2025 až 31. 12. 2028.' };
+  }
+  if (end < start) {
+    return { ok: false, error: 'Datum do nemůže být dříve než datum od.' };
+  }
+  if (!Number.isFinite(peopleCount) || peopleCount <= 0) {
+    return { ok: false, error: 'Počet lidí musí být číslo větší než 0.' };
+  }
+  if (peopleCount > MAX_PEOPLE_COUNT) {
+    return { ok: false, error: `Počet lidí může být maximálně ${MAX_PEOPLE_COUNT.toLocaleString('cs-CZ')}.` };
+  }
+
+  let calendarDays = 0;
+  let weekdays = 0;
+  let holidayDays = 0;
+  let vacationHours = 0;
+  let sickAndSickDayHours = 0;
+  let productiveHours = 0;
+
+  let cursorYear = start.getFullYear();
+  let cursorMonth = start.getMonth();
+  const endYear = end.getFullYear();
+  const endMonth = end.getMonth();
+
+  while (cursorYear < endYear || (cursorYear === endYear && cursorMonth <= endMonth)) {
+    const monthStart = new Date(cursorYear, cursorMonth, 1);
+    const monthEnd = new Date(cursorYear, cursorMonth + 1, 0);
+    const segStart = start > monthStart ? start : monthStart;
+    const segEnd = end < monthEnd ? end : monthEnd;
+    const segDays = eachDayOfInterval({ start: segStart, end: segEnd });
+
+    let segWeekdays = 0;
+    let segHolidays = 0;
+    for (const day of segDays) {
+      if (!isWeekend(day)) {
+        segWeekdays++;
+        if (isHoliday(day, false)) segHolidays++;
+      }
+    }
+
+    const segWorkingDays = segWeekdays - segHolidays;
+    const monthTotalWorkingDays = countWorkingDaysInMonth(cursorYear, cursorMonth);
+    const share = monthTotalWorkingDays > 0 ? segWorkingDays / monthTotalWorkingDays : 0;
+
+    const segWorkingFund = segWorkingDays * HOURS_PER_DAY;
+    const segVacation = (VACATION_HOURS_BY_MONTH[cursorMonth] ?? 0) * share;
+    const segSick = (SICK_AND_SICK_DAY_HOURS_BY_MONTH[cursorMonth] ?? 0) * share;
+    const segProductive = Math.max(0, segWorkingFund - segVacation - segSick);
+
+    calendarDays += segDays.length;
+    weekdays += segWeekdays;
+    holidayDays += segHolidays;
+    vacationHours += segVacation;
+    sickAndSickDayHours += segSick;
+    productiveHours += segProductive;
+
+    cursorMonth++;
+    if (cursorMonth > 11) {
+      cursorMonth = 0;
+      cursorYear++;
+    }
+  }
+
+  const workingDays = weekdays - holidayDays;
+  const theoreticalHours = weekdays * HOURS_PER_DAY;
+  const holidayHours = holidayDays * HOURS_PER_DAY;
+  const workingFundAfterHolidays = workingDays * HOURS_PER_DAY;
+  const utilizationPct = workingFundAfterHolidays > 0 ? (productiveHours / workingFundAfterHolidays) * 100 : 0;
+
+  return {
+    ok: true,
+    data: {
+      startDate: startDateStr.trim(),
+      endDate: endDateStr.trim(),
+      peopleCount,
+      calendarDays,
+      weekdays,
+      holidayDays,
+      workingDays,
+      perFte: {
+        theoreticalHours,
+        holidayHours,
+        workingFundAfterHolidays,
+        vacationHours,
+        sickAndSickDayHours,
+        productiveHours,
+        utilizationPct,
+      },
+      total: {
+        workingFundAfterHolidays: workingFundAfterHolidays * peopleCount,
+        vacationHours: vacationHours * peopleCount,
+        sickAndSickDayHours: sickAndSickDayHours * peopleCount,
+        productiveHours: productiveHours * peopleCount,
+      },
+    },
+  };
+}
+
 export function buildFteCapacityCalendar(year: SupportedCalendarYear): AnnualFteCapacity {
   const months: MonthlyFteCapacity[] = MONTH_NAMES.map((monthName, idx) => {
     const start = new Date(year, idx, 1);

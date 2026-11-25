@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { buildFteCapacityCalendar } from './fteCapacityCalendar';
+import { buildFteCapacityCalendar, calculateRangeFteCapacity } from './fteCapacityCalendar';
 
 test('2027 FTE capacity calendar matches Czech holidays and standard absence profile', () => {
   const cal = buildFteCapacityCalendar(2027);
@@ -46,4 +46,48 @@ test('2026 FTE capacity calendar applies 2026 Czech holidays with identical abse
   assert.equal(cal.months[3]?.holidayHours, 16);
   assert.equal(cal.months[4]?.holidayHours, 16);
   assert.equal(cal.months[11]?.holidayHours, 16);
+});
+
+test('range MH calculator matches annual calendar totals and scales by people count', () => {
+  const r2027 = calculateRangeFteCapacity('2027-01-01', '2027-12-31', 1);
+  assert.equal(r2027.ok, true);
+  if (!r2027.ok) return;
+  assert.equal(r2027.data.workingDays, 252);
+  assert.equal(r2027.data.holidayDays, 9);
+  assert.equal(r2027.data.perFte.productiveHours, 1768);
+  assert.equal(r2027.data.total.productiveHours, 1768);
+
+  const r2026For5 = calculateRangeFteCapacity('2026-01-01', '2026-12-31', 5);
+  assert.equal(r2026For5.ok, true);
+  if (!r2026For5.ok) return;
+  assert.equal(r2026For5.data.perFte.productiveHours, 1752);
+  assert.equal(r2026For5.data.total.productiveHours, 8760);
+});
+
+test('range MH calculator handles partial months additively and spans across years', () => {
+  const part1 = calculateRangeFteCapacity('2027-03-01', '2027-03-15', 2);
+  const part2 = calculateRangeFteCapacity('2027-03-16', '2027-03-31', 2);
+  const fullMar = calculateRangeFteCapacity('2027-03-01', '2027-03-31', 2);
+  assert.equal(part1.ok && part2.ok && fullMar.ok, true);
+  if (!part1.ok || !part2.ok || !fullMar.ok) return;
+  assert.equal(fullMar.data.perFte.productiveHours, 144);
+  assert.equal(fullMar.data.total.productiveHours, 288);
+  assert.ok(Math.abs(part1.data.total.productiveHours + part2.data.total.productiveHours - 288) < 1e-9);
+
+  const crossYear = calculateRangeFteCapacity('2026-12-01', '2027-01-31', 1.5);
+  assert.equal(crossYear.ok, true);
+  if (!crossYear.ok) return;
+  const dec2026 = buildFteCapacityCalendar(2026).months[11]?.productiveHours ?? 0;
+  const jan2027 = buildFteCapacityCalendar(2027).months[0]?.productiveHours ?? 0;
+  assert.equal(crossYear.data.perFte.productiveHours, dec2026 + jan2027);
+  assert.equal(crossYear.data.total.productiveHours, (dec2026 + jan2027) * 1.5);
+});
+
+test('range MH calculator rejects invalid dates, reversed ranges and non-positive people', () => {
+  assert.equal(calculateRangeFteCapacity('', '2027-01-31', 1).ok, false);
+  assert.equal(calculateRangeFteCapacity('2027-05-10', '2027-05-01', 1).ok, false);
+  assert.equal(calculateRangeFteCapacity('2027-01-01', '2027-01-31', 0).ok, false);
+  assert.equal(calculateRangeFteCapacity('2027-01-01', '2027-01-31', -2).ok, false);
+  assert.equal(calculateRangeFteCapacity('2027-01-01', '2027-01-31', Number.NaN).ok, false);
+  assert.equal(calculateRangeFteCapacity('2024-12-31', '2026-01-10', 1).ok, false);
 });
